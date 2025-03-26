@@ -1,6 +1,6 @@
 import { Axios } from 'axios';
 import React, { useState, useEffect } from 'react';
-import { FaPlus, FaEdit, FaTrash, FaSearch, FaThList, FaCamera } from 'react-icons/fa';
+import { FaPlus, FaEdit, FaTrash, FaSearch, FaThList, FaCamera, FaCheck, FaTimes } from 'react-icons/fa';
 import { FaListCheck } from 'react-icons/fa6';
 import axios from 'axios';
 import Swal from 'sweetalert2';
@@ -13,6 +13,12 @@ const EmployeeModal = ({ isOpen, onClose }) => {
     const [departamentos, setDepartamentos] = useState([]);
     const [cargos, setCargos] = useState([]);
     const [empleados, setEmpleados] = useState([]);
+    const [showFuncionesModal, setShowFuncionesModal] = useState(false);
+    const [funcionesEmpleado, setFuncionesEmpleado] = useState([]);
+    const [empleadoSeleccionado, setEmpleadoSeleccionado] = useState(null);
+    const [nuevaFuncion, setNuevaFuncion] = useState('');
+    const [funcionEditando, setFuncionEditando] = useState(null);
+    const [funcionEditada, setFuncionEditada] = useState('');
     const initialEmpleadoState = {
         id: '',
         identificacion: '',
@@ -52,6 +58,11 @@ const EmployeeModal = ({ isOpen, onClose }) => {
         .catch((error) => {
             console.error('Error al cargar los empleados:', error);
         });
+    };
+
+    const handleEditarFuncion = (funcion) => {
+        setFuncionEditando(funcion.id);
+        setFuncionEditada(funcion.descripcion);
     };
 
     const handleGuardarEmpleado = () => {
@@ -124,8 +135,84 @@ const EmployeeModal = ({ isOpen, onClose }) => {
         }
     };
 
-    const handleVerFunciones = (id) => {
-       
+    const handleVerFunciones = (empleado) => {
+        setEmpleadoSeleccionado(empleado.id);
+        
+        axios.get(`/parametros/cargarFunciones/${empleado.id}`)
+        .then((response) => {
+            setFuncionesEmpleado(response.data);
+            setShowFuncionesModal(true);
+        })
+        .catch((error) => {
+            console.error('Error al cargar las funciones:', error);
+        });
+    };
+
+    const handleGuardarFuncion = () => {
+        if (!nuevaFuncion.trim()) {
+            Swal.fire({
+                title: 'Error',
+                text: 'Por favor ingrese una función',
+                icon: 'error',
+                confirmButtonText: 'OK',
+            });
+            return;
+        }
+      
+        const data = {
+            empleado: empleadoSeleccionado,
+            funcion: nuevaFuncion
+        };
+
+        axios.post('/parametros/guardarFuncion', data)
+        .then((response) => {
+            console.log(response.data);
+            if (response.data.funcion) {
+                setFuncionesEmpleado(prevFunciones => [...prevFunciones, response.data.funcion]);
+                console.log(funcionesEmpleado);
+                setNuevaFuncion('');
+                Swal.fire({
+                    title: 'Función agregada correctamente',
+                    icon: 'success',
+                    confirmButtonText: 'OK',
+                });
+            }
+        })
+        .catch((error) => {
+            console.error('Error al guardar la función:', error);
+            Swal.fire({
+                title: 'Error',
+                text: 'Hubo un error al guardar la función',
+                icon: 'error',
+                confirmButtonText: 'OK',
+            });
+        });
+    };
+
+    const handleEliminarFuncion = (funcionId) => {
+        Swal.fire({
+            title: '¿Estás seguro?',
+            text: 'No podrás revertir esto.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Si, eliminar',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if(result.isConfirmed){
+                axios.delete(`/parametros/eliminarFuncion/${funcionId}`)
+                .then(() => {
+                    setFuncionesEmpleado(funcionesEmpleado.filter(f => f.id !== funcionId));
+                    Swal.fire({
+                        title: 'Función eliminada correctamente',
+                        icon: 'success',
+                        confirmButtonText: 'OK',
+                    });
+                })
+                .catch((error) => {
+                    console.error('Error al eliminar la función:', error);
+                });
+            }
+        });
     };
 
     const handleEliminarEmpleado = (id) => {
@@ -175,6 +262,49 @@ const EmployeeModal = ({ isOpen, onClose }) => {
         }
 
         setShowAddForm(true);
+    };
+
+    const handleGuardarEdicionFuncion = (id) => {
+        if (!funcionEditada.trim()) {
+            Swal.fire({
+                title: 'Error',
+                text: 'La función no puede estar vacía',
+                icon: 'error',
+                confirmButtonText: 'OK',
+            });
+            return;
+        }
+
+        const data = {
+            id: id,
+            empleado: empleadoSeleccionado,
+            descripcion: funcionEditada
+        };
+
+        axios.put(`/parametros/actualizarFuncion/${id}`, data)
+        .then((response) => {
+            setFuncionesEmpleado(prevFunciones =>
+                prevFunciones.map(funcion =>
+                    funcion.id === id ? { ...funcion, descripcion: funcionEditada } : funcion
+                )
+            );
+            setFuncionEditando(null);
+            setFuncionEditada('');
+            Swal.fire({
+                title: 'Función actualizada correctamente',
+                icon: 'success',
+                confirmButtonText: 'OK',
+            });
+        })
+        .catch((error) => {
+            console.error('Error al actualizar la función:', error);
+            Swal.fire({
+                title: 'Error',
+                text: 'Hubo un error al actualizar la función',
+                icon: 'error',
+                confirmButtonText: 'OK',
+            });
+        });
     };
 
     if (!isOpen) return null;
@@ -247,7 +377,7 @@ const EmployeeModal = ({ isOpen, onClose }) => {
                                             <button title="Ver tareas" className="edit-button">
                                                 <FaListCheck />
                                             </button>
-                                            <button title="Ver funciones" onClick={() => handleVerFunciones(empleado.id)} className="edit-button">
+                                            <button title="Ver funciones" onClick={() => handleVerFunciones(empleado)} className="edit-button">
                                                 <FaThList />
                                             </button>
                                             <button title="Editar empleado" onClick={() => handleEditarEmpleado(empleado)} className="edit-button">
@@ -426,7 +556,6 @@ const EmployeeModal = ({ isOpen, onClose }) => {
                                             <option key={cargo.id} value={cargo.id}>{cargo.nombre}</option>
                                         ))}
                                         
-                                       
                                     </select>
                                 </div>
                                 <div className="form-group col-4">
@@ -484,8 +613,6 @@ const EmployeeModal = ({ isOpen, onClose }) => {
                                 </div>
                             </div>
 
-                          
-
                             <div className="form-actions">
                                 <button 
                                     type="button" 
@@ -499,6 +626,97 @@ const EmployeeModal = ({ isOpen, onClose }) => {
                                 </button>
                             </div>
                         </form>
+                    </div>
+                </div>
+            )}
+
+            {showFuncionesModal && (
+                <div className="modal-overlay">
+                    <div className="funciones-modal">
+                        <div className="modal-header">
+                            <h2>Funciones del Empleado</h2>
+                            <button 
+                                className="close-button" 
+                                onClick={() => setShowFuncionesModal(false)}
+                            >
+                                &times;
+                            </button>
+                        </div>
+                        <div className="funciones-content">
+                            <div className="nueva-funcion">
+                                <input
+                                    type="text"
+                                    placeholder="Nueva función..."
+                                    value={nuevaFuncion}
+                                    onChange={(e) => setNuevaFuncion(e.target.value)}
+                                    className="funcion-input"
+                                />
+                                <button 
+                                    className="add-funcion-button"
+                                    onClick={handleGuardarFuncion}
+                                >
+                                    <FaPlus /> Agregar
+                                </button>
+                            </div>
+                            <div className="funciones-list">
+                                {funcionesEmpleado && funcionesEmpleado.length > 0 ? (
+                                    funcionesEmpleado.map((funcion) => (
+                                        <div key={`funcion-${funcion.id}`} className="funcion-item">
+                                            {funcionEditando === funcion.id ? (
+                                                <div className="funcion-edit-container">
+                                                    <input
+                                                        type="text"
+                                                        value={funcionEditada}
+                                                        onChange={(e) => setFuncionEditada(e.target.value)}
+                                                        className="funcion-edit-input"
+                                                        autoFocus
+                                                    />
+                                                    <div className="funcion-edit-buttons">
+                                                        <button
+                                                            className="save-edit-button"
+                                                            onClick={() => handleGuardarEdicionFuncion(funcion.id)}
+                                                        >
+                                                            <FaCheck />
+                                                        </button>
+                                                        <button
+                                                            className="cancel-edit-button"
+                                                            onClick={() => {
+                                                                setFuncionEditando(null);
+                                                                setFuncionEditada('');
+                                                            }}
+                                                        >
+                                                            <FaTimes />
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <>
+                                                    <span>{funcion.descripcion}</span>
+                                                    <div className="funcion-buttons">
+                                                        <button
+                                                            className="edit-funcion-button"
+                                                            onClick={() => handleEditarFuncion(funcion)}
+                                                        >
+                                                            <FaEdit />
+                                                        </button>
+                                                        <button
+                                                            className="delete-funcion-button"
+                                                            onClick={() => handleEliminarFuncion(funcion.id)}
+                                                        >
+                                                            <FaTrash />
+                                                        </button>
+                                                    </div>
+                                                </>
+                                            )}
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="no-funciones">
+                                        No hay funciones registradas
+                                    </div>
+                                )}
+                            </div>
+                        </div>
                     </div>
                 </div>
             )}

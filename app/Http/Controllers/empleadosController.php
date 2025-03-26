@@ -100,4 +100,60 @@ class empleadosController extends Controller
         ]);
         return response()->json(['success' => 'Empleado eliminado correctamente'], 200);
     }
+
+    function cargarFunciones($id)
+    {
+        $funciones = DB::table('funciones_empleado')
+        ->join('empleados', 'funciones_empleado.empleado', '=', 'empleados.id')
+        ->select('funciones_empleado.*', 'empleados.nombres', 'empleados.apellidos')
+        ->where('funciones_empleado.empleado', $id)
+        ->where('funciones_empleado.estado', 'Activo')
+        ->get();
+        return response()->json($funciones);
+    }
+
+    function guardarFuncion(Request $request)
+    {
+        $funcionEmpleado = $request->all();
+        DB::beginTransaction();
+        try {
+           
+            $funcion = DB::table('funciones_empleado')->insert([
+                'empleado' => $funcionEmpleado['empleado'],
+                'descripcion' => $funcionEmpleado['funcion'],
+                'estado' => 'Activo'
+            ]);
+            
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+        //obtener la ultima funcion insertada
+        $funcion = DB::table('funciones_empleado')
+        ->where('empleado', $funcionEmpleado['empleado'])
+        ->where('estado', 'Activo')
+        ->orderBy('id', 'desc')
+        ->first();
+        return response()->json([
+            'success' => 'Función guardada correctamente',
+            'funcion' => $funcion
+        ], 200);
+    }
+
+    function actualizarFuncion(Request $request, $id)
+    {
+        $funcionEmpleado = $request->all();
+        $funcion = DB::table('funciones_empleado')->where('id', $id)->update([
+            'descripcion' => $funcionEmpleado['descripcion']
+        ]);
+    }
+
+    function eliminarFuncion($id)
+    {
+        $funcion = DB::table('funciones_empleado')->where('id', $id)->update([
+            'estado' => 'Inactivo'
+        ]);
+        return response()->json(['success' => 'Función eliminada correctamente'], 200);
+    }
 }

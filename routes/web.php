@@ -12,3 +12,7 @@ Route::get('/parametros/cargarDepartamentos', [empleadosController::class, 'carg
 Route::get('/parametros/cargarCargos', [empleadosController::class, 'cargarCargos']);
 Route::get('/parametros/cargarEmpleados', [empleadosController::class, 'cargarEmpleados']);
 Route::delete('/parametros/eliminarEmpleado/{id}', [empleadosController::class, 'eliminarEmpleado']);
+Route::get('/parametros/cargarFunciones/{id}', [empleadosController::class, 'cargarFunciones']);
+Route::post('/parametros/guardarFuncion', [empleadosController::class, 'guardarFuncion']);
+Route::put('/parametros/actualizarFuncion/{id}', [empleadosController::class, 'actualizarFuncion']);
+Route::delete('/parametros/eliminarFuncion/{id}', [empleadosController::class, 'eliminarFuncion']);
