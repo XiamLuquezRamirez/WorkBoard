@@ -600,3 +600,203 @@ body{
 .edit-funcion-button:hover {
     background-color: #92b2db;
 }
+
+/* Estilos para el modal de tareas */
+.tareas-modal {
+    background-color: white;
+    border-radius: 16px;
+    width: 90%;
+    max-width: 1000px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.tareas-content {
+    padding: 1.5rem;
+}
+
+.nueva-tarea-section {
+    background-color: #f8fafc;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.tarea-form {
+    margin-top: 1rem;
+    padding: 1rem;
+}
+
+.evidencia-input {
+    width: 100%;
+    padding: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.evidencias-preview {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.evidencia-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.25rem 0.5rem;
+    background-color: #e2e8f0;
+    border-radius: 4px;
+}
+
+.remove-evidencia {
+    background: none;
+    border: none;
+    color: #ef4444;
+    cursor: pointer;
+    padding: 0.25rem;
+}
+
+.tareas-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.tarea-item {
+    background-color: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 1rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.tarea-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.prioridad-badge {
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.prioridad-badge.alta {
+    background-color: #fee2e2;
+    color: #ef4444;
+}
+
+.prioridad-badge.media {
+    background-color: #fef3c7;
+    color: #d97706;
+}
+
+.prioridad-badge.baja {
+    background-color: #dcfce7;
+    color: #22c55e;
+}
+
+.tarea-descripcion {
+    color: #64748b;
+    margin-bottom: 1rem;
+}
+
+.tarea-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.tarea-fechas {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.875rem;
+    color: #64748b;
+}
+
+.estado-select {
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    border: 1px solid #e2e8f0;
+}
+
+.estado-select.pendiente {
+    background-color: #fee2e2;
+    color: #ef4444;
+}
+
+.estado-select.en-proceso {
+    background-color: #fef3c7;
+    color: #d97706;
+}
+
+.estado-select.completada {
+    background-color: #dcfce7;
+    color: #22c55e;
+}
+
+.estado-select.cancelada {
+    background-color: #f1f5f9;
+    color: #64748b;
+}
+
+.tarea-evidencias {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e2e8f0;
+}
+
+.evidencias-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.evidencia-link {
+    color: var(--primary-color);
+    text-decoration: none;
+    padding: 0.25rem 0.5rem;
+    background-color: #eff6ff;
+    border-radius: 4px;
+    font-size: 0.875rem;
+}
+
+.evidencia-link:hover {
+    background-color: #dbeafe;
+}
+
+.modal-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.no-tareas {
+    text-align: center;
+    padding: 2rem;
+    color: #64748b;
+    background-color: #f8fafc;
+    border-radius: 8px;
+    font-size: 1.1rem;
+}
+
+.add-button {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.add-button:hover {
+    background-color: var(--secondary-color);
+}

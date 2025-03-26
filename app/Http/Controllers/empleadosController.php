@@ -156,4 +156,60 @@ class empleadosController extends Controller
         ]);
         return response()->json(['success' => 'Función eliminada correctamente'], 200);
     }
+
+    function cargarTareas($id)
+    {
+        $tareas = DB::table('tareas_empleados')
+            ->where('empleado', $id)
+            ->where('estado_reg', 'Activo')
+            ->get();
+    
+        // Obtener los IDs de las tareas
+        $tareasIds = $tareas->pluck('id');
+    
+        // Obtener las evidencias relacionadas a esas tareas
+        $evidencias = DB::table('evidencia_tarea')
+            ->whereIn('tarea', $tareasIds)
+            ->get();
+    
+        // Agregar evidencias a las tareas
+        $tareas = $tareas->map(function ($tarea) use ($evidencias) {
+            $tarea->evidencias = $evidencias->where('tarea', $tarea->id)->values();
+            return $tarea;
+        });
+    
+        return response()->json([
+            'tareas' => $tareas
+        ]);
+    }
+
+    function guardarTarea(Request $request)
+    {
+        $tarea = $request->all();
+        dd($tarea);
+        DB::beginTransaction();
+        try {
+            $IdTarea = DB::table('tareas_empleados')->insertGetId([
+                'empleado' => $tarea['empleado'],
+                'descripcion' => $tarea['descripcion'],
+                'estado' => 'Activo',
+                'estado_reg' => 'Activo'
+            ]);
+           
+
+            /// isertar evidencia
+            $evidencia = DB::table('evidencia_tarea')->insert([
+                'tarea' => $IdTarea,
+                'evidencia' => $tarea['evidencia'],
+                'estado' => 'Activo',
+                'estado_reg' => 'Activo'
+            ]);
+
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+        return response()->json(['success' => 'Tarea guardada correctamente'], 200);
+    }
 }

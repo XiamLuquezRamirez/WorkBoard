@@ -19,6 +19,19 @@ const EmployeeModal = ({ isOpen, onClose }) => {
     const [nuevaFuncion, setNuevaFuncion] = useState('');
     const [funcionEditando, setFuncionEditando] = useState(null);
     const [funcionEditada, setFuncionEditada] = useState('');
+    const [showTareasModal, setShowTareasModal] = useState(false);
+    const [tareasEmpleado, setTareasEmpleado] = useState([]);
+    const [nuevaTarea, setNuevaTarea] = useState({
+        titulo: '',
+        descripcion: '',
+        fecha_pactada: '',
+        estado: 'Pendiente',
+        prioridad: 'Media',
+        evidencias: []
+    });
+    const [editandoTarea, setEditandoTarea] = useState(null);
+    const [evidencias, setEvidencias] = useState([]);
+    const [mostrarFormularioTarea, setMostrarFormularioTarea] = useState(false);
     const initialEmpleadoState = {
         id: '',
         identificacion: '',
@@ -43,9 +56,9 @@ const EmployeeModal = ({ isOpen, onClose }) => {
 
     useEffect(() => {
         cargarEmpresas();
-         cargarDepartamentos();
-         cargarCargos();
-         cargarEmpleados();
+        cargarDepartamentos();
+        cargarCargos();
+        cargarEmpleados();
     }, []);
 
     
@@ -136,10 +149,11 @@ const EmployeeModal = ({ isOpen, onClose }) => {
     };
 
     const handleVerFunciones = (empleado) => {
-        setEmpleadoSeleccionado(empleado.id);
+        setEmpleadoSeleccionado(empleado);
         
         axios.get(`/parametros/cargarFunciones/${empleado.id}`)
         .then((response) => {
+                
             setFuncionesEmpleado(response.data);
             setShowFuncionesModal(true);
         })
@@ -160,7 +174,7 @@ const EmployeeModal = ({ isOpen, onClose }) => {
         }
       
         const data = {
-            empleado: empleadoSeleccionado,
+            empleado: empleadoSeleccionado.id,
             funcion: nuevaFuncion
         };
 
@@ -242,7 +256,6 @@ const EmployeeModal = ({ isOpen, onClose }) => {
     };
 
     const handleEditarEmpleado = (empleado) => {
-       
         setNewEmpleado({
             ...empleado,
             fechaNacimiento: empleado.fecha_nacimiento || '',
@@ -304,6 +317,93 @@ const EmployeeModal = ({ isOpen, onClose }) => {
                 icon: 'error',
                 confirmButtonText: 'OK',
             });
+        });
+    };
+
+    const handleVerTareas = (empleado) => {
+        
+        setEmpleadoSeleccionado(empleado);
+        axios.get(`/parametros/cargarTareas/${empleado.id}`)
+        .then((response) => {
+           console.log(response.data);
+             setTareasEmpleado(response.data.tareas);
+             setShowTareasModal(true);
+        })
+        .catch((error) => {
+            console.error('Error al cargar las tareas:', error);
+        });
+    };
+
+    const handleEvidenciaUpload = (e) => {
+        const files = Array.from(e.target.files);
+        
+        files.forEach(file => {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setEvidencias(prev => [...prev, {
+                    nombre: file.name,
+                    archivo: reader.result,
+                    tipo: file.type
+                }]);
+            };
+            reader.readAsDataURL(file);
+        });
+    };
+
+    const handleGuardarTarea = () => {
+        if (!nuevaTarea.titulo.trim() || !nuevaTarea.fecha_pactada) {
+            Swal.fire({
+                title: 'Error',
+                text: 'Por favor complete los campos requeridos',
+                icon: 'error',
+                confirmButtonText: 'OK',
+            });
+            return;
+        }
+
+        const tareaData = {
+            ...nuevaTarea,
+            empleado: empleadoSeleccionado.id,
+            evidencias: evidencias
+        };
+
+
+        axios.post('/parametros/guardarTarea', tareaData)
+        .then((response) => {
+            setTareasEmpleado([...tareasEmpleado, response.data]);
+            setNuevaTarea({
+                titulo: '',
+                descripcion: '',
+                fecha_pactada: '',
+                estado: 'Pendiente',
+                prioridad: 'Media',
+                evidencias: []
+            });
+            setEvidencias([]);
+            setMostrarFormularioTarea(false);
+            Swal.fire({
+                title: 'Tarea guardada correctamente',
+                icon: 'success',
+                confirmButtonText: 'OK',
+            });
+        })
+        .catch((error) => {
+            console.error('Error al guardar la tarea:', error);
+        });
+    };
+
+    const handleActualizarEstadoTarea = (tareaId, nuevoEstado) => {
+        axios.put(`/parametros/actualizarEstadoTarea/${tareaId}`, {
+            estado: nuevoEstado,
+            fecha_entrega: nuevoEstado === 'Completada' ? new Date().toISOString() : null
+        })
+        .then((response) => {
+            setTareasEmpleado(tareasEmpleado.map(tarea => 
+                tarea.id === tareaId ? response.data : tarea
+            ));
+        })
+        .catch((error) => {
+            console.error('Error al actualizar el estado:', error);
         });
     };
 
@@ -374,7 +474,7 @@ const EmployeeModal = ({ isOpen, onClose }) => {
                                     </td>
                                     <td>
                                         <div className="action-buttons">
-                                            <button title="Ver tareas" className="edit-button">
+                                            <button title="Ver tareas" onClick={() => handleVerTareas(empleado)} className="edit-button">
                                                 <FaListCheck />
                                             </button>
                                             <button title="Ver funciones" onClick={() => handleVerFunciones(empleado)} className="edit-button">
@@ -394,7 +494,6 @@ const EmployeeModal = ({ isOpen, onClose }) => {
                     </table>
                 </div>
             </div>
-
             {showAddForm && (
                 <div className="modal-overlay">
                     <div className="form-modal-large">
@@ -716,6 +815,193 @@ const EmployeeModal = ({ isOpen, onClose }) => {
                                     </div>
                                 )}
                             </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {showTareasModal && (
+                <div className="modal-overlay">
+                    <div className="tareas-modal">
+                        <div className="modal-header">
+                            <h2>
+                                {mostrarFormularioTarea ? 'Nueva Tarea' : 
+                                `Tareas de ${empleadoSeleccionado.nombres} ${empleadoSeleccionado.apellidos}`}
+                            </h2>
+                            <div className="modal-header-actions">
+                                {!mostrarFormularioTarea && (
+                                    <button 
+                                        className="add-button"
+                                        onClick={() => setMostrarFormularioTarea(true)}
+                                    >
+                                        <FaPlus /> Nueva Tarea
+                                    </button>
+                                )}
+                                <button 
+                                    className="close-button" 
+                                    onClick={() => {
+                                        setShowTareasModal(false);
+                                        setMostrarFormularioTarea(false);
+                                    }}
+                                >
+                                    &times;
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div className="tareas-content">
+                            {mostrarFormularioTarea ? (
+                                <div className="tarea-form">
+                                    <div className="form-row">
+                                        <div className="form-group col-12">
+                                            <label>Título</label>
+                                            <input
+                                                type="text"
+                                                value={nuevaTarea.titulo}
+                                                onChange={(e) => setNuevaTarea({...nuevaTarea, titulo: e.target.value})}
+                                                placeholder="Título de la tarea"
+                                            />
+                                        </div>
+                                       
+                                    </div>
+                                    <div className='form-row'>
+                                    <div className="form-group col-6">
+                                            <label>Fecha Pactada</label>
+                                            <input
+                                                type="date"
+                                                value={nuevaTarea.fecha_pactada}
+                                                onChange={(e) => setNuevaTarea({...nuevaTarea, fecha_pactada: e.target.value})}
+                                            />
+                                        </div>
+                                        <div className="form-group col-6">
+                                            <label>Prioridad</label>
+                                            <select
+                                                value={nuevaTarea.prioridad}
+                                                onChange={(e) => setNuevaTarea({...nuevaTarea, prioridad: e.target.value})}
+                                            >
+                                                <option value="Alta">Alta</option>
+                                                <option value="Media">Media</option>
+                                                <option value="Baja">Baja</option>
+                                            </select>
+                                        </div>
+                                        
+                                    </div>
+                                    <div className="form-row">
+                                        <div className="form-group col-12">
+                                            <label>Descripción</label>
+                                            <textarea
+                                                value={nuevaTarea.descripcion}
+                                                onChange={(e) => setNuevaTarea({...nuevaTarea, descripcion: e.target.value})}
+                                                placeholder="Descripción detallada de la tarea"
+                                                rows="3"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="form-row">
+                                        <div className="form-group col-12">
+                                            <label>Evidencias</label>
+                                            <input
+                                                type="file"
+                                                multiple
+                                                onChange={handleEvidenciaUpload}
+                                                className="evidencia-input"
+                                            />
+                                            <div className="evidencias-preview">
+                                                {evidencias.map((evidencia, index) => (
+                                                    <div key={index} className="evidencia-item">
+                                                        <span>{evidencia.nombre}</span>
+                                                        <button
+                                                            onClick={() => setEvidencias(evidencias.filter((_, i) => i !== index))}
+                                                            className="remove-evidencia"
+                                                        >
+                                                            <FaTimes />
+                                                        </button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="form-actions">
+                                        <button 
+                                            className="cancel-button"
+                                            onClick={() => {
+                                                setMostrarFormularioTarea(false);
+                                                setNuevaTarea({
+                                                    titulo: '',
+                                                    descripcion: '',
+                                                    fecha_pactada: '',
+                                                    estado: 'Pendiente',
+                                                    prioridad: 'Media',
+                                                    evidencias: []
+                                                });
+                                                setEvidencias([]);
+                                            }}
+                                        >
+                                            Cancelar
+                                        </button>
+                                        <button onClick={handleGuardarTarea} className="save-button">
+                                            Guardar Tarea
+                                        </button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="tareas-list">
+                                    {tareasEmpleado.length > 0 ? (
+                                        tareasEmpleado.map((tarea) => (
+                                            <div key={tarea.id} className={`tarea-item ${tarea.estado.toLowerCase()}`}>
+                                                <div className="tarea-header">
+                                                    <h4>{tarea.titulo}</h4>
+                                                    <span className={`prioridad-badge ${tarea.prioridad.toLowerCase()}`}>
+                                                        {tarea.prioridad}
+                                                    </span>
+                                                </div>
+                                                <p className="tarea-descripcion">{tarea.descripcion}</p>
+                                                <div className="tarea-footer">
+                                                    <div className="tarea-fechas">
+                                                        <span>Pactada: {new Date(tarea.fecha_pactada).toLocaleDateString()}</span>
+                                                        {tarea.fecha_entrega && (
+                                                            <span>Entregada: {new Date(tarea.fecha_entrega).toLocaleDateString()}</span>
+                                                        )}
+                                                    </div>
+                                                    <div className="tarea-estado">
+                                                        <select
+                                                            value={tarea.estado}
+                                                            onChange={(e) => handleActualizarEstadoTarea(tarea.id, e.target.value)}
+                                                            className={`estado-select ${tarea.estado.toLowerCase()}`}
+                                                        >
+                                                            <option value="Pendiente">Pendiente</option>
+                                                            <option value="En Proceso">En Proceso</option>
+                                                            <option value="Completada">Completada</option>
+                                                            <option value="Cancelada">Cancelada</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                {tarea.evidencias && tarea.evidencias.length > 0 && (
+                                                    <div className="tarea-evidencias">
+                                                        <h5>Evidencias:</h5>
+                                                        <div className="evidencias-list">
+                                                            {tarea.evidencias.map((evidencia, index) => (
+                                                                <a
+                                                                    key={index}
+                                                                    href={evidencia.archivo}
+                                                                    target="_blank"
+                                                                    className="evidencia-link"
+                                                                >
+                                                                    {evidencia.nombre}
+                                                                </a>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <div className="no-tareas">
+                                            No hay tareas registradas
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
