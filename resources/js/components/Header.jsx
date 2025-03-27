@@ -1,5 +1,5 @@
 import React from 'react';
-import { FaUserCircle, FaEnvelope, FaCog, FaSignOutAlt, FaChevronDown } from 'react-icons/fa';
+import { FaUserCircle, FaBell, FaCog, FaSignOutAlt, FaChevronDown } from 'react-icons/fa';
 
 const Header = ({ userInfo, showUserMenu, setShowUserMenu }) => {
     return (
@@ -29,13 +29,9 @@ const Header = ({ userInfo, showUserMenu, setShowUserMenu }) => {
                             <span>Mi Perfil</span>
                         </div>
                         <div className="dropdown-item">
-                            <FaEnvelope />
-                            <span>Mensajes</span>
-                        </div>
-                        <div className="dropdown-item">
-                            <FaCog />
-                            <span>Configuración</span>
-                        </div>
+                            <FaBell />
+                            <span>Notificaciones </span>
+                        </div>                        
                         <div className="dropdown-item">
                             <FaSignOutAlt />
                             <span>Cerrar Sesión</span>

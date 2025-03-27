@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\empleadosController;
 use App\Http\Controllers\EvidenciasController;
 
+use App\Http\Controllers\Auth\LoginController;
 Route::get('/', function () {
     return view('welcome');
 });
@@ -28,3 +29,10 @@ Route::get('/parametros/buscarUsuarios', [empleadosController::class, 'buscarUsu
 //guardar usuario
 Route::post('/parametros/guardarUsuario', [empleadosController::class, 'guardarUsuario']);
 Route::delete('/parametros/eliminarUsuario/{id}', [empleadosController::class, 'eliminarUsuario']);
+
+Route::post('/loginUser', [LoginController::class, 'login']);
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/logout', [LoginController::class, 'logout']);
+    // Aquí irán otras rutas protegidas
+}); 
