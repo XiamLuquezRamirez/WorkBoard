@@ -8,9 +8,11 @@ import {
     FaChartLine
 } from 'react-icons/fa';
 import EmployeeModal from './EmployeeModal';
+import UserModal from './UserModal';
 
 const Parameters = () => {
     const [showEmployeeModal, setShowEmployeeModal] = useState(false);
+    const [showUserModal, setShowUserModal] = useState(false);
 
     const parameterCards = [
         {
@@ -18,14 +20,16 @@ const Parameters = () => {
             title: 'Usuarios',
             icon: <FaUsers size={24} />,
             description: 'Gestión de usuarios y permisos del sistema',
-            color: '#2563eb'
+            color: '#2563eb',
+            onClick: () => setShowUserModal(true)
         },
         {
             id: 2,
             title: 'Empleados',
             icon: <FaUserTie size={24} />,
             description: 'Administración de empleados y sus perfiles',
-            color: '#0891b2'
+            color: '#0891b2',
+            onClick: () => setShowEmployeeModal(true)
         },
         {
             id: 3,
@@ -69,36 +73,33 @@ const Parameters = () => {
                     <div 
                         key={card.id} 
                         className="parameter-card"
-                        onClick={() => {
-                            if (card.title === 'Empleados') {
-                                setShowEmployeeModal(true);
-                            }
-                        }}
+                        style={{ borderColor: card.color }}
+                        onClick={card.onClick}
                     >
-                        <div 
-                            className="parameter-icon" 
-                            style={{ backgroundColor: `${card.color}15`, color: card.color }}
-                        >
+                        <div className="card-icon" style={{ color: card.color }}>
                             {card.icon}
                         </div>
-                        <div className="parameter-content">
+                        <div className="card-content">
                             <h3>{card.title}</h3>
                             <p>{card.description}</p>
                         </div>
-                        <button 
-                            className="parameter-button"
-                            style={{ backgroundColor: card.color }}
-                        >
-                            Configurar
-                        </button>
                     </div>
                 ))}
             </div>
 
-            <EmployeeModal 
-                isOpen={showEmployeeModal}
-                onClose={() => setShowEmployeeModal(false)}
-            />
+            {showEmployeeModal && (
+                <EmployeeModal 
+                    isOpen={showEmployeeModal} 
+                    onClose={() => setShowEmployeeModal(false)} 
+                />
+            )}
+
+            {showUserModal && (
+                <UserModal 
+                    isOpen={showUserModal} 
+                    onClose={() => setShowUserModal(false)} 
+                />
+            )}
         </div>
     );
 };

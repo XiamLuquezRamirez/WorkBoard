@@ -642,18 +642,55 @@ body{
 .evidencia-item {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    padding: 0.25rem 0.5rem;
-    background-color: #e2e8f0;
+    gap: 0.75rem;
+    padding: 0.5rem;
+    background-color: #f8fafc;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+}
+
+.evidencia-thumbnail {
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
     border-radius: 4px;
 }
 
+.evidencia-icon {
+    font-size: 24px;
+    color: #64748b;
+}
+
+.evidencia-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-left: auto;
+}
+
+.view-evidencia,
 .remove-evidencia {
     background: none;
     border: none;
-    color: #ef4444;
-    cursor: pointer;
     padding: 0.25rem;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.view-evidencia {
+    color: var(--primary-color);
+}
+
+.view-evidencia:hover {
+    background-color: #eff6ff;
+}
+
+.remove-evidencia {
+    color: #ef4444;
+}
+
+.remove-evidencia:hover {
+    background-color: #fee2e2;
 }
 
 .tareas-list {
@@ -678,15 +715,17 @@ body{
 }
 
 .prioridad-badge {
-    padding: 0.25rem 0.5rem;
-    border-radius: 4px;
-    font-size: 0.875rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
     font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
 }
 
 .prioridad-badge.alta {
     background-color: #fee2e2;
-    color: #ef4444;
+    color: #dc2626;
 }
 
 .prioridad-badge.media {
@@ -696,7 +735,7 @@ body{
 
 .prioridad-badge.baja {
     background-color: #dcfce7;
-    color: #22c55e;
+    color: #16a34a;
 }
 
 .tarea-descripcion {
@@ -712,34 +751,43 @@ body{
 
 .tarea-fechas {
     display: flex;
-    gap: 1rem;
+    gap: 1.5rem;
     font-size: 0.875rem;
     color: #64748b;
 }
 
+.tarea-fechas span {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
 .estado-select {
-    padding: 0.25rem 0.5rem;
-    border-radius: 4px;
+    padding: 0.25rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.875rem;
     border: 1px solid #e2e8f0;
+    background-color: white;
+    cursor: pointer;
 }
 
 .estado-select.pendiente {
-    background-color: #fee2e2;
-    color: #ef4444;
+    border-color: #dc2626;
+    color: #dc2626;
 }
 
 .estado-select.en-proceso {
-    background-color: #fef3c7;
+    border-color: #d97706;
     color: #d97706;
 }
 
 .estado-select.completada {
-    background-color: #dcfce7;
-    color: #22c55e;
+    border-color: #16a34a;
+    color: #16a34a;
 }
 
 .estado-select.cancelada {
-    background-color: #f1f5f9;
+    border-color: #64748b;
     color: #64748b;
 }
 
@@ -799,4 +847,208 @@ body{
 
 .add-button:hover {
     background-color: var(--secondary-color);
+}
+
+.evidencia-upload-container {
+    position: relative;
+    width: 100%;
+}
+
+.upload-loader-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(255, 255, 255, 0.9);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 8px;
+    z-index: 10;
+}
+
+.upload-loader {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid var(--primary-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+.upload-loader span {
+    color: var(--primary-color);
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Estilos para elementos deshabilitados */
+button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+input:disabled {
+    background-color: #f1f5f9;
+    cursor: not-allowed;
+}
+
+/* Mejorar la apariencia del input file */
+.evidencia-input {
+    width: 100%;
+    padding: 1rem;
+    border: 2px dashed #e2e8f0;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.evidencia-input:hover:not(:disabled) {
+    border-color: var(--primary-color);
+    background-color: #f8fafc;
+}
+
+/* Contenedor de evidencias con scroll si hay muchas */
+.evidencias-preview {
+    max-height: 300px;
+    overflow-y: auto;
+    margin-top: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding-right: 0.5rem;
+}
+
+/* Estilizar la barra de scroll */
+.evidencias-preview::-webkit-scrollbar {
+    width: 6px;
+}
+
+.evidencias-preview::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 3px;
+}
+
+.evidencias-preview::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 3px;
+}
+
+.evidencias-preview::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+/* Estilos para los iconos de archivo */
+.file-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background-color: #f8fafc;
+    border-radius: 4px;
+}
+
+.evidencia-icon {
+    font-size: 24px;
+}
+
+.evidencia-icon.pdf {
+    color: #dc2626;
+}
+
+.evidencia-icon.word {
+    color: #2563eb;
+}
+
+.evidencia-nombre {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.9rem;
+}
+
+.evidencias-modal {
+    background-color: white;
+    border-radius: 16px;
+    width: 90%;
+    max-width: 800px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.tarea-info {
+    padding: 1.5rem;
+    background-color: #f8fafc;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+}
+
+.tarea-info h3 {
+    margin-bottom: 0.5rem;
+    color: var(--primary-color);
+}
+
+.evidencias-section {
+    padding: 1.5rem;
+}
+
+.evidencias-hint {
+    color: #dc2626;
+    font-size: 0.875rem;
+    margin-bottom: 1rem;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    padding: 1.5rem;
+    border-top: 1px solid #e2e8f0;
+}
+
+.complete-button {
+    background-color: #16a34a;
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.complete-button:hover:not(:disabled) {
+    background-color: #15803d;
+}
+
+.complete-button:disabled {
+    background-color: #94a3b8;
+    cursor: not-allowed;
+}
+
+.evidencias-warning {
+    color: #f59e0b;
+    font-size: 0.875rem;
+    margin-bottom: 0.5rem;
+    padding: 0.5rem;
+    background-color: #fef3c7;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
 }

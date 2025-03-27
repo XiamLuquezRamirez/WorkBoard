@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 class empleadosController extends Controller
 {
     function guardarEmpleado(Request $request)
@@ -12,7 +13,8 @@ class empleadosController extends Controller
         DB::beginTransaction();
         try {
             if($empleado['accion'] == 'guardar'){
-            $empleado = DB::table('empleados')->insert(
+         
+            $empleadoId = DB::table('empleados')->insertGetId(
                 [
                     'identificacion' => $empleado['identificacion'],
                     'nombres' => $empleado['nombres'],
@@ -30,9 +32,20 @@ class empleadosController extends Controller
                     'foto' => $empleado['foto'],
                     'estado_registro' => 'Activo',
                     'estado' => $empleado['estado']
-
                 ]
             );
+
+
+
+            $usuario = DB::table('users')->insert([
+                'name' => $empleado['nombres'] . ' ' . $empleado['apellidos'],
+                'email' => $empleado['email'],
+                'password' => Hash::make($empleado['identificacion']),
+                'tipo_usuario' => 'Empleado',
+                'estado' => 'Activo',
+                'empleado' => $empleadoId
+            ]);
+
             }else{
                 $empleado = DB::table('empleados')->where('id', $empleado['id'])->update(
                     [
@@ -52,11 +65,21 @@ class empleadosController extends Controller
                         'estado' => $empleado['estado']
                     ]
                 );
+                $usuario = DB::table('users')->where('email', $empleado['email'])->update([
+                    'name' => $empleado['nombres'],
+                    'email' => $empleado['email'],
+                    'password' => Hash::make($empleado['identificacion']),
+                    'tipo_usuario' => 'Empleado'
+
+                ]);
             }
+
+
             DB::commit();
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json(['error' => $e->getMessage()], 500);
+           
         }
         return response()->json(['success' => 'Empleado guardado correctamente'], 200);
     }
@@ -177,6 +200,8 @@ class empleadosController extends Controller
             $tarea->evidencias = $evidencias->where('tarea', $tarea->id)->values();
             return $tarea;
         });
+
+        
     
         return response()->json([
             'tareas' => $tareas
@@ -186,24 +211,27 @@ class empleadosController extends Controller
     function guardarTarea(Request $request)
     {
         $tarea = $request->all();
-        dd($tarea);
         DB::beginTransaction();
         try {
+
             $IdTarea = DB::table('tareas_empleados')->insertGetId([
                 'empleado' => $tarea['empleado'],
                 'descripcion' => $tarea['descripcion'],
                 'estado' => 'Activo',
                 'estado_reg' => 'Activo'
             ]);
-           
 
             /// isertar evidencia
-            $evidencia = DB::table('evidencia_tarea')->insert([
-                'tarea' => $IdTarea,
-                'evidencia' => $tarea['evidencia'],
-                'estado' => 'Activo',
-                'estado_reg' => 'Activo'
-            ]);
+            $evidencias = $tarea['evidencias'];
+            foreach ($evidencias as $evidencia) {
+                $evidencia = DB::table('evidencia_tarea')->insert([
+                    'tarea' => $IdTarea,
+                    'evidencia' => $evidencia['ruta'],
+                    'nombre' => $evidencia['nombre'],
+                    'tipo' => $evidencia['tipo']
+                ]);
+            }
+
 
             DB::commit();
         } catch (\Exception $e) {
@@ -211,5 +239,107 @@ class empleadosController extends Controller
             return response()->json(['error' => $e->getMessage()], 500);
         }
         return response()->json(['success' => 'Tarea guardada correctamente'], 200);
+    }
+
+    function actualizarEstadoTarea(Request $request, $id)
+    {
+        $tarea = $request->all();
+    
+        DB::beginTransaction();
+        try {
+            $tareas = DB::table('tareas_empleados')->where('id', $id)->update([
+                'estado' => $tarea['estado'],
+                'fecha_entregada' => $tarea['fecha_entregada']
+            ]);
+        
+        if($tarea['estado'] == 'Completada'){
+            $evidencias = $tarea['evidencias']; 
+            foreach ($evidencias as $evidencia) {
+                $evidencia = DB::table('evidencia_tarea')->insert([
+                    'tarea' => $id,
+                    'evidencia' => $evidencia['ruta'],
+                    'nombre' => $evidencia['nombre'],
+                    'tipo' => $evidencia['tipo']
+                ]);
+            }
+        }
+
+        DB::commit();
+        return response()->json(['success' => 'Estado de la tarea actualizado correctamente'], 200);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+        
+    }
+
+    function cargarUsuarios()
+    {
+        $usuarios = DB::table('users')
+            ->leftJoin('empleados', 'users.empleado', '=', 'empleados.id') // 🔹 LEFT JOIN para incluir admins
+            ->select(
+                'users.*', 
+                DB::raw('IFNULL(CONCAT(empleados.nombres, " ", empleados.apellidos), "---") as nombre_empleado')
+            )
+            ->get();
+    
+        return response()->json($usuarios);
+    }
+    
+
+    function buscarUsuarios(Request $request)
+    {
+        $searchTerm = $request->input('search');
+        $usuarios = DB::table('users')
+        ->join('empleados', 'users.empleado', 'empleados.id')
+        ->select('users.*', DB::raw('CONCAT(empleados.nombres, " ", empleados.apellidos) as nombre_empleado'))
+        ->where('users.tipo_usuario', 'Empleado')
+        ->where('users.name', 'like', '%'.$searchTerm.'%')
+        ->orWhere('users.email', 'like', '%'.$searchTerm.'%')
+        ->orWhere('empleados.nombres', 'like', '%'.$searchTerm.'%')
+        ->orWhere('empleados.apellidos', 'like', '%'.$searchTerm.'%')
+        ->get();
+    }
+
+    function guardarUsuario(Request $request)
+    {
+        $usuario = $request->all();
+        if($usuario['accion'] == 'guardar'){    
+            $usuario = DB::table('users')->insert([
+                'name' => $usuario['name'],
+                'email' => $usuario['email'],
+                'password' => Hash::make($usuario['password']),
+                'tipo_usuario' => $usuario['role'],
+                'empleado' => $usuario['empleado'],
+                'estado' => $usuario['estado']
+            ]);
+        }else{
+            if($usuario['cambiar_password']){
+                $usuario = DB::table('users')->where('id', $usuario['id'])->update([
+                    'name' => $usuario['name'],
+                    'email' => $usuario['email'],
+                    'password' => Hash::make($usuario['password']),
+                    'tipo_usuario' => $usuario['role'],
+                    'empleado' => $usuario['empleado'],
+                    'estado' => $usuario['estado']
+                ]);
+            }else{
+                $usuario = DB::table('users')->where('id', $usuario['id'])->update([
+                    'name' => $usuario['name'],
+                    'email' => $usuario['email'],
+                    'tipo_usuario' => $usuario['role'],
+                    'empleado' => $usuario['empleado'],
+                    'estado' => $usuario['estado']
+                ]);
+            }
+        }
+        return response()->json(['success' => 'Usuario guardado correctamente'], 200);
+    
+    }
+
+    function eliminarUsuario($id)
+    {
+        $usuario = DB::table('users')->where('id', $id)->delete();
+        return response()->json(['success' => 'Usuario eliminado correctamente'], 200);
     }
 }

@@ -1,6 +1,5 @@
-import { Axios } from 'axios';
 import React, { useState, useEffect } from 'react';
-import { FaPlus, FaEdit, FaTrash, FaSearch, FaThList, FaCamera, FaCheck, FaTimes } from 'react-icons/fa';
+import { FaPlus, FaEdit, FaTrash, FaSearch, FaThList, FaCamera, FaCheck, FaTimes, FaFile, FaEye, FaFilePdf, FaFileWord } from 'react-icons/fa';
 import { FaListCheck } from 'react-icons/fa6';
 import axios from 'axios';
 import Swal from 'sweetalert2';
@@ -32,6 +31,9 @@ const EmployeeModal = ({ isOpen, onClose }) => {
     const [editandoTarea, setEditandoTarea] = useState(null);
     const [evidencias, setEvidencias] = useState([]);
     const [mostrarFormularioTarea, setMostrarFormularioTarea] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
+    const [showEvidenciasModal, setShowEvidenciasModal] = useState(false);
+    const [tareaActual, setTareaActual] = useState(null);
     const initialEmpleadoState = {
         id: '',
         identificacion: '',
@@ -321,33 +323,63 @@ const EmployeeModal = ({ isOpen, onClose }) => {
     };
 
     const handleVerTareas = (empleado) => {
-        
         setEmpleadoSeleccionado(empleado);
+        
         axios.get(`/parametros/cargarTareas/${empleado.id}`)
         .then((response) => {
-           console.log(response.data);
-             setTareasEmpleado(response.data.tareas);
-             setShowTareasModal(true);
+            setTareasEmpleado(response.data.tareas);
+            console.log(tareasEmpleado.evidencias);
+            setShowTareasModal(true);
         })
         .catch((error) => {
             console.error('Error al cargar las tareas:', error);
         });
     };
+    
 
-    const handleEvidenciaUpload = (e) => {
+    const handleEvidenciaUpload = async (e) => {
         const files = Array.from(e.target.files);
         
+        if (files.length === 0) return;
+
+        setIsUploading(true);
+        
+        const formData = new FormData();
         files.forEach(file => {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setEvidencias(prev => [...prev, {
-                    nombre: file.name,
-                    archivo: reader.result,
-                    tipo: file.type
-                }]);
-            };
-            reader.readAsDataURL(file);
+            formData.append('evidencias[]', file);
         });
+        
+        try {
+            const response = await axios.post('/parametros/subirEvidencias', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            });
+
+            setEvidencias(prev => [...prev, ...response.data.map(evidencia => ({
+                nombre: evidencia.nombre_original,
+                ruta: evidencia.ruta,
+                tipo: evidencia.tipo
+            }))]);
+
+            Swal.fire({
+                title: 'Éxito',
+                text: 'Archivos subidos correctamente',
+                icon: 'success',
+                confirmButtonText: 'OK',
+            });
+
+        } catch (error) {
+            console.error('Error al subir evidencias:', error);
+            Swal.fire({
+                title: 'Error',
+                text: 'Hubo un error al subir las evidencias',
+                icon: 'error',
+                confirmButtonText: 'OK',
+            });
+        } finally {
+            setIsUploading(false);
+        }
     };
 
     const handleGuardarTarea = () => {
@@ -392,18 +424,56 @@ const EmployeeModal = ({ isOpen, onClose }) => {
         });
     };
 
-    const handleActualizarEstadoTarea = (tareaId, nuevoEstado) => {
-        axios.put(`/parametros/actualizarEstadoTarea/${tareaId}`, {
+    const handleActualizarEstadoTarea = (tarea, nuevoEstado) => {
+        if (nuevoEstado === 'Completada') {
+            setTareaActual(tarea);
+            setShowEvidenciasModal(true);
+        } else {
+            actualizarEstadoTarea(tarea.id, nuevoEstado);
+        }
+    };
+
+    const actualizarEstadoTarea = (tareaId, nuevoEstado, evidencias = []) => {
+        const data = {
             estado: nuevoEstado,
-            fecha_entrega: nuevoEstado === 'Completada' ? new Date().toISOString() : null
-        })
+            fecha_entregada: nuevoEstado === 'Completada' ? tareaActual.fecha_entregada : null,
+            evidencias: evidencias
+        };
+
+        axios.put(`/parametros/actualizarEstadoTarea/${tareaId}`, data)
         .then((response) => {
             setTareasEmpleado(tareasEmpleado.map(tarea => 
                 tarea.id === tareaId ? response.data : tarea
             ));
+            if (nuevoEstado === 'Completada') {
+                setShowEvidenciasModal(false);
+                setShowTareasModal(false);
+                setEvidencias([]);
+                Swal.fire({
+                    title: 'Tarea completada',
+                    text: 'La tarea se ha marcado como completada correctamente',
+                    icon: 'success',
+                    confirmButtonText: 'OK',
+                });
+            }else{
+                Swal.fire({
+                    title: 'Tarea actualizada',
+                    text: 'La tarea se ha actualizado correctamente',
+                    icon: 'success',
+                    confirmButtonText: 'OK',
+                });
+            
+            setShowTareasModal(false);
+            }
         })
         .catch((error) => {
             console.error('Error al actualizar el estado:', error);
+            Swal.fire({
+                title: 'Error',
+                text: 'Hubo un error al actualizar el estado de la tarea',
+                icon: 'error',
+                confirmButtonText: 'OK',
+            });
         });
     };
 
@@ -580,8 +650,8 @@ const EmployeeModal = ({ isOpen, onClose }) => {
                             </div>
 
                             <div className="form-row">
-                            <div className="form-group col-2">
-                                    <label>Fecha de Nacimiento</label>
+                            <div className="form-group col-3">
+                                    <label>F. Nacimiento</label>
                                     <input type="date" 
                                     onChange={(e) => setNewEmpleado({...newEmpleado, fechaNacimiento: e.target.value})}
                                     value={newEmpleado.fechaNacimiento}
@@ -900,21 +970,50 @@ const EmployeeModal = ({ isOpen, onClose }) => {
                                     <div className="form-row">
                                         <div className="form-group col-12">
                                             <label>Evidencias</label>
-                                            <input
-                                                type="file"
-                                                multiple
-                                                onChange={handleEvidenciaUpload}
-                                                className="evidencia-input"
-                                            />
+                                            <div className="evidencia-upload-container">
+                                                <input
+                                                    type="file"
+                                                    multiple
+                                                    onChange={handleEvidenciaUpload}
+                                                    className="evidencia-input"
+                                                    disabled={isUploading}
+                                                />
+                                                {isUploading && (
+                                                    <div className="upload-loader-overlay">
+                                                        <div className="upload-loader">
+                                                            <div className="spinner"></div>
+                                                            <span>Subiendo archivos...</span>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
                                             <div className="evidencias-preview">
                                                 {evidencias.map((evidencia, index) => (
                                                     <div key={index} className="evidencia-item">
-                                                        <span>{evidencia.nombre}</span>
+                                                        {evidencia.tipo.startsWith('image/') ? (
+                                                            <img 
+                                                                src={`/storage/${evidencia.ruta}`} 
+                                                                alt={evidencia.nombre} 
+                                                                className="evidencia-thumbnail"
+                                                            />
+                                                        ) : (
+                                                            <div className="file-icon">
+                                                                {evidencia.tipo.includes('pdf') ? (
+                                                                    <FaFilePdf className="evidencia-icon pdf" />
+                                                                ) : evidencia.tipo.includes('word') ? (
+                                                                    <FaFileWord className="evidencia-icon word" />
+                                                                ) : (
+                                                                    <FaFile className="evidencia-icon" />
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                        <span className="evidencia-nombre">{evidencia.nombre}</span>
                                                         <button
-                                                            onClick={() => setEvidencias(evidencias.filter((_, i) => i !== index))}
-                                                            className="remove-evidencia"
+                                                            type="button"
+                                                            onClick={() => window.open(`/storage/${evidencia.ruta}`, '_blank')}
+                                                            className="view-evidencia"
                                                         >
-                                                            <FaTimes />
+                                                            <FaEye />
                                                         </button>
                                                     </div>
                                                 ))}
@@ -950,23 +1049,25 @@ const EmployeeModal = ({ isOpen, onClose }) => {
                                         tareasEmpleado.map((tarea) => (
                                             <div key={tarea.id} className={`tarea-item ${tarea.estado.toLowerCase()}`}>
                                                 <div className="tarea-header">
-                                                    <h4>{tarea.titulo}</h4>
-                                                    <span className={`prioridad-badge ${tarea.prioridad.toLowerCase()}`}>
-                                                        {tarea.prioridad}
+                                                    <h4>{tarea.titulo || 'Sin título'}</h4>
+                                                    <span className={`prioridad-badge ${(tarea.prioridad || 'media').toLowerCase()}`}>
+                                                        {tarea.prioridad || 'Media'}
                                                     </span>
                                                 </div>
                                                 <p className="tarea-descripcion">{tarea.descripcion}</p>
                                                 <div className="tarea-footer">
                                                     <div className="tarea-fechas">
-                                                        <span>Pactada: {new Date(tarea.fecha_pactada).toLocaleDateString()}</span>
-                                                        {tarea.fecha_entrega && (
-                                                            <span>Entregada: {new Date(tarea.fecha_entrega).toLocaleDateString()}</span>
+                                                        {tarea.fecha_pactada && (
+                                                            <span>Pactada: {new Date(tarea.fecha_pactada).toLocaleDateString()}</span>
+                                                        )}
+                                                        {tarea.fecha_entregada && (
+                                                            <span>Entregada: {new Date(tarea.fecha_entregada).toLocaleDateString()}</span>
                                                         )}
                                                     </div>
                                                     <div className="tarea-estado">
                                                         <select
                                                             value={tarea.estado}
-                                                            onChange={(e) => handleActualizarEstadoTarea(tarea.id, e.target.value)}
+                                                            onChange={(e) => handleActualizarEstadoTarea(tarea, e.target.value)}
                                                             className={`estado-select ${tarea.estado.toLowerCase()}`}
                                                         >
                                                             <option value="Pendiente">Pendiente</option>
@@ -979,17 +1080,47 @@ const EmployeeModal = ({ isOpen, onClose }) => {
                                                 {tarea.evidencias && tarea.evidencias.length > 0 && (
                                                     <div className="tarea-evidencias">
                                                         <h5>Evidencias:</h5>
+                                                        {tarea.evidencias.some(e => !e || !e.evidencia || !e.tipo) && (
+                                                            <p className="evidencias-warning">
+                                                                Algunas evidencias no están disponibles o están dañadas
+                                                            </p>
+                                                        )}
                                                         <div className="evidencias-list">
-                                                            {tarea.evidencias.map((evidencia, index) => (
-                                                                <a
-                                                                    key={index}
-                                                                    href={evidencia.archivo}
-                                                                    target="_blank"
-                                                                    className="evidencia-link"
-                                                                >
-                                                                    {evidencia.nombre}
-                                                                </a>
-                                                            ))}
+                                                            {tarea.evidencias
+                                                                .filter(evidencia => evidencia && evidencia.evidencia && evidencia.tipo)
+                                                                .map((evidencia) => (
+                                                                    <div key={evidencia.id} className="evidencia-item">
+                                                                        {evidencia.tipo?.startsWith('image/') ? (
+                                                                            <img 
+                                                                                src={`/storage/${evidencia.evidencia}`} 
+                                                                                alt={evidencia.nombre || 'Sin nombre'} 
+                                                                                className="evidencia-thumbnail"
+                                                                            />
+                                                                        ) : (
+                                                                            <div className="file-icon">
+                                                                                {evidencia.tipo?.includes('pdf') ? (
+                                                                                    <FaFilePdf className="evidencia-icon pdf" />
+                                                                                ) : evidencia.tipo?.includes('word') ? (
+                                                                                    <FaFileWord className="evidencia-icon word" />
+                                                                                ) : (
+                                                                                    <FaFile className="evidencia-icon" />
+                                                                                )}
+                                                                            </div>
+                                                                        )}
+                                                                        <span className="evidencia-nombre">
+                                                                            {evidencia.nombre || 'Archivo sin nombre'}
+                                                                        </span>
+                                                                        {evidencia.evidencia && (
+                                                                            <button
+                                                                                type="button"
+                                                                                onClick={() => window.open(`/storage/${evidencia.evidencia}`, '_blank')}
+                                                                                className="view-evidencia"
+                                                                            >
+                                                                                <FaEye />
+                                                                            </button>
+                                                                        )}
+                                                                    </div>
+                                                                ))}
                                                         </div>
                                                     </div>
                                                 )}
@@ -1002,6 +1133,129 @@ const EmployeeModal = ({ isOpen, onClose }) => {
                                     )}
                                 </div>
                             )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {showEvidenciasModal && (
+                <div className="modal-overlay">
+                    <div className="evidencias-modal">
+                        <div className="modal-header">
+                            <h2>Completar Tarea</h2>
+                            <button 
+                                className="close-button" 
+                                onClick={() => {
+                                    setShowEvidenciasModal(false);
+                                    setTareasEmpleado(tareasEmpleado.map(t => 
+                                        t.id === tareaActual.id 
+                                            ? {...t, estado: tareaActual.estado} 
+                                            : t
+                                    ));
+                                }}
+                            >
+                                &times;
+                            </button>
+                        </div>
+                        <div className="modal-content">
+                            <div className="tarea-info">
+                                <h3>{tareaActual?.titulo}</h3>
+                                <p>{tareaActual?.descripcion}</p>
+                            </div>
+                            <div className='form-row'>
+                                <div className="form-group col-6">
+                                    <label>Fecha de entrega</label>
+                                    <input type="date" value={tareaActual?.fecha_entregada} onChange={(e) => setTareaActual({...tareaActual, fecha_entregada: e.target.value})} />
+                                </div>
+                            </div>
+                            <div className="evidencias-section">
+                                <h4>Adjuntar Evidencias</h4>
+                                <p className="evidencias-hint">* Debe adjuntar al menos una evidencia para completar la tarea</p>
+                                
+                                <div className="evidencia-upload-container">
+                                    <input
+                                        type="file"
+                                        multiple
+                                        onChange={handleEvidenciaUpload}
+                                        className="evidencia-input"
+                                        disabled={isUploading}
+                                    />
+                                    {isUploading && (
+                                        <div className="upload-loader-overlay">
+                                            <div className="upload-loader">
+                                                <div className="spinner"></div>
+                                                <span>Subiendo archivos...</span>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="evidencias-preview">
+                                    {evidencias.map((evidencia, index) => (
+                                        <div key={index} className="evidencia-item">
+                                            {evidencia.tipo.startsWith('image/') ? (
+                                                <img 
+                                                    src={`/storage/${evidencia.ruta}`} 
+                                                    alt={evidencia.nombre} 
+                                                    className="evidencia-thumbnail"
+                                                />
+                                            ) : (
+                                                <div className="file-icon">
+                                                    {evidencia.tipo.includes('pdf') ? (
+                                                        <FaFilePdf className="evidencia-icon pdf" />
+                                                    ) : evidencia.tipo.includes('word') ? (
+                                                        <FaFileWord className="evidencia-icon word" />
+                                                    ) : (
+                                                        <FaFile className="evidencia-icon" />
+                                                    )}
+                                                </div>
+                                            )}
+                                            <span className="evidencia-nombre">{evidencia.nombre}</span>
+                                            <button
+                                                type="button"
+                                                onClick={() => setEvidencias(evidencias.filter((_, i) => i !== index))}
+                                                className="remove-evidencia"
+                                                disabled={isUploading}
+                                            >
+                                                <FaTimes />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                            <div className="modal-actions">
+                                <button 
+                                    className="cancel-button"
+                                    onClick={() => {
+                                        setShowEvidenciasModal(false);
+                                        setTareasEmpleado(tareasEmpleado.map(t => 
+                                            t.id === tareaActual.id 
+                                                ? {...t, estado: tareaActual.estado} 
+                                                : t
+                                        ));
+                                    }}
+                                >
+                                    Cancelar
+                                </button>
+                                <button 
+                                    className="complete-button"
+                                    onClick={() => {
+                                        if (evidencias.length === 0) {
+                                            Swal.fire({
+                                                title: 'Error',
+                                                text: 'Debe adjuntar al menos una evidencia',
+                                                icon: 'error',
+                                                confirmButtonText: 'OK',
+                                            });
+                                            return;
+                                        }
+                                        actualizarEstadoTarea(tareaActual.id, 'Completada', evidencias);
+                                    }}
+                                    disabled={isUploading || evidencias.length === 0}
+                                >
+                                    Completar Tarea
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>

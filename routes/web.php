@@ -2,6 +2,8 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\empleadosController;
+use App\Http\Controllers\EvidenciasController;
+
 Route::get('/', function () {
     return view('welcome');
 });
@@ -18,3 +20,11 @@ Route::put('/parametros/actualizarFuncion/{id}', [empleadosController::class, 'a
 Route::delete('/parametros/eliminarFuncion/{id}', [empleadosController::class, 'eliminarFuncion']);
 Route::get('/parametros/cargarTareas/{id}', [empleadosController::class, 'cargarTareas']);
 Route::post('/parametros/guardarTarea', [empleadosController::class, 'guardarTarea']);
+Route::post('/parametros/subirEvidencias', [EvidenciasController::class, 'subirEvidencias']);
+Route::put('/parametros/actualizarEstadoTarea/{id}', [empleadosController::class, 'actualizarEstadoTarea']);
+Route::get('/parametros/cargarUsuarios', [empleadosController::class, 'cargarUsuarios']);
+Route::get('/parametros/buscarUsuarios', [empleadosController::class, 'buscarUsuarios']);
+
+//guardar usuario
+Route::post('/parametros/guardarUsuario', [empleadosController::class, 'guardarUsuario']);
+Route::delete('/parametros/eliminarUsuario/{id}', [empleadosController::class, 'eliminarUsuario']);
