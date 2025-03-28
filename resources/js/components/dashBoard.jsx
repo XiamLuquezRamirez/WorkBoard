@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import TaskList from './TaskList';
@@ -7,6 +7,8 @@ import '../css/dashBoard.css';
 import '../css/taskList.css';
 import '../css/parameters.css';
 import { FaCheckCircle, FaSpinner, FaClock } from 'react-icons/fa';
+import EmployeeInterface from './EmployeeInterface';
+import AuthMiddleware from '../middleware/AuthMiddleware';
 
 const DashBoard = () => {
     const [showUserMenu, setShowUserMenu] = useState(false);
@@ -51,6 +53,13 @@ const DashBoard = () => {
         },
         // ... más empleados
     ]);
+
+    const [currentUser, setCurrentUser] = useState(null);
+
+    useEffect(() => {
+        const user = AuthMiddleware.getUser();
+        setCurrentUser(user);
+    }, []);
 
     const userInfo = {
         nombre: 'Admin Usuario',
@@ -149,25 +158,31 @@ const DashBoard = () => {
         }
     };
 
+    const renderInterface = () => {
+        if (!currentUser) return null;
+
+        if (currentUser.tipo_usuario === 'Administrador') {
+            return (
+                <>
+                    <Sidebar />
+                    <div className="main-content">
+                        {renderContent()}
+                    </div>
+                </>
+            );
+        } else {
+         
+            return <EmployeeInterface user={currentUser} />;
+        }
+    };
+
     return (
-        <div className="dashboard-container">
-            <Sidebar 
-                activeMenu={activeMenu} 
-                onMenuClick={(view) => {
-                    setActiveMenu(view);
-                    setCurrentView(view);
-                }}
+        <div className="dashboard">
+            <Header 
+                showUserMenu={showUserMenu} 
+                setShowUserMenu={setShowUserMenu}
             />
-
-            <div className="main-content">
-                <Header 
-                    userInfo={userInfo}
-                    showUserMenu={showUserMenu}
-                    setShowUserMenu={setShowUserMenu}
-                />
-
-                {renderContent()}
-            </div>
+            {renderInterface()}
         </div>
     );
 };

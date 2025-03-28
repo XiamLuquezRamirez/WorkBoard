@@ -185,6 +185,7 @@ class empleadosController extends Controller
         $tareas = DB::table('tareas_empleados')
             ->where('empleado', $id)
             ->where('estado_reg', 'Activo')
+            ->orderBy('fecha_pactada', 'asc')
             ->get();
     
         // Obtener los IDs de las tareas
@@ -215,13 +216,17 @@ class empleadosController extends Controller
         try {
 
             $IdTarea = DB::table('tareas_empleados')->insertGetId([
+                'titulo' => $tarea['titulo'],
                 'empleado' => $tarea['empleado'],
                 'descripcion' => $tarea['descripcion'],
-                'estado' => 'Activo',
+                'fecha_pactada' => $tarea['fecha_pactada'],
+                'prioridad' => $tarea['prioridad'],
+                'estado' => 'Pendiente',
                 'estado_reg' => 'Activo'
             ]);
 
             /// isertar evidencia
+            if(isset($tarea['evidencias'])){
             $evidencias = $tarea['evidencias'];
             foreach ($evidencias as $evidencia) {
                 $evidencia = DB::table('evidencia_tarea')->insert([
@@ -231,6 +236,7 @@ class empleadosController extends Controller
                     'tipo' => $evidencia['tipo']
                 ]);
             }
+        }
 
 
             DB::commit();
@@ -247,12 +253,18 @@ class empleadosController extends Controller
     
         DB::beginTransaction();
         try {
-            $tareas = DB::table('tareas_empleados')->where('id', $id)->update([
-                'estado' => $tarea['estado'],
-                'fecha_entregada' => $tarea['fecha_entregada']
-            ]);
-        
-        if($tarea['estado'] == 'Completada'){
+            // actualizar estado de la tarea si es completada agregar fecha entregada
+            if($tarea['estado'] == 'Completada'){
+                $tareas = DB::table('tareas_empleados')->where('id', $id)->update([
+                    'estado' => $tarea['estado'],
+                    'fecha_entregada' => now()
+                ]);
+            }else{
+                $tareas = DB::table('tareas_empleados')->where('id', $id)->update([
+                    'estado' => $tarea['estado']
+                ]);
+            }
+            if(isset($tarea['evidencias'])){
             $evidencias = $tarea['evidencias']; 
             foreach ($evidencias as $evidencia) {
                 $evidencia = DB::table('evidencia_tarea')->insert([
@@ -264,8 +276,14 @@ class empleadosController extends Controller
             }
         }
 
+        $evidencias = DB::table('evidencia_tarea')->where('tarea', $id)->get();
+        
+
         DB::commit();
-        return response()->json(['success' => 'Estado de la tarea actualizado correctamente'], 200);
+        return response()->json([
+            'success' => 'Estado de la tarea actualizado correctamente',
+            'evidencias' => $evidencias
+        ], 200);
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json(['error' => $e->getMessage()], 500);
@@ -363,11 +381,62 @@ class empleadosController extends Controller
 
         $usuario = DB::table('users')->where('id', $usuario['id'])->first();
 
-
         return response()->json([
             'success' => 'Usuario actualizado correctamente',
             'user' => $usuario,
             'status' => 'success'
         ], 200);
     }   
+
+    function cargarTareasEmpleado($id)
+    {
+        $tareas = DB::table('tareas_empleados')
+        ->where('empleado', $id)
+        ->where('estado_reg', 'Activo')
+        ->get();
+
+        $tareasIds = $tareas->pluck('id');
+
+        $evidencias = DB::table('evidencia_tarea')
+        ->whereIn('tarea', $tareasIds)
+        ->get();
+
+        $tareas = $tareas->map(function ($tarea) use ($evidencias) {
+            $tarea->evidencias = $evidencias->where('tarea', $tarea->id)->values();
+            return $tarea;
+        });
+
+        return response()->json($tareas);
+    }
+
+    function completarTareaConEvidencias(Request $request)
+    {
+
+  
+        $tarea = $request->all();
+        $tarea = DB::table('tareas_empleados')->where('id', $tarea['id'])->update([
+            'estado' => $tarea['estado']
+        ]);
+
+        $evidencias = $tarea['evidencias'];
+        foreach ($evidencias as $evidencia) {
+            $evidencia = DB::table('evidencia_tarea')->insert([
+                'tarea' => $tarea['id'],
+                'evidencia' => $evidencia['ruta'],
+                'nombre' => $evidencia['nombre'],
+                'tipo' => $evidencia['tipo']
+            ]);
+        }
+
+        return response()->json(['success' => 'Tarea actualizada correctamente'], 200);
+    }
+
+    function eliminarEvidencia($id)
+    {
+        $evidencia = DB::table('evidencia_tarea')->where('id', $id)->delete();
+        return response()->json(['success' => 'Evidencia eliminada correctamente'], 200);
+    }
+
+ 
+
 }

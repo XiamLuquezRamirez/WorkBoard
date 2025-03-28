@@ -39,6 +39,18 @@ Route::middleware('auth:sanctum')->group(function () {
 
     //actualizar usuario
     Route::post('/profile/update', [empleadosController::class, 'actualizarUsuario']);
+
+    //cargar tareas de un empleado
+    Route::get('/parametros/cargarTareasEmpleado/{id}', [empleadosController::class, 'cargarTareas']);
+
+    // completar tarea con evidencias
+    Route::post('/parametros/completarTareaConEvidencias', [empleadosController::class, 'completarTareaConEvidencias']);
+
+    // eliminar evidencia de una tarea
+    Route::delete('/parametros/eliminarEvidencia/{id}', [empleadosController::class, 'eliminarEvidencia']);
+
+    // crear tarea
+    Route::post('/parametros/guardarTarea', [empleadosController::class, 'guardarTarea']);
 });
 
 // Esta ruta debe manejar todas las rutas de la aplicación React

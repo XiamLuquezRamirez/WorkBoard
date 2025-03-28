@@ -8,6 +8,11 @@ export default defineConfig({
             input: ['resources/css/app.css', 'resources/js/app.jsx'],
             refresh: true,
         }),
-        react(),
+        react({
+            strictMode: true,
+        }),
     ],
+    optimizeDeps: {
+        include: ['react-beautiful-dnd'],
+    },
 });

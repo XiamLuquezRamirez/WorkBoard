@@ -69,14 +69,14 @@ const Parameters = () => {
             </div>
 
             <div className="parameters-grid">
-                {parameterCards.map(card => (
+                {parameterCards.map((card, index) => (
                     <div 
                         key={card.id} 
                         className="parameter-card"
-                        style={{ borderColor: card.color }}
                         onClick={card.onClick}
+                        style={{'--card-index': index}}
                     >
-                        <div className="card-icon" style={{ color: card.color }}>
+                        <div className="card-icon">
                             {card.icon}
                         </div>
                         <div className="card-content">

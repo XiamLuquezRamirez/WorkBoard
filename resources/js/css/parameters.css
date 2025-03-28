@@ -21,60 +21,161 @@
 
 .parameters-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 2rem;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+    padding: 1.5rem;
 }
 
 .parameter-card {
+    position: relative;
     background: white;
     border-radius: 16px;
-    padding: 1.5rem;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    padding: 2rem;
     transition: all 0.3s ease;
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    position: relative;
     overflow: hidden;
+    cursor: pointer;
+    border: 2px solid #3a2bea29;
+    box-shadow: 0 0 15px 0 rgba(0, 0, 0, 0.1);
 }
 
+/* Patrón de fondo sutil */
 .parameter-card::before {
     content: '';
     position: absolute;
     top: 0;
     left: 0;
     right: 0;
-    height: 4px;
-    background: inherit;
-    opacity: 0.1;
+    bottom: 0;
+    opacity: 0.05;
+    background: 
+        linear-gradient(45deg, transparent 48%, currentColor 49%, currentColor 51%, transparent 52%) 0 0/1rem 1rem,
+        linear-gradient(-45deg, transparent 48%, currentColor 49%, currentColor 51%, transparent 52%) 0 0/1rem 1rem;
+    transition: all 0.3s ease;
+}
+
+/* Efecto de brillo */
+.parameter-card::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(
+        45deg,
+        transparent,
+        rgba(92, 58, 241, 0.1),
+        transparent
+    );
+    transform: rotate(30deg);
+    transition: all 0.8s ease;
+    opacity: 0;
 }
 
 .parameter-card:hover {
     transform: translateY(-5px);
-    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    border-color: currentColor;
 }
 
-.parameter-icon {
+.parameter-card:hover::after {
+    opacity: 1;
+    transform: rotate(30deg) translate(100%, 100%);
+}
+
+.card-icon {
+    position: relative;
     width: 50px;
     height: 50px;
-    border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 1rem;
+    border-radius: 12px;
+    margin-bottom: 1.5rem;
+    background: linear-gradient(
+        135deg,
+        rgba(var(--card-color-rgb), 0.1),
+        rgba(var(--card-color-rgb), 0.2)
+    );
 }
 
-.parameter-content h3 {
-    font-size: 1.25rem;
-    font-weight: 600;
+.card-icon::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 2px;
+    background: linear-gradient(
+        135deg,
+        rgba(var(--card-color-rgb), 0.5),
+        transparent
+    );
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+}
+
+.card-content {
+    position: relative;
+    z-index: 1;
+}
+
+.card-content h3 {
     color: var(--text-primary);
+    font-size: 1.25rem;
     margin-bottom: 0.5rem;
+    font-weight: 600;
 }
 
-.parameter-content p {
+.card-content p {
     color: var(--text-secondary);
-    font-size: 0.95rem;
+    font-size: 0.875rem;
     line-height: 1.5;
+    opacity: 0.8;
+}
+
+/* Estilos específicos para cada card */
+.parameter-card:nth-child(1) {
+    --card-color-rgb: 37, 99, 235;
+}
+
+.parameter-card:nth-child(2) {
+    --card-color-rgb: 8, 145, 178;
+}
+
+.parameter-card:nth-child(3) {
+    --card-color-rgb: 124, 58, 237;
+}
+
+.parameter-card:nth-child(4) {
+    --card-color-rgb: 5, 150, 105;
+}
+
+.parameter-card:nth-child(5) {
+    --card-color-rgb: 219, 39, 119;
+}
+
+.parameter-card:nth-child(6) {
+    --card-color-rgb: 234, 88, 12;
+}
+
+/* Animación de entrada */
+@keyframes cardFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.parameter-card {
+    animation: cardFadeIn 0.5s ease forwards;
+    animation-delay: calc(var(--card-index) * 0.1s);
+    opacity: 0;
 }
 
 .parameter-button {

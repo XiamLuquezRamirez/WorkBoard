@@ -28,7 +28,8 @@ class LoginController extends Controller
                     'id' => $user->id,
                     'name' => $user->name,
                     'email' => $user->email,
-                    'tipo_usuario' => $user->tipo_usuario // asumiendo que tienes un campo role
+                    'tipo_usuario' => $user->tipo_usuario,
+                    'empleado' => $user->empleado
                 ]
             ]);
         }

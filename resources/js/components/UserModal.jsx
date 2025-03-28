@@ -19,7 +19,8 @@ const UserModal = ({ isOpen, onClose }) => {
         role: '',
         empleado: '',
         estado: 'Activo',
-        cambiar_password: false
+        cambiar_password: false,
+        accion: 'guardar'
     };
 
     const [newUser, setNewUser] = useState(initialUserState);
@@ -134,7 +135,7 @@ const UserModal = ({ isOpen, onClose }) => {
                 return;
             }
         }
-        newUser.accion = 'guardar';
+   
 
         const userData = { ...newUser };
         if (newUser.accion === 'editar' && !newUser.cambiar_password) {
