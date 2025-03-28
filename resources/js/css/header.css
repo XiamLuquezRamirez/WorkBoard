@@ -5,4 +5,13 @@
 
 .user-section {
     /* ... estilos existentes ... */
+}
+
+.dropdown-item.disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.dropdown-item.disabled:hover {
+    background-color: inherit;
 } 

@@ -28,7 +28,7 @@ class LoginController extends Controller
                     'id' => $user->id,
                     'name' => $user->name,
                     'email' => $user->email,
-                    'tipo_usuario' => $user->role // asumiendo que tienes un campo role
+                    'tipo_usuario' => $user->tipo_usuario // asumiendo que tienes un campo role
                 ]
             ]);
         }
@@ -41,11 +41,19 @@ class LoginController extends Controller
 
     public function logout(Request $request)
     {
-        $request->user()->currentAccessToken()->delete();
-        
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Sesión cerrada correctamente'
-        ]);
+        try {
+            // Revocar el token actual
+            $request->user()->currentAccessToken()->delete();
+            
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Sesión cerrada correctamente'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Error al cerrar sesión'
+            ], 500);
+        }
     }
 } 

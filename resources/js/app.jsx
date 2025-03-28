@@ -8,6 +8,7 @@ import AuthMiddleware from './middleware/AuthMiddleware';
 import './css/employeeModal.css';
 import './css/userModal.css';
 import './css/login.css';
+import './css/profileModal.css';
 
 // Configurar interceptores de axios
 AuthMiddleware.setupAxiosInterceptors();

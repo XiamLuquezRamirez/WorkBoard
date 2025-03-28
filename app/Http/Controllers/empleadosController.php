@@ -342,4 +342,32 @@ class empleadosController extends Controller
         $usuario = DB::table('users')->where('id', $id)->delete();
         return response()->json(['success' => 'Usuario eliminado correctamente'], 200);
     }
+
+    function actualizarUsuario(Request $request)
+    {
+        $usuario = $request->all();
+      
+        if(!$usuario['cambiar_password']){
+            $usuarios = DB::table('users')->where('id', $usuario['id'])->update([
+                'name' => $usuario['name'],
+                'email' => $usuario['email'],
+                'password' => Hash::make($usuario['new_password'])
+            ]);
+        }else{
+           
+            $usuarios = DB::table('users')->where('id', $usuario['id'])->update([
+                'name' => $usuario['name'],
+                'email' => $usuario['email']
+            ]);
+        }
+
+        $usuario = DB::table('users')->where('id', $usuario['id'])->first();
+
+
+        return response()->json([
+            'success' => 'Usuario actualizado correctamente',
+            'user' => $usuario,
+            'status' => 'success'
+        ], 200);
+    }   
 }
