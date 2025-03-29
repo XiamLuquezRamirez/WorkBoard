@@ -1,0 +1,35 @@
+.app-layout {
+    min-height: 100vh;
+    background: #f8fafc;
+}
+
+/* Variables globales */
+:root {
+    --header-height: 70px;
+    --sidebar-width: 80px;
+    --primary-color: #6c5ce7;
+    --primary-color-dark: #5849c2;
+}
+
+/* Asegurar que el scroll funcione correctamente */
+html, body {
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+}
+
+/* Estilos para el contenedor principal */
+.main-content {
+    transition: all 0.3s ease;
+}
+
+/* Ajustes para pantallas pequeñas */
+@media (max-width: 768px) {
+    .header {
+        left: var(--sidebar-width);
+    }
+
+    .main-content {
+        margin-left: var(--sidebar-width);
+    }
+} 

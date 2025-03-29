@@ -1,27 +1,32 @@
 import React from 'react';
 import { FaHome, FaChartBar, FaCog } from 'react-icons/fa';
+import { Link, useLocation } from 'react-router-dom';
 
-const Sidebar = ({ activeMenu, onMenuClick }) => {
+const Sidebar = () => {
+    const location = useLocation();
+
     return (
         <nav className="sidebar">
-            <div 
-                className={`sidebar-icon ${activeMenu === 'home' ? 'active' : ''}`}
-                onClick={() => onMenuClick('home')}
+            <Link 
+                to="/"
+                className={`sidebar-icon ${location.pathname === '/' ? 'active' : ''}`}
             >
                 <FaHome size={24} />
-            </div>
-            <div 
-                className={`sidebar-icon ${activeMenu === 'reports' ? 'active' : ''}`}
-                onClick={() => onMenuClick('reports')}
+            </Link>
+
+            <Link 
+                to="/reports"
+                className={`sidebar-icon ${location.pathname === '/reports' ? 'active' : ''}`}
             >
                 <FaChartBar size={24} />
-            </div>
-            <div 
-                className={`sidebar-icon ${activeMenu === 'settings' ? 'active' : ''}`}
-                onClick={() => onMenuClick('settings')}
+            </Link>
+
+            <Link 
+                to="/parameters"
+                className={`sidebar-icon ${location.pathname === '/parameters' ? 'active' : ''}`}
             >
                 <FaCog size={24} />
-            </div>
+            </Link>
         </nav>
     );
 };

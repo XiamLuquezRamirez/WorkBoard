@@ -260,6 +260,14 @@ const EmployeeInterface = ({ user }) => {
                                         <option value="Baja">Baja</option>
                                     </select>
                                 </div>
+                                <div className="form-group">
+                                    <label htmlFor="estado">Estado</label>
+                                    <select id="estado" name="estado" required>
+                                        <option value="Pendiente">Pendiente</option>
+                                        <option value="En Progreso">En Progreso</option>
+                                        <option value="Completada">Completada</option>
+                                    </select>
+                                </div>
                                 <div className="modal-actions">
                                     <button 
                                         type="button" 

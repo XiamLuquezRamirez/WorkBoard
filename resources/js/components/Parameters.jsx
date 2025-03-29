@@ -5,14 +5,18 @@ import {
     FaCog, 
     FaBuilding, 
     FaClipboardList,
-    FaChartLine
+    FaChartLine,
+    FaArrowLeft
 } from 'react-icons/fa';
 import EmployeeModal from './EmployeeModal';
 import UserModal from './UserModal';
+import { useNavigate } from 'react-router-dom';
+import '../css/parameters.css';
 
 const Parameters = () => {
     const [showEmployeeModal, setShowEmployeeModal] = useState(false);
     const [showUserModal, setShowUserModal] = useState(false);
+    const navigate = useNavigate();
 
     const parameterCards = [
         {
@@ -65,8 +69,15 @@ const Parameters = () => {
         <div className="parameters-container">
             <div className="parameters-header">
                 <h1>Parámetros del Sistema</h1>
-                <p>Configuración general y administración del sistema</p>
+                <button 
+                    className="back-button"
+                    onClick={() => navigate('/dashboard')}
+                >
+                    <FaArrowLeft /> Regresar al Dashboard
+                </button>
             </div>
+           
+          
 
             <div className="parameters-grid">
                 {parameterCards.map((card, index) => (

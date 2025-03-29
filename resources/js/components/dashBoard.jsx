@@ -164,10 +164,14 @@ const DashBoard = () => {
         if (currentUser.tipo_usuario === 'Administrador') {
             return (
                 <>
+                    <div style={{display: 'flex'}}>
                     <Sidebar />
                     <div className="main-content">
                         {renderContent()}
                     </div>
+
+                    </div>
+                    
                 </>
             );
         } else {

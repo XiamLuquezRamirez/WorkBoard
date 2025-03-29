@@ -70,7 +70,7 @@ const Header = ({ showUserMenu, setShowUserMenu }) => {
                     <img src="/images/logo.png" alt="Logo" />
                 </div>
                 
-                <div className="user-section">
+                <div className="user-section" style={{marginRight: '25px'}} >
                     <div 
                         className="user-button"
                         onClick={() => setShowUserMenu(!showUserMenu)}

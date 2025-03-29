@@ -137,7 +137,7 @@ const NewTaskModal = ({ isOpen, onClose, onTaskCreated }) => {
                         </div>
 
                         <div className="form-row">
-                            <div className="form-group col-6">
+                            <div className="form-group col-4">
                                 <label>Fecha Pactada <span className="required">*</span></label>
                                 <input
                                     type="date"
@@ -145,7 +145,7 @@ const NewTaskModal = ({ isOpen, onClose, onTaskCreated }) => {
                                     onChange={(e) => setNuevaTarea({...nuevaTarea, fecha_pactada: e.target.value})}
                                 />
                             </div>
-                            <div className="form-group col-6">
+                            <div className="form-group col-4">
                                 <label>Prioridad</label>
                                 <select
                                     value={nuevaTarea.prioridad}
@@ -154,6 +154,17 @@ const NewTaskModal = ({ isOpen, onClose, onTaskCreated }) => {
                                     <option value="Alta">Alta</option>
                                     <option value="Media">Media</option>
                                     <option value="Baja">Baja</option>
+                                </select>
+                            </div>
+                            <div className="form-group col-4">
+                                <label>Estado</label>
+                                <select
+                                    value={nuevaTarea.estado}
+                                    onChange={(e) => setNuevaTarea({...nuevaTarea, estado: e.target.value})}
+                                >
+                                    <option value="Pendiente">Pendiente</option>
+                                    <option value="En Progreso">En Progreso</option>
+                                    <option value="Completada">Completada</option>
                                 </select>
                             </div>
                         </div>

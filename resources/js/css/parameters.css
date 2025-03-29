@@ -214,3 +214,53 @@
         font-size: 1.5rem;
     }
 } 
+.parameters-header {
+    background: linear-gradient(to right, #2c3e50, #3498db);
+    padding: 20px 30px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.parameters-header h1 {
+    color: white;
+    margin: 0;
+    font-size: 24px;
+    font-weight: 600;
+}
+
+.back-button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border: 2px solid white;
+    border-radius: 8px;
+    background-color: transparent;
+    color: white;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.back-button:hover {
+    background-color: white;
+    color: #2c3e50;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.back-button svg {
+    font-size: 16px;
+    transition: transform 0.3s ease;
+}
+
+.back-button:hover svg {
+    transform: translateX(-3px);
+}

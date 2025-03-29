@@ -399,10 +399,9 @@ const EmployeeModal = ({ isOpen, onClose }) => {
             evidencias: evidencias
         };
 
-
         axios.post('/parametros/guardarTarea', tareaData)
-        .then((response) => {
-            setTareasEmpleado([...tareasEmpleado, response.data]);
+        .then((response) => {           
+            setTareasEmpleado(response.data.tareas);
             setNuevaTarea({
                 titulo: '',
                 descripcion: '',
@@ -413,6 +412,7 @@ const EmployeeModal = ({ isOpen, onClose }) => {
             });
             setEvidencias([]);
             setMostrarFormularioTarea(false);
+
             Swal.fire({
                 title: 'Tarea guardada correctamente',
                 icon: 'success',
@@ -421,6 +421,12 @@ const EmployeeModal = ({ isOpen, onClose }) => {
         })
         .catch((error) => {
             console.error('Error al guardar la tarea:', error);
+            Swal.fire({
+                title: 'Error',
+                text: 'Hubo un error al guardar la tarea',
+                icon: 'error',
+                confirmButtonText: 'OK',
+            });
         });
     };
 
@@ -935,7 +941,7 @@ const EmployeeModal = ({ isOpen, onClose }) => {
                                        
                                     </div>
                                     <div className='form-row'>
-                                    <div className="form-group col-6">
+                                    <div className="form-group col-4">
                                             <label>Fecha Pactada</label>
                                             <input
                                                 type="date"
@@ -943,7 +949,7 @@ const EmployeeModal = ({ isOpen, onClose }) => {
                                                 onChange={(e) => setNuevaTarea({...nuevaTarea, fecha_pactada: e.target.value})}
                                             />
                                         </div>
-                                        <div className="form-group col-6">
+                                        <div className="form-group col-4">
                                             <label>Prioridad</label>
                                             <select
                                                 value={nuevaTarea.prioridad}
@@ -954,6 +960,18 @@ const EmployeeModal = ({ isOpen, onClose }) => {
                                                 <option value="Baja">Baja</option>
                                             </select>
                                         </div>
+                                        <div className="form-group col-4">
+                                            <label>Estado</label>
+                                            <select
+                                                value={nuevaTarea.estado}
+                                                onChange={(e) => setNuevaTarea({...nuevaTarea, estado: e.target.value})}
+                                            >
+                                                <option value="Pendiente">Pendiente</option>
+                                                <option value="En Progreso">En Progreso</option>
+                                                <option value="Completada">Completada</option>
+                                            </select>
+                                        </div>
+                                        
                                         
                                     </div>
                                     <div className="form-row">
@@ -1045,8 +1063,10 @@ const EmployeeModal = ({ isOpen, onClose }) => {
                                 </div>
                             ) : (
                                 <div className="tareas-list">
+                              
                                     {tareasEmpleado.length > 0 ? (
                                         tareasEmpleado.map((tarea) => (
+                                            console.log(tarea),
                                             <div key={tarea.id} className={`tarea-item ${tarea.estado.toLowerCase()}`}>
                                                 <div className="tarea-header">
                                                     <h4>{tarea.titulo || 'Sin título'}</h4>
