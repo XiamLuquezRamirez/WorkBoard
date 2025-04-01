@@ -61,6 +61,11 @@ const DashBoard = () => {
         setCurrentUser(user);
     }, []);
 
+    //Cargar empleados y tareas
+    useEffect(() => {
+       //Cargar empleados
+    }, []);
+
     const userInfo = {
         nombre: 'Admin Usuario',
         email: 'admin@empresa.com',

@@ -446,4 +446,20 @@ class empleadosController extends Controller
         $evidencia = DB::table('evidencia_tarea')->where('id', $id)->delete();
         return response()->json(['success' => 'Evidencia eliminada correctamente'], 200);
     }
+
+    function cargarEmpleadosTareas()
+    {
+        $empleados = DB::table('empleados')
+            ->where('estado_registro', 'Activo')
+            ->get();
+
+        foreach ($empleados as $empleado) {
+            $tareas = DB::table('tareas_empleados')->where('empleado', $empleado->id)->get();
+            $empleado->tareas = $tareas;
+        }
+        //tareas recientes
+
+        return response()->json($empleados);
+    }
+
 }

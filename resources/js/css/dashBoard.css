@@ -140,6 +140,13 @@
     overflow-y: auto;
 }
 
+.cards-container h1 {
+    font-size: 2rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 2rem;
+}
+
 .cards-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);

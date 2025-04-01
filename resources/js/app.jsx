@@ -7,6 +7,7 @@ import Login from './components/Login';
 import AuthMiddleware from './middleware/AuthMiddleware';
 import './css/employeeModal.css';
 import './css/userModal.css';
+import './css/CompanyModal.css';
 import './css/login.css';
 import './css/profileModal.css';
 import Sidebar from './components/Sidebar';

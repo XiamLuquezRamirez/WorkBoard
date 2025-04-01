@@ -238,7 +238,13 @@ const UserModal = ({ isOpen, onClose }) => {
                 </div>
 
                 <div className="modal-content">
-                    <table className="employee-table">
+                    {usuarios.length === 0 ? (
+                        <div className="no-data-message">
+                            <p>No hay usuarios disponibles</p>
+                        </div>
+                    ) : (
+                        
+                        <table className="employee-table">
                         <thead>
                             <tr>
                                 <th>Nombre</th>
@@ -273,8 +279,11 @@ const UserModal = ({ isOpen, onClose }) => {
                                     </td>
                                 </tr>
                             ))}
+
                         </tbody>
                     </table>
+                    )} 
+                   
                 </div>
             </div>
 

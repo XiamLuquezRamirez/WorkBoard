@@ -49,6 +49,8 @@ Route::middleware('auth:sanctum')->group(function () {
     // eliminar evidencia de una tarea
     Route::delete('/parametros/eliminarEvidencia/{id}', [empleadosController::class, 'eliminarEvidencia']);
 
+    // cargar empleados y tareas
+    Route::get('/parametros/cargarEmpleadosTareas', [empleadosController::class, 'cargarEmpleadosTareas']); 
 });
 
 // Esta ruta debe manejar todas las rutas de la aplicación React
