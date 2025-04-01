@@ -8,8 +8,8 @@ const Sidebar = () => {
     return (
         <nav className="sidebar">
             <Link 
-                to="/"
-                className={`sidebar-icon ${location.pathname === '/' ? 'active' : ''}`}
+                to="/dashboard"
+                className={`sidebar-icon ${location.pathname === '/dashboard' ? 'active' : ''}`}
             >
                 <FaHome size={24} />
             </Link>

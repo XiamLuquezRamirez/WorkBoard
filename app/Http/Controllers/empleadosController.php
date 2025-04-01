@@ -222,7 +222,8 @@ class empleadosController extends Controller
                 'fecha_pactada' => $tarea['fecha_pactada'],
                 'prioridad' => $tarea['prioridad'],
                 'estado' => $tarea['estado'],
-                'estado_reg' => 'Activo'
+                'estado_reg' => 'Activo',
+                'fecha_creacion' => now()
             ]);
 
             /// isertar evidencia
@@ -451,15 +452,81 @@ class empleadosController extends Controller
     {
         $empleados = DB::table('empleados')
             ->where('estado_registro', 'Activo')
+            ->leftJoin("cargos", "empleados.cargo", "cargos.id")
+            ->leftJoin("departamentos", "empleados.departamento", "departamentos.id")
+            ->leftJoin("empresas", "empleados.empresa", "empresas.id")
+            ->select("empleados.*", "cargos.nombre as cargo", "departamentos.nombre as departamento", "empresas.nombre as empresa")
+         
             ->get();
-
+    
+        $empleadosData = [];
+    
         foreach ($empleados as $empleado) {
-            $tareas = DB::table('tareas_empleados')->where('empleado', $empleado->id)->get();
-            $empleado->tareas = $tareas;
-        }
-        //tareas recientes
+            // Obtener las tareas asignadas al empleado
+            $tareas = DB::table('tareas_empleados')
+                ->where('empleado', $empleado->id)
+                ->where('estado_reg', 'Activo')
+                ->get();
+    
+            // Contar las tareas según su estado
+            $tareasCompletadas = $tareas->where('estado', 'Completada')->count();
+            $tareasPendientes = $tareas->where('estado', 'Pendiente')->count();
+            $tareasEnProceso = $tareas->where('estado', 'En Proceso')->count();
 
-        return response()->json($empleados);
+             //CALCULAR TAREAS ATRASADAS si la fecha pactada es menor a la fecha actual
+            if($tareas->where('fecha_pactada', '<', now())->count() > 0){
+                $tareasAtrasadas = $tareas->where('fecha_pactada', '<', now())->count();
+            }else{
+                $tareasAtrasadas = 0;
+            }
+
+    
+            // Calcular eficiencia y avance
+            $totalTareas = $tareas->count();
+            $eficiencia = $totalTareas > 0 ? round(($tareasCompletadas / $totalTareas) * 100, 2) : 0;
+            $avance = $totalTareas > 0 ? round(($tareasCompletadas / $totalTareas) * 100, 2) : 0;
+    
+            // Obtener últimas 3 tareas
+            $tareasRecientes = $tareas->sortByDesc('fecha_creacion')->take(3)->map(function ($tarea) {
+                return [
+                    'id' => $tarea->id,
+                    'titulo' => $tarea->titulo,
+                    'estado' => $tarea->estado
+                ];
+            })->values();
+
+            // Construir estructura
+            $empleadosData[] = [
+                'id' => $empleado->id,
+                'nombre' => $empleado->nombres . ' ' . $empleado->apellidos,
+                'cargo' => $empleado->cargo,
+                'departamento' => $empleado->departamento,
+                'empresa' => $empleado->empresa,
+                'contacto' => [
+                    'email' => $empleado->email,
+                    'telefono' => $empleado->telefono
+                ],
+                'foto' => $empleado->foto,
+                'rendimiento' => [
+                    'tareasAsignadas' => $totalTareas,
+                    'tareas' => [
+                        'completadas' => $tareasCompletadas,
+                        'pendientes' => $tareasPendientes,
+                        'enProceso' => $tareasEnProceso,
+                        'atrasadas' => $tareasAtrasadas
+                    ],
+                    'tiempoPromedioTarea' => '2.5 días', // Esto podrías calcularlo según la BD
+                    'eficiencia' => $eficiencia,
+                    'ultimaActividad' => $empleado->ultima_actividad ?? null,
+                    'ranking' => rand(1, 10) // Puedes definir una lógica real para esto
+                ],
+                'avance' => $avance,
+                'tareasRecientes' => $tareasRecientes
+            ];
+        }
+    
+        return response()->json($empleadosData);
     }
+    
 
 }

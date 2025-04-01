@@ -6,7 +6,8 @@ import Parameters from './Parameters';
 import '../css/dashBoard.css';
 import '../css/taskList.css';
 import '../css/parameters.css';
-import { FaCheckCircle, FaSpinner, FaClock } from 'react-icons/fa';
+import '../css/employeeCard.css';
+import { FaCheckCircle, FaSpinner, FaClock, FaSearch } from 'react-icons/fa';
 import EmployeeInterface from './EmployeeInterface';
 import AuthMiddleware from '../middleware/AuthMiddleware';
 
@@ -14,47 +15,13 @@ const DashBoard = () => {
     const [showUserMenu, setShowUserMenu] = useState(false);
     const [activeMenu, setActiveMenu] = useState('home');
     const [currentView, setCurrentView] = useState('home');
-    const [empleados] = useState([
-        {
-            id: 1,
-            nombre: 'Marcos Sanz',
-            departamento: 'Desarrollo',
-            empresa: 'CSI DESARROLLOS',
-            foto: '/images/empleados/xiam.jpg',
-            avance: 70,
-            tareas: {
-                completadas: 12,
-                pendientes: 5,
-                enProceso: 3
-            },
-            tareasRecientes: [
-                { id: 1, nombre: 'Desarrollo Frontend', estado: 'completed' },
-                { id: 2, nombre: 'Testing unitario', estado: 'progress' },
-                { id: 3, nombre: 'Documentación API', estado: 'pending' }
-            ]
-        },
-        {
-            id: 2,
-            nombre: 'Ana López',
-            departamento: 'Diseño UX/UI',
-            empresa: 'CSI DESARROLLOS',
-            foto: '/images/empleados/xiam.jpg',
-            avance: 85,
-            tareas: {
-                completadas: 15,
-                pendientes: 2,
-                enProceso: 4
-            },
-            tareasRecientes: [
-                { id: 1, nombre: 'Diseño Dashboard', estado: 'completed' },
-                { id: 2, nombre: 'Prototipo Mobile', estado: 'progress' },
-                { id: 3, nombre: 'User Research', estado: 'pending' }
-            ]
-        },
-        // ... más empleados
-    ]);
+    const [empleados, setEmpleados] = useState([]);
+
+
 
     const [currentUser, setCurrentUser] = useState(null);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
     useEffect(() => {
         const user = AuthMiddleware.getUser();
@@ -64,21 +31,30 @@ const DashBoard = () => {
     //Cargar empleados y tareas
     useEffect(() => {
        //Cargar empleados
+       cargarEmpleados();
+
     }, []);
 
-    const userInfo = {
-        nombre: 'Admin Usuario',
-        email: 'admin@empresa.com',
-        foto: '/images/empleados/xiam.jpg'
-    };
+    const cargarEmpleados = async () => {
+        axios.get('/parametros/cargarEmpleadosTareas')
+        .then((response) => {
+            console.log(response.data);
+            setEmpleados(response.data);
+        })
+        .catch((error) => {
+            console.error('Error al cargar los empleados:', error);
+        });
+    }
+
+
 
     const getStatusIcon = (status) => {
         switch(status) {
-            case 'completed':
-                return <FaCheckCircle color="#0369a1" />;
-            case 'progress':
-                return <FaSpinner color="#047857" />;
-            case 'pending':
+            case 'Completada':
+                return <FaCheckCircle color="#54B743" />;
+            case 'En Proceso':
+                return <FaSpinner color="#377AED" />;
+            case 'Pendiente':
                 return <FaClock color="#c2410c" />;
             default:
                 return null;
@@ -87,16 +63,23 @@ const DashBoard = () => {
 
     const getStatusClass = (status) => {
         switch(status) {
-            case 'completed':
+            case 'Completada':
                 return 'status-completed';
-            case 'progress':
+            case 'En Proceso':
                 return 'status-progress';
-            case 'pending':
+            case 'Pendiente':
                 return 'status-pending';
             default:
                 return '';
         }
     };
+
+    // Función para filtrar empleados
+    const filteredEmpleados = empleados.filter(empleado => 
+        empleado.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        empleado.departamento.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        empleado.empresa.toLowerCase().includes(searchTerm.toLowerCase())
+    );
 
     const renderContent = () => {
         switch(currentView) {
@@ -106,54 +89,93 @@ const DashBoard = () => {
             default:
                 return (
                     <div className="cards-container">
-                        <h1>Tablero de seguimiento de empleados</h1>
+                        <div className="dashboard-header">
+                            <h1>Tablero de seguimiento de empleados</h1>
+                            <div className="search-container">
+                                <div className="search-box">
+                                    <FaSearch className="search-icon" />
+                                    <input
+                                        type="text"
+                                        placeholder="Buscar empleado por nombre, departamento o empresa..."
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                        className="search-input"
+                                    />
+                                </div>
+                            </div>
+                        </div>
                         <div className="cards-grid">
-                            {empleados.map(empleado => (
+                            {filteredEmpleados.map(empleado => (
                                 <div key={empleado.id} className="employee-card">
-                                    <div className="employee-card-pattern"></div>
-                                    <div className="employee-header">
+                                    <div className="employee-main-info">
                                         <img 
                                             src={empleado.foto} 
                                             alt={empleado.nombre}
                                             className="employee-photo"
                                         />
-                                        <div className="employee-info">
+                                        <div className="employee-details">
                                             <h3>{empleado.nombre}</h3>
-                                            <p className="cargo">{empleado.departamento}</p>
-                                            <p className="empresa">{empleado.empresa}</p>
+                                            <p className="cargo">{empleado.cargo}</p>
+                                            <p className="empresa">{empleado.empresa} - {empleado.departamento}</p>
+                                            <p className="contacto">
+                                                <i className="fas fa-envelope"></i> {empleado.contacto?.email}
+                                            </p>
                                         </div>
                                     </div>
 
-                                    <div className="employee-content">
-                                        <div className="employee-stats">
-                                            <div className="stat-box">
-                                                <div className="stat-value">{empleado.tareas.completadas}</div>
-                                                <div className="stat-label">Completadas</div>
+                                    <div className="performance-section">
+                                        <h4>Rendimiento</h4>
+                                        <div className="task-stats-grid">
+                                            <div className="stat-item">
+                                                <span className="stat-number">
+                                                    {empleado.rendimiento?.tareasAsignadas || 0}
+                                                </span>
+                                                <span className="stat-label">Total Asignadas</span>
                                             </div>
-                                            <div className="stat-box">
-                                                <div className="stat-value">{empleado.tareas.enProceso}</div>
-                                                <div className="stat-label">En Proceso</div>
+                                            <div className="stat-item">
+                                                <span className="stat-number">
+                                                    {empleado.rendimiento?.tareas.completadas || 0}
+                                                </span>
+                                                <span className="stat-label">Completadas</span>
                                             </div>
-                                            <div className="stat-box">
-                                                <div className="stat-value">{empleado.tareas.pendientes}</div>
-                                                <div className="stat-label">Pendientes</div>
+                                            <div className="stat-item">
+                                                <span className="stat-number">
+                                                    {empleado.rendimiento?.tareas.enProceso || 0}
+                                                </span>
+                                                <span className="stat-label">En Proceso</span>
                                             </div>
-                                        </div>
-                                        
-                                        <div className="progress-section">
-                                            <div className="progress-header">
-                                                <span>Progreso General</span>
-                                                <span>{empleado.avance}%</span>
-                                            </div>
-                                            <div className="progress-bar">
-                                                <div 
-                                                    className="progress-fill"
-                                                    style={{ width: `${empleado.avance}%` }}
-                                                />
+                                            <div className="stat-item urgent">
+                                                <span className="stat-number">
+                                                    {empleado.rendimiento?.tareas.pendientes || 0}
+                                                </span>
+                                                <span className="stat-label">Pendientes</span>
                                             </div>
                                         </div>
 
-                                        <TaskList tareas={empleado.tareasRecientes} />
+                                        <div className="kpi-section">
+                                            <div className="kpi-item">
+                                                <span className="kpi-label">Eficiencia</span>
+                                                <div className="progress-bar">
+                                                    <div 
+                                                        className="progress-fill"
+                                                        style={{ width: `${empleado.avance}%` }}
+                                                    />
+                                                    <span className="progress-value">{empleado.avance}%</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="urgent-tasks">
+                                            <h5>Tareas Recientes</h5>
+                                            {empleado.tareasRecientes?.map(tarea => (
+                                                <div key={tarea.id} className="urgent-task-item">
+                                                    <span>{tarea.titulo}</span>
+                                                    <span className={`status ${getStatusClass(tarea.estado)}`}>
+                                                        {getStatusIcon(tarea.estado)}
+                                                    </span>
+                                                </div>
+                                            ))}
+                                        </div>
                                     </div>
                                 </div>
                             ))}
@@ -168,19 +190,16 @@ const DashBoard = () => {
 
         if (currentUser.tipo_usuario === 'Administrador') {
             return (
-                <>
-                    <div style={{display: 'flex'}}>
-                    <Sidebar />
-                    <div className="main-content">
+                <div className="dashboard-layout">
+                    <div className={`sidebar ${isSidebarOpen ? 'active' : ''}`}>
+                        <Sidebar />
+                    </div>
+                    <div className="content-area">
                         {renderContent()}
                     </div>
-
-                    </div>
-                    
-                </>
+                </div>
             );
         } else {
-         
             return <EmployeeInterface user={currentUser} />;
         }
     };
@@ -190,6 +209,7 @@ const DashBoard = () => {
             <Header 
                 showUserMenu={showUserMenu} 
                 setShowUserMenu={setShowUserMenu}
+                toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
             />
             {renderInterface()}
         </div>
