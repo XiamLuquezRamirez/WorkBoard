@@ -32,9 +32,7 @@ const CompanyModal = ({ isOpen, onClose }) => {
 
     const [newCompany, setNewCompany] = useState(initialCompanyState);
 
-    useEffect(() => {
-        cargarEmpresas();
-    }, []);
+
 
     useEffect(() => {
         const delaySearch = setTimeout(() => {
@@ -76,6 +74,10 @@ const CompanyModal = ({ isOpen, onClose }) => {
             });
     };
 
+    const handleGuardarEmpresa = () => {
+        console.log(newCompany);
+    };
+
     if (!isOpen) return null;
 
     return (
@@ -88,7 +90,7 @@ const CompanyModal = ({ isOpen, onClose }) => {
                     </button>
                 </div>
 
-                <div className="modal-toolbar">
+                <div className="modal-toolbar" >
                     <div className={`search-box ${loading ? "loading" : ""}`}>
                         <FaSearch />
                         <input
@@ -177,6 +179,48 @@ const CompanyModal = ({ isOpen, onClose }) => {
                     )}
                 </div>
             </div>
+            {showAddForm && (
+                <div className="modal-overlay">
+                    <div className="form-modal-large">
+                        <div className="modal-header">
+                            <h2>{newCompany.accion === 'editar' ? 'Editar Empresa' : 'Nueva Empresa'}</h2>
+                            <button 
+                                className="close-button" 
+                                onClick={() => setShowAddForm(false)}
+                            >
+                                &times;
+                            </button>
+                        </div>
+                        <form className="employee-form">
+                            <div className="form-row">
+
+                                
+
+                                <div className="form-group col-4">
+                                    <label>NIT</label>
+                                    <input type="text" className="form-control" value={newCompany.nit} onChange={(e) => setNewCompany({...newCompany, nit: e.target.value})} />
+                                </div>
+                                <div className="form-group col-8">
+                                    <label>Nombre</label>
+                                    <input type="text" className="form-control" value={newCompany.nombre} onChange={(e) => setNewCompany({...newCompany, nombre: e.target.value})} />
+                                </div>
+                                <div className="form-group col-6">
+                                    <label>Representante</label>
+                                    <input type="text" className="form-control" value={newCompany.representante} onChange={(e) => setNewCompany({...newCompany, representante: e.target.value})} />
+                                </div>
+                            </div>
+                            <div className="form-actions">
+                                <button type="button" className="cancel-button" onClick={() => setShowAddForm(false)}>
+                                    Cancelar
+                                </button>
+                                <button type="button" onClick={handleGuardarEmpresa} className="save-button">
+                                    Guardar
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

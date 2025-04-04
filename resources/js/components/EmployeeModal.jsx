@@ -20,6 +20,7 @@ const EmployeeModal = ({ isOpen, onClose }) => {
     const [funcionEditada, setFuncionEditada] = useState('');
     const [showTareasModal, setShowTareasModal] = useState(false);
     const [tareasEmpleado, setTareasEmpleado] = useState([]);
+    const [searchTarea, setSearchTarea] = useState('');
     const [nuevaTarea, setNuevaTarea] = useState({
         titulo: '',
         descripcion: '',
@@ -45,13 +46,14 @@ const EmployeeModal = ({ isOpen, onClose }) => {
         cargo: '',
         foto: '',
         fotoPreview: null,
-        fechaNacimiento: '',
-        fechaIngreso: '',
-        tipoContrato: '',
+        fecha_nacimiento: '',
+        fecha_ingreso: '',
+        tipo_contrato: '',
         estado: 'Activo',
         direccion: '',
         telefono: '',
-        accion: 'guardar'
+        accion: 'guardar',
+        lider: ''
     };
 
     const [newEmpleado, setNewEmpleado] = useState(initialEmpleadoState);
@@ -63,12 +65,73 @@ const EmployeeModal = ({ isOpen, onClose }) => {
         cargarEmpleados();
     }, []);
 
+    useEffect(() => {
+        const delaySearch = setTimeout(() => {
+            if (searchTarea.length > 0) {
+                buscarTareas();
+            } else {
+                handleVerTareas(empleadoSeleccionado);
+            }
+        }, 500);
+
+        return () => clearTimeout(delaySearch);
+    }, [searchTarea]);
+    
+    const buscarTareas = () => {
+        axios.get(`/parametros/buscarTareas/${empleadoSeleccionado.id}`, {
+            params: {
+                search: searchTarea
+            }
+        })
+        .then((response) => {
+            setTareasEmpleado(response.data.tareas);
+        })
+        .catch((error) => {
+            console.error('Error al cargar las tareas:', error);
+        });
+    };
+    
+
+    useEffect(() => {
+        const delaySearch = setTimeout(() => {
+            if (searchTerm.length > 0) {
+                buscarEmpleados();
+            } else {
+                cargarEmpleados();
+            }
+        }, 500);
+
+        return () => clearTimeout(delaySearch);
+    }, [searchTerm]);
+
+
+    
+    const buscarEmpleados = () => {
+        setLoading(true);
+        axios.get('/parametros/buscarEmpleados', { 
+            params: { 
+                search: searchTerm,
+                filters: {
+                    nombre: true,
+                    cargo: true,
+                    empresa: true
+                }
+            } })
+        .then((response) => {
+            setEmpleados(response.data);
+            setLoading(false);
+        })
+    }
+    
+
     
     const cargarEmpleados = () => {
+        setLoading(true);
         axios.get('/parametros/cargarEmpleados')
         .then((response) => {
             
             setEmpleados(response.data);
+            setLoading(false);
         })
         .catch((error) => {
             console.error('Error al cargar los empleados:', error);
@@ -81,21 +144,22 @@ const EmployeeModal = ({ isOpen, onClose }) => {
     };
 
     const handleGuardarEmpleado = () => {
-      
         axios
         .post('/parametros/guardarEmpleados', newEmpleado)
         .then((response) => {
-           
-           Swal.fire({
-            title: 'Empleado guardado correctamente',
-            icon: 'success',
-            confirmButtonText: 'OK',
-           });
+            if (response.data.success) {
+                Swal.fire({
+                    title: 'Empleado guardado correctamente',
+                    icon: 'success',
+                    confirmButtonText: 'OK',
+                });
 
-           setShowAddForm(false);
-           setNewEmpleado(initialEmpleadoState);
-           cargarEmpleados();
-          
+                setShowAddForm(false);
+                setNewEmpleado(initialEmpleadoState);
+                cargarEmpleados();
+            } else {
+                throw new Error('Error al guardar el empleado');
+            }
         })
         .catch((error) => {
             console.error('Error al guardar el empleado:', error);
@@ -260,9 +324,10 @@ const EmployeeModal = ({ isOpen, onClose }) => {
     const handleEditarEmpleado = (empleado) => {
         setNewEmpleado({
             ...empleado,
-            fechaNacimiento: empleado.fecha_nacimiento || '',
-            fechaIngreso: empleado.fecha_ingreso || '',
-            tipoContrato: empleado.tipo_contrato || '',
+            fecha_nacimiento: empleado.fecha_nacimiento || '',
+            fecha_ingreso: empleado.fecha_ingreso || '',
+            tipo_contrato: empleado.tipo_contrato || '',
+            lider: empleado.lider || '',
             accion: 'editar',
             id: empleado.id
         });
@@ -322,13 +387,14 @@ const EmployeeModal = ({ isOpen, onClose }) => {
         });
     };
 
+
+    
+
     const handleVerTareas = (empleado) => {
-        setEmpleadoSeleccionado(empleado);
-        
+        setEmpleadoSeleccionado(empleado);        
         axios.get(`/parametros/cargarTareas/${empleado.id}`)
         .then((response) => {
             setTareasEmpleado(response.data.tareas);
-            console.log(tareasEmpleado.evidencias);
             setShowTareasModal(true);
         })
         .catch((error) => {
@@ -487,7 +553,13 @@ const EmployeeModal = ({ isOpen, onClose }) => {
 
     return (
         <div className="modal-overlay">
-            <div className="modal-container">
+            <div className="modal-container" style={{
+                width: '95%',
+                maxWidth: '1200px',
+                height: '50vh',
+                display: 'flex',
+                flexDirection: 'column'
+            }}>
                 <div className="modal-header">
                     <h2>Gestión de Empleados</h2>
                     <button className="close-button" onClick={onClose}>&times;</button>
@@ -514,18 +586,36 @@ const EmployeeModal = ({ isOpen, onClose }) => {
                     </button>
                 </div>
 
-                <div className="modal-content">
-                    <table className="employee-table">
+                <div className="modal-content" style={{
+                    flex: 1,
+                    width: '100%',
+                    overflow: 'auto',
+                    padding: '20px'
+                }}>
+                    {loading ? (
+                        <div className="loading-spinner">
+                            <div className="spinner-border" role="status">
+                                <span className="sr-only">Cargando...</span>
+                            </div>
+                        </div>
+                    ) : empleados.length === 0 ? (
+                        <div className="no-data-message">
+                            <p>No hay empleados disponibles</p>
+                        </div>
+                    ) : (
+                    <table className="employee-table" style={{
+                        width: '100%',
+                        tableLayout: 'fixed',
+                        borderCollapse: 'collapse'
+                    }}>
                         <thead>
                             <tr>
-                                <th>Foto</th>
-                                <th>Nombre</th>
-                                <th>Departamento</th>
-                                <th>Cargo</th>
-                                <th>Empresa</th>
-                                <th>Email</th>
-                                <th>Estado</th>
-                                <th>Acciones</th>
+                                <th style={{width: '8%'}}>Foto</th>
+                                <th style={{width: '25%'}}>Nombre</th>
+                                <th style={{width: '12%'}}>Cargo</th>
+                                <th style={{width: '20%'}}>Empresa</th>
+                                <th style={{width: '20%'}}>Email</th>
+                                <th style={{width: '15%'}}>Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -539,21 +629,17 @@ const EmployeeModal = ({ isOpen, onClose }) => {
                                         />
                                     </td>
                                     <td style={{textTransform: 'capitalize'}}>{empleado.nombres} {empleado.apellidos}</td>
-                                    <td>{empleado.nombre_departamento}</td>
+                               
                                     <td>{empleado.nombre_cargo}</td>
                                     <td>{empleado.nombre_empresa}</td>
                                     <td>{empleado.email}</td>
-                                    <td>
-                                        <span className={`status-badge ${empleado.estado.toLowerCase()}`}>
-                                            {empleado.estado}
-                                        </span>
-                                    </td>
+                                   
                                     <td>
                                         <div className="action-buttons">
-                                            <button title="Ver tareas" onClick={() => handleVerTareas(empleado)} className="edit-button">
+                                            <button title="Ver tareas" onClick={() => handleVerTareas(empleado)} className="tareas-button">
                                                 <FaListCheck />
                                             </button>
-                                            <button title="Ver funciones" onClick={() => handleVerFunciones(empleado)} className="edit-button">
+                                            <button title="Ver funciones" onClick={() => handleVerFunciones(empleado)} className="funciones-button">
                                                 <FaThList />
                                             </button>
                                             <button title="Editar empleado" onClick={() => handleEditarEmpleado(empleado)} className="edit-button">
@@ -568,6 +654,9 @@ const EmployeeModal = ({ isOpen, onClose }) => {
                             ))}
                         </tbody>
                     </table>
+                 
+                    )}
+
                 </div>
             </div>
             {showAddForm && (
@@ -659,11 +748,11 @@ const EmployeeModal = ({ isOpen, onClose }) => {
                             <div className="form-group col-3">
                                     <label>F. Nacimiento</label>
                                     <input type="date" 
-                                    onChange={(e) => setNewEmpleado({...newEmpleado, fechaNacimiento: e.target.value})}
-                                    value={newEmpleado.fechaNacimiento}
+                                    onChange={(e) => setNewEmpleado({...newEmpleado, fecha_nacimiento: e.target.value})}
+                                    value={newEmpleado.fecha_nacimiento}
                                     className="form-control"
-                                    name="fechaNacimiento"
-                                    id='fechaNacimiento'                                    
+                                    name="fecha_nacimiento"
+                                    id='fecha_nacimiento'                                    
                                     />
                                 </div>
                                 <div className="form-group col-4">
@@ -750,23 +839,35 @@ const EmployeeModal = ({ isOpen, onClose }) => {
                             </div>
 
                             <div className="form-row">
-                                <div className="form-group col-4">
+                            <div className="form-group col-2">
+                                    <label>Lider de Departamento</label>
+                                    <select onChange={(e) => setNewEmpleado({...newEmpleado, lider: e.target.value})}
+                                    value={newEmpleado.lider}
+                                    className="form-control"
+                                    name="lider"
+                                    id='lider'                                    
+                                    >
+                                        <option value="Si">Si</option>
+                                        <option value="No">No</option>
+                                    </select>
+                                </div>
+                                <div className="form-group col-3">
                                     <label>Fecha de Ingreso</label>
                                     <input   type="date" 
-                                    onChange={(e) => setNewEmpleado({...newEmpleado, fechaIngreso: e.target.value})}
-                                    value={newEmpleado.fechaIngreso}
+                                    onChange={(e) => setNewEmpleado({...newEmpleado, fecha_ingreso: e.target.value})}
+                                    value={newEmpleado.fecha_ingreso}
                                     className="form-control"
-                                    name="fechaIngreso"
-                                    id='fechaIngreso'                                    
+                                    name="fecha_ingreso"
+                                    id='fecha_ingreso'                                    
                                     />
                                 </div>
-                                <div className="form-group col-4">
+                                <div className="form-group col-3">
                                     <label>Tipo de Contrato</label>
-                                    <select onChange={(e) => setNewEmpleado({...newEmpleado, tipoContrato: e.target.value})}
-                                    value={newEmpleado.tipoContrato}
+                                    <select onChange={(e) => setNewEmpleado({...newEmpleado, tipo_contrato: e.target.value})}
+                                    value={newEmpleado.tipo_contrato}
                                     className="form-control"
-                                    name="tipoContrato"
-                                    id='tipoContrato'                                    
+                                    name="tipo_contrato"
+                                    id='tipo_contrato'                                    
                                     >
                                         <option value="">Seleccionar tipo</option>
                                         <option value="indefinido">Indefinido</option>
@@ -774,7 +875,7 @@ const EmployeeModal = ({ isOpen, onClose }) => {
                                         <option value="servicios">Prestación de Servicios</option>
                                     </select>
                                 </div>
-                                <div className="form-group col-4">
+                                <div className="form-group col-2">
                                     <label>Estado</label>
                                     <select onChange={(e) => setNewEmpleado({...newEmpleado, estado: e.target.value})}
                                     value={newEmpleado.estado}
@@ -905,14 +1006,7 @@ const EmployeeModal = ({ isOpen, onClose }) => {
                                 `Tareas de ${empleadoSeleccionado.nombres} ${empleadoSeleccionado.apellidos}`}
                             </h2>
                             <div className="modal-header-actions">
-                                {!mostrarFormularioTarea && (
-                                    <button 
-                                        className="add-button"
-                                        onClick={() => setMostrarFormularioTarea(true)}
-                                    >
-                                        <FaPlus /> Nueva Tarea
-                                    </button>
-                                )}
+                              
                                 <button 
                                     className="close-button" 
                                     onClick={() => {
@@ -923,7 +1017,31 @@ const EmployeeModal = ({ isOpen, onClose }) => {
                                     &times;
                                 </button>
                             </div>
+                   
                         </div>
+                         <div className="modal-toolbar" style={{width: '100%'}}>
+                  
+
+                    {!mostrarFormularioTarea && (
+                                      <div className={`search-box ${loading ? "loading" : ""}`}>
+                                      <FaSearch />
+                                      <input
+                                          type="text"
+                                          placeholder="Buscar por título, descripción, estado o prioridad"
+                                          value={searchTarea}
+                                          onChange={(e) => setSearchTarea(e.target.value)}
+                                      />
+                                      {loading && <div className="search-spinner"></div>}
+                                      <button 
+                                        className="add-button"
+                                        onClick={() => setMostrarFormularioTarea(true)}
+                                    >
+                                        <FaPlus /> Nueva Tarea
+                                    </button>
+                                    </div>    
+                                    
+                                )}
+                </div>
                         
                         <div className="tareas-content">
                             {mostrarFormularioTarea ? (

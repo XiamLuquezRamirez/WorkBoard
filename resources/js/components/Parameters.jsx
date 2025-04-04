@@ -11,6 +11,7 @@ import {
 import EmployeeModal from './EmployeeModal';
 import UserModal from './UserModal';
 import CompanyModal from './CompanyModal';
+import LeaderModal from './LeaderModal';
 import { useNavigate } from 'react-router-dom';
 import '../css/parameters.css';
 
@@ -18,6 +19,7 @@ const Parameters = () => {
     const [showEmployeeModal, setShowEmployeeModal] = useState(false);
     const [showUserModal, setShowUserModal] = useState(false);
     const [showCompanyModal, setShowCompanyModal] = useState(false);
+    const [showLeaderModal, setShowLeaderModal] = useState(false);
     const navigate = useNavigate();
 
     const parameterCards = [
@@ -45,6 +47,14 @@ const Parameters = () => {
             description: 'Gestión de empresas y sucursales',
             color: '#059669',
             onClick: () => setShowCompanyModal(true)
+        },
+        {
+            id: 5,
+            title: 'Lideres de área',
+            icon: <FaUserTie size={25} />,
+            description: 'Gestión de lideres de area',
+            color: '#059669',
+            onClick: () => setShowLeaderModal(true)
         }
     ];
 
@@ -101,6 +111,14 @@ const Parameters = () => {
                     onClose={() => setShowCompanyModal(false)} 
                 />
             )}
+
+            {showLeaderModal && (
+                <LeaderModal 
+                    isOpen={showLeaderModal} 
+                    onClose={() => setShowLeaderModal(false)} 
+                />
+            )}
+
         </div>
     );
 };

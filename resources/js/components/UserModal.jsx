@@ -135,7 +135,6 @@ const UserModal = ({ isOpen, onClose }) => {
                 return;
             }
         }
-   
 
         const userData = { ...newUser };
         if (newUser.accion === 'editar' && !newUser.cambiar_password) {

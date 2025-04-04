@@ -32,6 +32,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/parametros/actualizarEstadoTarea/{id}', [empleadosController::class, 'actualizarEstadoTarea']);
     Route::get('/parametros/cargarUsuarios', [empleadosController::class, 'cargarUsuarios']);
     Route::get('/parametros/buscarUsuarios', [empleadosController::class, 'buscarUsuarios']);
+    Route::get('/parametros/buscarEmpresas', [empleadosController::class, 'buscarEmpresas']);
+    Route::get('/parametros/buscarEmpleados', [empleadosController::class, 'buscarEmpleados']);
+    Route::get('/parametros/cargarLideres', [empleadosController::class, 'cargarLideres']);
+    Route::get('/parametros/cargarEmpleadosLider/{id}', [empleadosController::class, 'cargarEmpleadosLider']);
+    Route::post('/parametros/guardarAsignacionesLider', [empleadosController::class, 'guardarAsignacionesLider']);
 
     //guardar usuario
     Route::post('/parametros/guardarUsuario', [empleadosController::class, 'guardarUsuario']);
@@ -51,6 +56,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // cargar empleados y tareas
     Route::get('/parametros/cargarEmpleadosTareas', [empleadosController::class, 'cargarEmpleadosTareas']); 
+
+    // buscar tareas
+    Route::get('/parametros/buscarTareas/{id}', [empleadosController::class, 'buscarTareas']);
 });
 
 // Esta ruta debe manejar todas las rutas de la aplicación React
