@@ -58,7 +58,6 @@ const DashBoard = () => {
         axios
             .get("/parametros/cargarEmpleadosTareas")
             .then((response) => {
-                console.log(response.data);
                 setEmpleados(response.data);
             })
             .catch((error) => {

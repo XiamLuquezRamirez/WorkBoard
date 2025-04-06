@@ -13,6 +13,7 @@ import './css/profileModal.css';
 import Sidebar from './components/Sidebar';
 import Parameters from './components/Parameters';
 import Layout from './components/Layout';
+import { UserProvider } from './components/UserContext';
 
 // Configurar interceptores de axios
 AuthMiddleware.setupAxiosInterceptors();
@@ -29,15 +30,17 @@ const App = () => {
     const [currentView, setCurrentView] = useState('dashboard');
 
     return (
-        <Router>
-            <Routes>
-                <Route path="/" element={<Layout />}>
-                    <Route index element={<DashBoard />} />
+        <UserProvider>
+            <Router>
+                <Routes>
+                    <Route path="/" element={<Layout />}>
+                        <Route index element={<DashBoard />} />
                     <Route path="reports" element={<Reports />} />
                     <Route path="parameters" element={<Parameters />} />
                 </Route>
             </Routes>
         </Router>
+        </UserProvider>
     );
 };
 

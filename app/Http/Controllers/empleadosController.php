@@ -5,14 +5,15 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Auth;
 
 class empleadosController extends Controller
 {
     function guardarEmpleado(Request $request)
     {
         $empleado = $request->all();
-        
-        
+
+
         DB::beginTransaction();
         try {
             if ($empleado['accion'] == 'guardar') {
@@ -45,11 +46,12 @@ class empleadosController extends Controller
                     'password' => Hash::make($empleado['identificacion']),
                     'tipo_usuario' => 'Empleado',
                     'estado' => 'Activo',
-                    'empleado' => $empleadoId
+                    'empleado' => $empleadoId,
+                    'lider' => $empleado['lider']
                 ]);
             } else {
                 $empleadoData = $empleado; // Guardamos los datos originales
-                
+
                 $updateResult = DB::table('empleados')->where('id', $empleadoData['id'])->update([
                     'identificacion' => $empleadoData['identificacion'],
                     'nombres' => $empleadoData['nombres'],
@@ -73,7 +75,8 @@ class empleadosController extends Controller
                     'email' => $empleadoData['email'],
                     'password' => Hash::make($empleadoData['identificacion']),
                     'tipo_usuario' => 'Empleado',
-                    'empleado' => $empleadoData['id']
+                    'empleado' => $empleadoData['id'],
+                    'lider' => $empleadoData['lider']
                 ]);
             }
 
@@ -97,7 +100,7 @@ class empleadosController extends Controller
 
         foreach ($empleados as $empleado) {
             $empleadoId = $empleado['id'];
-            
+
             $asignacion = DB::table('lideres_empleados')->insert([
                 'lider' => $liderId,
                 'empleado' => $empleadoId
@@ -105,6 +108,43 @@ class empleadosController extends Controller
         }
 
         return response()->json(['success' => 'Asignaciones guardadas correctamente'], 200);
+    }
+
+    function cargarNotificaciones(Request $request)
+    {
+        $tipo = $request->input('tipo');
+        $id = $request->input('id');
+     
+        if ($tipo == 'Administrador') {
+            $notificaciones = DB::table('notificaciones')
+                ->orderBy('fecha', 'desc')
+                ->get();
+        } else {
+           
+            if ($tipo == 'empleado') {
+                $notificaciones = DB::table('notificaciones')
+                ->join('empleados', 'notificaciones.id_empleado', '=', 'empleados.id')
+                ->select('notificaciones.*', 'empleados.nombres', 'empleados.apellidos')
+                ->where('id_empleado', $id)
+                ->where('leida', 'No')
+                ->where('emisor', '!=', $tipo)
+                ->orderBy('fecha', 'desc')
+                ->get();
+             
+            }else{
+                $notificaciones = DB::table('notificaciones')
+                ->join('empleados', 'notificaciones.id_empleado', '=', 'empleados.id')
+                ->select('notificaciones.*', 'empleados.nombres', 'empleados.apellidos')
+                ->where('id_lider', $id)
+                ->where('leida', 'No')
+                ->where('emisor', '!=', $tipo)
+                ->orderBy('fecha', 'desc')
+                ->get();
+            }
+
+           
+        }
+        return response()->json($notificaciones);
     }
 
     function cargarEmpresas()
@@ -140,22 +180,23 @@ class empleadosController extends Controller
     function cargarLideres()
     {
         $lideres = DB::table('empleados')
-        ->join('empresas', 'empleados.empresa', 'empresas.id')
-        ->join('departamentos', 'empleados.departamento', '=', 'departamentos.id')
-        ->join('cargos', 'empleados.cargo', '=', 'cargos.id')
-        ->select('empleados.*', 
-        'empresas.nombre as nombre_empresa',
-         'departamentos.nombre as nombre_departamento', 
-         'cargos.nombre as nombre_cargo',
-         DB::raw('(SELECT COUNT(*) FROM lideres_empleados WHERE lider = empleados.id) as empleados_asignados')
-        )
-        ->where('empleados.estado_registro', 'Activo')
-        ->where('empleados.lider', 'Si')
-        ->get();
+            ->join('empresas', 'empleados.empresa', 'empresas.id')
+            ->join('departamentos', 'empleados.departamento', '=', 'departamentos.id')
+            ->join('cargos', 'empleados.cargo', '=', 'cargos.id')
+            ->select(
+                'empleados.*',
+                'empresas.nombre as nombre_empresa',
+                'departamentos.nombre as nombre_departamento',
+                'cargos.nombre as nombre_cargo',
+                DB::raw('(SELECT COUNT(*) FROM lideres_empleados WHERE lider = empleados.id) as empleados_asignados')
+            )
+            ->where('empleados.estado_registro', 'Activo')
+            ->where('empleados.lider', 'Si')
+            ->get();
         return response()->json($lideres);
     }
-    
-    
+
+
 
     function eliminarEmpleado($id)
     {
@@ -267,18 +308,18 @@ class empleadosController extends Controller
             })
             ->get();
 
-            $tareasIds = $tareas->pluck('id');
+        $tareasIds = $tareas->pluck('id');
 
-            // Obtener las evidencias relacionadas a esas tareas
-            $evidencias = DB::table('evidencia_tarea')
-                ->whereIn('tarea', $tareasIds)
-                ->get();
-    
-            // Agregar evidencias a las tareas
-            $tareas = $tareas->map(function ($tarea) use ($evidencias) {
-                $tarea->evidencias = $evidencias->where('tarea', $tarea->id)->values();
-                return $tarea;
-            });
+        // Obtener las evidencias relacionadas a esas tareas
+        $evidencias = DB::table('evidencia_tarea')
+            ->whereIn('tarea', $tareasIds)
+            ->get();
+
+        // Agregar evidencias a las tareas
+        $tareas = $tareas->map(function ($tarea) use ($evidencias) {
+            $tarea->evidencias = $evidencias->where('tarea', $tarea->id)->values();
+            return $tarea;
+        });
 
         return response()->json([
             'tareas' => $tareas
@@ -288,7 +329,7 @@ class empleadosController extends Controller
     function guardarTarea(Request $request)
     {
         $tarea = $request->all();
-       
+
         DB::beginTransaction();
         try {
 
@@ -315,11 +356,37 @@ class empleadosController extends Controller
                     ]);
                 }
             }
-         
+
+            //consultar lider del empleado
+            $lider = DB::table('lideres_empleados')->where('empleado', $tarea['empleado'])->first();
+
+            //insertar notificacion
+            if ($lider || Auth::user()->tipo_usuario == 'Administrador') {
+                DB::table('notificaciones')->insert([
+                    'id_lider' => $lider->lider,
+                    'id_empleado' => $tarea['empleado'],
+                    'id_tarea' => $IdTarea,
+                    'descripcion' => 'Se te ha asignado una nueva tarea',
+                    'leida' => 0,
+                    'fecha' => now(),
+                    'tipo' => 'Tarea',
+                    'emisor' => 'Lider'
+                ]);
+            } else {
+                DB::table('notificaciones')->insert([
+                    'id_lider' => $tarea['empleado'],
+                    'id_empleado' => $tarea['empleado'],
+                    'id_tarea' => $IdTarea,
+                    'descripcion' => 'Ha creado una nueva tarea',
+                    'leida' => 'No',
+                    'fecha' => now(),
+                    'tipo' => 'Tarea',
+                    'emisor' => 'Empleado'
+                ]);
+            }
+
             //consultar tareas del empleado
             DB::commit();
-          
-
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json(['error' => $e->getMessage()], 500);
@@ -327,10 +394,10 @@ class empleadosController extends Controller
 
 
         $tareas = DB::table('tareas_empleados')
-        ->where('empleado', $tarea['empleado'])
-        ->orderBy('id', 'desc')
-        ->get();
-          
+            ->where('empleado', $tarea['empleado'])
+            ->orderBy('id', 'desc')
+            ->get();
+
         return response()->json([
             'success' => 'Tarea guardada correctamente',
             'tareas' => $tareas
@@ -354,6 +421,7 @@ class empleadosController extends Controller
                     'estado' => $tarea['estado']
                 ]);
             }
+            //insertar evidencias
             if (isset($tarea['evidencias'])) {
                 $evidencias = $tarea['evidencias'];
                 foreach ($evidencias as $evidencia) {
@@ -366,7 +434,41 @@ class empleadosController extends Controller
                 }
             }
 
+            //consultar evidencias de la tarea
             $evidencias = DB::table('evidencia_tarea')->where('tarea', $id)->get();
+
+            //consultar empleado de la tarea
+            $empleado = DB::table('tareas_empleados')->where('id', $id)->first();
+
+            
+            $lider = DB::table('lideres_empleados')
+            ->where('empleado', $empleado->empleado)
+            ->first();
+            
+            //insertar notificacion
+            if (Auth::user()->lider == 'Si' || Auth::user()->tipo_usuario == 'Administrador') {
+                DB::table('notificaciones')->insert([
+                    'id_lider' => $lider->lider,
+                    'id_empleado' => $empleado->empleado,
+                    'id_tarea' => $id,
+                    'descripcion' => 'Se te ha actualizado el estado de la tarea a ' . $tarea['estado'],
+                    'leida' => 0,
+                    'fecha' => now(),
+                    'tipo' => 'Tarea',
+                    'emisor' => 'Lider'
+                ]);
+            } else {
+                DB::table('notificaciones')->insert([
+                    'id_lider' => $lider->lider,
+                    'id_empleado' => $empleado->empleado,
+                    'id_tarea' => $id,
+                    'descripcion' => 'Ha actualizado el estado de la tarea a ' . $tarea['estado'],
+                    'leida' => 0,
+                    'fecha' => now(),
+                    'tipo' => 'Tarea',
+                    'emisor' => 'Empleado'
+                ]);
+            }
 
 
             DB::commit();
@@ -383,10 +485,10 @@ class empleadosController extends Controller
     function cargarEmpleadosLider($id)
     {
         $empleados = DB::table('lideres_empleados')
-        ->join('empleados', 'lideres_empleados.empleado', '=', 'empleados.id')
-        ->select('empleados.*', 'lideres_empleados.lider')
-        ->where('lideres_empleados.lider', $id)
-        ->get();
+            ->join('empleados', 'lideres_empleados.empleado', '=', 'empleados.id')
+            ->select('empleados.*', 'lideres_empleados.lider')
+            ->where('lideres_empleados.lider', $id)
+            ->get();
         return response()->json($empleados);
     }
 
@@ -435,16 +537,16 @@ class empleadosController extends Controller
     {
         $searchTerm = $request->input('search');
         $empleados = DB::table('empleados')
-        ->join('empresas', 'empleados.empresa', 'empresas.id')
-        ->join('cargos', 'empleados.cargo', 'cargos.id')
-        ->select('empleados.*', 'empresas.nombre as nombre_empresa', 'cargos.nombre as nombre_cargo')
-        ->where('empleados.estado_registro', 'Activo')
-        ->where(function ($query) use ($searchTerm) {
-            $query->where('empleados.nombres', 'like', '%' . $searchTerm . '%')
-                ->orWhere('empleados.apellidos', 'like', '%' . $searchTerm . '%')
-                ->orWhere('empleados.identificacion', 'like', '%' . $searchTerm . '%');
-        })      
-        ->get();
+            ->join('empresas', 'empleados.empresa', 'empresas.id')
+            ->join('cargos', 'empleados.cargo', 'cargos.id')
+            ->select('empleados.*', 'empresas.nombre as nombre_empresa', 'cargos.nombre as nombre_cargo')
+            ->where('empleados.estado_registro', 'Activo')
+            ->where(function ($query) use ($searchTerm) {
+                $query->where('empleados.nombres', 'like', '%' . $searchTerm . '%')
+                    ->orWhere('empleados.apellidos', 'like', '%' . $searchTerm . '%')
+                    ->orWhere('empleados.identificacion', 'like', '%' . $searchTerm . '%');
+            })
+            ->get();
 
         return response()->json($empleados);
     }
@@ -574,11 +676,11 @@ class empleadosController extends Controller
             ->leftJoin("departamentos", "empleados.departamento", "departamentos.id")
             ->leftJoin("empresas", "empleados.empresa", "empresas.id")
             ->select("empleados.*", "cargos.nombre as cargo", "departamentos.nombre as departamento", "empresas.nombre as empresa")
-         
+
             ->get();
-    
+
         $empleadosData = [];
-    
+
         foreach ($empleados as $empleado) {
             // Obtener las tareas asignadas al empleado
             $tareas = DB::table('tareas_empleados')
@@ -591,25 +693,25 @@ class empleadosController extends Controller
                 ->where('empleado', $empleado->id)
                 ->where('estado', 'Activo')
                 ->get();
-    
+
             // Contar las tareas según su estado
             $tareasCompletadas = $tareas->where('estado', 'Completada')->count();
             $tareasPendientes = $tareas->where('estado', 'Pendiente')->count();
             $tareasEnProceso = $tareas->where('estado', 'En Proceso')->count();
 
-             //CALCULAR TAREAS ATRASADAS si la fecha pactada es menor a la fecha actual
-            if($tareas->where('fecha_pactada', '<', now())->count() > 0){
+            //CALCULAR TAREAS ATRASADAS si la fecha pactada es menor a la fecha actual
+            if ($tareas->where('fecha_pactada', '<', now())->count() > 0) {
                 $tareasAtrasadas = $tareas->where('fecha_pactada', '<', now())->count();
-            }else{
+            } else {
                 $tareasAtrasadas = 0;
             }
 
-    
+
             // Calcular eficiencia y avance
             $totalTareas = $tareas->count();
             $eficiencia = $totalTareas > 0 ? round(($tareasCompletadas / $totalTareas) * 100, 2) : 0;
             $avance = $totalTareas > 0 ? round(($tareasCompletadas / $totalTareas) * 100, 2) : 0;
-    
+
             // Obtener últimas 3 tareas
             $tareasRecientes = $tareas->sortByDesc('fecha_creacion')->take(3)->map(function ($tarea) {
                 return [
@@ -650,11 +752,7 @@ class empleadosController extends Controller
                 'tareasRecientes' => $tareasRecientes
             ];
         }
-    
+
         return response()->json($empleadosData);
     }
-    
-    
-
 }
-                           

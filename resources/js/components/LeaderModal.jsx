@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FaPlus, FaEdit, FaTrash, FaSearch, FaUserPlus, FaUsers } from 'react-icons/fa';
+import { FaPlus, FaTrash,  FaUsers } from 'react-icons/fa6';
 import axios from 'axios';
 import Swal from 'sweetalert2';
 import '../css/LeaderModal.css';
@@ -141,7 +141,7 @@ const LeaderModal = ({ isOpen, onClose }) => {
                                     <td>{lider.nombre_cargo}</td>
                                     <td>{lider.nombre_departamento}</td>
                                     <td>{lider.nombre_empresa}</td>
-                                    <td>{lider.empleados_asignados || 0}</td>
+                                    <td style={{textAlign: 'center', fontWeight: 'bold'}}>{lider.empleados_asignados || 0}</td>
                                     <td>
                                         <div className="action-buttons">
                                             <button 

@@ -29,7 +29,8 @@ class LoginController extends Controller
                     'name' => $user->name,
                     'email' => $user->email,
                     'tipo_usuario' => $user->tipo_usuario,
-                    'empleado' => $user->empleado
+                    'empleado' => $user->empleado,
+                    'lider' => $user->lider
                 ]
             ]);
         }

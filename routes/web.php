@@ -59,6 +59,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // buscar tareas
     Route::get('/parametros/buscarTareas/{id}', [empleadosController::class, 'buscarTareas']);
+
+    // cargar notificaciones
+    Route::get('/notificaciones', [empleadosController::class, 'cargarNotificaciones']);
 });
 
 // Esta ruta debe manejar todas las rutas de la aplicación React

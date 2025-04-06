@@ -14,12 +14,14 @@ import CompanyModal from './CompanyModal';
 import LeaderModal from './LeaderModal';
 import { useNavigate } from 'react-router-dom';
 import '../css/parameters.css';
+import Header from './Header';
 
 const Parameters = () => {
     const [showEmployeeModal, setShowEmployeeModal] = useState(false);
     const [showUserModal, setShowUserModal] = useState(false);
     const [showCompanyModal, setShowCompanyModal] = useState(false);
     const [showLeaderModal, setShowLeaderModal] = useState(false);
+    const [showUserMenu, setShowUserMenu] = useState(false);
     const navigate = useNavigate();
 
     const parameterCards = [
@@ -59,67 +61,71 @@ const Parameters = () => {
     ];
 
     return (
-        <div className="parameters-container">
-            <div className="parameters-header">
-                <h1>Parámetros del Sistema</h1>
-                <button 
-                    className="back-button"
-                    onClick={() => navigate('/dashboard')}
-                >
-                    <FaArrowLeft /> Regresar al Dashboard
-                </button>
-            </div>
-           
-          
-
-            <div className="parameters-grid">
-                {parameterCards.map((card, index) => (
-                    <div 
-                        key={card.id} 
-                        className="parameter-card"
-                        onClick={card.onClick}
-                        style={{'--card-index': index}}
+        <>
+            <Header showUserMenu={showUserMenu} setShowUserMenu={setShowUserMenu} />
+            <div className="parameters-container">
+                
+                <div className="parameters-header">
+                   <h1>Parámetros del Sistema</h1>
+                    <button 
+                        className="back-button"
+                        onClick={() => navigate('/dashboard')}
                     >
-                        <div className="card-icon">
-                            {card.icon}
+                        <FaArrowLeft /> Regresar al Dashboard
+                    </button>
+                </div>
+               
+              
+
+                <div className="parameters-grid">
+                    {parameterCards.map((card, index) => (
+                        <div 
+                            key={card.id} 
+                            className="parameter-card"
+                            onClick={card.onClick}
+                            style={{'--card-index': index}}
+                        >
+                            <div className="card-icon">
+                                {card.icon}
+                            </div>
+                            <div className="card-content">
+                                <h3>{card.title}</h3>
+                                <p>{card.description}</p>
+                            </div>
                         </div>
-                        <div className="card-content">
-                            <h3>{card.title}</h3>
-                            <p>{card.description}</p>
-                        </div>
-                    </div>
-                ))}
+                    ))}
+                </div>
+
+                {showEmployeeModal && (
+                    <EmployeeModal 
+                        isOpen={showEmployeeModal} 
+                        onClose={() => setShowEmployeeModal(false)} 
+                    />
+                )}
+
+                {showUserModal && (
+                    <UserModal 
+                        isOpen={showUserModal} 
+                        onClose={() => setShowUserModal(false)} 
+                    />
+                )}
+
+                {showCompanyModal && (
+                    <CompanyModal 
+                        isOpen={showCompanyModal} 
+                        onClose={() => setShowCompanyModal(false)} 
+                    />
+                )}
+
+                {showLeaderModal && (
+                    <LeaderModal 
+                        isOpen={showLeaderModal} 
+                        onClose={() => setShowLeaderModal(false)} 
+                    />
+                )}
+
             </div>
-
-            {showEmployeeModal && (
-                <EmployeeModal 
-                    isOpen={showEmployeeModal} 
-                    onClose={() => setShowEmployeeModal(false)} 
-                />
-            )}
-
-            {showUserModal && (
-                <UserModal 
-                    isOpen={showUserModal} 
-                    onClose={() => setShowUserModal(false)} 
-                />
-            )}
-
-            {showCompanyModal && (
-                <CompanyModal 
-                    isOpen={showCompanyModal} 
-                    onClose={() => setShowCompanyModal(false)} 
-                />
-            )}
-
-            {showLeaderModal && (
-                <LeaderModal 
-                    isOpen={showLeaderModal} 
-                    onClose={() => setShowLeaderModal(false)} 
-                />
-            )}
-
-        </div>
+        </>
     );
 };
 

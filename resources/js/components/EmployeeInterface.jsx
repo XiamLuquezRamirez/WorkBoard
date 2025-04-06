@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
-import { FaPlus, FaClock, FaSpinner, FaCheck, FaEye, FaFile, FaFileWord, FaFileImage, FaFilePdf } from 'react-icons/fa';
+import { FaPlus, FaClock, FaSpinner, FaCheck, FaEye, FaSearch, FaFile, FaFileWord, FaFileImage, FaFilePdf } from 'react-icons/fa';
 import TaskDetailsModal from './TaskDetailsModal';
 import axios from 'axios';
 import Swal from 'sweetalert2';
 import '../css/EmployeeInterface.css';
-
+import { useUser } from './UserContext';
 const EmployeeInterface = ({ user }) => {
+ 
     const [columns, setColumns] = useState({
         'Pendiente': {
             title: 'Pendiente',
@@ -51,6 +52,7 @@ const EmployeeInterface = ({ user }) => {
 
     const loadTasks = async () => {
         try {
+            console.log(user);
             const response = await axios.get(`/parametros/cargarTareas/${user.empleado}`);
             organizeTasks(response.data.tareas);
         } catch (error) {
@@ -203,12 +205,25 @@ const EmployeeInterface = ({ user }) => {
         <div className="kanban-container">
             <div className="kanban-header">
                 <h2>Mis Tareas</h2>
-                <button 
+
+                <div className="header-right">
+                {user.lider == 'Si' && (
+                <button
+                className="search-task-button"
+                onClick={() => setShowNewTaskModal(true)}
+                >
+                    <FaSearch /> Seguimiento de Tareas
+                </button>
+           
+                )}
+                     <button 
                     className="new-task-button"
                     onClick={() => setShowNewTaskModal(true)}
                 >
                     <FaPlus /> Nueva Tarea
                 </button>
+                </div>
+                
             </div>
 
             {/* Modal de nueva tarea */}

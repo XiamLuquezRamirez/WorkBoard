@@ -576,7 +576,7 @@ const EmployeeModal = ({ isOpen, onClose }) => {
                         />
                     </div>
                     <button 
-                        className="add-button"
+                        className="add-button" style={{width: '200px'}}
                         onClick={() => {
                             setNewEmpleado(initialEmpleadoState);
                             setShowAddForm(true);

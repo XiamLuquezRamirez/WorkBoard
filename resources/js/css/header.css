@@ -1,10 +1,7 @@
-/* Mover los estilos del header aquí */
-.header {
-    /* ... estilos existentes ... */
-}
 
 .user-section {
-    /* ... estilos existentes ... */
+   margin-left: 25px;
+   
 }
 
 .dropdown-item.disabled {
@@ -15,3 +12,8 @@
 .dropdown-item.disabled:hover {
     background-color: inherit;
 } 
+
+.header-right {
+    display: flex;
+    align-items: center;
+}

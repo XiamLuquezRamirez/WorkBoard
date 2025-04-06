@@ -3,8 +3,8 @@ import { FaBell, FaCheck, FaTrash, FaCircle } from 'react-icons/fa';
 import axios from 'axios';
 import Swal from 'sweetalert2';
 
-const NotificationsModal = ({ isOpen, onClose }) => {
-    const [notifications, setNotifications] = useState([]);
+const NotificationsModal = ({ isOpen, onClose, notifications, setNotifications }) => {
+    
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -14,14 +14,15 @@ const NotificationsModal = ({ isOpen, onClose }) => {
     }, [isOpen]);
 
     const cargarNotificaciones = async () => {
-        try {
-            const response = await axios.get('/api/notifications');
-            setNotifications(response.data);
-            setLoading(false);
-        } catch (error) {
-            console.error('Error al cargar notificaciones:', error);
-            setLoading(false);
-        }
+       setLoading(true);
+        const response = await axios.get("/notificaciones", {
+            params: {
+                tipo: tipo,
+                id: currentUser.empleado
+            },
+        });
+        setNotifications(response.data);
+        setLoading(false);
     };
 
     const marcarComoLeida = async (id) => {
@@ -84,7 +85,7 @@ const NotificationsModal = ({ isOpen, onClose }) => {
                 <div className="modal-header">
                     <div className="header-title">
                         <FaBell />
-                        <h2>Notificaciones</h2>
+                        <h2>Notificaciones nuevas</h2>
                         {notifications.some(n => !n.read_at) && (
                             <span className="unread-count">
                                 {notifications.filter(n => !n.read_at).length}

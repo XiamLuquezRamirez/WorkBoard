@@ -22,10 +22,30 @@
     gap: 0.5rem;
     cursor: pointer;
     transition: all 0.2s ease;
+    font-weight: bold;
+}
+.search-task-button {
+    background: #16A34A;
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-right: 10px;
+    font-weight: bold;
+}
+
+.search-task-button:hover {
+    background: #0e7c37;
+    transform: translateY(-2px);
 }
 
 .new-task-button:hover {
-    background: var(--primary-color-dark);
+    background: #2248f0;
     transform: translateY(-2px);
 }
 
