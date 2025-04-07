@@ -1,16 +1,28 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { FaFileUpload, FaCheck, FaClock, FaSpinner, FaDownload, FaTrash, FaFile, FaImage } from 'react-icons/fa';
 import axios from 'axios';
 import Swal from 'sweetalert2';
 import '../css/TaskDetailsModal.css';
+import AuthMiddleware from '../middleware/AuthMiddleware';
 
 const TaskDetailsModal = ({ task, onClose, onUpdate }) => {
     const [loading, setLoading] = useState(false);
     const [currentStatus, setCurrentStatus] = useState(task.estado);
     const [isChangingStatus, setIsChangingStatus] = useState(false);
     const [previewFiles, setPreviewFiles] = useState([]);
-    const fileInputRef = useRef(null);
     const [evidencias, setEvidencias] = useState(task.evidencias || []);
+    const [observaciones, setObservaciones] = useState(task.observaciones || '');
+    const [vistoBueno, setVistoBueno] = useState(task.visto_bueno || false);
+    const [currentUser, setCurrentUser] = useState(null);
+    const fileInputRef = useRef(null);
+
+    useEffect(() => {
+        const user = AuthMiddleware.getUser();
+        setCurrentUser(user);
+    }, []);
+
+    const isLider = currentUser?.lider === 'Si';
+    const isOwnTask = currentUser?.empleado === task.empleado;
 
     const handleFileChange = (e) => {
         const files = Array.from(e.target.files);
@@ -78,8 +90,6 @@ const TaskDetailsModal = ({ task, onClose, onUpdate }) => {
                 created_at: new Date().toISOString()
             }));
 
-
-
             setEvidencias(prevEvidencias => [...prevEvidencias, ...nuevasEvidencias]);
 
             // Actualizar estado de la tarea y evidencias
@@ -115,7 +125,6 @@ const TaskDetailsModal = ({ task, onClose, onUpdate }) => {
                     denyButtonText: 'Cancelar'
                 });
 
-                console.log(result)
                 // Si se presiona "Cancelar"
                 if (result.isDenied) {
                     setIsChangingStatus(false);
@@ -200,31 +209,20 @@ const TaskDetailsModal = ({ task, onClose, onUpdate }) => {
                                     headers: {
                                         'Content-Type': 'multipart/form-data'
                                     }
-                                    
                                 });
-                               
-                                // Actualizar evidencias con las nuevas
-                                const nuevasEvidencias = response.data.map(evidencia => ({
-                                    id: evidencia.id,
-                                    nombre: evidencia.nombre_original,
-                                    evidencia: evidencia.ruta,
-                                    tipo: evidencia.tipo,
-                                    created_at: new Date().toISOString()
-                                }));
 
-                                setEvidencias(prev => [...prev, ...nuevasEvidencias]);
-
-                                // Actualizar estado de la tarea y evidencias
+                                // Actualizar estado de la tarea
                                 await axios.put(`/parametros/actualizarEstadoTarea/${task.id}`, {
                                     estado: newStatus,
-                                    evidencias: evidencias
+                                    evidencias: response.data
                                 });
 
+                                setCurrentStatus(newStatus);
+                                onUpdate();
                                 return true;
                             } catch (error) {
-                                Swal.showValidationMessage(
-                                    `Error al subir archivos: ${error.message}`
-                                );
+                                console.error(error);
+                                Swal.showValidationMessage('Error al subir las evidencias');
                                 return false;
                             } finally {
                                 setLoading(false);
@@ -233,9 +231,7 @@ const TaskDetailsModal = ({ task, onClose, onUpdate }) => {
                     });
 
                     if (uploadConfirmed) {
-                        setCurrentStatus(newStatus);
-                        onUpdate();
-                        Swal.fire('¡Éxito!', 'Tarea completada y evidencias subidas correctamente', 'success');
+                        Swal.fire('¡Éxito!', 'Tarea completada con evidencias', 'success');
                     }
                 }
             } else {
@@ -280,6 +276,26 @@ const TaskDetailsModal = ({ task, onClose, onUpdate }) => {
         }
     };
 
+    const handleSaveObservations = async () => {
+        try {
+            setLoading(true);
+            await axios.put(`/parametros/realizarObservaciones/${task.id}`, {
+                observaciones,
+                visto_bueno: vistoBueno,
+                id_empleado: task.empleado,
+                id_lider: currentUser.empleado
+            });
+            
+            onUpdate();
+            Swal.fire('¡Éxito!', 'Observaciones guardadas correctamente', 'success');
+        } catch (error) {
+            console.error(error);
+            Swal.fire('Error', 'Error al guardar las observaciones', 'error');
+        } finally {
+            setLoading(false);
+        }
+    };
+
     return (
         <div className="modal-overlay" onClick={(e) => e.target.className === 'modal-overlay' && onClose()}>
             <div className="task-details-modal">
@@ -315,52 +331,57 @@ const TaskDetailsModal = ({ task, onClose, onUpdate }) => {
                             )}
                         </div>
 
-                        <div className="status-control">
-                            <h4>Cambiar estado de la tarea</h4>
-                            <div className="status-buttons">
-                                <button 
-                                    className={`status-button pending ${currentStatus === 'Pendiente' ? 'active' : ''}`}
-                                    onClick={() => handleStatusChange('Pendiente')}
-                                    disabled={isChangingStatus || currentStatus === 'Pendiente'}
-                                >
-                                    <FaClock /> Pendiente
-                                </button>
-                                <button 
-                                    className={`status-button in-progress ${currentStatus === 'En progreso' ? 'active' : ''}`}
-                                    onClick={() => handleStatusChange('En progreso')}
-                                    disabled={isChangingStatus || currentStatus === 'En progreso'}
-                                >
-                                    <FaSpinner /> En Progreso
-                                </button>
-                                <button 
-                                    className={`status-button completed ${currentStatus === 'Completada' ? 'active' : ''}`}
-                                    onClick={() => handleStatusChange('Completada')}
-                                    disabled={isChangingStatus || currentStatus === 'Completada'}
-                                >
-                                    <FaCheck /> Completada
-                                </button>
+                        {/* Solo mostrar controles de estado si es el dueño de la tarea */}
+                        {isOwnTask && (
+                            <div className="status-control">
+                                <h4>Cambiar estado de la tarea</h4>
+                                <div className="status-buttons">
+                                    <button 
+                                        className={`status-button pending ${currentStatus === 'Pendiente' ? 'active' : ''}`}
+                                        onClick={() => handleStatusChange('Pendiente')}
+                                        disabled={isChangingStatus || currentStatus === 'Pendiente'}
+                                    >
+                                        <FaClock /> Pendiente
+                                    </button>
+                                    <button 
+                                        className={`status-button in-progress ${currentStatus === 'En progreso' ? 'active' : ''}`}
+                                        onClick={() => handleStatusChange('En progreso')}
+                                        disabled={isChangingStatus || currentStatus === 'En progreso'}
+                                    >
+                                        <FaSpinner /> En Progreso
+                                    </button>
+                                    <button 
+                                        className={`status-button completed ${currentStatus === 'Completada' ? 'active' : ''}`}
+                                        onClick={() => handleStatusChange('Completada')}
+                                        disabled={isChangingStatus || currentStatus === 'Completada'}
+                                    >
+                                        <FaCheck /> Completada
+                                    </button>
+                                </div>
                             </div>
-                        </div>
+                        )}
                     </div>
 
                     {/* Panel derecho: Evidencias */}
                     <div className="evidence-panel">
                         <h4>Evidencias de la tarea</h4>
                         
-                        {/* Sección de carga de archivos */}
-                        <div className="evidence-upload">
-                            <input
-                                type="file"
-                                multiple
-                                onChange={handleFileChange}
-                                className="file-input"
-                                id="evidence-files"
-                                ref={fileInputRef}
-                            />
-                            <label htmlFor="evidence-files" className="upload-button">
-                                <FaFileUpload /> Seleccionar archivos
-                            </label>
-                        </div>
+                        {/* Sección de carga de archivos - Solo para el dueño de la tarea */}
+                        {isOwnTask && (
+                            <div className="evidence-upload">
+                                <input
+                                    type="file"
+                                    multiple
+                                    onChange={handleFileChange}
+                                    className="file-input"
+                                    id="evidence-files"
+                                    ref={fileInputRef}
+                                />
+                                <label htmlFor="evidence-files" className="upload-button">
+                                    <FaFileUpload /> Seleccionar archivos
+                                </label>
+                            </div>
+                        )}
 
                         {/* Preview de archivos seleccionados */}
                         {previewFiles.length > 0 && (
@@ -419,44 +440,90 @@ const TaskDetailsModal = ({ task, onClose, onUpdate }) => {
                         {/* Lista de evidencias existentes */}
                         <div className="evidence-list">
                             <h5>Evidencias cargadas</h5>
-                            {evidencias.map(evidencia => (
-                                <div key={evidencia.id} className="evidence-item">
-                                    <div className="evidence-info">
-                                        <div className="evidence-icon">
-                                            {evidencia.tipo?.includes('image') ? (
-                                                <FaImage />
-                                            ) : (
-                                                <FaFile />
+                            {evidencias.length > 0 ? (
+                                evidencias.map(evidencia => (
+                                    <div key={evidencia.id} className="evidence-item">
+                                        <div className="evidence-info">
+                                            <div className="evidence-icon">
+                                                {evidencia.tipo?.includes('image') ? (
+                                                    <FaImage />
+                                                ) : (
+                                                    <FaFile />
+                                                )}
+                                            </div>
+                                            <div className="evidence-details">
+                                                <span className="evidence-name">{evidencia.nombre}</span>
+                                                <span className="evidence-date">
+                                                    {new Date(evidencia.created_at).toLocaleDateString()}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div className="evidence-actions">
+                                            <a 
+                                                href={evidencia.ruta} 
+                                                target="_blank" 
+                                                rel="noopener noreferrer"
+                                                className="download-button"
+                                            >
+                                                <FaDownload />
+                                            </a>
+                                            {/* Solo permitir eliminar al dueño de la tarea */}
+                                            {isOwnTask && (
+                                                <button 
+                                                    className="delete-button"
+                                                    onClick={() => handleDeleteEvidence(evidencia.id)}
+                                                >
+                                                    <FaTrash />
+                                                </button>
                                             )}
                                         </div>
-                                        <div className="evidence-details">
-                                            <span className="evidence-name">{evidencia.nombre}</span>
-                                            <span className="evidence-date">
-                                                {new Date(evidencia.created_at).toLocaleDateString()}
-                                            </span>
-                                        </div>
                                     </div>
-                                    <div className="evidence-actions">
-                                        <a 
-                                            href={`/storage/${evidencia.evidencia}`} 
-                                            target="_blank" 
-                                            className="action-button download"
-                                            title="Descargar"
-                                        >
-                                            <FaDownload />
-                                        </a>
-                                        <button
-                                            className="action-button delete"
-                                            onClick={() => handleDeleteEvidence(evidencia.id)}
-                                            title="Eliminar"
-                                        >
-                                            <FaTrash />
-                                        </button>
-                                    </div>
-                                </div>
-                            ))}
+                                ))
+                            ) : (
+                                <p className="no-evidence">No hay evidencias cargadas</p>
+                            )}
                         </div>
                     </div>
+
+                    {/* Panel de observaciones - Solo para líderes */}
+                    {isLider && (
+                        <div className="observations-panel">
+                            <h4>Observaciones</h4>
+                            <textarea
+                                value={observaciones}
+                                onChange={(e) => setObservaciones(e.target.value)}
+                                placeholder="Escriba sus observaciones aquí..."
+                                rows="4"
+                                className="observations-textarea"
+                            />
+                            
+                            <div className="visto-bueno-checkbox">
+                                <label>
+                                    <input
+                                        type="checkbox"
+                                        checked={vistoBueno}
+                                        onChange={(e) => setVistoBueno(e.target.checked)}
+                                    />
+                                    Dar visto bueno
+                                </label>
+                            </div>
+
+                            <button 
+                                className="save-observations-button"
+                                onClick={handleSaveObservations}
+                                disabled={loading}
+                            >
+                                {loading ? (
+                                    <>
+                                        <FaSpinner className="spinner" /> 
+                                        Guardando...
+                                    </>
+                                ) : (
+                                    'Guardar Observaciones'
+                                )}
+                            </button>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

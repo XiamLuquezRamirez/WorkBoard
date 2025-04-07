@@ -1,20 +1,27 @@
 import React, { useState } from 'react';
 import { FaBell, FaClipboardList, FaComment, FaCalendar } from 'react-icons/fa';
 import '../css/NotificationModal.css';
+import axios from 'axios';
+import TaskDetailsModal from './TaskDetailsModal';
+import Swal from 'sweetalert2';
 
 const NotificationModal = ({ isOpen, onClose, notifications, setNotifications }) => {
     const [activeTab, setActiveTab] = useState('unread'); // 'read' o 'unread'
+    const [selectedTask, setSelectedTask] = useState(null);
+    const [showTaskDetailsModal, setShowTaskDetailsModal] = useState(false);
     
     if (!isOpen) return null;
 
     const getIcon = (tipo) => {
         switch (tipo) {
-            case 'tarea':
+            case 'Tarea':
                 return <FaClipboardList />;
-            case 'mensaje':
+            case 'Mensaje':
                 return <FaComment />;
-            case 'recordatorio':
+            case 'Recordatorio':
                 return <FaCalendar />;
+            case 'Observaciones':
+                return <FaComment />;
             default:
                 return <FaBell />;
         }
@@ -28,19 +35,35 @@ const NotificationModal = ({ isOpen, onClose, notifications, setNotifications })
         ));
     };
 
-    const handleNotificationClick = (notification) => {
+    const handleNotificationClick = async (notification) => {
         // Marcar como leída si no lo está
         if (!notification.leida) {
             handleMarkAsRead(notification.id);
         }
-        
+
+        // Cambiar estado de la notificacion en la base de datos
+        await axios.get(`/cambioEstadoNotificaciones/${notification.id}`, {
+            leida: true
+        });
+
         // Abrir el detalle de la tarea
-        if (notification.tipo === 'tarea') {
-            // Aquí puedes implementar la lógica para abrir el detalle de la tarea
-            // Por ejemplo, redirigir a la página de detalle de la tarea
-            window.location.href = `/tareas/${notification.tarea_id}`;
-        }
-        // Puedes añadir más condiciones para otros tipos de notificaciones
+            try {
+                const response = await axios.get(`/parametros/cargarTareaSeleccionada/${notification.id_tarea}`);
+                console.log('Respuesta del servidor:', response.data);
+                
+                if (response.data) {
+                    const tarea = response.data;
+                    if (tarea) {
+                        console.log('Tarea encontrada:', tarea);
+                        setSelectedTask(tarea);
+                        setShowTaskDetailsModal(true);
+                    }
+                }
+            } catch (error) {
+                console.error('Error al cargar los detalles de la tarea:', error);
+                Swal.fire('Error', 'No se pudieron cargar los detalles de la tarea', 'error');
+            }
+        
     };
 
     // Filtrar notificaciones por estado
@@ -48,35 +71,31 @@ const NotificationModal = ({ isOpen, onClose, notifications, setNotifications })
     const unreadNotifications = notifications.filter(notif => !notif.leida);
 
     return (
-        <div className="modal-overlay">
+        <div className="modal-overlay" onClick={(e) => e.target.className === 'modal-overlay' && onClose()}>
             <div className="notification-modal">
                 <div className="modal-header">
                     <h2>Notificaciones</h2>
                     <button className="close-button" onClick={onClose}>&times;</button>
                 </div>
-
-                <div className="tab-container">
-                    <button 
-                        className={`tab-button ${activeTab === 'read' ? 'active' : ''}`}
-                        onClick={() => setActiveTab('read')}
-                    >
-                        Notificaciones leídas ({readNotifications.length})
-                    </button>
-                    <button 
-                        className={`tab-button ${activeTab === 'unread' ? 'active' : ''}`}
-                        onClick={() => setActiveTab('unread')}
-                    >
-                        Notificaciones no leídas ({unreadNotifications.length})
-                    </button>
-                </div>
-
-                <div className="tab-content">
-                    {activeTab === 'read' ? (
-                        <div className="tab-content-item">
-                            {readNotifications.length === 0 ? (
-                                <p className="no-notifications">No hay notificaciones leídas</p>
-                            ) : (
-                                readNotifications.map(notification => (
+                <div className="modal-body">
+                    <div className="tabs">
+                        <button 
+                            className={`tab ${activeTab === 'unread' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('unread')}
+                        >
+                            No leídas ({unreadNotifications.length})
+                        </button>
+                        <button 
+                            className={`tab ${activeTab === 'read' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('read')}
+                        >
+                            Leídas ({readNotifications.length})
+                        </button>
+                    </div>
+                    <div className="notifications-list">
+                        {activeTab === 'unread' ? (
+                            notifications.filter(n => !n.leida).length > 0 ? (
+                                notifications.filter(n => !n.leida).map(notification => (
                                     <div 
                                         key={notification.id} 
                                         className="notification-item"
@@ -92,17 +111,15 @@ const NotificationModal = ({ isOpen, onClose, notifications, setNotifications })
                                         </div>
                                     </div>
                                 ))
-                            )}
-                        </div>
-                    ) : (
-                        <div className="tab-content-item">
-                            {unreadNotifications.length === 0 ? (
-                                <p className="no-notifications">No hay notificaciones no leídas</p>
                             ) : (
-                                unreadNotifications.map(notification => (
+                                <p className="no-notifications">No hay notificaciones sin leer</p>
+                            )
+                        ) : (
+                            notifications.filter(n => n.leida).length > 0 ? (
+                                notifications.filter(n => n.leida).map(notification => (
                                     <div 
                                         key={notification.id} 
-                                        className="notification-item unread"
+                                        className="notification-item"
                                         onClick={() => handleNotificationClick(notification)}
                                     >
                                         <div className="notification-icon">
@@ -115,11 +132,32 @@ const NotificationModal = ({ isOpen, onClose, notifications, setNotifications })
                                         </div>
                                     </div>
                                 ))
-                            )}
-                        </div>
-                    )}
+                            ) : (
+                                <p className="no-notifications">No hay notificaciones leídas</p>
+                            )
+                        )}
+                    </div>
                 </div>
             </div>
+            {showTaskDetailsModal && selectedTask && (
+                <TaskDetailsModal
+                    task={selectedTask}
+                    onClose={() => {
+                        setShowTaskDetailsModal(false);
+                        setSelectedTask(null);
+                    }}
+                    onUpdate={() => {
+                        // Actualizar la lista de notificaciones si es necesario
+                        setNotifications(prevNotifications => 
+                            prevNotifications.map(notif => 
+                                notif.id_tarea === selectedTask.id 
+                                    ? {...notif, leida: true}
+                                    : notif
+                            )
+                        );
+                    }}
+                />
+            )}
         </div>
     );
 };

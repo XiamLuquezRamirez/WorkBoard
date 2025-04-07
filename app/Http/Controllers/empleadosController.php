@@ -89,6 +89,13 @@ class empleadosController extends Controller
         return response()->json(['success' => 'Empleado guardado correctamente'], 200);
     }
 
+    function cambiarEstadoNotificacion(Request $request, $id)
+    {
+        $notificacion = $request->all();
+        DB::table('notificaciones')->where('id', $id)->update(['leida' => 1]);  
+        return response()->json(['success' => 'Notificación actualizada correctamente'], 200);
+    }
+
     function guardarAsignacionesLider(Request $request)
     {
         $asignaciones = $request->all();
@@ -754,5 +761,47 @@ class empleadosController extends Controller
         }
 
         return response()->json($empleadosData);
+    }
+
+    function cargarTareaSeleccionada($id)
+    {
+        $tarea = DB::table('tareas_empleados')->where('id', $id)->first();
+
+        $evidencias = DB::table('evidencia_tarea')->where('tarea', $id)->get();
+
+        $tarea->evidencias = $evidencias;
+
+        return response()->json($tarea);
+    }
+
+    function realizarObservaciones(Request $request, $id)
+    {
+      
+        $data = $request->all();
+        
+        $observaciones = DB::table('observaciones_tareas')->insert([
+            'id_tarea' => $id,
+            'observaciones' => $data['observaciones'], 
+            'visto_bueno' => $data['visto_bueno']
+        ]);
+
+        //actualizar estado de la tarea
+        $tarea = DB::table('tareas_empleados')->where('id', $id)->update([
+            'visto_bueno' => $data['visto_bueno']
+        ]);
+
+        //generar notificacion
+        $notificacion = DB::table('notificaciones')->insert([
+            'id_tarea' => $id,
+            'descripcion' => 'Se han realizado observaciones a la tarea',
+            'fecha' => now(),
+            'tipo' => 'Observaciones',
+            'leida' => 0,
+            'emisor' => 'Lider',
+            'id_empleado' => $data['id_empleado'],
+            'id_lider' => $data['id_lider']
+        ]);
+
+        return response()->json(['success' => 'Observaciones realizadas correctamente'], 200);
     }
 }
