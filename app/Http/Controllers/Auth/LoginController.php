@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
-
+use Illuminate\Support\Facades\DB;
 class LoginController extends Controller
 {
     public function login(Request $request)
@@ -19,6 +19,11 @@ class LoginController extends Controller
 
         if (Auth::attempt($credentials, $request->remember)) {
             $user = Auth::user();
+            $empleadosAsignados = DB::table('lideres_empleados')
+            ->join('empleados', 'lideres_empleados.empleado', 'empleados.id')
+            ->select('empleados.id', DB::raw('CONCAT(empleados.nombres, " ", empleados.apellidos) as nombre'))
+            ->where('lideres_empleados.lider', $user->empleado)
+            ->get();
             $token = $user->createToken('auth-token')->plainTextToken;
 
             return response()->json([
@@ -30,7 +35,8 @@ class LoginController extends Controller
                     'email' => $user->email,
                     'tipo_usuario' => $user->tipo_usuario,
                     'empleado' => $user->empleado,
-                    'lider' => $user->lider
+                    'lider' => $user->lider,
+                    'empleados_asignados' => $empleadosAsignados
                 ]
             ]);
         }

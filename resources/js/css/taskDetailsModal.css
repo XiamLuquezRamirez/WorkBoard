@@ -26,7 +26,53 @@
     padding: 1.5rem;
     border-bottom: 1px solid #e2e8f0;
     background: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
+
+.priority-badge-notf{
+    display: flex;
+    align-items: center;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    color: #64748b;
+    animation: fadeIn 0.5s ease-in-out;
+    cursor: pointer;  
+    background-color: #fafafa;
+}
+
+.priority-badge-notf.active{
+    font-weight: bold;
+    animation: back 2s infinite;
+}
+
+@keyframes back{
+    0%{
+        background-color: #fafafa;
+    }
+    100%{
+        background-color: #f52c2c;
+        color: white;
+    }
+}
+
+.notificacion-badge{
+    background-color: #fee2e2;
+    color: #dc2626;
+}
+
+
+
+.priority-container{
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+
+}
+
 
 .modal-body {
     display: grid;
@@ -42,6 +88,20 @@
     border-right: 1px solid #e2e8f0;
 }
 
+.download-button {
+    background-color: #16a34a;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    padding: 0.5rem 0.5rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+
+
+
 .task-header {
     display: flex;
     justify-content: space-between;
@@ -55,6 +115,7 @@
     padding: 1.5rem;
     border-radius: 12px;
     margin-bottom: 1.5rem;
+    text-transform: capitalize;
 }
 
 .task-dates {
@@ -200,14 +261,17 @@
     right: 5px;
     font-size: 12px;
     background: currentColor;
-    color: white;
+    color: rgb(29, 133, 252);
     width: 16px;
     height: 16px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
+    font-weight: bold;
+
 }
+
 
 /* Estilos responsivos */
 @media (max-width: 1024px) {
@@ -570,6 +634,91 @@
     to {
         transform: rotate(360deg);
     }
+}
+
+.edit-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+.edit-button, .save-button, .cancel-button {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.edit-button {
+    background-color: #f0f9ff;
+    color: #0284c7;
+    border: 1px solid #bae6fd;
+}
+
+.edit-button:hover {
+    background-color: #e0f2fe;
+}
+
+.save-button {
+    background-color: #dcfce7;
+    color: #16a34a;
+    border: 1px solid #bbf7d0;
+}
+
+.save-button:hover:not(:disabled) {
+    background-color: #1239e4;
+}
+
+.save-button:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.cancel-button {
+    background-color: #fee2e2;
+    color: #dc2626;
+    border: 1px solid #fecaca;
+}
+
+.cancel-button:hover {
+    background-color: #fecaca;
+}
+
+.edit-form {
+    width: 100%;
+    padding: 15px;
+    background-color: #f8fafc;
+    border-radius: 8px;
+    margin-bottom: 15px;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+    color: #475569;
+}
+
+.form-control {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    font-size: 14px;
+    transition: border-color 0.2s ease;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
 }
 
 

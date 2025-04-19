@@ -1,161 +1,113 @@
-import React, { useState, useEffect } from 'react';
-import { FaBell, FaCheck, FaTrash, FaCircle } from 'react-icons/fa';
-import axios from 'axios';
-import Swal from 'sweetalert2';
+import React from 'react';
+import { FaTimes, FaCheck, FaTimes as FaX } from 'react-icons/fa';
+import '../../css/NotificationsModal.css';
 
-const NotificationsModal = ({ isOpen, onClose, notifications, setNotifications }) => {
-    
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        if (isOpen) {
-            cargarNotificaciones();
-        }
-    }, [isOpen]);
-
-    const cargarNotificaciones = async () => {
-       setLoading(true);
-        const response = await axios.get("/notificaciones", {
-            params: {
-                tipo: tipo,
-                id: currentUser.empleado
-            },
-        });
-        setNotifications(response.data);
-        setLoading(false);
-    };
-
-    const marcarComoLeida = async (id) => {
-        try {
-            await axios.post(`/api/notifications/${id}/read`);
-            setNotifications(notifications.map(notif => 
-                notif.id === id ? { ...notif, read_at: new Date().toISOString() } : notif
-            ));
-        } catch (error) {
-            console.error('Error al marcar notificación:', error);
-        }
-    };
-
-    const eliminarNotificacion = async (id) => {
-        try {
-            await axios.delete(`/api/notifications/${id}`);
-            setNotifications(notifications.filter(notif => notif.id !== id));
-        } catch (error) {
-            console.error('Error al eliminar notificación:', error);
-        }
-    };
-
-    const marcarTodasComoLeidas = async () => {
-        try {
-            await axios.post('/api/notifications/mark-all-read');
-            setNotifications(notifications.map(notif => ({
-                ...notif,
-                read_at: notif.read_at || new Date().toISOString()
-            })));
-        } catch (error) {
-            console.error('Error al marcar todas las notificaciones:', error);
-        }
-    };
-
-    const eliminarTodasLasNotificaciones = () => {
-        Swal.fire({
-            title: '¿Estás seguro?',
-            text: 'Se eliminarán todas las notificaciones',
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonText: 'Sí, eliminar todas',
-            cancelButtonText: 'Cancelar'
-        }).then(async (result) => {
-            if (result.isConfirmed) {
-                try {
-                    await axios.delete('/api/notifications');
-                    setNotifications([]);
-                } catch (error) {
-                    console.error('Error al eliminar notificaciones:', error);
-                }
-            }
-        });
-    };
-
+const NotificationsModal = ({ isOpen, onClose, observaciones }) => {
     if (!isOpen) return null;
 
+    const handleOverlayClick = (e) => {
+        if (e.target.className === 'notifications-modal-overlay') {
+            onClose();
+        }
+    };
+
     return (
-        <div className="modal-overlay">
-            <div className="notifications-modal">
-                <div className="modal-header">
-                    <div className="header-title">
-                        <FaBell />
-                        <h2>Notificaciones nuevas</h2>
-                        {notifications.some(n => !n.read_at) && (
-                            <span className="unread-count">
-                                {notifications.filter(n => !n.read_at).length}
-                            </span>
-                        )}
-                    </div>
-                    <div className="header-actions">
-                        <button 
-                            className="mark-all-button"
-                            onClick={marcarTodasComoLeidas}
-                            disabled={!notifications.some(n => !n.read_at)}
-                        >
-                            <FaCheck /> Marcar todas como leídas
-                        </button>
-                        <button 
-                            className="delete-all-button"
-                            onClick={eliminarTodasLasNotificaciones}
-                            disabled={notifications.length === 0}
-                        >
-                            <FaTrash /> Eliminar todas
-                        </button>
-                        <button className="close-button" onClick={onClose}>&times;</button>
-                    </div>
+        <div 
+            className="notifications-modal-overlay" 
+            onClick={handleOverlayClick} 
+            style={{ 
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100%',
+                backgroundColor: 'rgba(0, 0, 0, 0.75)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                zIndex: 1070
+            }}
+        >
+            <div 
+                className="notifications-modal" 
+                style={{ 
+                    background: 'white',
+                    borderRadius: '8px',
+                    padding: '20px',
+                    width: '90%',
+                    maxWidth: '700px',
+                    maxHeight: '80vh',
+                    overflow: 'hidden',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                    zIndex: 1071
+                }}
+            >
+                <div className="notifications-header" style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '15px', marginBottom: '15px', borderBottom: '1px solid #e5e7eb', position: 'relative'}}>
+                    <h3 className="notifications-title">
+                        Observaciones de la Tarea
+                    </h3>
+                    <button
+                        onClick={onClose}
+                        className="notifications-close"
+                        title="Cerrar"
+                        aria-label="Cerrar"
+                        style={{
+                            position: 'relative',
+                            top: '10px',
+                            right: '10px',
+                            background: 'transparent',
+                            border: 'none',
+                            color: '#6b7280',
+                            cursor: 'pointer',
+                            padding: '5px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '1.2rem',
+                            width: '30px',
+                            height: '30px',
+                            borderRadius: '50%'
+                        }}
+                    >
+                        <FaTimes />
+                    </button>
                 </div>
 
                 <div className="notifications-content">
-                    {loading ? (
-                        <div className="loading-spinner">Cargando notificaciones...</div>
-                    ) : notifications.length === 0 ? (
-                        <div className="no-notifications">
-                            <FaBell size={40} />
-                            <p>No hay notificaciones</p>
-                        </div>
-                    ) : (
-                        <div className="notifications-list">
-                            {notifications.map(notification => (
-                                <div 
-                                    key={notification.id} 
-                                    className={`notification-item ${!notification.read_at ? 'unread' : ''}`}
-                                >
-                                    <div className="notification-icon">
-                                        {!notification.read_at && <FaCircle className="unread-dot" />}
-                                        <FaBell />
-                                    </div>
-                                    <div className="notification-content">
-                                        <p className="notification-text">{notification.data.message}</p>
-                                        <span className="notification-time">
-                                            {new Date(notification.created_at).toLocaleDateString()}
+                    {observaciones && observaciones.length > 0 ? (
+                        observaciones.map((obs, index) => (
+                            <div key={index} className="notification-item">
+                                <div className="notification-header">
+                                    <div className="notification-user">
+                                        <span className="notification-username" style={{textTransform: 'capitalize'}}>
+                                            {obs.creador || 'Usuario'}
                                         </span>
+                                     
                                     </div>
-                                    <div className="notification-actions">
-                                        {!notification.read_at && (
-                                            <button 
-                                                className="mark-read-button"
-                                                onClick={() => marcarComoLeida(notification.id)}
-                                                title="Marcar como leída"
-                                            >
-                                                <FaCheck />
-                                            </button>
+                                    <div className={`notification-status ${obs.visto_bueno ? 'status-approved' : 'status-not-approved'}`}>
+                                        {obs.visto_bueno ? (
+                                            <>
+                                                <FaCheck /> Aprobado
+                                            </>
+                                        ) : (
+                                            <>
+                                                <FaX /> No aprobado
+                                            </>
                                         )}
-                                        <button 
-                                            className="delete-button"
-                                            onClick={() => eliminarNotificacion(notification.id)}
-                                            title="Eliminar notificación"
-                                        >
-                                            <FaTrash />
-                                        </button>
                                     </div>
                                 </div>
-                            ))}
+                                <p className="notification-text">
+                                    {obs.observaciones || 'Sin observaciones'}
+                                </p>
+                            </div>
+                        ))
+                    ) : (
+                        <div className="notification-item">
+                            <p className="notification-text text-center">
+                                No hay observaciones para esta tarea
+                            </p>
                         </div>
                     )}
                 </div>

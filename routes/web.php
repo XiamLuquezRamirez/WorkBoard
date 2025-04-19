@@ -72,6 +72,8 @@ Route::middleware('auth:sanctum')->group(function () {
     // realizar observaciones
     Route::put('/parametros/realizarObservaciones/{id}', [empleadosController::class, 'realizarObservaciones']);
 
+    // actualizar tarea
+    Route::put('/parametros/actualizarTarea/{id}', [empleadosController::class, 'actualizarTarea']);
 });
 
 // Esta ruta debe manejar todas las rutas de la aplicación React

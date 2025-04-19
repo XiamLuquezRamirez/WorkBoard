@@ -5,7 +5,6 @@ import TaskDetailsModal from './TaskDetailsModal';
 import axios from 'axios';
 import Swal from 'sweetalert2';
 import '../css/EmployeeInterface.css';
-import { useUser } from './UserContext';
 const EmployeeInterface = ({ user }) => {
  
     const [columns, setColumns] = useState({
@@ -31,7 +30,13 @@ const EmployeeInterface = ({ user }) => {
     const [selectedTask, setSelectedTask] = useState(null);
     const [showTaskDetails, setShowTaskDetails] = useState(false);
     const [showNewTaskModal, setShowNewTaskModal] = useState(false);
-
+    const [showListaEmpleadosAsignados, setShowListaEmpleadosAsignados] = useState(false);
+    const [empleadosAsignados, setEmpleadosAsignados] = useState([]);
+    const [showTareasEmpleado, setShowTareasEmpleado] = useState(false);
+    const [tareasEmpleado, setTareasEmpleado] = useState([]);
+    const [empleadoSeleccionado, setEmpleadoSeleccionado] = useState(null);
+    const [estadoSeleccionado, setEstadoSeleccionado] = useState(null);
+    const [mostrarTareasEstado, setMostrarTareasEstado] = useState(false);
     useEffect(() => {
         loadTasks();
     }, []);
@@ -138,6 +143,47 @@ const EmployeeInterface = ({ user }) => {
         setShowTaskDetails(true);
     };
 
+    const abrirListaEmpleadosAsignados = async () => {
+        setShowListaEmpleadosAsignados(true);
+        
+    };
+
+    const verTareas = async (empleadoId) => {
+        try {
+            const response = await axios.get(`/parametros/cargarTareas/${empleadoId}`);
+            setTareasEmpleado(response.data.tareas);
+            
+            // Encontrar el empleado seleccionado
+            const empleado = user.empleados_asignados.find(emp => emp.id === empleadoId);
+            setEmpleadoSeleccionado(empleado);
+            
+            // Cerrar el modal de empleados y abrir el de tareas
+            setShowListaEmpleadosAsignados(false);
+            setShowTareasEmpleado(true);
+            setMostrarTareasEstado(false);
+            setEstadoSeleccionado(null);
+        } catch (error) {
+            console.error('Error al cargar tareas del empleado:', error);
+            Swal.fire('Error', 'No se pudieron cargar las tareas del empleado', 'error');
+        }
+    };
+
+    const seleccionarEstado = (estado) => {
+        setEstadoSeleccionado(estado);
+        setMostrarTareasEstado(true);
+    };
+
+    const volverAEstados = () => {
+        setMostrarTareasEstado(false);
+        setEstadoSeleccionado(null);
+    };
+
+    const cerrarTareasEmpleado = () => {
+        setShowTareasEmpleado(false);
+        setMostrarTareasEstado(false);
+        setEstadoSeleccionado(null);
+    };
+
     const handleSubmitNewTask = async (e) => {
         e.preventDefault();
         const formData = new FormData(e.target);
@@ -148,7 +194,8 @@ const EmployeeInterface = ({ user }) => {
                 descripcion: formData.get('descripcion'),
                 fecha_pactada: formData.get('fecha_pactada'),
                 prioridad: formData.get('prioridad'),
-                empleado: user.empleado
+                empleado: user.empleado,
+                estado: formData.get('estado')
             });
 
             // Cerrar el modal primero
@@ -210,7 +257,7 @@ const EmployeeInterface = ({ user }) => {
                 {user.lider == 'Si' && (
                 <button
                 className="search-task-button"
-                onClick={() => setShowNewTaskModal(true)}
+                onClick={() => abrirListaEmpleadosAsignados()}
                 >
                     <FaSearch /> Seguimiento de Tareas
                 </button>
@@ -304,6 +351,148 @@ const EmployeeInterface = ({ user }) => {
                 </div>
             )}
 
+            {showListaEmpleadosAsignados && (
+                <div className="modal-overlay">
+                <div className="lista-empleados-asignados-modal">
+                    <div className="modal-header">
+                        <h2>Lista de Empleados Asignados</h2>
+                        <button 
+                            className="close-button"
+                            onClick={() => setShowListaEmpleadosAsignados(false)}
+                        >
+                            &times;
+                        </button>
+                    </div>
+                    <div className="modal-content">
+                        <div className="lista-empleados-asignados-container">
+                           <table className='table-empleados-asignados'>
+                            <thead className='table-header'> 
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>Opciones</th>
+                                </tr>
+                            </thead>
+                            <tbody className='table-body'>
+                                {user.empleados_asignados.map(empleado => (
+                                    <tr className='table-row' key={empleado.id}>
+                                        <td style={{textTransform: 'capitalize'}}>{empleado.nombre}</td>
+                                        <td>
+                                                <FaEye onClick={() => verTareas(empleado.id)} className='btn-ver-tareas' style={{fontSize: '2rem', padding: '0'}} />
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                           </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            )}
+
+            {showTareasEmpleado && (
+                <div className="modal-overlay">
+                    <div className="tareas-empleado-modal">
+                        <div className="modal-header">
+                            <h2>Tareas de {empleadoSeleccionado?.nombre}</h2>
+                            <button 
+                                className="close-button"
+                                onClick={cerrarTareasEmpleado}
+                            >
+                                &times;
+                            </button>
+                        </div>
+                        <div className="modal-content">
+                            <div className="tareas-empleado-container">
+                                {!mostrarTareasEstado ? (
+                                    // Vista de estados (nivel 1)
+                                    <div className="estados-cards">
+                                        {Object.entries(columns).map(([estado, column]) => (
+                                            <div 
+                                                key={estado} 
+                                                className="estado-card"
+                                                onClick={() => seleccionarEstado(estado)}
+                                                style={{ borderTop: `4px solid ${column.color}` }}
+                                            >
+                                                <div className="estado-card-header">
+                                                    {renderIcon(column.iconComponent)}
+                                                    <h3>{column.title}</h3>
+                                                </div>
+                                                <div className="estado-card-count">
+                                                    <span>{tareasEmpleado.filter(task => task.estado === estado).length}</span>
+                                                    <span>tareas</span>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    // Vista de tareas de un estado (nivel 2)
+                                    <div className="tareas-estado-container">
+                                        <button 
+                                                className="back-button"
+                                                onClick={volverAEstados}
+                                            >
+                                                &larr; Volver a estados
+                                            </button>
+                                        <div className="estado-tareas-header">
+                                            
+                                            <h3>Tareas {estadoSeleccionado}</h3>
+                                        </div>
+                                        <div className="tareas-list">
+                                            {tareasEmpleado
+                                                .filter(task => task.estado === estadoSeleccionado)
+                                                .map(task => (
+                                                    <div 
+                                                        key={task.id} 
+                                                        className="task-card"
+                                                        onClick={() => handleTaskClick(task)}
+                                                    >
+                                                        <div className="task-card-header">
+                                                            <h4 style={{textTransform: 'capitalize', marginBottom: '0.5rem'}}>{task.titulo}</h4>
+                                                            {task.prioridad && (
+                                                                <span className={`priority-badge ${task.prioridad.toLowerCase()}`}>
+                                                                    {task.prioridad}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        <p className="task-description">{task.descripcion}</p>
+                                                        <div className="task-dates">
+                                                            {(task.estado === 'Pendiente' || task.estado === 'En progreso') && task.fecha_pactada && (
+                                                                <span className="date-badge due-date">
+                                                                    <FaClock />
+                                                                    Fecha límite: {new Date(task.fecha_pactada + 'T00:00:00').toLocaleDateString()}
+                                                                </span>
+                                                            )}
+                                                            {task.estado === 'Completada' && task.fecha_entregada && (
+                                                                <span className="date-badge completed-date">
+                                                                    <FaCheck />
+                                                                    Entregado: {new Date(task.fecha_entregada).toLocaleDateString()}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        {task.evidencias && task.evidencias.length > 0 && (
+                                                            <div className="evidences-container">
+                                                                {task.evidencias.map(evidencia => (
+                                                                    <span 
+                                                                        key={evidencia.id} 
+                                                                        className="evidence-icon" 
+                                                                        title={evidencia.nombre}
+                                                                    >
+                                                                        {getFileIcon(evidencia.tipo)}
+                                                                    </span>
+                                                                ))}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <DragDropContext onDragEnd={onDragEnd}>
                 <div className="kanban-board">
                     {Object.entries(columns).map(([columnId, column]) => (
@@ -347,13 +536,13 @@ const EmployeeInterface = ({ user }) => {
                                                             {(task.estado === 'Pendiente' || task.estado === 'En progreso') && task.fecha_pactada && (
                                                                 <span className="date-badge due-date">
                                                                     <FaClock />
-                                                                    Fecha límite: {new Date(task.fecha_pactada).toLocaleDateString()}
+                                                                    Fecha límite: {new Date(task.fecha_pactada + 'T00:00:00').toLocaleDateString()}
                                                                 </span>
                                                             )}
                                                             {task.estado === 'Completada' && task.fecha_entregada && (
                                                                 <span className="date-badge completed-date">
                                                                     <FaCheck />
-                                                                    Entregado: {new Date(task.fecha_entregada).toLocaleDateString()}
+                                                                    Entregado: {new Date(task.fecha_entregada + 'T00:00:00').toLocaleDateString()}
                                                                 </span>
                                                             )}
                                                         </div>

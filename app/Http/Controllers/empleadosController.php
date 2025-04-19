@@ -88,6 +88,19 @@ class empleadosController extends Controller
         }
         return response()->json(['success' => 'Empleado guardado correctamente'], 200);
     }
+    
+
+    function actualizarTarea(Request $request, $id)
+    {
+        $tarea = $request->all();
+        DB::table('tareas_empleados')->where('id', $id)->update([
+            'titulo' => $tarea['titulo'],
+            'descripcion' => $tarea['descripcion'],
+            'fecha_pactada' => $tarea['fecha_pactada'],
+            'prioridad' => $tarea['prioridad']
+        ]);
+        return response()->json(['success' => 'Tarea actualizada correctamente'], 200);
+    }
 
     function cambiarEstadoNotificacion(Request $request, $id)
     {
@@ -279,6 +292,23 @@ class empleadosController extends Controller
             ->orderBy('id', 'desc')
             ->get();
 
+            //obtener observaciones de las tareas
+            $observaciones = DB::table('observaciones_tareas')
+                ->join('users', 'observaciones_tareas.creador', 'users.id')
+                ->select('observaciones_tareas.*', 'users.name as creador')
+                ->whereIn('id_tarea', $tareas->pluck('id'))
+                ->get();
+
+
+
+        // Agregar observaciones a las tareas
+        $tareas = $tareas->map(function ($tarea) use ($observaciones) {
+            $tarea->observaciones = $observaciones->where('id_tarea', $tarea->id)->values();
+            return $tarea;
+        });
+
+
+
         // Obtener los IDs de las tareas
         $tareasIds = $tareas->pluck('id');
 
@@ -366,9 +396,9 @@ class empleadosController extends Controller
 
             //consultar lider del empleado
             $lider = DB::table('lideres_empleados')->where('empleado', $tarea['empleado'])->first();
-
+          
             //insertar notificacion
-            if ($lider || Auth::user()->tipo_usuario == 'Administrador') {
+            if (Auth::user()->lider == 'Si' || Auth::user()->tipo_usuario == 'Administrador') {
                 DB::table('notificaciones')->insert([
                     'id_lider' => $lider->lider,
                     'id_empleado' => $tarea['empleado'],
@@ -377,15 +407,15 @@ class empleadosController extends Controller
                     'leida' => 0,
                     'fecha' => now(),
                     'tipo' => 'Tarea',
-                    'emisor' => 'Lider'
+                    'emisor' => 'Lider'   
                 ]);
             } else {
                 DB::table('notificaciones')->insert([
-                    'id_lider' => $tarea['empleado'],
+                    'id_lider' => $lider->lider,
                     'id_empleado' => $tarea['empleado'],
                     'id_tarea' => $IdTarea,
                     'descripcion' => 'Ha creado una nueva tarea',
-                    'leida' => 'No',
+                    'leida' => 0,
                     'fecha' => now(),
                     'tipo' => 'Tarea',
                     'emisor' => 'Empleado'
@@ -766,6 +796,18 @@ class empleadosController extends Controller
     function cargarTareaSeleccionada($id)
     {
         $tarea = DB::table('tareas_empleados')->where('id', $id)->first();
+       
+              //obtener observaciones de las tareas
+              $observaciones = DB::table('observaciones_tareas')
+              ->join('users', 'observaciones_tareas.creador', 'users.id')
+              ->select('observaciones_tareas.*', 'users.name as creador')
+              ->where('id_tarea', $tarea->id)
+              ->get();
+
+      // Agregar observaciones a las tareas
+        $tarea->observaciones = $observaciones;
+
+       
 
         $evidencias = DB::table('evidencia_tarea')->where('tarea', $id)->get();
 
@@ -782,7 +824,8 @@ class empleadosController extends Controller
         $observaciones = DB::table('observaciones_tareas')->insert([
             'id_tarea' => $id,
             'observaciones' => $data['observaciones'], 
-            'visto_bueno' => $data['visto_bueno']
+            'visto_bueno' => $data['visto_bueno'],
+            'creador' => Auth::user()->id
         ]);
 
         //actualizar estado de la tarea

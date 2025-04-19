@@ -1,11 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { FaFileUpload, FaCheck, FaClock, FaSpinner, FaDownload, FaTrash, FaFile, FaImage } from 'react-icons/fa';
+import { FaFileUpload, FaCheck, FaClock, FaSpinner, FaDownload, FaTrash, FaFile, FaImage, FaBell, FaComment, FaEdit, FaSave } from 'react-icons/fa';
 import axios from 'axios';
 import Swal from 'sweetalert2';
 import '../css/TaskDetailsModal.css';
 import AuthMiddleware from '../middleware/AuthMiddleware';
+import FileViewerModal from './FileViewerModal';
+import NotificationsModal from './NotificationsModal';
 
-const TaskDetailsModal = ({ task, onClose, onUpdate }) => {
+const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton }) => {
     const [loading, setLoading] = useState(false);
     const [currentStatus, setCurrentStatus] = useState(task.estado);
     const [isChangingStatus, setIsChangingStatus] = useState(false);
@@ -15,6 +17,16 @@ const TaskDetailsModal = ({ task, onClose, onUpdate }) => {
     const [vistoBueno, setVistoBueno] = useState(task.visto_bueno || false);
     const [currentUser, setCurrentUser] = useState(null);
     const fileInputRef = useRef(null);
+    const [selectedFile, setSelectedFile] = useState(null);
+    const [isNotificationsModalOpen, setIsNotificationsModalOpen] = useState(false);
+    const [isEditingTask, setIsEditingTask] = useState(false);
+    //fecha de tarea en fomao local
+    const [editedTask, setEditedTask] = useState({
+        titulo: task.titulo,
+        descripcion: task.descripcion,
+        prioridad: task.prioridad,
+        fecha_pactada: task.fecha_pactada
+    });
 
     useEffect(() => {
         const user = AuthMiddleware.getUser();
@@ -72,6 +84,7 @@ const TaskDetailsModal = ({ task, onClose, onUpdate }) => {
                     'Content-Type': 'multipart/form-data'
                 }
             });
+            
 
             // Limpiar previsualizaciones
             previewFiles.forEach(fileData => {
@@ -82,7 +95,7 @@ const TaskDetailsModal = ({ task, onClose, onUpdate }) => {
             setPreviewFiles([]);
 
             // Actualizar el estado de evidencias con las nuevas
-            const nuevasEvidencias = response.data.map(evidencia => ({
+            const nuevasEvidencias = response.data.evidencias.map(evidencia => ({
                 id: evidencia.id,
                 nombre: evidencia.nombre_original,
                 ruta: evidencia.ruta,
@@ -296,237 +309,398 @@ const TaskDetailsModal = ({ task, onClose, onUpdate }) => {
         }
     };
 
+    const handleFileClick = (evidencia) => {
+       
+        setSelectedFile({
+            ruta: evidencia.evidencia,
+            nombre: evidencia.nombre,
+            tipo: evidencia.tipo
+        });
+
+    };
+
+    const handleCloseFileViewer = () => {
+        setSelectedFile(null);
+    };
+
+    const handleNotificationsClick = () => {
+        setIsNotificationsModalOpen(true);
+    };
+
+    const handleEditTask = () => {
+        setIsEditingTask(true);
+    };
+
+    const handleSaveTask = async () => {
+        try {
+            setLoading(true);
+            await axios.put(`/parametros/actualizarTarea/${task.id}`, editedTask);
+            setIsEditingTask(false);
+            onUpdate();
+            Swal.fire('¡Éxito!', 'Tarea actualizada correctamente', 'success');
+        } catch (error) {
+            console.error(error);
+            Swal.fire('Error', 'Error al actualizar la tarea', 'error');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleCancelEdit = () => {
+        setIsEditingTask(false);
+        setEditedTask({
+            titulo: task.titulo,
+            descripcion: task.descripcion,
+            prioridad: task.prioridad,
+            fecha_pactada: task.fecha_pactada
+        });
+    };
+
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        setEditedTask(prev => ({
+            ...prev,
+            [name]: value
+        }));
+    };
+
     return (
-        <div className="modal-overlay" onClick={(e) => e.target.className === 'modal-overlay' && onClose()}>
-            <div className="task-details-modal">
-                <div className="modal-header">
-                    <h2>Detalles de la Tarea</h2>
-                    <button className="close-button" onClick={onClose}>&times;</button>
-                </div>
-
-                <div className="modal-body">
-                    {/* Panel izquierdo: Información de la tarea */}
-                    <div className="task-info-panel">
-                        <div className="task-header">
-                            <h3>{task.titulo}</h3>
-                            <span className={`priority-badge ${task.prioridad.toLowerCase()}`}>
-                                {task.prioridad}
-                            </span>
-                        </div>
-
-                        <div className="task-description">
-                            <p>{task.descripcion}</p>
-                        </div>
-
-                        <div className="task-dates">
-                            <div className="date-item">
-                                <FaClock />
-                                <span>Fecha límite: {new Date(task.fecha_pactada).toLocaleDateString()}</span>
-                            </div>
-                            {task.fecha_entregada && (
-                                <div className="date-item">
-                                    <FaCheck />
-                                    <span>Entregado: {new Date(task.fecha_entregada).toLocaleDateString()}</span>
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Solo mostrar controles de estado si es el dueño de la tarea */}
-                        {isOwnTask && (
-                            <div className="status-control">
-                                <h4>Cambiar estado de la tarea</h4>
-                                <div className="status-buttons">
-                                    <button 
-                                        className={`status-button pending ${currentStatus === 'Pendiente' ? 'active' : ''}`}
-                                        onClick={() => handleStatusChange('Pendiente')}
-                                        disabled={isChangingStatus || currentStatus === 'Pendiente'}
-                                    >
-                                        <FaClock /> Pendiente
-                                    </button>
-                                    <button 
-                                        className={`status-button in-progress ${currentStatus === 'En progreso' ? 'active' : ''}`}
-                                        onClick={() => handleStatusChange('En progreso')}
-                                        disabled={isChangingStatus || currentStatus === 'En progreso'}
-                                    >
-                                        <FaSpinner /> En Progreso
-                                    </button>
-                                    <button 
-                                        className={`status-button completed ${currentStatus === 'Completada' ? 'active' : ''}`}
-                                        onClick={() => handleStatusChange('Completada')}
-                                        disabled={isChangingStatus || currentStatus === 'Completada'}
-                                    >
-                                        <FaCheck /> Completada
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Panel derecho: Evidencias */}
-                    <div className="evidence-panel">
-                        <h4>Evidencias de la tarea</h4>
+        <>
+            {/* Modal principal de detalles */}
+            {task && (
+                <div className="modal-overlay" onClick={(e) => e.target.className === 'modal-overlay' && onClose()}>
+                    <div className="task-details-modal">
+                        <div className="modal-header">
+                            <h2>Detalles de la Tarea</h2>                        
                         
-                        {/* Sección de carga de archivos - Solo para el dueño de la tarea */}
-                        {isOwnTask && (
-                            <div className="evidence-upload">
-                                <input
-                                    type="file"
-                                    multiple
-                                    onChange={handleFileChange}
-                                    className="file-input"
-                                    id="evidence-files"
-                                    ref={fileInputRef}
-                                />
-                                <label htmlFor="evidence-files" className="upload-button">
-                                    <FaFileUpload /> Seleccionar archivos
-                                </label>
-                            </div>
-                        )}
+                            <button className="close-button" onClick={onClose}>&times;</button>
 
-                        {/* Preview de archivos seleccionados */}
-                        {previewFiles.length > 0 && (
-                            <div className="preview-files">
-                                <h5>Archivos seleccionados</h5>
-                                <div className="preview-list">
-                                    {previewFiles.map((fileData, index) => (
-                                        <div key={index} className="preview-item">
-                                            <div className="preview-content">
-                                                {fileData.preview ? (
-                                                    <img 
-                                                        src={fileData.preview} 
-                                                        alt={fileData.name}
-                                                        className="preview-image"
-                                                    />
-                                                ) : (
-                                                    <div className="file-icon">
-                                                        {fileData.type.includes('image') ? (
+                        </div>
+
+                        <div className="modal-body">
+                            {/* Panel izquierdo: Información de la tarea */}
+                            <div className="task-info-panel">
+                                <div className="edit-buttons">
+                                {!isEditingTask ? (
+                                    <button className="edit-button" onClick={handleEditTask}>
+                                        <FaEdit /> Editar Tarea
+                                    </button>
+                                ) : (
+                                    <>
+                                        <button className="save-button" onClick={handleSaveTask} disabled={loading}>
+                                            {loading ? <FaSpinner className="spinner" /> : <FaSave />} Guardar
+                                        </button>
+                                        <button className="cancel-button" onClick={handleCancelEdit}>
+                                            Cancelar
+                                        </button>
+                                    </>
+                                )}
+                            </div>
+                                <div className="task-header">
+                                    {isEditingTask ? (
+                                        <div className="edit-form">
+                                            <div className="form-group">
+                                                <label htmlFor="titulo">Título:</label>
+                                                <input
+                                                    type="text"
+                                                    id="titulo"
+                                                    name="titulo"
+                                                    value={editedTask.titulo}
+                                                    onChange={handleInputChange}
+                                                    className="form-control"
+                                                />
+                                            </div>
+                                            <div className="form-group">
+                                                <label htmlFor="descripcion">Descripción:</label>
+                                                <textarea
+                                                    id="descripcion"
+                                                    name="descripcion"
+                                                    value={editedTask.descripcion}
+                                                    onChange={handleInputChange}
+                                                    className="form-control"
+                                                    rows="4"
+                                                />
+                                            </div>
+                                            <div className="form-group">
+                                                <label htmlFor="prioridad">Prioridad:</label>
+                                                <select
+                                                    id="prioridad"
+                                                    name="prioridad"
+                                                    value={editedTask.prioridad}
+                                                    onChange={handleInputChange}
+                                                    className="form-control"
+                                                >
+                                                    <option value="Alta">Alta</option>
+                                                    <option value="Media">Media</option>
+                                                    <option value="Baja">Baja</option>
+                                                </select>
+                                            </div>
+                                            <div className="form-group">
+                                                <label htmlFor="fecha_pactada">Fecha límite:</label>
+                                                <input
+                                                    type="date"
+                                                    id="fecha_pactada"
+                                                    name="fecha_pactada"
+                                                    value={editedTask.fecha_pactada}
+                                                    onChange={handleInputChange}
+                                                    className="form-control"
+                                                />
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <h3>{task.titulo}</h3>
+                                            <div className="priority-container">
+                                                <span className={`priority-badge ${task.prioridad.toLowerCase()}`}>
+                                                    Prioridad: <strong>{task.prioridad}</strong>
+                                                </span>
+                                                {task.observaciones && task.observaciones.length > 0 && (
+                                                    <span
+                                                        className='priority-badge-notf active'
+                                                        onClick={handleNotificationsClick}
+                                                        style={{ cursor: 'pointer' }}
+                                                    >
+                                                        <FaComment /> OBSERVACIONES
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+
+                                {!isEditingTask && (
+                                    <div className="task-description">
+                                        <p>{task.descripcion}</p>
+                                    </div>
+                                )}
+
+                                <div className="task-dates">
+                                    <div className="date-item">
+                                        <FaClock />
+                                        <span>  Fecha límite: {new Date(task.fecha_pactada + 'T00:00:00').toLocaleDateString()}</span>
+                                    </div>
+                                    {task.fecha_entregada && (
+                                        <div className="date-item">
+                                            <FaCheck />
+                                            <span>Entregado: {new Date(task.fecha_entregada).toLocaleDateString()}</span>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Solo mostrar controles de estado si es el dueño de la tarea */}
+                                {isOwnTask && (
+                                    <div className="status-control">
+                                        <h4>Cambiar estado de la tarea</h4>
+                                        <div className="status-buttons">
+                                            <button 
+                                                className={`status-button pending ${currentStatus === 'Pendiente' ? 'active' : ''}`}
+                                                onClick={() => handleStatusChange('Pendiente')}
+                                                disabled={isChangingStatus || currentStatus === 'Pendiente'}
+                                            >
+                                                <FaClock /> Pendiente
+                                            </button>
+                                            <button 
+                                                className={`status-button in-progress ${currentStatus === 'En progreso' ? 'active' : ''}`}
+                                                onClick={() => handleStatusChange('En progreso')}
+                                                disabled={isChangingStatus || currentStatus === 'En progreso'}
+                                            >
+                                                <FaSpinner /> En Progreso
+                                            </button>
+                                            <button 
+                                                className={`status-button completed ${currentStatus === 'Completada' ? 'active' : ''}`}
+                                                onClick={() => handleStatusChange('Completada')}
+                                                disabled={isChangingStatus || currentStatus === 'Completada'}
+                                            >
+                                                <FaCheck /> Completada
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Panel derecho: Evidencias */}
+                            <div className="evidence-panel">
+                                <h4>Evidencias de la tarea</h4>
+                                
+                                {/* Sección de carga de archivos - Solo para el dueño de la tarea */}
+                                {isOwnTask && (
+                                    <div key={task.id} className="evidence-upload">
+                                        <input
+                                            type="file"
+                                            multiple
+                                            onChange={handleFileChange}
+                                            className="file-input"
+                                            id="evidence-files"
+                                            ref={fileInputRef}
+                                        />
+                                        <label htmlFor="evidence-files" className="upload-button">
+                                            <FaFileUpload /> Seleccionar archivos
+                                        </label>
+                                    </div>
+                                )}
+
+                                {/* Preview de archivos seleccionados */}
+                                {previewFiles.length > 0 && (
+                                    <div className="preview-files">
+                                        <h5>Archivos seleccionados</h5>
+                                        <div className="preview-list">
+                                            {previewFiles.map((fileData, index) => (
+                                                <div key={index} className="preview-item">
+                                                    <div className="preview-content">
+                                                        {fileData.preview ? (
+                                                            <img 
+                                                                src={fileData.preview} 
+                                                                alt={fileData.name}
+                                                                className="preview-image"
+                                                            />
+                                                        ) : (
+                                                            <div className="file-icon">
+                                                                {fileData.type.includes('image') ? (
+                                                                    <FaImage />
+                                                                ) : (
+                                                                    <FaFile />
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                        <span className="preview-name">{fileData.name}</span>
+                                                    </div>
+                                                    <button 
+                                                        className="remove-file"
+                                                        onClick={() => removeFile(index)}
+                                                    >
+                                                        <FaTrash />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <button 
+                                            className="upload-selected"
+                                            onClick={handleUploadEvidences}
+                                            disabled={loading}
+                                        >
+                                            {loading ? (
+                                                <>
+                                                    <FaSpinner className="spinner" /> 
+                                                    Subiendo...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <FaFileUpload /> 
+                                                    Subir evidencias
+                                                </>
+                                            )}
+                                        </button>
+                                    </div>
+                                )}
+
+                                {/* Lista de evidencias existentes */}
+                                <div className="evidence-list">
+                                    <h5>Evidencias cargadas</h5>
+                                    {evidencias.length > 0 ? (
+                                        evidencias.map(evidencia => (
+                                            <div key={evidencia.id} className="evidence-item">
+                                                <div className="evidence-info">
+                                                    <div className="evidence-icon">
+                                                        {evidencia.tipo?.includes('image') ? (
                                                             <FaImage />
                                                         ) : (
                                                             <FaFile />
                                                         )}
                                                     </div>
-                                                )}
-                                                <span className="preview-name">{fileData.name}</span>
+                                                    <div className="evidence-details">
+                                                        <span className="evidence-name">{evidencia.nombre_original}</span>
+                                                    </div>
+                                                </div>
+                                                <div className="evidence-actions">
+                                                    <button 
+                                                        onClick={() => handleFileClick(evidencia)}
+                                                        className="download-button"
+                                                        title="Ver archivo"
+                                                    >
+                                                        <FaDownload />
+                                                    </button>
+                                                    {isOwnTask && (
+                                                        <button 
+                                                            className="delete-button"
+                                                            onClick={() => handleDeleteEvidence(evidencia.id)}
+                                                        >
+                                                            <FaTrash />
+                                                        </button>
+                                                    )}
+                                                </div>
                                             </div>
-                                            <button 
-                                                className="remove-file"
-                                                onClick={() => removeFile(index)}
-                                            >
-                                                <FaTrash />
-                                            </button>
-                                        </div>
-                                    ))}
-                                </div>
-                                <button 
-                                    className="upload-selected"
-                                    onClick={handleUploadEvidences}
-                                    disabled={loading}
-                                >
-                                    {loading ? (
-                                        <>
-                                            <FaSpinner className="spinner" /> 
-                                            Subiendo...
-                                        </>
+                                        ))
                                     ) : (
-                                        <>
-                                            <FaFileUpload /> 
-                                            Subir evidencias
-                                        </>
+                                        <p className="no-evidence">No hay evidencias cargadas</p>
                                     )}
-                                </button>
+                                </div>
                             </div>
-                        )}
 
-                        {/* Lista de evidencias existentes */}
-                        <div className="evidence-list">
-                            <h5>Evidencias cargadas</h5>
-                            {evidencias.length > 0 ? (
-                                evidencias.map(evidencia => (
-                                    <div key={evidencia.id} className="evidence-item">
-                                        <div className="evidence-info">
-                                            <div className="evidence-icon">
-                                                {evidencia.tipo?.includes('image') ? (
-                                                    <FaImage />
-                                                ) : (
-                                                    <FaFile />
-                                                )}
-                                            </div>
-                                            <div className="evidence-details">
-                                                <span className="evidence-name">{evidencia.nombre}</span>
-                                                <span className="evidence-date">
-                                                    {new Date(evidencia.created_at).toLocaleDateString()}
-                                                </span>
-                                            </div>
-                                        </div>
-                                        <div className="evidence-actions">
-                                            <a 
-                                                href={evidencia.ruta} 
-                                                target="_blank" 
-                                                rel="noopener noreferrer"
-                                                className="download-button"
-                                            >
-                                                <FaDownload />
-                                            </a>
-                                            {/* Solo permitir eliminar al dueño de la tarea */}
-                                            {isOwnTask && (
-                                                <button 
-                                                    className="delete-button"
-                                                    onClick={() => handleDeleteEvidence(evidencia.id)}
-                                                >
-                                                    <FaTrash />
-                                                </button>
-                                            )}
-                                        </div>
+                            {/* Panel de observaciones - Solo para líderes */}
+                            {isLider && (
+                                <div className="observations-panel">
+                                    <h4>Observaciones</h4>
+                                    <textarea
+                                        onChange={(e) => setObservaciones(e.target.value)}
+                                        placeholder="Escriba sus observaciones aquí..."
+                                        rows="4"
+                                        className="observations-textarea"
+                                    />
+                                    
+                                    <div className="visto-bueno-checkbox">
+                                        <label>
+                                            <input
+                                                type="checkbox"
+                                                checked={vistoBueno}
+                                                onChange={(e) => setVistoBueno(e.target.checked)}
+                                            />
+                                            Dar visto bueno
+                                        </label>
                                     </div>
-                                ))
-                            ) : (
-                                <p className="no-evidence">No hay evidencias cargadas</p>
+
+                                    <button 
+                                        className="save-observations-button"
+                                        onClick={handleSaveObservations}
+                                        disabled={loading}
+                                    >
+                                        {loading ? (
+                                            <>
+                                                <FaSpinner className="spinner" /> 
+                                                Guardando...
+                                            </>
+                                        ) : (
+                                            'Guardar Observaciones'
+                                        )}
+                                    </button>
+                                </div>
                             )}
                         </div>
                     </div>
-
-                    {/* Panel de observaciones - Solo para líderes */}
-                    {isLider && (
-                        <div className="observations-panel">
-                            <h4>Observaciones</h4>
-                            <textarea
-                                value={observaciones}
-                                onChange={(e) => setObservaciones(e.target.value)}
-                                placeholder="Escriba sus observaciones aquí..."
-                                rows="4"
-                                className="observations-textarea"
-                            />
-                            
-                            <div className="visto-bueno-checkbox">
-                                <label>
-                                    <input
-                                        type="checkbox"
-                                        checked={vistoBueno}
-                                        onChange={(e) => setVistoBueno(e.target.checked)}
-                                    />
-                                    Dar visto bueno
-                                </label>
-                            </div>
-
-                            <button 
-                                className="save-observations-button"
-                                onClick={handleSaveObservations}
-                                disabled={loading}
-                            >
-                                {loading ? (
-                                    <>
-                                        <FaSpinner className="spinner" /> 
-                                        Guardando...
-                                    </>
-                                ) : (
-                                    'Guardar Observaciones'
-                                )}
-                            </button>
-                        </div>
-                    )}
                 </div>
-            </div>
-        </div>
+            )}
+
+            {/* Modal de notificaciones (independiente) */}
+            {isNotificationsModalOpen && (
+                <NotificationsModal
+                    isOpen={isNotificationsModalOpen}
+                    onClose={() => setIsNotificationsModalOpen(false)}
+                    observaciones={task.observaciones || []}
+                />
+            )}
+
+            {/* Modal de visualización de archivos (independiente) */}
+            {selectedFile && (
+                <div className="modal-overlay" style={{ zIndex: 1070 }}>
+                    <FileViewerModal
+                        isOpen={!!selectedFile}
+                        onClose={handleCloseFileViewer}
+                        fileUrl={selectedFile?.ruta}
+                        fileName={selectedFile?.nombre_original}
+                        fileType={selectedFile?.tipo}
+                    />
+                </div>
+            )}
+        </>
     );
 };
 
