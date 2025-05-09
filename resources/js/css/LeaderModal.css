@@ -1,0 +1,309 @@
+/* Estilos para el modal principal */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-container {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    border-bottom: 1px solid #eee;
+    text-transform: uppercase;
+}
+
+.modal-header h2 {
+    margin: 0;
+    color: #333;
+}
+
+.close-button {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #666;
+}
+
+.close-button:hover {
+    color: #333;
+}
+
+/* Estilos para la barra de herramientas */
+.modal-toolbar {
+    padding: 15px 20px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.search-box {
+    display: flex;
+    align-items: center;
+    background: #f5f5f5;
+    padding: 8px 12px;
+    border-radius: 4px;
+    width: 300px;
+}
+
+.search-box input {
+    border: none;
+    background: none;
+    margin-left: 8px;
+    flex: 1;
+    outline: none;
+}
+
+/* Estilos para la tabla de líderes */
+.leader-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.leader-table th,
+.leader-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+
+.leader-table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    color: #333;
+}
+
+.leader-table tr:hover {
+    background-color: #f5f5f5;
+}
+
+.employee-mini-photo {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+/* Estilos para los botones de acción */
+.action-buttons {
+    display: flex;
+    gap: 8px;
+}
+
+.action-buttons button {
+    padding: 6px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.edit-button {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.delete-button {
+    background-color: #f44336;
+    color: white;
+}
+
+/* Estilos para el modal de asignación */
+.asignar-modal {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    width: 80%;
+    max-width: 900px;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.empleados-disponibles,
+.empleados-asignados {
+    margin: 20px 0;
+}
+
+.empleados-list {
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid #ddd;
+    padding: 10px;
+    border-radius: 4px;
+    background: #f9f9f9;
+}
+
+.empleado-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    border-bottom: 1px solid #eee;
+    background: white;
+    margin-bottom: 8px;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+}
+
+.empleado-item img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.empleado-item span {
+    margin-left: 10px;
+    text-transform: capitalize;
+}
+
+.empleado-item:hover {
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.empleado-item:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.empleado-item span {
+    flex: 1;
+    margin-right: 10px;
+}
+
+/* Botones de agregar/remover empleados */
+.add-button,
+.remove-button {
+    padding: 6px 12px;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: all 0.3s ease;
+}
+
+.add-button {
+    background: #4CAF50;
+    color: white;
+}
+
+.add-button:hover {
+    background: #45a049;
+}
+
+.remove-button {
+    background: #f44336;
+    color: white;
+}
+
+.remove-button:hover {
+    background: #da190b;
+}
+
+/* Estilos para las acciones del modal */
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+}
+
+.save-button,
+.cancel-button {
+    padding: 10px 20px;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.save-button {
+    background: #2196F3;
+    color: white;
+}
+
+.save-button:hover {
+    background: #1976D2;
+}
+
+.cancel-button {
+    background: #9e9e9e;
+    color: white;
+}
+
+.cancel-button:hover {
+    background: #757575;
+}
+
+/* Estilos para los encabezados de secciones */
+.empleados-disponibles h3,
+.empleados-asignados h3 {
+    color: #333;
+    margin-bottom: 10px;
+    font-size: 1.1em;
+}
+
+/* Estilos para el estado de carga */
+.loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    color: #666;
+}
+
+/* Estilos para mensajes de estado vacío */
+.no-empleados {
+    text-align: center;
+    padding: 20px;
+    color: #666;
+    font-style: italic;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .asignar-modal {
+        width: 95%;
+        padding: 15px;
+    }
+
+    .empleados-list {
+        max-height: 200px;
+    }
+
+    .search-box {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+
+    .modal-toolbar {
+        flex-direction: column;
+    }
+
+    .action-buttons {
+        flex-direction: column;
+    }
+} 

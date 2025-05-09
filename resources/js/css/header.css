@@ -1,0 +1,19 @@
+
+.user-section {
+   margin-left: 25px;
+   
+}
+
+.dropdown-item.disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.dropdown-item.disabled:hover {
+    background-color: inherit;
+} 
+
+.header-right {
+    display: flex;
+    align-items: center;
+}
