@@ -15,4 +15,13 @@ export default defineConfig({
     optimizeDeps: {
         include: ['react-beautiful-dnd'],
     },
+    server: {
+        hmr: {
+            host: 'localhost',
+        },
+        cors: true,
+        headers: {
+            'Access-Control-Allow-Origin': '*',
+        },
+    },
 });
