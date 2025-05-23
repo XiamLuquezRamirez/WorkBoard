@@ -1,0 +1,77 @@
+// Variables
+$primary-color: #3490dc;
+$secondary-color: #ffed4a;
+$danger-color: #e3342f;
+
+// Estilos generales
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    line-height: 1.5;
+    margin: 0;
+    padding: 0;
+}
+
+// Estilos para el contenedor principal
+#app {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+// Estilos para títulos
+h1 {
+    color: $primary-color;
+    margin-bottom: 1rem;
+}
+
+// Estilos para el Dashboard
+.dashboard {
+    &-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem;
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        margin-bottom: 2rem;
+
+        h1 {
+            margin: 0;
+        }
+    }
+
+    &-content {
+        padding: 1rem;
+    }
+
+    &-card {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+
+    span {
+        font-weight: 500;
+    }
+}
+
+.logout-button {
+    background-color: $danger-color;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+
+    &:hover {
+        background-color: darken($danger-color, 10%);
+    }
+} 

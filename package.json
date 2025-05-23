@@ -1,0 +1,29 @@
+{
+  "private": true,
+  "scripts": {
+    "dev": "npm run development",
+    "development": "npx mix",
+    "watch": "npx mix watch",
+    "watch-poll": "npx mix watch -- --watch-options-poll=1000",
+    "hot": "npx mix watch --hot",
+    "prod": "npm run production",
+    "production": "npx mix --production"
+  },
+  "devDependencies": {
+    "@babel/preset-react": "^7.23.3",
+    "axios": "^1.6.4",
+    "browser-sync": "^2.29.3",
+    "browser-sync-webpack-plugin": "^2.3.0",
+    "laravel-mix": "^6.0.49",
+    "resolve-url-loader": "^5.0.0"
+  },
+  "dependencies": {
+    "@hello-pangea/dnd": "^18.0.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-icons": "^5.5.0",
+    "react-router-dom": "^7.6.0",
+    "styled-components": "^6.1.18",
+    "sweetalert2": "^11.21.0"
+  }
+}
