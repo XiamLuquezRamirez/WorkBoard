@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { FaFileUpload, FaCheck, FaClock, FaSpinner, FaDownload, FaTrash, FaFile, FaImage, FaBell, FaComment, FaEdit, FaSave } from 'react-icons/fa';
+import { FaFileUpload, FaCheck, 
+    FaClock, FaSpinner, FaDownload, 
+    FaTrash, FaFile, FaImage, FaBell, FaComment, FaEdit, FaSave } from 'react-icons/fa';
 import axios from 'axios';
 import Swal from 'sweetalert2';
 import FileViewerModal from './FileViewerModal';
@@ -7,6 +9,7 @@ import NotificationsModal from './NotificationsModal';
 import config from '../config';
 import { useUser } from './UserContext';
 import axiosInstance from '../axiosConfig';
+import { FaCircleCheck, FaCircle } from 'react-icons/fa6';
 
 const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton }) => {
     const [loading, setLoading] = useState(false);
@@ -22,8 +25,9 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton }) 
                 tipo: evidencia.tipo
             }))
             : []);
-    const [observaciones, setObservaciones] = useState(task.observaciones || '');
-    const [vistoBueno, setVistoBueno] = useState(!!task.visto_bueno || false);
+    const [observaciones, setObservaciones] = useState('');
+    console.log(task.visto_bueno);
+    const [vistoBueno, setVistoBueno] = useState(task.visto_bueno === 1);
     const { user } = useUser();
     const fileInputRef = useRef(null);
     const [selectedFile, setSelectedFile] = useState(null);
@@ -39,11 +43,10 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton }) 
     });
 
     const currentUser = user;
-
     const isLider = currentUser?.lider === 'Si';
     const isOwnTask = currentUser?.empleado === task.empleado;
     const isAdmin = currentUser?.tipo_usuario === 'Administrador';
-
+  
 
 
     const handleFileChange = (e) => {
@@ -316,6 +319,9 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton }) 
             });
 
             onUpdate();
+            //limpiar campo de observaciones
+            setObservaciones('');
+            setIsButtonObservaciones(false);
             Swal.fire('¡Éxito!', 'Observaciones guardadas correctamente', 'success');
         } catch (error) {
             console.error(error);
@@ -416,7 +422,8 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton }) 
                 <div className="modal-overlay" onClick={(e) => e.target.className === 'modal-overlay' && onClose()}>
                     <div className="task-details-modal">
                         <div className="modal-header">
-                            <h2>Detalles de la Tarea</h2>
+                            <h2 className='modal-title'> {vistoBueno ? <FaCircleCheck color='green' title='Visto bueno' /> : <FaCircle color='grey' title='No visto bueno' />} Detalles de la Tarea</h2>
+                           
 
                             <button className="close-button" onClick={onClose}>&times;</button>
 
@@ -502,15 +509,6 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton }) 
                                                 <span className={`prioridad-badge ${task.prioridad.toLowerCase()}`}>
                                                     Prioridad: <strong>{task.prioridad}</strong>
                                                 </span>
-                                                {/* {task.observaciones && task.observaciones.length > 0 && (
-                                                    <span
-                                                        className='priority-badge-notf active'
-                                                        onClick={handleNotificationsClick}
-                                                        style={{ cursor: 'pointer' }}
-                                                    >
-                                                        <FaComment /> OBSERVACIONES
-                                                    </span>
-                                                )} */}
                                             </div>
                                         </>
                                     )}
@@ -685,7 +683,7 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton }) 
                             </div>
 
                             {/* Panel de observaciones - Solo para líderes o administradores */}
-                            {isLider || isAdmin && (
+                            {(isLider || isAdmin) && (
                                 <>
                                     <div className='vistoBueno-panel'>
                                         <h4>Visto bueno</h4>
@@ -703,12 +701,11 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton }) 
                                     <div className="observations-panel">
                                         <h4>Observaciones</h4>
                                         <textarea
+                                            value={observaciones}
                                             onChange={(e) => {
                                                 setObservaciones(e.target.value)
-
                                             }}
                                             onFocus={() => setIsButtonObservaciones(true)}
-
                                             placeholder="Escriba sus observaciones aquí..."
                                             rows="2"
                                             className="observations-textarea"
@@ -743,19 +740,25 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton }) 
                             <div className="observations-list">
                                 <h4 className="observations-title">📝 Lista de Observaciones</h4>
                                 {task.observaciones.length > 0 ? (
-                                    task.observaciones.map((observacion) => (
-                                        <div key={observacion.id} className="observation-card">
-                                            <p className="observation-text">❝{observacion.observaciones}❞</p>
-                                            <div className="observation-meta">
-                                                <span><strong>Creador:</strong> {observacion.creador}</span>
-                                                <span><strong>Fecha:</strong> {new Date(observacion.fecha).toLocaleDateString()}</span>
+                                    task.observaciones.map((observacion) => {
+                                        const fecha = new Date(observacion.fecha + 'T12:00:00'); // Evita cambio de zona horaria
+                                        const fechaFormateada = fecha.toLocaleDateString();
+
+                                        return (
+                                            <div key={observacion.id} className="observation-card">
+                                                <p className="observation-text">❝{observacion.observaciones}❞</p>
+                                                <div className="observation-meta">
+                                                    <span><strong>Creador:</strong> {observacion.creador}</span>
+                                                    <span><strong>Fecha:</strong> {fechaFormateada}</span>
+                                                </div>
                                             </div>
-                                        </div>
-                                    ))
+                                        );
+                                    })
                                 ) : (
                                     <p className="no-observations">✨ No hay observaciones registradas</p>
                                 )}
                             </div>
+
                         </div>
                     </div>
                 </div>

@@ -4,7 +4,6 @@ import { Link, useLocation } from 'react-router-dom';
 
 const Sidebar = () => {
     const location = useLocation();
-
     return (
         <nav className="sidebar">
             <Link 
@@ -14,13 +13,13 @@ const Sidebar = () => {
                 <FaHome size={24} />
             </Link>
 
+         
             <Link 
                 to="/reports"
                 className={`sidebar-icon ${location.pathname === '/reports' ? 'active' : ''}`}
             >
                 <FaChartBar size={24} />
             </Link>
-
             <Link 
                 to="/parameters"
                 className={`sidebar-icon ${location.pathname === '/parameters' ? 'active' : ''}`}

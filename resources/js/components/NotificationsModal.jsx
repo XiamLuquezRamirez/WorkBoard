@@ -24,8 +24,8 @@ const NotificationModal = ({ isOpen, onClose, notifications, setNotifications, c
             case 'Mensaje':
                 return {
                     icon: <FaComment />,
-                    mensaje1: 'le ha enviado un mensaje',
-                    mensaje2: ''
+                    mensaje1: 'le ha enviado un mensaje a',
+                    mensaje2: 'le ha enviado un mensaje a'
                 };
             case 'Recordatorio':
                 return {
@@ -73,12 +73,10 @@ const NotificationModal = ({ isOpen, onClose, notifications, setNotifications, c
         // Abrir el detalle de la tarea
             try {
                 const response = await axiosInstance.get(`/cargarTareaSeleccionada/${notification.id_tarea}`);
-                console.log('Respuesta del servidor:', response.data);
                 
                 if (response.data) {
                     const tarea = response.data;
                     if (tarea) {
-                        console.log('Tarea encontrada:', tarea);
                         setSelectedTask(tarea);
                         setShowTaskDetailsModal(true);
                     }
@@ -133,13 +131,18 @@ const NotificationModal = ({ isOpen, onClose, notifications, setNotifications, c
                                         {/* mostrar el nombre si es lider o empleado  o admin*/}
                                         {tipo === 'Administrador' ? (
                                             <div className="notification-content">
-                                                <p className="notification-employee">{notification.emisor === 'Lider' ?  notification.nombre_lider + ` ${getIcon(notification.tipo).mensaje2} ` + notification.nombre_empleado : notification.nombre_empleado + ` ${getIcon(notification.tipo).mensaje1} `}</p>
+                                                <p className="notification-employee">{
+                                                notification.emisor === 'Lider' 
+                                                ?
+                                                notification.nombre_lider + ` ${getIcon(notification.tipo).mensaje2} ` + notification.nombre_completo 
+                                                : 
+                                                notification.nombre_completo + ` ${getIcon(notification.tipo).mensaje1} `}</p>
                                                 <p className="notification-description">{notification.descripcion}</p>
                                                 <p className="notification-date">{notification.fecha}</p>
                                             </div>
                                         ) : (
                                             <div className="notification-content">
-                                                <p className="notification-employee">{notification.nombres} {notification.apellidos}</p>
+                                                <p className="notification-employee">{notification.nombre_completo}</p>
                                                 <p className="notification-description">{notification.descripcion}</p>
                                                 <p className="notification-date">{notification.fecha}</p>
                                             </div>

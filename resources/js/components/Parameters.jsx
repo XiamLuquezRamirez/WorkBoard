@@ -4,13 +4,18 @@ import Sidebar from './Sidebar';
 import { useUser } from './UserContext';
 import { FaArrowLeft, FaUsers, FaUserTie, FaBuilding } from 'react-icons/fa';
 import EmployeeModal from './EmployeeModal';
-
+import UserModal from './UserModal';
+import CompanyModal from './CompanyModal';
+import LeaderModal from './LeaderModal';
+import { getImageUrl, getAssetUrl } from '../utils/assetHelper';
 
 const Parameters = () => {
     const { user } = useUser();
     const [showUserMenu, setShowUserMenu] = useState(false);
     const [showEmployeeModal, setShowEmployeeModal] = useState(false);
-
+    const [showUserModal, setShowUserModal] = useState(false);
+    const [showCompanyModal, setShowCompanyModal] = useState(false);
+    const [showLeaderModal, setShowLeaderModal] = useState(false);
     const parameterCards = [
 
         {
@@ -51,6 +56,12 @@ const Parameters = () => {
         document.title = "Parámetros del Sistema - WorkBoard";
     }, []);
 
+    const backDashboard = () => {
+        const fullPath = getAssetUrl('dashboard');              
+        window.location.href = fullPath;
+    };
+
+
     return (
         <div className="dashboard-container">
             <Sidebar />
@@ -63,7 +74,7 @@ const Parameters = () => {
             <div className="parameters-container">
                 <div className="parameters-header">
                     <h1>Parámetros del Sistema</h1>
-                    <button className="back-button" onClick={() => navigate('/dashboard')}>
+                    <button className="back-button" onClick={ backDashboard }>
                         <FaArrowLeft /> Regresar al Dashboard
                     </button>
                 </div>
@@ -92,6 +103,24 @@ const Parameters = () => {
                     <EmployeeModal 
                         isOpen={showEmployeeModal} 
                         onClose={() => setShowEmployeeModal(false)} 
+                    />
+                )}
+                {showUserModal && (
+                    <UserModal
+                        isOpen={showUserModal}
+                        onClose={() => setShowUserModal(false)}
+                    />
+                )}
+                {showCompanyModal && (
+                    <CompanyModal
+                        isOpen={showCompanyModal}
+                        onClose={() => setShowCompanyModal(false)}
+                    />
+                )}
+                {showLeaderModal && (
+                    <LeaderModal
+                        isOpen={showLeaderModal}
+                        onClose={() => setShowLeaderModal(false)}
                     />
                 )}
 

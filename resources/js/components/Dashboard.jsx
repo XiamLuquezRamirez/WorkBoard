@@ -8,12 +8,12 @@ import TaskDetailsModal from './TaskDetailsModal';
 import EmployeeInterface from './EmployeeInterface';
 
 import {
-    FaSearch, 
-    FaUser, 
-    FaTasks, 
-    FaCheckCircle, 
-    FaSpinner, 
-    FaClock, 
+    FaSearch,
+    FaUser,
+    FaTasks,
+    FaCheckCircle,
+    FaSpinner,
+    FaClock,
     FaTimes,
     FaArrowLeft,
     FaEye,
@@ -43,7 +43,7 @@ const Dashboard = () => {
     const [selectedTask, setSelectedTask] = useState(null);
 
 
-    
+
     useEffect(() => {
         document.title = "Dashboard - WorkBoard";
     }, []);
@@ -54,21 +54,21 @@ const Dashboard = () => {
             window.location.href = getAssetUrl('/login');
             localStorage.clear();
             window.location.reload();
-          
+
         } catch (error) {
             setError('Error al cerrar sesión');
             setIsLoading(false);
         }
     };
 
-      //Cargar empleados y tareas
+    //Cargar empleados y tareas
 
-      useEffect(() => {
+    useEffect(() => {
         if (!isLoading) {
             cargarEmpleados();
         }
     }, [isLoading]);
-    
+
 
     const cargarEmpleados = async () => {
         setIsLoading2(true);
@@ -86,7 +86,7 @@ const Dashboard = () => {
                 setIsLoading2(false);
             });
     };
-    
+
 
     const getStatusIcon = (status) => {
         switch (status) {
@@ -162,7 +162,7 @@ const Dashboard = () => {
         );
     }
 
-     // Función para filtrar empleados
+    // Función para filtrar empleados
     const filteredEmpleados = empleados.filter(
         (empleado) =>
             empleado.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -181,177 +181,177 @@ const Dashboard = () => {
                 return (
                     //loading
                     <>
-                    {isLoading2 ? (
-                        <div className="loader">
-                            <div className="justify-content-center jimu-primary-loading"></div>
-                        </div>
-                    ) : (
-                    <div className="cards-container">
-                        <div className="dashboard-header">
-                            <h1>Tablero de seguimiento de empleados</h1>
-                            <div className="search-container">
-                                <div className="search-box">
-                                    <input
-                                        type="text"
-                                        placeholder="Buscar empleado por nombre, departamento o empresa..."
-                                        value={searchTerm}
-                                        onChange={(e) =>
-                                            setSearchTerm(e.target.value)
-                                        }
-                                        className="search-input"
-                                    />
-                                </div>
+                        {isLoading2 ? (
+                            <div className="loader">
+                                <div className="justify-content-center jimu-primary-loading"></div>
                             </div>
-                        </div>
-                        <div className="cards-grid">
-                            {filteredEmpleados.map((empleado) => (
-                                <div
-                                    key={empleado.id}
-                                    className="employee-card"
-                                >
-                                    <div className="employee-main-info">
-                                        <img
-                                            src={empleado.foto}
-                                            alt={empleado.nombre}
-                                            className="employee-photo"
-                                        />
-                                        <div className="employee-details">
-                                            <h3>{empleado.nombre}</h3>
-                                            <p className="cargo">
-                                             <FaUserTie size={13} /> {" "}   {empleado.cargo}
-                                            </p>
-                                            <p className="empresa">
-                                                <FaBuilding size={13} /> {" "}   {empleado.empresa} -{" "}
-                                                {empleado.departamento}
-                                            </p>
-                                            <p className="contacto">
-                                                <FaEnvelope />{" "}
-                                                {empleado.contacto?.email}
-                                            </p>
+                        ) : (
+                            <div className="cards-container">
+                                <div className="dashboard-header">
+                                    <h1>Tablero de seguimiento de empleados</h1>
+                                    <div className="search-container">
+                                        <div className="search-box">
+                                            <input
+                                                type="text"
+                                                placeholder="Buscar empleado por nombre, departamento o empresa..."
+                                                value={searchTerm}
+                                                onChange={(e) =>
+                                                    setSearchTerm(e.target.value)
+                                                }
+                                                className="search-input"
+                                            />
                                         </div>
-
                                     </div>
-                                    <div className="employee-actions">
-                                        <button
-                                            className="action-button profile-btn"
-                                            onClick={() => {
-                                                setSelectedEmployee(
-                                                    empleado
-                                                );
-                                                setShowProfileModal(true);
-                                            }}
+                                </div>
+                                <div className="cards-grid">
+                                    {filteredEmpleados.map((empleado) => (
+                                        <div
+                                            key={empleado.id}
+                                            className="employee-card"
                                         >
-                                            <FaUser /> Perfil
-                                        </button>
-                                        <button
-                                            className="action-button tasks-btn"
-                                            onClick={() => {
-                                                setSelectedEmployee(
-                                                    empleado
-                                                );
-                                                setShowTasksModal(true);
-                                            }}
-                                        >
-                                            <FaTasks /> Tareas
-                                        </button>
-                                    </div>
-                                    <div className="performance-section">
-                                        <h4>Rendimiento</h4>
-                                        <div className="task-stats-grid">
-                                            <div className="stat-item">
-                                                <span className="stat-number">
-                                                    {empleado.rendimiento
-                                                        ?.tareasAsignadas || 0}
-                                                </span>
-                                                <span className="stat-label">
-                                                    Total Asignadas
-                                                </span>
-                                            </div>
-                                            <div className="stat-item">
-                                                <span className="stat-number">
-                                                    {empleado.rendimiento
-                                                        ?.tareas.completadas ||
-                                                        0}
-                                                </span>
-                                                <span className="stat-label">
-                                                    Completadas
-                                                </span>
-                                            </div>
-                                            <div className="stat-item">
-                                                <span className="stat-number">
-                                                    {empleado.rendimiento
-                                                        ?.tareas.enProceso || 0}
-                                                </span>
-                                                <span className="stat-label">
-                                                    En Proceso
-                                                </span>
-                                            </div>
-                                            <div className="stat-item urgent">
-                                                <span className="stat-number">
-                                                    {empleado.rendimiento
-                                                        ?.tareas.pendientes ||
-                                                        0}
-                                                </span>
-                                                <span className="stat-label">
-                                                    Pendientes
-                                                </span>
-                                            </div>
-                                        </div>
+                                            <div className="employee-main-info">
+                                                <img
+                                                    src={empleado.foto}
+                                                    alt={empleado.nombre}
+                                                    className="employee-photo"
+                                                />
+                                                <div className="employee-details">
+                                                    <h3>{empleado.nombre}</h3>
+                                                    <p className="cargo">
+                                                        <FaUserTie size={13} /> {" "}   {empleado.cargo}
+                                                    </p>
+                                                    <p className="empresa">
+                                                        <FaBuilding size={13} /> {" "}   {empleado.empresa} -{" "}
+                                                        {empleado.departamento}
+                                                    </p>
+                                                    <p className="contacto">
+                                                        <FaEnvelope />{" "}
+                                                        {empleado.contacto?.email}
+                                                    </p>
+                                                </div>
 
-                                        <div className="kpi-section">
-                                            <div className="kpi-item">
-                                                <span className="kpi-label">
-                                                    Eficiencia
-                                                </span>
-                                                <div className="progress-bar">
-                                                    <div
-                                                        className="progress-fill"
-                                                        style={{
-                                                            width: `${empleado.avance}%`,
-                                                        }}
-                                                    />
-                                                    <span className="progress-value">
-                                                        {empleado.avance}%
-                                                    </span>
+                                            </div>
+                                            <div className="employee-actions">
+                                                <button
+                                                    className="action-button profile-btn"
+                                                    onClick={() => {
+                                                        setSelectedEmployee(
+                                                            empleado
+                                                        );
+                                                        setShowProfileModal(true);
+                                                    }}
+                                                >
+                                                    <FaUser /> Perfil
+                                                </button>
+                                                <button
+                                                    className="action-button tasks-btn"
+                                                    onClick={() => {
+                                                        setSelectedEmployee(
+                                                            empleado
+                                                        );
+                                                        setShowTasksModal(true);
+                                                    }}
+                                                >
+                                                    <FaTasks /> Tareas
+                                                </button>
+                                            </div>
+                                            <div className="performance-section">
+                                                <h4>Rendimiento</h4>
+                                                <div className="task-stats-grid">
+                                                    <div className="stat-item">
+                                                        <span className="stat-number">
+                                                            {empleado.rendimiento
+                                                                ?.tareasAsignadas || 0}
+                                                        </span>
+                                                        <span className="stat-label">
+                                                            Asignadas
+                                                        </span>
+                                                    </div>
+                                                    <div className="stat-item">
+                                                        <span className="stat-number">
+                                                            {empleado.rendimiento
+                                                                ?.tareas.completadas ||
+                                                                0}
+                                                        </span>
+                                                        <span className="stat-label">
+                                                            Completadas
+                                                        </span>
+                                                    </div>
+                                                    <div className="stat-item">
+                                                        <span className="stat-number">
+                                                            {empleado.rendimiento
+                                                                ?.tareas.enProceso || 0}
+                                                        </span>
+                                                        <span className="stat-label">
+                                                            En Proceso
+                                                        </span>
+                                                    </div>
+                                                    <div className="stat-item urgent">
+                                                        <span className="stat-number">
+                                                            {empleado.rendimiento
+                                                                ?.tareas.pendientes ||
+                                                                0}
+                                                        </span>
+                                                        <span className="stat-label">
+                                                            Pendientes
+                                                        </span>
+                                                    </div>
+                                                </div>
+
+                                                <div className="kpi-section">
+                                                    <div className="kpi-item">
+                                                        <span className="kpi-label">
+                                                            Eficiencia
+                                                        </span>
+                                                        <div className="progress-bar">
+                                                            <div
+                                                                className="progress-fill"
+                                                                style={{
+                                                                    width: `${empleado.avance}%`,
+                                                                }}
+                                                            />
+                                                            <span className="progress-value">
+                                                                {empleado.avance}%
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div className="urgent-tasks">
+                                                    <h5>Tareas Recientes</h5>
+                                                    {empleado.tareasRecientes?.map(
+                                                        (tarea) => (
+                                                            <div
+                                                                key={tarea.id}
+                                                                className="urgent-task-item"
+                                                            >
+                                                                <span>
+                                                                    {tarea.titulo}
+                                                                </span>
+                                                                <span
+                                                                    className={`status ${getStatusClass(
+                                                                        tarea.estado
+                                                                    )}`}
+                                                                >
+                                                                    {getStatusIcon(
+                                                                        tarea.estado
+                                                                    )}
+                                                                </span>
+                                                            </div>
+                                                        )
+                                                    )}
                                                 </div>
                                             </div>
                                         </div>
-
-                                        <div className="urgent-tasks">
-                                            <h5>Tareas Recientes</h5>
-                                            {empleado.tareasRecientes?.map(
-                                                (tarea) => (
-                                                    <div
-                                                        key={tarea.id}
-                                                        className="urgent-task-item"
-                                                    >
-                                                        <span>
-                                                            {tarea.titulo}
-                                                        </span>
-                                                        <span
-                                                            className={`status ${getStatusClass(
-                                                                tarea.estado
-                                                            )}`}
-                                                        >
-                                                            {getStatusIcon(
-                                                                tarea.estado
-                                                            )}
-                                                        </span>
-                                                    </div>
-                                                )
-                                            )}
-                                        </div>
-                                    </div>
+                                    ))}
                                 </div>
-                            ))}
-                        </div>
-                    </div>
-                    )}
+                            </div>
+                        )}
                     </>
                 );
         }
     };
-    
+
     const renderInterface = () => {
         if (!currentUser) return null;
 
@@ -370,24 +370,26 @@ const Dashboard = () => {
         }
     };
 
-      // Componente Modal de Perfil
-      const ProfileModal = ({ employee, onClose }) => (
+    // Componente Modal de Perfil
+    const ProfileModal = ({ employee, onClose }) => (
         <div className="modal-overlay">
-            <div className="modal-content profile-modal">
+            <div className="profile-modal">
                 <div className="modal-header">
-                    <h2>Perfil del Empleado</h2>
+                    <h2>Perfil de {employee.nombre}</h2>
                     <button className="close-button" onClick={onClose}>
                         <FaTimes />
                     </button>
                 </div>
-                <div className="modal-body">
-                    <div className="profile-header">
-                        <div className="profile-photo-container">
-                            <img
-                                src={employee.foto}
-                                alt={employee.nombre}
-                                className="profile-photo"
-                            />
+                <div className="modal-content">
+                    <div className="profile-section">
+                        <div className="profile-header">
+                            <div className="profile-photo-container">
+                                <img
+                                    src={employee.foto}
+                                    alt={employee.nombre}
+                                    className="profile-photo"
+                                />
+                            </div>
                             <div className="profile-info">
                                 <h3 style={{ textTransform: 'capitalize' }}>{employee.nombre}</h3>
                                 <p className="cargo">{employee.cargo}</p>
@@ -397,38 +399,42 @@ const Dashboard = () => {
                             </div>
                         </div>
                     </div>
-                    <div className="profile-details">
-                        <div className="info-section">
-                            <h4>Información de Contacto</h4>
-                            <p>
-                                <strong>Email:</strong>{" "}
-                                {employee.contacto?.email}
-                            </p>
-                            <p>
-                                <strong>Teléfono:</strong>{" "}
-                                {employee.contacto?.telefono}
-                            </p>
+
+                    <div className="profile-sections">
+                        <div className="profile-details">
+                            <div className="info-section">
+                                <h4>Información de Contacto</h4>
+                                <div className="contact-info">
+                                    <p>
+                                        <strong>Email:</strong>{" "}
+                                        {employee.contacto?.email}
+                                    </p>
+                                    <p>
+                                        <strong>Teléfono:</strong>{" "}
+                                        {employee.contacto?.telefono}
+                                    </p>
+                                </div>
+                            </div>
                         </div>
 
-                    </div>
-                    <div className="info-funciones">
-                        <h4>Funciones activas</h4>
-                        <ul>
-                            {employee.funciones?.map(
-                                (funciones, index) => (
-                                    <li key={index}>{funciones.descripcion}</li>
-                                )
-                            )}
-                        </ul>
+                        <div className="info-funciones">
+                            <h4>Funciones activas</h4>
+                            <ul className="funciones-list">
+                                {employee.funciones?.map(
+                                    (funciones, index) => (
+                                        <li key={index}>{funciones.descripcion}</li>
+                                    )
+                                )}
+                            </ul>
+                        </div>
                     </div>
                 </div>
-
             </div>
         </div>
     );
 
-     // Componente Modal de Tareas
-     const TasksModal = ({ employee, onClose }) => {
+    // Componente Modal de Tareas
+    const TasksModal = ({ employee, onClose }) => {
         const estados = [
             {
                 id: 'Todas',
@@ -471,7 +477,7 @@ const Dashboard = () => {
 
         const handleTaskClick = (task) => {
             setSelectedTask(task);
-            console.log(task);
+
             setShowTaskDetails(true);
         };
 
@@ -595,8 +601,8 @@ const Dashboard = () => {
 
                                         setSelectedEmployee(empleadoActualizado);
                                         // Actualizar la lista de empleados
-                                        setEmpleados(prevEmpleados => 
-                                            prevEmpleados.map(emp => 
+                                        setEmpleados(prevEmpleados =>
+                                            prevEmpleados.map(emp =>
                                                 emp.id === empleadoActualizado.id ? empleadoActualizado : emp
                                             )
                                         );
@@ -615,7 +621,7 @@ const Dashboard = () => {
 
     return (
         <div className="dashboard-container">
-             <Sidebar
+            <Sidebar
                 activeMenu={activeMenu}
                 setActiveMenu={setActiveMenu}
                 setCurrentView={setCurrentView}
@@ -623,7 +629,7 @@ const Dashboard = () => {
                 setIsOpen={setIsSidebarOpen}
             />
             <div className="main-content">
-            <Header
+                <Header
                     currentUser={user}
                     showUserMenu={showUserMenu}
                     setShowUserMenu={setShowUserMenu}
@@ -637,7 +643,7 @@ const Dashboard = () => {
                     onClose={() => setShowProfileModal(false)}
                 />
             )}
-             {showTasksModal && selectedEmployee && (
+            {showTasksModal && selectedEmployee && (
                 <TasksModal
                     employee={selectedEmployee}
                     onClose={() => setShowTasksModal(false)}

@@ -97,6 +97,48 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
         //visto bueno
         Route::put('/vistoBueno/{id}', [EmpleadosController::class, 'vistoBueno']);
+
+        //cargar usuarios
+        Route::get('/cargarUsuarios', [EmpleadosController::class, 'cargarUsuarios']);
+
+        //buscar usuarios
+        Route::get('/buscarUsuarios', [EmpleadosController::class, 'buscarUsuarios']);
+
+        //lista de empleados
+        Route::get('/listaEmpleados', [EmpleadosController::class, 'listaEmpleados']);
+        
+        //guardar usuario
+        Route::post('/guardarUsuario', [EmpleadosController::class, 'guardarUsuario']);
+
+        //eliminar usuario
+        Route::delete('/eliminarUsuario/{id}', [EmpleadosController::class, 'eliminarUsuario']);
+
+        //cargar empresas
+        Route::get('/cargarEmpresas', [EmpleadosController::class, 'cargarEmpresas']);
+
+        //buscar empresas
+        Route::get('/buscarEmpresas', [EmpleadosController::class, 'buscarEmpresas']);
+
+        //guardar empresa
+        Route::post('/guardarEmpresa', [EmpleadosController::class, 'guardarEmpresa']);
+
+        //eliminar empresa
+        Route::delete('/eliminarEmpresa/{id}', [EmpleadosController::class, 'eliminarEmpresa']);
+
+        //cargar lideres
+        Route::get('/cargarLideres', [EmpleadosController::class, 'cargarLideres']);
+
+        //cargar empleados lider
+        Route::get('/cargarEmpleadosLider/{id}', [EmpleadosController::class, 'cargarEmpleadosLider']);
+
+        //guardar asignaciones lider
+        Route::post('/guardarAsignacionesLider', [EmpleadosController::class, 'guardarAsignacionesLider']); 
+
+           // informe de tareas
+    Route::get('/informes/tareas', [empleadosController::class, 'informeTareas']);
+
+    //verificar empleado lider
+    Route::get('/verificarEmpleadoLider/{id}', [empleadosController::class, 'verificarEmpleadoLider']);
     });
 });
 

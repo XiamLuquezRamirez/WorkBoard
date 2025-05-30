@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FaBell, FaChevronDown, FaUserCircle, FaSignOutAlt } from 'react-icons/fa';
+import { FaBell, FaChevronDown, FaUserCircle, FaSignOutAlt, FaSignInAlt } from 'react-icons/fa';
 import { getImageUrl, getAssetUrl } from '../utils/assetHelper';
 import axiosInstance from '../axiosConfig';
 import { useUser } from './UserContext';
@@ -13,11 +13,11 @@ const Header = ({ currentUser, showUserMenu, setShowUserMenu, setIsSidebarOpen }
     const [notifications, setNotifications] = useState([]);
     const [showProfileModal, setShowProfileModal] = useState(false);
     const { user, setUser } = useUser();
-    
+    const [hover, setHover] = useState(false);
 
     useEffect(() => {
         if (!user) return;
-       
+
         const intervalo = setInterval(() => {
             if (user.tipo_usuario === "Administrador") {
                 cargarNotificaciones('admin');
@@ -45,10 +45,12 @@ const Header = ({ currentUser, showUserMenu, setShowUserMenu, setIsSidebarOpen }
         setIsLoggingOut(true);
         try {
             await axiosInstance.post('/logout');
-               // Limpiar el localStorage
-               localStorage.removeItem('user');
-               // Redirigir inmediatamente a la página de login
-               window.location.href = '/login';
+            // Limpiar el localStorage
+            localStorage.removeItem('user');
+            // Redirigir inmediatamente a la página de login
+            //obtener la url actual
+            const url = getAssetUrl('login');
+            window.location.href = url;
         } catch (error) {
             console.error("Error al cerrar sesión:", error);
         } finally {
@@ -83,13 +85,13 @@ const Header = ({ currentUser, showUserMenu, setShowUserMenu, setIsSidebarOpen }
                             <FaBell size={30} />
                             {notifications.filter((n) => !n.leida).length >
                                 0 && (
-                                <span className="notification-badge">
-                                    {
-                                        notifications.filter((n) => !n.leida)
-                                            .length
-                                    }
-                                </span>
-                            )}
+                                    <span className="notification-badge">
+                                        {
+                                            notifications.filter((n) => !n.leida)
+                                                .length
+                                        }
+                                    </span>
+                                )}
                         </div>
                     </div>
 
@@ -132,8 +134,12 @@ const Header = ({ currentUser, showUserMenu, setShowUserMenu, setIsSidebarOpen }
                                 onClick={
                                     !isLoggingOut ? handleLogout : undefined
                                 }
+                                onMouseEnter={() => setHover(true)}
+                                onMouseLeave={() => setHover(false)}
                             >
-                                <FaSignOutAlt />
+
+                                {hover ? <FaSignOutAlt /> : <FaSignInAlt />}
+
                                 <span>
                                     {isLoggingOut
                                         ? "Cerrando sesión..."
@@ -163,7 +169,7 @@ const Header = ({ currentUser, showUserMenu, setShowUserMenu, setIsSidebarOpen }
                     setNotifications={setNotifications}
                 />
             )}
-            
+
         </header>
     );
 

@@ -1,11 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
-import { FaPlus, FaClock, FaSpinner, FaCheck, FaEye, FaSearch, FaFile, FaFileWord, FaFileImage, FaFilePdf, FaTimes, FaSave } from 'react-icons/fa';
+import {
+    FaPlus, FaClock, FaSpinner, FaCheck,
+    FaEye, FaSearch, FaFile, FaFileWord,
+    FaFileImage, FaFilePdf, FaTimes,
+    FaSave, FaArrowLeft
+} from 'react-icons/fa';
 import TaskDetailsModal from './TaskDetailsModal';
 import axiosInstance from '../axiosConfig';
 import Swal from 'sweetalert2';
+import { FaCircleCheck, FaCircle } from 'react-icons/fa6';
 const EmployeeInterface = ({ user }) => {
- 
+
     const [columns, setColumns] = useState({
         'Pendiente': {
             title: 'Pendiente',
@@ -36,6 +42,8 @@ const EmployeeInterface = ({ user }) => {
     const [empleadoSeleccionado, setEmpleadoSeleccionado] = useState(null);
     const [estadoSeleccionado, setEstadoSeleccionado] = useState(null);
     const [mostrarTareasEstado, setMostrarTareasEstado] = useState(false);
+    const [asignarTareasEmpleado, setAsignarTareasEmpleado] = useState(false);
+    const [empleadoAsignado, setEmpleadoAsignado] = useState(null);
     useEffect(() => {
         loadTasks();
     }, []);
@@ -56,6 +64,7 @@ const EmployeeInterface = ({ user }) => {
 
     const loadTasks = async () => {
         try {
+            console.log(user);
             const response = await axiosInstance.get(`/cargarTareas/${user.empleado}`);
             organizeTasks(response.data.tareas);
         } catch (error) {
@@ -79,7 +88,7 @@ const EmployeeInterface = ({ user }) => {
                 items: []
             }
         };
-
+        console.log(tareas);
         // Distribuir las tareas en las columnas correspondientes
         tareas.forEach(task => {
             const estado = task.estado.trim();
@@ -88,21 +97,23 @@ const EmployeeInterface = ({ user }) => {
             }
         });
 
+
+
         setColumns(newColumns);
     };
 
     const onDragEnd = (result) => {
-        
+
         if (!result || !result.destination) return;
-        
+
         const { source, destination, draggableId } = result;
         const sourceId = source.droppableId;
-        console.log(destination);
+
         const destinationId = destination.droppableId;
 
         // Crear copias profundas para evitar mutaciones
         const newColumns = JSON.parse(JSON.stringify(columns));
-        
+
         // Obtener las columnas afectadas
         const sourceColumn = newColumns[sourceId];
         const destColumn = newColumns[destinationId];
@@ -119,7 +130,7 @@ const EmployeeInterface = ({ user }) => {
             const sourceItems = Array.from(sourceColumn.items);
             const destItems = Array.from(destColumn.items);
             const [moved] = sourceItems.splice(source.index, 1);
-            
+
             // Actualizar el estado de la tarea
             moved.estado = destinationId;
 
@@ -153,6 +164,12 @@ const EmployeeInterface = ({ user }) => {
         setColumns(newColumns);
     };
 
+    const asignarTareas = () => {
+        setShowNewTaskModal(true);
+        setShowTareasEmpleado(false);
+        setAsignarTareasEmpleado(true);
+    };
+
     const handleTaskClick = (task) => {
         setSelectedTask(task);
         setShowTaskDetails(true);
@@ -160,18 +177,19 @@ const EmployeeInterface = ({ user }) => {
 
     const abrirListaEmpleadosAsignados = async () => {
         setShowListaEmpleadosAsignados(true);
-        
+
     };
 
     const verTareas = async (empleadoId) => {
         try {
+            setEmpleadoAsignado(empleadoId);
             const response = await axiosInstance.get(`/cargarTareas/${empleadoId}`);
             setTareasEmpleado(response.data.tareas);
-            
+
             // Encontrar el empleado seleccionado
             const empleado = user.empleados_asignados.find(emp => emp.id === empleadoId);
             setEmpleadoSeleccionado(empleado);
-            
+
             // Cerrar el modal de empleados y abrir el de tareas
             setShowListaEmpleadosAsignados(false);
             setShowTareasEmpleado(true);
@@ -193,6 +211,13 @@ const EmployeeInterface = ({ user }) => {
         setEstadoSeleccionado(null);
     };
 
+    const volverAEmpleados = () => {
+        setShowTareasEmpleado(false);
+        setMostrarTareasEstado(false);
+        setEstadoSeleccionado(null);
+        setShowListaEmpleadosAsignados(true);
+    };
+
     const cerrarTareasEmpleado = () => {
         setShowTareasEmpleado(false);
         setMostrarTareasEstado(false);
@@ -202,22 +227,30 @@ const EmployeeInterface = ({ user }) => {
     const handleSubmitNewTask = async (e) => {
         e.preventDefault();
         const formData = new FormData(e.target);
-        
+
         try {
+
+            let empleado = null;
+            if (asignarTareasEmpleado) {
+                empleado = empleadoAsignado;
+            }else{
+                empleado = user.empleado;
+            }
+            
             const response = await axiosInstance.post('/guardarTarea', {
                 titulo: formData.get('titulo'),
                 descripcion: formData.get('descripcion'),
                 fecha_pactada: formData.get('fecha_pactada'),
                 prioridad: formData.get('prioridad'),
-                empleado: user.empleado,
+                empleado: empleado,
                 estado: formData.get('estado')
             });
 
             // Cerrar el modal primero
             setShowNewTaskModal(false);
 
-            // Cargar todas las tareas nuevamente
-            const tasksResponse = await axiosInstance.get(`/cargarTareas/${user.empleado}`);
+            // preguntar si la tarea es para un empleado o para el lider
+            const tasksResponse = await axiosInstance.get(`/cargarTareas/${ user.empleado}`);
             const tasks = tasksResponse.data.tareas;
 
             // Organizar las tareas en las columnas
@@ -269,22 +302,22 @@ const EmployeeInterface = ({ user }) => {
                 <h2>Mis Tareas</h2>
 
                 <div className="header-right">
-                {user.lider == 'Si' && (
-                <button
-                className="search-task-button"
-                onClick={() => abrirListaEmpleadosAsignados()}
-                >
-                    <FaSearch /> Seguimiento de Tareas
-                </button>
-                )}
-                <button 
-                    className="new-task-button"
-                    onClick={() => setShowNewTaskModal(true)}
-                >
-                    <FaPlus /> Nueva Tarea
-                </button>
+                    {user.lider == 'Si' && (
+                        <button
+                            className="search-task-button"
+                            onClick={() => abrirListaEmpleadosAsignados()}
+                        >
+                            <FaSearch /> Seguimiento de Tareas
+                        </button>
+                    )}
+                    <button
+                        className="new-task-button"
+                        onClick={() => setShowNewTaskModal(true)}
+                    >
+                        <FaPlus /> Nueva Tarea
+                    </button>
                 </div>
-                
+
             </div>
 
             {/* Modal de nueva tarea */}
@@ -293,7 +326,7 @@ const EmployeeInterface = ({ user }) => {
                     <div className="new-task-modal">
                         <div className="modal-header">
                             <h2>Nueva Tarea</h2>
-                            <button 
+                            <button
                                 className="close-button"
                                 onClick={() => setShowNewTaskModal(false)}
                             >
@@ -304,28 +337,28 @@ const EmployeeInterface = ({ user }) => {
                             <form onSubmit={handleSubmitNewTask}>
                                 <div className="form-group">
                                     <label htmlFor="titulo">Título</label>
-                                    <input 
-                                        type="text" 
-                                        id="titulo" 
-                                        name="titulo" 
-                                        required 
+                                    <input
+                                        type="text"
+                                        id="titulo"
+                                        name="titulo"
+                                        required
                                     />
                                 </div>
                                 <div className="form-group">
                                     <label htmlFor="descripcion">Descripción</label>
-                                    <textarea 
-                                        id="descripcion" 
-                                        name="descripcion" 
-                                        required 
+                                    <textarea
+                                        id="descripcion"
+                                        name="descripcion"
+                                        required
                                     />
                                 </div>
                                 <div className="form-group">
                                     <label htmlFor="fecha_pactada">Fecha límite</label>
-                                    <input 
-                                        type="date" 
-                                        id="fecha_pactada" 
-                                        name="fecha_pactada" 
-                                        required 
+                                    <input
+                                        type="date"
+                                        id="fecha_pactada"
+                                        name="fecha_pactada"
+                                        required
                                     />
                                 </div>
                                 <div className="form-group">
@@ -345,15 +378,15 @@ const EmployeeInterface = ({ user }) => {
                                     </select>
                                 </div>
                                 <div className="modal-actions">
-                                    <button 
-                                        type="button" 
+                                    <button
+                                        type="button"
                                         className="cancel-button-new-task"
                                         onClick={() => setShowNewTaskModal(false)}
                                     >
-                                      <FaTimes /> Cancelar
+                                        <FaTimes /> Cancelar
                                     </button>
-                                    <button 
-                                        type="submit" 
+                                    <button
+                                        type="submit"
                                         className="submit-button-new-task"
                                     >
                                         <FaSave /> Crear Tarea
@@ -367,40 +400,28 @@ const EmployeeInterface = ({ user }) => {
 
             {showListaEmpleadosAsignados && (
                 <div className="modal-overlay">
-                <div className="lista-empleados-asignados-modal">
-                    <div className="modal-header">
-                        <h2>Lista de Empleados Asignados</h2>
-                        <button 
-                            className="close-button"
-                            onClick={() => setShowListaEmpleadosAsignados(false)}
-                        >
-                            &times;
-                        </button>
-                    </div>
-                    <div className="modal-content">
-                        <div className="lista-empleados-asignados-container">
-                           <table className='table-empleados-asignados'>
-                            <thead className='table-header'> 
-                                <tr>
-                                    <th>Nombre</th>
-                                    <th>Opciones</th>
-                                </tr>
-                            </thead>
-                            <tbody className='table-body'>
-                                {user.empleados_asignados.map(empleado => (
-                                    <tr className='table-row' key={empleado.id}>
-                                        <td style={{textTransform: 'capitalize'}}>{empleado.nombre}</td>
-                                        <td>
-                                                <FaEye onClick={() => verTareas(empleado.id)} className='btn-ver-tareas' style={{fontSize: '2rem', padding: '0'}} />
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                           </table>
+                    <div className="lista-empleados-asignados-modal">
+                        <div className="modal-header">
+                            <h2>👥 Empleados Asignados</h2>
+                            <button className="close-button" onClick={() => setShowListaEmpleadosAsignados(false)}>
+                                &times;
+                            </button>
+                        </div>
+                        <div className="modal-content empleados-grid">
+                            {user.empleados_asignados.map((empleado) => (
+                                <div className="empleado-card" key={empleado.id}>
+                                    <div className="empleado-info">
+                                        <span className="empleado-nombre">{empleado.nombre}</span>
+                                    </div>
+                                    <button className="btn-ver" onClick={() => verTareas(empleado.id)}>
+                                        <FaEye /> Ver Tareas
+                                    </button>
+                                </div>
+                            ))}
                         </div>
                     </div>
                 </div>
-            </div>
+
             )}
 
             {showTareasEmpleado && (
@@ -408,7 +429,7 @@ const EmployeeInterface = ({ user }) => {
                     <div className="tareas-empleado-modal">
                         <div className="modal-header">
                             <h2>Tareas de {empleadoSeleccionado?.nombre}</h2>
-                            <button 
+                            <button
                                 className="close-button"
                                 onClick={cerrarTareasEmpleado}
                             >
@@ -419,50 +440,61 @@ const EmployeeInterface = ({ user }) => {
                             <div className="tareas-empleado-container">
                                 {!mostrarTareasEstado ? (
                                     // Vista de estados (nivel 1)
-                                    <div className="estados-cards">
-                                        {Object.entries(columns).map(([estado, column]) => (
-                                            
-                                            <div 
-                                                key={estado} 
-                                                className="estado-card"
-                                                onClick={() => seleccionarEstado(estado)}
-                                                style={{ borderTop: `4px solid ${column.color}` }}
+                                    <>
+                                        <div className="estados-cards">
+                                            {Object.entries(columns).map(([estado, column]) => (
+
+                                                <div
+                                                    key={estado}
+                                                    className="estado-card"
+                                                    onClick={() => seleccionarEstado(estado)}
+                                                    style={{ borderTop: `4px solid ${column.color}` }}
+                                                >
+                                                    <div className="estado-card-header">
+                                                        {renderIcon(column.iconComponent)}
+                                                        <h3>{column.title}</h3>
+                                                    </div>
+                                                    <div className="estado-card-count">
+                                                        <span>{tareasEmpleado.filter(task => task.estado === estado).length}</span>
+                                                        <span>tareas</span>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <div className="buttons-container">
+                                            <button
+                                                className="back-button"
+                                                onClick={volverAEmpleados}
                                             >
-                                                <div className="estado-card-header">
-                                                    {renderIcon(column.iconComponent)}
-                                                    <h3>{column.title}</h3>
-                                                </div>
-                                                <div className="estado-card-count">
-                                                    <span>{tareasEmpleado.filter(task => task.estado === estado).length}</span>
-                                                    <span>tareas</span>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
+                                                <FaArrowLeft /> Volver a empleados
+                                            </button>
+                                            <button className="asignar-tareas-button" onClick={() => asignarTareas()}>
+                                                <FaPlus /> Asignar Tareas
+                                            </button>
+                                        </div>
+
+
+                                    </>
+
                                 ) : (
                                     // Vista de tareas de un estado (nivel 2)
                                     <div className="tareas-estado-container">
-                                        <button 
-                                                className="back-button"
-                                                onClick={volverAEstados}
-                                            >
-                                                &larr; Volver a estados
-                                            </button>
+
                                         <div className="estado-tareas-header">
-                                            
+
                                             <h3>Tareas {estadoSeleccionado}</h3>
                                         </div>
                                         <div className="tareas-list">
                                             {tareasEmpleado
                                                 .filter(task => task.estado === estadoSeleccionado)
                                                 .map(task => (
-                                                    <div 
-                                                        key={task.id} 
+                                                    <div
+                                                        key={task.id}
                                                         className="task-card"
                                                         onClick={() => handleTaskClick(task)}
                                                     >
                                                         <div className="task-card-header">
-                                                            <h4 style={{textTransform: 'capitalize', marginBottom: '0.5rem'}}>{task.titulo}</h4>
+                                                            <h4 style={{ textTransform: 'capitalize', marginBottom: '0.5rem' }}>{task.titulo}</h4>
                                                             {task.prioridad && (
                                                                 <span className={`priority-badge ${task.prioridad.toLowerCase()}`}>
                                                                     {task.prioridad}
@@ -487,9 +519,9 @@ const EmployeeInterface = ({ user }) => {
                                                         {task.evidencias && task.evidencias.length > 0 && (
                                                             <div className="evidences-container">
                                                                 {task.evidencias.map(evidencia => (
-                                                                    <span 
-                                                                        key={evidencia.id} 
-                                                                        className="evidence-icon" 
+                                                                    <span
+                                                                        key={evidencia.id}
+                                                                        className="evidence-icon"
                                                                         title={evidencia.nombre}
                                                                     >
                                                                         {getFileIcon(evidencia.tipo)}
@@ -500,6 +532,12 @@ const EmployeeInterface = ({ user }) => {
                                                     </div>
                                                 ))}
                                         </div>
+                                        <button
+                                            className="back-button"
+                                            onClick={volverAEstados}
+                                        >
+                                            &larr; Volver a estados
+                                        </button>
                                     </div>
                                 )}
                             </div>
@@ -538,10 +576,13 @@ const EmployeeInterface = ({ user }) => {
                                                         className={`task-card ${snapshot.isDragging ? 'dragging' : ''}`}
                                                         onClick={() => handleTaskClick(task)}
                                                     >
+                                                        <div className="kanban-column-visto-bueno">
+                                                            {task.visto_bueno ? <FaCircleCheck color='green' title='Visto bueno' fontSize='2rem' /> : <FaCircle color='grey' title='No visto bueno' fontSize='2rem' />}
+                                                        </div>
                                                         <div className="task-card-header">
                                                             <h4>{task.titulo}</h4>
                                                             {task.prioridad && (
-                                                                <span className={`priority-badge ${task.prioridad.toLowerCase()}`}>
+                                                                <span className={`prioridad-badge ${task.prioridad.toLowerCase()}`}>
                                                                     {task.prioridad}
                                                                 </span>
                                                             )}
@@ -564,9 +605,9 @@ const EmployeeInterface = ({ user }) => {
                                                         {task.evidencias && task.evidencias.length > 0 && (
                                                             <div className="evidences-container">
                                                                 {task.evidencias.map(evidencia => (
-                                                                    <span 
-                                                                        key={evidencia.id} 
-                                                                        className="evidence-icon" 
+                                                                    <span
+                                                                        key={evidencia.id}
+                                                                        className="evidence-icon"
                                                                         title={evidencia.nombre}
                                                                     >
                                                                         {getFileIcon(evidencia.tipo)}
@@ -591,7 +632,16 @@ const EmployeeInterface = ({ user }) => {
                 <TaskDetailsModal
                     task={selectedTask}
                     onClose={() => setShowTaskDetails(false)}
-                    onUpdate={loadTasks}
+                    onUpdate={async () => {
+                        const response = await axiosInstance.get(`/cargarTareas/${selectedTask.empleado}`);
+                        //  organizeTasks(response.data.tareas);
+
+                        // Actualizar el selectedTask con los nuevos datos
+                        const updatedTask = response.data.tareas.find(t => t.id === selectedTask.id);
+                        if (updatedTask) {
+                            setSelectedTask(updatedTask);
+                        }
+                    }}
                 />
             )}
         </div>

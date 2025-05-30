@@ -3,14 +3,14 @@ import { FaTimes } from 'react-icons/fa';
 
 const FileViewerModal = ({ isOpen, onClose, fileUrl, fileName, fileType }) => {
     if (!isOpen) return null;
-    console.log(fileName);
-    console.log('FileViewerModal props:', { fileUrl, fileName, fileType });
+  
+
 
     const isImage = fileType?.toLowerCase().includes('image');
     const isPDF = fileType?.toLowerCase().includes('pdf');
     const isViewable = isImage || isPDF;
 
-    console.log('isPDF:', isPDF);
+  
 
     // Construir la URL completa del archivo
     const fullFileUrl = fileUrl?.startsWith('http') 

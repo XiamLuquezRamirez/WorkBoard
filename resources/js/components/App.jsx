@@ -4,6 +4,7 @@ import Dashboard from './Dashboard';
 import LoginForm from './LoginForm';
 import { useUser } from './UserContext';
 import Parameters from './Parameters';
+import Reportes from './Reportes';
 
 function App() {
     const { user } = useUser();
@@ -21,6 +22,12 @@ function App() {
                 <Route
                     path="/dashboard"
                     element={user ? <Dashboard /> : <Navigate to="/login" />}
+                />
+
+                {/* Ruta protegida para reportes */}
+                <Route
+                    path="/reports"
+                    element={user ? <Reportes /> : <Navigate to="/login" />}
                 />
 
                 {/* Ruta protegida para parameters */}

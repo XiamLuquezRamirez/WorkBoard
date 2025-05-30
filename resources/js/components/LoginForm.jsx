@@ -4,7 +4,6 @@ import Swal from 'sweetalert2';
 import { FaUser, FaLock, FaEye, FaEyeSlash, FaUnlock } from 'react-icons/fa';
 import { getImageUrl, getAssetUrl } from '../utils/assetHelper';
 
-
 const LoginForm = () => {
     const [formData, setFormData] = useState({
         email: '',
@@ -38,7 +37,7 @@ const LoginForm = () => {
 
             // Intentar el login
             const response = await axiosInstance.post('/login', formData);
-            console.log(response.data.message);
+          
             if (response.data.message === 'Login exitoso') {
                 
                 //mostrar un mensaje de exito
@@ -79,6 +78,23 @@ const LoginForm = () => {
 
     return (
         <div className="login-container">
+            <div 
+                style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    backgroundImage: `url(${getImageUrl('images/fondo.png')})`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    backgroundRepeat: 'no-repeat',
+                    backgroundAttachment: 'fixed',
+                    filter: 'blur(5px)',
+                    opacity: '0.9',
+                    zIndex: '-1'
+                }}
+            />
             <div className="login-card">
                 <div className="login-header">
                     <img src={getImageUrl('images/logo.png')} alt="Logo" className="login-logo" />
