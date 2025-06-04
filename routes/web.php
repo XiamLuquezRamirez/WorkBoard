@@ -139,7 +139,30 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     //verificar empleado lider
     Route::get('/verificarEmpleadoLider/{id}', [empleadosController::class, 'verificarEmpleadoLider']);
-    });
+        //eliminar funcion
+    Route::delete('/eliminarFuncion/{id}', [empleadosController::class, 'eliminarFuncion']);
+    
+    //cargar actividades
+    Route::get('/cargarActividades/{id}', [empleadosController::class, 'cargarActividades']);
+
+    //guardar actividad
+    Route::post('/guardarActividad', [empleadosController::class, 'guardarActividad']);
+
+    //eliminar actividad
+    Route::delete('/eliminarActividad/{id}', [empleadosController::class, 'eliminarActividad']);
+
+    //actualizar actividad
+    Route::put('/actualizarActividad/{id}', [empleadosController::class, 'actualizarActividad']);
+
+    //rechazar tarea
+    Route::put('/rechazarTarea/{id}', [empleadosController::class, 'rechazarTarea']);
+
+    //aprobar tarea
+    Route::put('/aprobarTarea/{id}', [empleadosController::class, 'aprobarTarea']);
+
+});
+
+
 });
 
 // Ruta catch-all para el SPA

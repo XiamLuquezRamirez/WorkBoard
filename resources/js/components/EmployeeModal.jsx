@@ -101,7 +101,8 @@ const EmployeeModal = ({ isOpen, onClose }) => {
         fecha_pactada: '',
         estado: 'Pendiente',
         prioridad: 'Media',
-        evidencias: []
+        evidencias: [],
+        accion: 'guardar'
     });
     const [searchTarea, setSearchTarea] = useState('');
     const [editandoTarea, setEditandoTarea] = useState(null);
@@ -111,6 +112,11 @@ const EmployeeModal = ({ isOpen, onClose }) => {
     const [tareaActual, setTareaActual] = useState(null);
     const [selectedFile, setSelectedFile] = useState(null);
 
+    const [activeTab, setActiveTab] = useState('funciones');
+    const [nuevaActividad, setNuevaActividad] = useState('');
+    const [actividadesEmpleado, setActividadesEmpleado] = useState([]);
+    const [actividadEditando, setActividadEditando] = useState(null);
+    const [actividadEditada, setActividadEditada] = useState('');
 
     useEffect(() => {
         const delaySearch = setTimeout(() => {
@@ -310,18 +316,27 @@ const EmployeeModal = ({ isOpen, onClose }) => {
     };
 
     const handleVerFunciones = (empleado) => {
-
         setEmpleadoSeleccionado(empleado);
 
+        // Cargar funciones
         axiosInstance.get(`/cargarFunciones/${empleado.id}`)
             .then((response) => {
-
                 setFuncionesEmpleado(response.data);
-                setShowFuncionesModal(true);
             })
             .catch((error) => {
                 console.error('Error al cargar las funciones:', error);
             });
+
+        // Cargar actividades
+        axiosInstance.get(`/cargarActividades/${empleado.id}`)
+            .then((response) => {
+                setActividadesEmpleado(response.data);
+            })
+            .catch((error) => {
+                console.error('Error al cargar las actividades:', error);
+            });
+
+        setShowFuncionesModal(true);
     };
 
     const handleGuardarFuncion = () => {
@@ -405,6 +420,148 @@ const EmployeeModal = ({ isOpen, onClose }) => {
                 Swal.fire({
                     title: 'Error',
                     text: 'Hubo un error al actualizar la función',
+                    icon: 'error',
+                    confirmButtonText: 'OK',
+                });
+            });
+    };
+
+    const handleEditarTarea = (tarea) => {
+
+        setMostrarFormularioTarea(true)
+        setNuevaTarea({
+            ...tarea,
+            accion: 'editar'
+        })
+    };
+
+    const handleEliminarFuncion = (id) => {
+        axiosInstance.delete(`/eliminarFuncion/${id}`)
+            .then((response) => {
+                Swal.fire({
+                    title: 'Función eliminada correctamente',
+                    icon: 'success',
+                    confirmButtonText: 'OK',
+                });
+                setFuncionesEmpleado(prevFunciones => prevFunciones.filter(funcion => funcion.id !== id));
+            })
+            .catch((error) => {
+                console.error('Error al eliminar la función:', error);
+                Swal.fire({
+                    title: 'Error',
+                    text: 'Hubo un error al eliminar la función',
+                    icon: 'error',
+                    confirmButtonText: 'OK',
+                });
+            });
+    }
+
+    const handleGuardarActividad = () => {
+        if (!nuevaActividad.trim()) {
+            Swal.fire({
+                title: 'Error',
+                text: 'Por favor ingrese una actividad',
+                icon: 'error',
+                confirmButtonText: 'OK',
+            });
+            return;
+        }
+
+        const data = {
+            empleado: empleadoSeleccionado.id,
+            actividad: nuevaActividad
+        };
+
+        axiosInstance.post('/guardarActividad', data)
+            .then((response) => {
+                if (response.data.actividad) {
+                    console.log(response.data.actividad);
+                    setActividadesEmpleado(prevActividades => [...prevActividades, response.data.actividad]);
+                    setNuevaActividad('');
+
+                    Swal.fire({
+                        title: 'Actividad agregada correctamente',
+                        icon: 'success',
+                        confirmButtonText: 'OK',
+                    });
+
+                    
+                }
+            })
+            .catch((error) => {
+                console.error('Error al guardar la actividad:', error);
+                Swal.fire({
+                    title: 'Error',
+                    text: 'Hubo un error al guardar la actividad',
+                    icon: 'error',
+                    confirmButtonText: 'OK',
+                });
+            });
+    };
+
+    const handleEditarActividad = (actividad) => {
+        setActividadEditando(actividad.id);
+        setActividadEditada(actividad.descripcion);
+    };
+
+    const handleGuardarEdicionActividad = (id) => {
+        if (!actividadEditada.trim()) {
+            Swal.fire({
+                title: 'Error',
+                text: 'La actividad no puede estar vacía',
+                icon: 'error',
+                confirmButtonText: 'OK',
+            });
+            return;
+        }
+
+        const data = {
+            id: id,
+            empleado: empleadoSeleccionado,
+            descripcion: actividadEditada
+        };
+
+        axiosInstance.put(`/actualizarActividad/${id}`, data)
+            .then((response) => {
+                setActividadesEmpleado(prevActividades =>
+                    prevActividades.map(actividad =>
+                        actividad.id === id ? { ...actividad, descripcion: actividadEditada } : actividad
+                    )
+                );
+                setActividadEditando(null);
+                setActividadEditada('');
+                Swal.fire({
+                    title: 'Actividad actualizada correctamente',
+                    icon: 'success',
+                    confirmButtonText: 'OK',
+                });
+            })
+            .catch((error) => {
+                console.error('Error al actualizar la actividad:', error);
+                Swal.fire({
+                    title: 'Error',
+                    text: 'Hubo un error al actualizar la actividad',
+                    icon: 'error',
+                    confirmButtonText: 'OK',
+                });
+            });
+    };
+
+    const handleEliminarActividad = (id) => {
+        axiosInstance.delete(`/eliminarActividad/${id}`)
+            .then((response) => {
+                Swal.fire({
+                    title: 'Actividad eliminada correctamente',
+                    icon: 'success',
+                    confirmButtonText: 'OK',
+                });
+                setActividadesEmpleado(prevActividades => prevActividades.filter(actividad => actividad.id !== id));
+            })
+            .catch((error) => {
+                console.error('Error al eliminar la actividad:', error);
+                Swal.fire({
+                    title: 'Error',
+                    text: 'Hubo un error al eliminar la actividad',
                     icon: 'error',
                     confirmButtonText: 'OK',
                 });
@@ -669,7 +826,7 @@ const EmployeeModal = ({ isOpen, onClose }) => {
                                                         <button title="Ver tareas" onClick={() => cargarTareas(empleado)} className="tareas-button">
                                                             <FaListCheck />
                                                         </button>
-                                                        <button title="Ver funciones" onClick={() => handleVerFunciones(empleado)} className="funciones-button">
+                                                        <button title="Ver funciones y Actividades" onClick={() => handleVerFunciones(empleado)} className="funciones-button">
                                                             <FaThList />
                                                         </button>
                                                         <button title="Editar empleado" onClick={() => handleEditarEmpleado(empleado)} className="edit-button">
@@ -945,7 +1102,7 @@ const EmployeeModal = ({ isOpen, onClose }) => {
                 <div className="modal-overlay">
                     <div className="funciones-modal">
                         <div className="modal-header">
-                            <h2>Funciones del Empleado</h2>
+                            <h2>Funciones y Actividades del Empleado</h2>
                             <button
                                 className="close-button"
                                 onClick={() => setShowFuncionesModal(false)}
@@ -953,80 +1110,175 @@ const EmployeeModal = ({ isOpen, onClose }) => {
                                 &times;
                             </button>
                         </div>
+                        <div className='tab-container-funciones'>
+                            <div 
+                                className={`tab-item ${activeTab === 'funciones' ? 'active' : ''}`}
+                                onClick={() => setActiveTab('funciones')}
+                            >
+                                <h3>Funciones</h3>
+                            </div>
+                            <div 
+                                className={`tab-item ${activeTab === 'actividades' ? 'active' : ''}`}
+                                onClick={() => setActiveTab('actividades')}
+                            >
+                                <h3>Actividades</h3>
+                            </div>
+                        </div>
+                        
                         <div className="funciones-content">
-                            <div className="nueva-funcion">
-                                <input
-                                    type="text"
-                                    placeholder="Nueva función..."
-                                    value={nuevaFuncion}
-                                    onChange={(e) => setNuevaFuncion(e.target.value)}
-                                    className="funcion-input"
-                                />
-                                <button
-                                    className="add-funcion-button"
-                                    onClick={handleGuardarFuncion}
-                                >
-                                    <FaPlus /> Agregar
-                                </button>
-                            </div>
-                            <div className="funciones-list">
-                                {funcionesEmpleado && funcionesEmpleado.length > 0 ? (
-                                    funcionesEmpleado.map((funcion) => (
-                                        <div key={`funcion-${funcion.id}`} className="funcion-item">
-                                            {funcionEditando === funcion.id ? (
-                                                <div className="funcion-edit-container">
-                                                    <input
-                                                        type="text"
-                                                        value={funcionEditada}
-                                                        onChange={(e) => setFuncionEditada(e.target.value)}
-                                                        className="funcion-edit-input"
-                                                        autoFocus
-                                                    />
-                                                    <div className="funcion-edit-buttons">
-                                                        <button
-                                                            className="save-edit-button"
-                                                            onClick={() => handleGuardarEdicionFuncion(funcion.id)}
-                                                        >
-                                                            <FaCheck />
-                                                        </button>
-                                                        <button
-                                                            className="cancel-edit-button"
-                                                            onClick={() => {
-                                                                setFuncionEditando(null);
-                                                                setFuncionEditada('');
-                                                            }}
-                                                        >
-                                                            <FaTimes />
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            ) : (
-                                                <>
-                                                    <span>{funcion.descripcion}</span>
-                                                    <div className="funcion-buttons">
-                                                        <button
-                                                            className="edit-funcion-button"
-                                                            onClick={() => handleEditarFuncion(funcion)}
-                                                        >
-                                                            <FaEdit />
-                                                        </button>
-                                                        <button
-                                                            className="delete-funcion-button"
-                                                            onClick={() => handleEliminarFuncion(funcion.id)}
-                                                        >
-                                                            <FaTrash />
-                                                        </button>
-                                                    </div>
-                                                </>
-                                            )}
-                                        </div>
-                                    ))
-                                ) : (
-                                    <div className="no-funciones">
-                                        No hay funciones registradas
+                            {activeTab === 'funciones' ? (
+                                <>
+                                    <div className="nueva-funcion">
+                                        <input
+                                            type="text"
+                                            placeholder="Nueva función..."
+                                            value={nuevaFuncion}
+                                            onChange={(e) => setNuevaFuncion(e.target.value)}
+                                            className="funcion-input"
+                                        />
+                                        <button
+                                            className="add-funcion-button"
+                                            onClick={handleGuardarFuncion}
+                                        >
+                                            <FaPlus /> Agregar
+                                        </button>
                                     </div>
-                                )}
-                            </div>
+                                    <div className="funciones-list">
+                                        {funcionesEmpleado && funcionesEmpleado.length > 0 ? (
+                                            funcionesEmpleado.map((funcion) => (
+                                                <div key={`funcion-${funcion.id}`} className="funcion-item">
+                                                    {funcionEditando === funcion.id ? (
+                                                        <div className="funcion-edit-container">
+                                                            <input
+                                                                type="text"
+                                                                value={funcionEditada}
+                                                                onChange={(e) => setFuncionEditada(e.target.value)}
+                                                                className="funcion-edit-input"
+                                                                autoFocus
+                                                            />
+                                                            <div className="funcion-edit-buttons">
+                                                                <button
+                                                                    className="save-edit-button"
+                                                                    onClick={() => handleGuardarEdicionFuncion(funcion.id)}
+                                                                >
+                                                                    <FaCheck />
+                                                                </button>
+                                                                <button
+                                                                    className="cancel-edit-button"
+                                                                    onClick={() => {
+                                                                        setFuncionEditando(null);
+                                                                        setFuncionEditada('');
+                                                                    }}
+                                                                >
+                                                                    <FaTimes />
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        <>
+                                                            <span>{funcion.descripcion}</span>
+                                                            <div className="funcion-buttons">
+                                                                <button
+                                                                    className="edit-funcion-button"
+                                                                    onClick={() => handleEditarFuncion(funcion)}
+                                                                >
+                                                                    <FaEdit />
+                                                                </button>
+                                                                <button
+                                                                    className="delete-funcion-button"
+                                                                    onClick={() => handleEliminarFuncion(funcion.id)}
+                                                                >
+                                                                    <FaTrash />
+                                                                </button>
+                                                            </div>
+                                                        </>
+                                                    )}
+                                                </div>
+                                            ))
+                                        ) : (
+                                            <div className="no-funciones">
+                                                No hay funciones registradas
+                                            </div>
+                                        )}
+                                    </div>
+                                </>
+                            ) : (
+                                <>
+                                    <div className="nueva-funcion">
+                                        <input
+                                            type="text"
+                                            placeholder="Nueva actividad..."
+                                            value={nuevaActividad}
+                                            onChange={(e) => setNuevaActividad(e.target.value)}
+                                            className="funcion-input"
+                                        />
+                                        <button
+                                            className="add-funcion-button"
+                                            onClick={handleGuardarActividad}
+                                        >
+                                            <FaPlus /> Agregar
+                                        </button>
+                                    </div>
+                                    <div className="funciones-list">
+                                        {actividadesEmpleado && actividadesEmpleado.length > 0 ? (
+                                            actividadesEmpleado.map((actividad) => (
+                                                <div key={`actividad-${actividad.id}`} className="funcion-item">
+                                                    {actividadEditando === actividad.id ? (
+                                                        <div className="funcion-edit-container">
+                                                            <input
+                                                                type="text"
+                                                                value={actividadEditada}
+                                                                onChange={(e) => setActividadEditada(e.target.value)}
+                                                                className="funcion-edit-input"
+                                                                autoFocus
+                                                            />
+                                                            <div className="funcion-edit-buttons">
+                                                                <button
+                                                                    className="save-edit-button"
+                                                                    onClick={() => handleGuardarEdicionActividad(actividad.id)}
+                                                                >
+                                                                    <FaCheck />
+                                                                </button>
+                                                                <button
+                                                                    className="cancel-edit-button"
+                                                                    onClick={() => {
+                                                                        setActividadEditando(null);
+                                                                        setActividadEditada('');
+                                                                    }}
+                                                                >
+                                                                    <FaTimes />
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        <>
+                                                            <span>{actividad.descripcion}</span>
+                                                            <div className="funcion-buttons">
+                                                                <button
+                                                                    className="edit-funcion-button"
+                                                                    onClick={() => handleEditarActividad(actividad)}
+                                                                >
+                                                                    <FaEdit />
+                                                                </button>
+                                                                <button
+                                                                    className="delete-funcion-button"
+                                                                    onClick={() => handleEliminarActividad(actividad.id)}
+                                                                >
+                                                                    <FaTrash />
+                                                                </button>
+                                                            </div>
+                                                        </>
+                                                    )}
+                                                </div>
+                                            ))
+                                        ) : (
+                                            <div className="no-funciones">
+                                                No hay actividades registradas
+                                            </div>
+                                        )}
+                                    </div>
+                                </>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -1238,12 +1490,13 @@ const EmployeeModal = ({ isOpen, onClose }) => {
                                                 <div className="tarea-footer">
                                                     <div className="tarea-fechas">
                                                         {tarea.fecha_pactada && (
-                                                            <span>Pactada: {new Date(tarea.fecha_pactada).toLocaleDateString()}</span>
+                                                            <span>Pactada: {new Date(tarea.fecha_pactada + 'T00:00:00').toLocaleDateString()}</span>
                                                         )}
                                                         {tarea.fecha_entregada && (
-                                                            <span>Entregada: {new Date(tarea.fecha_entregada).toLocaleDateString()}</span>
+                                                            <span>Entregada: {new Date(tarea.fecha_entregada + 'T00:00:00').toLocaleDateString()}</span>
                                                         )}
                                                     </div>
+                                                    <div className='container-editar-tarea'>
                                                     <div className="tarea-estado">
                                                         <select
                                                             value={tarea.estado}
@@ -1255,6 +1508,12 @@ const EmployeeModal = ({ isOpen, onClose }) => {
                                                             <option value="Completada">Completada</option>
                                                             <option value="Cancelada">Cancelada</option>
                                                         </select>
+                                                    </div>
+                                                    <div className='btn-editar-tarea'>
+                                                        <button className='btn-editar-tarea-button' onClick={()=> handleEditarTarea(tarea)}>
+                                                            <FaEdit /> Editar
+                                                        </button>
+                                                    </div>
                                                     </div>
                                                 </div>
                                                 {tarea.evidencias && tarea.evidencias.length > 0 && (

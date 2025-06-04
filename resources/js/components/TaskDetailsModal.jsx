@@ -1,7 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { FaFileUpload, FaCheck, 
-    FaClock, FaSpinner, FaDownload, 
-    FaTrash, FaFile, FaImage, FaBell, FaComment, FaEdit, FaSave } from 'react-icons/fa';
+import {
+    FaFileUpload, FaCheck,
+    FaClock, FaSpinner, FaDownload,
+    FaTrash, FaFile, FaImage, FaEdit, FaSave, FaEye
+} from 'react-icons/fa';
 import axios from 'axios';
 import Swal from 'sweetalert2';
 import FileViewerModal from './FileViewerModal';
@@ -9,7 +11,7 @@ import NotificationsModal from './NotificationsModal';
 import config from '../config';
 import { useUser } from './UserContext';
 import axiosInstance from '../axiosConfig';
-import { FaCircleCheck, FaCircle } from 'react-icons/fa6';
+import { FaCircleCheck, FaCircle,FaCircleXmark } from 'react-icons/fa6';
 
 const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton }) => {
     const [loading, setLoading] = useState(false);
@@ -26,7 +28,6 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton }) 
             }))
             : []);
     const [observaciones, setObservaciones] = useState('');
-    console.log(task.visto_bueno);
     const [vistoBueno, setVistoBueno] = useState(task.visto_bueno === 1);
     const { user } = useUser();
     const fileInputRef = useRef(null);
@@ -34,6 +35,8 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton }) 
     const [isNotificationsModalOpen, setIsNotificationsModalOpen] = useState(false);
     const [isEditingTask, setIsEditingTask] = useState(false);
     const [isButtonObservaciones, setIsButtonObservaciones] = useState(false);
+    const [aprobada, setAprobada] = useState(task.aprobada === 1);
+    const [rechazada, setRechazada] = useState(task.rechazada === 1);
     //fecha de tarea en fomao local
     const [editedTask, setEditedTask] = useState({
         titulo: task.titulo,
@@ -46,8 +49,8 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton }) 
     const isLider = currentUser?.lider === 'Si';
     const isOwnTask = currentUser?.empleado === task.empleado;
     const isAdmin = currentUser?.tipo_usuario === 'Administrador';
-  
 
+    console.log(`isOwnTask ${isOwnTask}`);
 
     const handleFileChange = (e) => {
         const files = Array.from(e.target.files);
@@ -105,6 +108,7 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton }) 
                     URL.revokeObjectURL(fileData.preview);
                 }
             });
+
             setPreviewFiles([]);
 
             // Actualizar el estado de evidencias con las nuevas
@@ -128,7 +132,6 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton }) 
             onUpdate();
             Swal.fire('¡Éxito!', 'Evidencias subidas correctamente', 'success');
         } catch (error) {
-            console.error(error);
             Swal.fire('Error', 'Error al subir las evidencias', 'error');
         } finally {
             setLoading(false);
@@ -157,11 +160,14 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton }) 
                     setIsChangingStatus(false);
                     return;
                 }
+                const fechaEntrega = new Date().toISOString().split('T')[0];
 
                 // Si se presiona "No, solo completar"
                 if (result.isDismissed) {
+                    //agregar fecha de entrega
                     await axiosInstance.put(`/actualizarEstadoTarea/${task.id}`, {
-                        estado: newStatus
+                        estado: newStatus,
+                        fecha_entregada: fechaEntrega
                     });
                     setCurrentStatus(newStatus);
                     onUpdate();
@@ -194,7 +200,7 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton }) 
                                         ? `<img src="${URL.createObjectURL(file)}" class="preview-image">`
                                         : `<div class="preview-file-icon">
                                                 <i class="fas fa-file"></i>
-                                               </div>`
+                                            </div>`
                                     }
                                         <span class="preview-filename">${file.name}</span>
                                         <button type="button" class="preview-remove" data-index="${index}">
@@ -241,14 +247,14 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton }) 
                                 // Actualizar estado de la tarea
                                 await axiosInstance.put(`/actualizarEstadoTarea/${task.id}`, {
                                     estado: newStatus,
-                                    evidencias: response.data
+                                    evidencias: response.data,
+                                    fecha_entregada: fechaEntrega
                                 });
 
                                 setCurrentStatus(newStatus);
                                 onUpdate();
                                 return true;
                             } catch (error) {
-                                console.error(error);
                                 Swal.showValidationMessage('Error al subir las evidencias');
                                 return false;
                             } finally {
@@ -271,7 +277,6 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton }) 
                 Swal.fire('¡Éxito!', 'Estado actualizado correctamente', 'success');
             }
         } catch (error) {
-            console.error(error);
             Swal.fire('Error', 'Error al actualizar el estado', 'error');
         } finally {
             setIsChangingStatus(false);
@@ -324,7 +329,6 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton }) 
             setIsButtonObservaciones(false);
             Swal.fire('¡Éxito!', 'Observaciones guardadas correctamente', 'success');
         } catch (error) {
-            console.error(error);
             Swal.fire('Error', 'Error al guardar las observaciones', 'error');
         } finally {
             setLoading(false);
@@ -341,8 +345,33 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton }) 
             onUpdate();
             Swal.fire('¡Éxito!', 'Visto bueno actualizado correctamente', 'success');
         } catch (error) {
-            console.error(error);
             Swal.fire('Error', 'Error al actualizar el visto bueno', 'error');
+        }
+    };
+
+    const handleAprobada = async (checked) => {
+        setAprobada(checked);
+        try {
+            await axiosInstance.put(`/aprobarTarea/${task.id}`, {
+                aprobada: checked
+            });
+            onUpdate();
+            Swal.fire('¡Éxito!', 'Tarea aprobada correctamente', 'success');
+        } catch (error) {
+            Swal.fire('Error', 'Error al aprobar la tarea', 'error');
+        }
+    };
+
+    const handleRechazada = async (checked) => {
+        setRechazada(checked);
+        try {
+            await axiosInstance.put(`/rechazarTarea/${task.id}`, {
+                rechazada: checked
+            });
+            onUpdate();
+            Swal.fire('¡Éxito!', 'Tarea rechazada correctamente', 'success');
+        } catch (error) {
+            Swal.fire('Error', 'Error al rechazar la tarea', 'error');
         }
     };
 
@@ -390,7 +419,6 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton }) 
             });
             Swal.fire('¡Éxito!', 'Tarea actualizada correctamente', 'success');
         } catch (error) {
-            console.error(error);
             Swal.fire('Error', 'Error al actualizar la tarea', 'error');
         } finally {
             setLoading(false);
@@ -422,8 +450,29 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton }) 
                 <div className="modal-overlay" onClick={(e) => e.target.className === 'modal-overlay' && onClose()}>
                     <div className="task-details-modal">
                         <div className="modal-header">
-                            <h2 className='modal-title'> {vistoBueno ? <FaCircleCheck color='green' title='Visto bueno' /> : <FaCircle color='grey' title='No visto bueno' />} Detalles de la Tarea</h2>
-                           
+                            <h2 className='modal-title'>
+                                Detalles de la Tarea
+                                 {/* Mostrar Aprobación */}
+                                 {task.aprobada ? (
+                                    <FaCircleCheck color='green' title='Aprobada' style={{ marginRight: '0.5rem' }} />
+                                ) : (
+                                    <FaCircleCheck color='grey' title='No aprobada' style={{ marginRight: '0.5rem', opacity: 0.5 }} />
+                                )}
+
+                                {/* Mostrar Visto Bueno */}
+                                {(task.estado === 'Completada' || (task.estado === 'En Proceso' && task.visto_bueno)) && !task.rechazada ? (
+                                    <FaEye color='green' title='Visto bueno' style={{ marginRight: '0.5rem' }} />
+                                ) : (
+                                    <FaEye color='grey' title='Pendiente de visto bueno' style={{ marginRight: '0.5rem', opacity: 0.5 }} />
+                                )}
+
+                                {/* Mostrar Rechazada */}
+                                {(task.estado === 'Completada' || task.estado === 'En Proceso') && task.rechazada ? (
+                                    <FaCircleXmark color='red' title='Rechazada' style={{ marginRight: '0.5rem' }} />
+                                ): null}
+                            </h2>
+
+
 
                             <button className="close-button" onClick={onClose}>&times;</button>
 
@@ -535,9 +584,9 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton }) 
 
                                 {/* Solo mostrar controles de estado si es el dueño de la tarea */}
                                 {isOwnTask && (
-                                    <div className="status-control">
+                                    <div className={"status-control"}>
                                         <h4>Cambiar estado de la tarea</h4>
-                                        <div className="status-buttons">
+                                        <div className={`status-buttons ${task.aprobada ? '' : 'disabled-status'}`}>
                                             <button
                                                 className={`status-button pending ${currentStatus === 'Pendiente' ? 'active' : ''}`}
                                                 onClick={() => handleStatusChange('Pendiente')}
@@ -682,21 +731,59 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton }) 
                                 </div>
                             </div>
 
-                            {/* Panel de observaciones - Solo para líderes o administradores */}
-                            {(isLider || isAdmin) && (
+                            {/* Panel de observaciones - Solo para líderes  o administradores */}
+                            {((isLider && !isOwnTask) || isAdmin) && (
                                 <>
-                                    <div className='vistoBueno-panel'>
-                                        <h4>Visto bueno</h4>
-                                        <div className="visto-bueno-checkbox">
-                                            <label>
-                                                <input
-                                                    type="checkbox"
-                                                    checked={vistoBueno}
-                                                    onChange={(e) => handleVistoBueno(e.target.checked)}
-                                                />
-                                                Dar visto bueno
-                                            </label>
+                                    <div className='aprobacion-vistoBueno-container'>
+                                        <div className='aprobacion-panel'>
+                                            <h4>Aprobación de la tarea</h4>
+                                            <div className="aprobacion-checkbox">
+                                                <label>
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={aprobada}
+                                                        onChange={(e) => {
+                                                            handleAprobada(e.target.checked);
+                                                        }} />
+                                                    Aprobar tarea
+                                                </label>
+                                            </div>
                                         </div>
+
+                                        {task.estado === 'Completada' && (
+                                            <div className='vistoBueno-panel'>
+                                                <h4>Revisión final</h4>
+                                                <div className="revision-opciones">
+                                                    <label>
+                                                        <input
+                                                            type="radio"
+                                                            name="revision"
+                                                            value="visto_bueno"
+                                                            checked={vistoBueno && !rechazada}
+                                                            onChange={() => {
+                                                                handleVistoBueno(true);
+                                                                handleRechazada(false);
+                                                            }}
+                                                        />
+                                                        Dar visto bueno
+                                                    </label>
+                                                    <label>
+                                                        <input
+                                                            type="radio"
+                                                            name="revision"
+                                                            value="rechazada"
+                                                            checked={rechazada}
+                                                            onChange={() => {
+                                                                handleVistoBueno(false);
+                                                                handleRechazada(true);
+                                                            }}
+                                                        />
+                                                        Rechazar tarea
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        )}
+
                                     </div>
                                     <div className="observations-panel">
                                         <h4>Observaciones</h4>

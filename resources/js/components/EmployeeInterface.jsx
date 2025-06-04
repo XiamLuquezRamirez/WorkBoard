@@ -4,12 +4,12 @@ import {
     FaPlus, FaClock, FaSpinner, FaCheck,
     FaEye, FaSearch, FaFile, FaFileWord,
     FaFileImage, FaFilePdf, FaTimes,
-    FaSave, FaArrowLeft
+    FaSave, FaArrowLeft, FaLock
 } from 'react-icons/fa';
 import TaskDetailsModal from './TaskDetailsModal';
 import axiosInstance from '../axiosConfig';
 import Swal from 'sweetalert2';
-import { FaCircleCheck, FaCircle } from 'react-icons/fa6';
+import { FaCircleCheck, FaCircle, FaCircleXmark } from 'react-icons/fa6';
 const EmployeeInterface = ({ user }) => {
 
     const [columns, setColumns] = useState({
@@ -233,24 +233,25 @@ const EmployeeInterface = ({ user }) => {
             let empleado = null;
             if (asignarTareasEmpleado) {
                 empleado = empleadoAsignado;
-            }else{
+            } else {
                 empleado = user.empleado;
             }
-            
+
             const response = await axiosInstance.post('/guardarTarea', {
                 titulo: formData.get('titulo'),
                 descripcion: formData.get('descripcion'),
                 fecha_pactada: formData.get('fecha_pactada'),
                 prioridad: formData.get('prioridad'),
                 empleado: empleado,
-                estado: formData.get('estado')
+                estado: formData.get('estado'),
+                accion: 'guardar'
             });
 
             // Cerrar el modal primero
             setShowNewTaskModal(false);
 
             // preguntar si la tarea es para un empleado o para el lider
-            const tasksResponse = await axiosInstance.get(`/cargarTareas/${ user.empleado}`);
+            const tasksResponse = await axiosInstance.get(`/cargarTareas/${user.empleado}`);
             const tasks = tasksResponse.data.tareas;
 
             // Organizar las tareas en las columnas
@@ -312,7 +313,10 @@ const EmployeeInterface = ({ user }) => {
                     )}
                     <button
                         className="new-task-button"
-                        onClick={() => setShowNewTaskModal(true)}
+                        onClick={() => {
+                            setShowNewTaskModal(true);
+                            setAsignarTareasEmpleado(false);
+                        }}
                     >
                         <FaPlus /> Nueva Tarea
                     </button>
@@ -549,7 +553,7 @@ const EmployeeInterface = ({ user }) => {
             <DragDropContext onDragEnd={onDragEnd}>
                 <div className="kanban-board">
                     {Object.entries(columns).map(([columnId, column]) => (
-                        <div key={columnId} className="kanban-column" data-status={column.title} >
+                        <div key={columnId} className="kanban-column" data-status={column.title} style={{ overflow: 'hidden' }}>
                             <div className="column-header" style={{ backgroundColor: column.color }}>
                                 {renderIcon(column.iconComponent)}
                                 <h3>{column.title}</h3>
@@ -561,23 +565,48 @@ const EmployeeInterface = ({ user }) => {
                                         {...provided.droppableProps}
                                         ref={provided.innerRef}
                                         className="task-list"
+                                        style={{ overflow: 'auto', maxHeight: 'calc(100vh - 200px)' }}
                                     >
                                         {column.items.map((task, index) => (
                                             <Draggable
                                                 key={task.id.toString()}
                                                 draggableId={task.id.toString()}
                                                 index={index}
+                                                isDragDisabled={!task.aprobada}
                                             >
                                                 {(provided, snapshot) => (
                                                     <div
                                                         ref={provided.innerRef}
                                                         {...provided.draggableProps}
                                                         {...provided.dragHandleProps}
-                                                        className={`task-card ${snapshot.isDragging ? 'dragging' : ''}`}
+                                                        className={`task-card ${snapshot.isDragging ? 'dragging' : ''} ${!task.aprobada ? 'disabled-drag' : ''}`}
                                                         onClick={() => handleTaskClick(task)}
                                                     >
                                                         <div className="kanban-column-visto-bueno">
-                                                            {task.visto_bueno ? <FaCircleCheck color='green' title='Visto bueno' fontSize='2rem' /> : <FaCircle color='grey' title='No visto bueno' fontSize='2rem' />}
+                                                            {task.aprobada ? <FaCircleCheck color='green' title='Aprobada' fontSize='1.5rem' /> : <FaCircleCheck color='grey' title='No aprobada' fontSize='1.5rem' style={{ opacity: 0.5 }} />}
+                                                            {(task.estado === 'Completada' || (task.estado === 'En Proceso' && task.rechazada)) && (
+                                                                task.rechazada ? (
+                                                                    <FaCircleXmark
+                                                                        color='red'
+                                                                        title='Rechazada por el líder'
+                                                                        fontSize='1.5rem'
+                                                                    />
+                                                                ) : task.visto_bueno ? (
+                                                                    <FaEye
+                                                                        color='green'
+                                                                        title='Visto bueno del líder'
+                                                                        fontSize='1.5rem'
+                                                                    />
+                                                                ) : (
+                                                                    <FaEye
+                                                                        color='grey'
+                                                                        title='Pendiente de visto bueno'
+                                                                        fontSize='1.5rem'
+                                                                        style={{ opacity: 0.5 }}
+                                                                    />
+                                                                )
+                                                            )}
+                                                        
                                                         </div>
                                                         <div className="task-card-header">
                                                             <h4>{task.titulo}</h4>
@@ -634,7 +663,7 @@ const EmployeeInterface = ({ user }) => {
                     onClose={() => setShowTaskDetails(false)}
                     onUpdate={async () => {
                         const response = await axiosInstance.get(`/cargarTareas/${selectedTask.empleado}`);
-                        //  organizeTasks(response.data.tareas);
+                        organizeTasks(response.data.tareas);
 
                         // Actualizar el selectedTask con los nuevos datos
                         const updatedTask = response.data.tareas.find(t => t.id === selectedTask.id);

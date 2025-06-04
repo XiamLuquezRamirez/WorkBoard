@@ -250,6 +250,7 @@ const Dashboard = () => {
                                                             empleado
                                                         );
                                                         setShowTasksModal(true);
+                                                        setSelectedEstado(null);
                                                     }}
                                                 >
                                                     <FaTasks /> Tareas

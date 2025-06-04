@@ -44,7 +44,7 @@ class EmpleadosController extends Controller
         //         } else {
         //             $liderSeleccionado = Auth::user()->id;
         //         }
-                
+
         //     $notificacion = [
         //         'id_empleado' => $tarea->empleado,
         //         'id_lider' => $liderSeleccionado,
@@ -69,29 +69,31 @@ class EmpleadosController extends Controller
                     DB::raw('CONCAT(lider.name) as nombre_lider')
                 )
                 ->where('leida', 0)
-                ->orderBy('notificaciones.fecha', 'desc')
+                ->orderBy('notificaciones.id', 'desc')
                 ->get();
         } else {
             if ($tipo == 'empleado') {
-               
+
                 $notificaciones = DB::table('notificaciones')
                     ->join('users', 'notificaciones.id_lider', 'users.id')
                     ->select('notificaciones.*', 'users.name as nombre_completo')
                     ->where('id_empleado', $id)
                     ->where('leida', 0)
                     ->where('emisor', '!=', $tipo)
-                    ->orderBy('fecha', 'desc')
+                    ->orderBy('notificaciones.id', 'desc')
                     ->get();
+                   
             } else {
                 $notificaciones = DB::table('notificaciones')
                     ->join('empleados', 'notificaciones.id_empleado', 'empleados.id')
-                    ->select('notificaciones.*',
-                    DB::raw('CONCAT(empleados.nombres, " ", empleados.apellidos) as nombre_completo')
+                    ->select(
+                        'notificaciones.*',
+                        DB::raw('CONCAT(empleados.nombres, " ", empleados.apellidos) as nombre_completo')
                     )
                     ->where('id_lider', Auth::user()->id)
                     ->where('leida', 0)
                     ->where('emisor', '!=', $tipo)
-                    ->orderBy('fecha', 'desc')
+                    ->orderBy('notificaciones.id', 'desc')
                     ->get();
             }
         }
@@ -378,17 +380,26 @@ class EmpleadosController extends Controller
         $tarea = $request->all();
         DB::beginTransaction();
         try {
-
-            $IdTarea = DB::table('tareas_empleados')->insertGetId([
-                'titulo' => $tarea['titulo'],
-                'empleado' => $tarea['empleado'],
-                'descripcion' => $tarea['descripcion'],
-                'fecha_pactada' => $tarea['fecha_pactada'],
-                'prioridad' => $tarea['prioridad'],
-                'estado' => $tarea['estado'],
-                'estado_reg' => 'Activo',
-                'fecha_creacion' => now()
-            ]);
+            if ($tarea['accion'] == 'guardar') {
+                $IdTarea = DB::table('tareas_empleados')->insertGetId([
+                    'titulo' => $tarea['titulo'],
+                    'empleado' => $tarea['empleado'],
+                    'descripcion' => $tarea['descripcion'],
+                    'fecha_pactada' => $tarea['fecha_pactada'],
+                    'prioridad' => $tarea['prioridad'],
+                    'estado' => $tarea['estado'],
+                    'estado_reg' => 'Activo',
+                    'fecha_creacion' => now()
+                ]);
+            } else {
+                $IdTarea = DB::table('tareas_empleados')->where('id', $tarea['id'])->update([
+                    'titulo' => $tarea['titulo'],
+                    'descripcion' => $tarea['descripcion'],
+                    'fecha_pactada' => $tarea['fecha_pactada'],
+                    'prioridad' => $tarea['prioridad'],
+                    'estado' => $tarea['estado'],
+                ]);
+            }
 
             /// isertar evidencia
             if (isset($tarea['evidencias']) && count($tarea['evidencias']) > 0) {
@@ -410,18 +421,29 @@ class EmpleadosController extends Controller
                 ->where('lideres_empleados.empleado', $tarea['empleado'])
                 ->first();
 
+            $liderEmpleado = "No";
             if ($lider) {
-                $lider = $lider->id;
+                $lider = $lider;
+                $liderEmpleado = "Si";
             } else {
-                $lider = Auth::user()->id;
+                $lider = DB::table('users')->where('lider_seguimiento', 'Si')->first();
+           
+                if ($lider) {
+                    $lider = $lider->id;
+                } else {
+                    $lider = DB::table('users')->where('tipo_usuario', 'Administrador')->first();
+                    $lider = $lider->id;
+                }
             }
+
             //insertar notificacion
 
 
-            if (Auth::user()->lider == 'Si' || Auth::user()->tipo_usuario == 'Administrador') {
+            if ($liderEmpleado == 'Si' || Auth::user()->tipo_usuario == 'Administrador') {
 
-                $descripcion = 'Se te ha asignado una nueva tarea, "' . $tarea['titulo'] . '"';
+                $descripcion = 'Te ha asignado una nueva tarea, "' . $tarea['titulo'] . '"';
                 $emisor = 'Lider';
+
 
                 DB::table('notificaciones')->insert([
                     'id_lider' => Auth::user()->id,
@@ -434,12 +456,12 @@ class EmpleadosController extends Controller
                     'emisor' => 'Lider'
                 ]);
 
-          //      $this->enviarNotificacion($descripcion, $tarea['empleado'], $emisor, $lider->id);
+                //      $this->enviarNotificacion($descripcion, $tarea['empleado'], $emisor, $lider->id);
             } else {
                 $descripcion = 'Ha creado una nueva tarea, "' . $tarea['titulo'] . '"';
                 $emisor = 'Empleado';
                 DB::table('notificaciones')->insert([
-                    'id_lider' => $lider->id,
+                    'id_lider' => $lider,
                     'id_empleado' => $tarea['empleado'],
                     'id_tarea' => $IdTarea,
                     'descripcion' => $descripcion,
@@ -448,7 +470,7 @@ class EmpleadosController extends Controller
                     'tipo' => 'Tarea',
                     'emisor' => 'Empleado'
                 ]);
-           //     $this->enviarNotificacion($descripcion, $tarea['empleado'], $emisor, $lider->id);
+                //     $this->enviarNotificacion($descripcion, $tarea['empleado'], $emisor, $lider->id);
             }
 
             //consultar tareas del empleado
@@ -588,13 +610,25 @@ class EmpleadosController extends Controller
                 ->where('empleado', $empleado->empleado)
                 ->first();
 
+            if ($lider) {
+                $lider = $lider->lider;
+            } else {
+                $lider = DB::table('users')->where('lider_seguimiento', 'Si')->first();
+                if ($lider) {
+                    $lider = $lider->id;
+                } else {
+                    $lider = DB::table('users')->where('tipo_usuario', 'Administrador')->first();
+                    $lider = $lider->id;
+                }
+            }
+
             //insertar notificacion
             if (Auth::user()->lider == 'Si' || Auth::user()->tipo_usuario == 'Administrador') {
                 DB::table('notificaciones')->insert([
-                    'id_lider' => $lider->lider,
+                    'id_lider' => $lider,
                     'id_empleado' => $empleado->empleado,
                     'id_tarea' => $id,
-                    'descripcion' => 'Se te ha actualizado el estado de la tarea a ' . $tarea['estado'],
+                    'descripcion' => 'Te ha actualizado el estado de la tarea a ' . $tarea['estado'],
                     'leida' => 0,
                     'fecha' => now(),
                     'tipo' => 'Mensaje',
@@ -813,20 +847,20 @@ class EmpleadosController extends Controller
 
             //consultar empleado de la tarea
             $empleado = DB::table('tareas_empleados')->where('id', $id)->first();
-           
+
             //consultar lider de la tarea
             $lider = DB::table('lideres_empleados')
                 ->join('users', 'lideres_empleados.lider', 'users.empleado')
                 ->select('users.id')
                 ->where('lideres_empleados.empleado', $empleado->empleado)->first();
-          
-          
+
+
             if ($lider) {
                 $lider = $lider->id;
             } else {
                 $lider = Auth::user()->id;
             }
-       
+
 
             if ($data['visto_bueno']) {
                 $descripcion = 'ha generado un visto bueno para la tarea';
@@ -846,7 +880,7 @@ class EmpleadosController extends Controller
                 'id_lider' => $lider
             ]);
 
-          
+
             return response()->json(['success' => 'Visto bueno actualizado correctamente'], 200);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
@@ -912,7 +946,8 @@ class EmpleadosController extends Controller
                 'tipo_usuario' => $usuario['role'],
                 'empleado' => $usuario['empleado'],
                 'estado' => $usuario['estado'],
-                'foto' => $usuario['foto']
+                'foto' => $usuario['foto'],
+                'lider_seguimiento' => $usuario['lider_seguimiento']
             ]);
         } else {
             if ($usuario['cambiar_password']) {
@@ -923,7 +958,8 @@ class EmpleadosController extends Controller
                     'tipo_usuario' => $usuario['role'],
                     'empleado' => $usuario['empleado'],
                     'estado' => $usuario['estado'],
-                    'foto' => $usuario['foto']
+                    'foto' => $usuario['foto'],
+                    'lider_seguimiento' => $usuario['lider_seguimiento']
                 ]);
             } else {
                 $usuario = DB::table('users')->where('id', $usuario['id'])->update([
@@ -932,7 +968,8 @@ class EmpleadosController extends Controller
                     'tipo_usuario' => $usuario['role'],
                     'empleado' => $usuario['empleado'],
                     'estado' => $usuario['estado'],
-                    'foto' => $usuario['foto']
+                    'foto' => $usuario['foto'],
+                    'lider_seguimiento' => $usuario['lider_seguimiento']
                 ]);
             }
         }
@@ -1075,10 +1112,118 @@ class EmpleadosController extends Controller
     function verificarEmpleadoLider($id)
     {
         $empleado = DB::table('lideres_empleados')->where('empleado', $id)->first();
-        if ($empleado) {    
+        if ($empleado) {
             return response()->json(['existe' => true]);
         } else {
             return response()->json(['existe' => false]);
         }
+    }
+
+    function eliminarFuncion($id)
+    {
+        $funcion = DB::table('funciones_empleado')->where('id', $id)->delete();
+        return response()->json(['success' => 'Funcion eliminada correctamente'], 200);
+    }
+
+    function cargarActividades($id)
+    {
+        $actividades = DB::table('actividades_empleado')->where('empleado', $id)->get();
+        return response()->json($actividades);
+    }
+
+    function guardarActividad(Request $request)
+    {
+        $actividadActual = $request->all();
+        $actividad = DB::table('actividades_empleado')->insert([
+            'empleado' => $actividadActual['empleado'],
+            'descripcion' => $actividadActual['actividad']
+        ]);
+
+        $actividad = DB::table('actividades_empleado')
+            ->where('empleado', $actividadActual['empleado'])
+            ->orderBy('id', 'desc')
+            ->first();
+
+        return response()->json(['success' => 'Actividad guardada correctamente', 'actividad' => $actividad], 200);
+    }
+
+    function eliminarActividad($id)
+    {
+        $actividad = DB::table('actividades_empleado')->where('id', $id)->delete();
+        return response()->json(['success' => 'Actividad eliminada correctamente'], 200);
+    }
+
+    function actualizarActividad($id, Request $request)
+    {
+        $actividadActual = $request->all();
+        $actividad = DB::table('actividades_empleado')->where('id', $id)->update([
+            'descripcion' => $actividadActual['descripcion']
+        ]);
+
+        return response()->json(['success' => 'Actividad actualizada correctamente'], 200);
+    }
+
+    function rechazarTarea($id, Request $request)
+    {
+
+        $data = $request->all();
+        try {
+
+            DB::table('tareas_empleados')
+                ->where('id', $id)
+                ->update([
+                    'rechazada' => (int) filter_var($data['rechazada'], FILTER_VALIDATE_BOOLEAN),
+                    'estado' => $data['rechazada'] ? 'En Proceso' : 'Completada'
+                ]);
+
+                $empleado = DB::table('tareas_empleados')->where('id', $id)->first();
+
+                //consultar lider de la tarea
+                $lider = DB::table('lideres_empleados')
+                    ->join('users', 'lideres_empleados.lider', 'users.empleado')
+                    ->select('users.id')
+                    ->where('lideres_empleados.empleado', $empleado->empleado)->first();
+    
+    
+                if ($lider) {
+                    $lider = $lider->id;
+                } else {
+                    $lider = Auth::user()->id;
+                }
+    
+    
+                if ($data['rechazada']) {
+                    $descripcion = 'ha rechazado la tarea';
+                } else {
+                    $descripcion = 'ha generado un visto bueno para la tarea';
+                }
+    
+                //generar notificacion
+                $notificacion = DB::table('notificaciones')->insert([
+                    'id_tarea' => $id,
+                    'descripcion' => $descripcion,
+                    'fecha' => now(),
+                    'tipo' => 'Mensaje',
+                    'leida' => 0,
+                    'emisor' => 'Lider',
+                    'id_empleado' => $empleado->empleado,
+                    'id_lider' => $lider
+                ]);
+
+                return response()->json(['success' => 'Tarea rechazada correctamente'], 200);
+
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    function aprobarTarea($id, Request $request)
+    {
+        $data = $request->all();
+        $tarea = DB::table('tareas_empleados')->where('id', $id)->update([
+            'aprobada' => (int) filter_var($data['aprobada'], FILTER_VALIDATE_BOOLEAN)
+        ]);
+
+        return response()->json(['success' => 'Tarea aprobada correctamente'], 200);
     }
 }

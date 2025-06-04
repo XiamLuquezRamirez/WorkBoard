@@ -59,6 +59,12 @@ const NotificationModal = ({ isOpen, onClose, notifications, setNotifications, c
         ));
     };
 
+    const formatDate = (fecha) => {
+        if (!fecha) return '';
+        const [year, month, day] = fecha.split('-');
+        return `${day}/${month}/${year}`;
+      };
+
     const handleNotificationClick = async (notification) => {
         // Marcar como leída si no lo está
         if (!notification.leida) {
@@ -138,13 +144,13 @@ const NotificationModal = ({ isOpen, onClose, notifications, setNotifications, c
                                                 : 
                                                 notification.nombre_completo + ` ${getIcon(notification.tipo).mensaje1} `}</p>
                                                 <p className="notification-description">{notification.descripcion}</p>
-                                                <p className="notification-date">{notification.fecha}</p>
+                                                <p className="notification-date">{formatDate(notification.fecha)}</p>
                                             </div>
                                         ) : (
                                             <div className="notification-content">
                                                 <p className="notification-employee">{notification.nombre_completo}</p>
                                                 <p className="notification-description">{notification.descripcion}</p>
-                                                <p className="notification-date">{notification.fecha}</p>
+                                                <p className="notification-date">{formatDate(notification.fecha)}</p>
                                             </div>
                                         )}
                                     </div>
