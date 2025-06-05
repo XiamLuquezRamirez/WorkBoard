@@ -22,6 +22,7 @@ import {
     FaUserTie,
     FaBuilding
 } from 'react-icons/fa';
+import { FaCircleCheck, FaCircle, FaCircleXmark } from 'react-icons/fa6';
 
 const Dashboard = () => {
     const { user, loading } = useUser();
@@ -549,9 +550,34 @@ const Dashboard = () => {
                                             >
                                                 <div className="tarea-header">
                                                     <h4>{tarea.titulo}</h4>
-                                                    <span className={`prioridad-badge ${tarea.prioridad.toLowerCase()}`}>
-                                                        {tarea.prioridad}
-                                                    </span>
+                                                    <div className="task-card-header-right">
+                                                        {tarea.prioridad && (
+                                                            <span className={`prioridad-badge ${tarea.prioridad.toLowerCase()}`}>
+                                                                {tarea.prioridad}
+                                                            </span>
+                                                        )}
+                                                                <div className="task-card-header-right-icons">
+                                                                    {/* Mostrar Aprobación */}
+                                                                    {tarea.aprobada ? (
+                                                                        <FaCircleCheck color='green' title='Aprobada' style={{ marginRight: '0.5rem' }} />
+                                                                    ) : (
+                                                                        <FaCircleCheck color='grey' title='No aprobada' style={{ marginRight: '0.5rem', opacity: 0.5 }} />
+                                                                    )}
+
+                                                                    {/* Mostrar Visto Bueno */}
+                                                                    {(tarea.estado === 'Completada' || (tarea.estado === 'En Proceso' && tarea.visto_bueno)) && !tarea.rechazada ? (
+                                                                        <FaEye color='green' title='Visto bueno' style={{ marginRight: '0.5rem' }} />
+                                                                    ) : (
+                                                                        <FaEye color='grey' title='Pendiente de visto bueno' style={{ marginRight: '0.5rem', opacity: 0.5 }} />
+                                                                    )}
+
+                                                                    {/* Mostrar Rechazada */}
+                                                                    {(tarea.estado === 'Completada' || tarea.estado === 'En Proceso') && tarea.rechazada ? (
+                                                                        <FaCircleXmark color='red' title='Rechazada' style={{ marginRight: '0.5rem' }} />
+                                                                    ) : null}
+
+                                                                </div>
+                                                            </div>
                                                 </div>
                                                 <p className="tarea-descripcion">{tarea.descripcion}</p>
                                                 <div className="tarea-footer">

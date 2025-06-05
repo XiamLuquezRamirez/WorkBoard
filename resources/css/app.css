@@ -4852,6 +4852,11 @@ search-container .employee-card:hover::before {
     .employee-photo {
         margin: 0 auto;
     }
+
+    .login-logo {
+        width: 250px;
+       height: auto;
+    }
 }
 
 @media screen and (max-width: 768px) {
@@ -4912,6 +4917,11 @@ search-container .employee-card:hover::before {
     .action-button {
         width: 100%;
     }
+
+    .login-logo {
+        width: 250px;
+       height: auto;
+    }
 }
 
 @media screen and (max-width: 576px) {
@@ -4932,6 +4942,7 @@ search-container .employee-card:hover::before {
     .dashboard-header h1 {
         font-size: 1.25rem;
     }
+    
 
     .search-input {
         font-size: 0.875rem;
@@ -4939,6 +4950,10 @@ search-container .employee-card:hover::before {
 
     .modal-header h2 {
         font-size: 1.25rem;
+    }
+    .login-logo {
+        width: 250px;
+       height: auto;
     }
 
     .employee-card {
@@ -4986,6 +5001,11 @@ search-container .employee-card:hover::before {
 
     .modal-content {
         max-height: 80vh;
+    }
+
+    .login-logo {
+        width: 250px;
+       height: auto;
     }
 }
 
@@ -5134,6 +5154,22 @@ search-container .employee-card:hover::before {
     cursor: not-allowed;
 }
 
+.task-card-header-right{
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.task-card-header-right-icons {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    align-items: right;
+}
+
+.task-card-header-right-icons span {
+    font-size: 0.8rem;
+}
 
 
 

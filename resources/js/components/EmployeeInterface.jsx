@@ -88,7 +88,7 @@ const EmployeeInterface = ({ user }) => {
                 items: []
             }
         };
-        console.log(tareas);
+
         // Distribuir las tareas en las columnas correspondientes
         tareas.forEach(task => {
             const estado = task.estado.trim();
@@ -173,6 +173,21 @@ const EmployeeInterface = ({ user }) => {
     const handleTaskClick = (task) => {
         setSelectedTask(task);
         setShowTaskDetails(true);
+    };
+
+    const handleTaskUpdate = async () => {
+        // Si estamos viendo las tareas de un empleado específico
+        if (showTareasEmpleado && empleadoSeleccionado) {
+            try {
+                const response = await axiosInstance.get(`/cargarTareas/${empleadoSeleccionado.id}`);
+                setTareasEmpleado(response.data.tareas);
+            } catch (error) {
+                console.error('Error al actualizar tareas del empleado:', error);
+            }
+        } else {
+            // Si estamos en la vista principal, actualizar todas las tareas
+            await loadTasks();
+        }
     };
 
     const abrirListaEmpleadosAsignados = async () => {
@@ -499,11 +514,34 @@ const EmployeeInterface = ({ user }) => {
                                                     >
                                                         <div className="task-card-header">
                                                             <h4 style={{ textTransform: 'capitalize', marginBottom: '0.5rem' }}>{task.titulo}</h4>
-                                                            {task.prioridad && (
-                                                                <span className={`priority-badge ${task.prioridad.toLowerCase()}`}>
-                                                                    {task.prioridad}
-                                                                </span>
-                                                            )}
+                                                            <div className="task-card-header-right">
+                                                                {task.prioridad && (
+                                                                    <span className={`prioridad-badge ${task.prioridad.toLowerCase()}`}>
+                                                                        {task.prioridad}
+                                                                    </span>
+                                                                )}
+                                                                <div className="task-card-header-right-icons">
+                                                                    {/* Mostrar Aprobación */}
+                                                                    {task.aprobada ? (
+                                                                        <FaCircleCheck color='green' title='Aprobada' style={{ marginRight: '0.5rem' }} />
+                                                                    ) : (
+                                                                        <FaCircleCheck color='grey' title='No aprobada' style={{ marginRight: '0.5rem', opacity: 0.5 }} />
+                                                                    )}
+
+                                                                    {/* Mostrar Visto Bueno */}
+                                                                    {(task.estado === 'Completada' || (task.estado === 'En Proceso' && task.visto_bueno)) && !task.rechazada ? (
+                                                                        <FaEye color='green' title='Visto bueno' style={{ marginRight: '0.5rem' }} />
+                                                                    ) : (
+                                                                        <FaEye color='grey' title='Pendiente de visto bueno' style={{ marginRight: '0.5rem', opacity: 0.5 }} />
+                                                                    )}
+
+                                                                    {/* Mostrar Rechazada */}
+                                                                    {(task.estado === 'Completada' || task.estado === 'En Proceso') && task.rechazada ? (
+                                                                        <FaCircleXmark color='red' title='Rechazada' style={{ marginRight: '0.5rem' }} />
+                                                                    ) : null}
+
+                                                                </div>
+                                                            </div>
                                                         </div>
                                                         <p className="task-description">{task.descripcion}</p>
                                                         <div className="task-dates">
@@ -606,7 +644,7 @@ const EmployeeInterface = ({ user }) => {
                                                                     />
                                                                 )
                                                             )}
-                                                        
+
                                                         </div>
                                                         <div className="task-card-header">
                                                             <h4>{task.titulo}</h4>
@@ -661,16 +699,7 @@ const EmployeeInterface = ({ user }) => {
                 <TaskDetailsModal
                     task={selectedTask}
                     onClose={() => setShowTaskDetails(false)}
-                    onUpdate={async () => {
-                        const response = await axiosInstance.get(`/cargarTareas/${selectedTask.empleado}`);
-                        organizeTasks(response.data.tareas);
-
-                        // Actualizar el selectedTask con los nuevos datos
-                        const updatedTask = response.data.tareas.find(t => t.id === selectedTask.id);
-                        if (updatedTask) {
-                            setSelectedTask(updatedTask);
-                        }
-                    }}
+                    onUpdate={handleTaskUpdate}
                 />
             )}
         </div>

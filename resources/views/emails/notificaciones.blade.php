@@ -65,11 +65,7 @@
         </div>
         
         <div class="message">
-            @if($data['emisor'] == 'Lider')
             Queremos informarle que  {{ $data['message'] }}      
-            @elseif($data['emisor'] == 'Empleado')
-            Queremos informarle que {{$data['empleado']}} {{ $data['message'] }}
-            @endif
         </div>
         <div class="footer">
             <p>Este es un correo automático, por favor no responder.</p>

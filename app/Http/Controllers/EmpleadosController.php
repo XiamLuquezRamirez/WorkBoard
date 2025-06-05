@@ -16,87 +16,31 @@ class EmpleadosController extends Controller
         $tipo = $request->input('tipo');
         $id = $request->input('id');
 
-        //consultar tareas atrasadas
-        $tareasAtrasadas = DB::table('tareas_empleados')
-            ->join('empleados', 'tareas_empleados.empleado', 'empleados.id')
-            ->where('fecha_pactada', '<', now())
-            ->where('tareas_empleados.estado', '!=', 'Completada')
-            ->where('tareas_empleados.estado_reg', 'Activo')
-            ->select(
-                DB::raw('CONCAT(empleados.nombres, " ", empleados.apellidos) as nombre_empleado'),
-                'tareas_empleados.*'
-            )
-            ->get();
+        $usuarioActual = Auth::user();
 
-        //insertar notificacion
-        // foreach ($tareasAtrasadas as $tarea) {
-        //     //consultar lider del empleado
-        //     $lider = DB::table('lideres_empleados')
-        //         ->join('empleados', 'lideres_empleados.lider', 'empleados.id')
-        //         ->where('empleado', $tarea->empleado)
-        //         ->select(
-        //             DB::raw('CONCAT(empleados.nombres, " ", empleados.apellidos) as nombre_lider'),
-        //             'lideres_empleados.lider'
-        //         )
-        //         ->first();
-        //         if ($lider) {
-        //             $liderSeleccionado = $lider->lider;
-        //         } else {
-        //             $liderSeleccionado = Auth::user()->id;
-        //         }
+        if ($usuarioActual->tipo_usuario === 'Empleado') {
+            // Obtener ID del empleado asociado
+            $empleado = DB::table('empleados')
+                ->join('users', 'empleados.id', 'users.empleado')
+                ->select('users.id as id_usuario', 'empleados.*')
+                ->where('users.id', $usuarioActual->id)->first();
 
-        //     $notificacion = [
-        //         'id_empleado' => $tarea->empleado,
-        //         'id_lider' => $liderSeleccionado,
-        //         'descripcion' => 'Tiene una tarea atrasada ' . $tarea->titulo . ' fecha pactada ' . $tarea->fecha_pactada,
-        //         'fecha' => now(),
-        //         'tipo' => 'Recordatorio',
-        //         'leida' => 0,
-        //         'emisor' => 'Lider'
-        //     ];
-        // }
-
-        // //insertar notificacion
-        // DB::table('notificaciones')->insert($notificacion);
-
-        if ($tipo == 'admin') {
-            $notificaciones = DB::table('notificaciones')
-                ->join('empleados as empleado', 'notificaciones.id_empleado', 'empleado.id')
-                ->join('users as lider', 'notificaciones.id_lider', 'lider.id')
-                ->select(
-                    'notificaciones.*',
-                    DB::raw('CONCAT(empleado.nombres, " ", empleado.apellidos) as nombre_completo'),
-                    DB::raw('CONCAT(lider.name) as nombre_lider')
-                )
-                ->where('leida', 0)
-                ->orderBy('notificaciones.id', 'desc')
-                ->get();
-        } else {
-            if ($tipo == 'empleado') {
-
-                $notificaciones = DB::table('notificaciones')
-                    ->join('users', 'notificaciones.id_lider', 'users.id')
-                    ->select('notificaciones.*', 'users.name as nombre_completo')
-                    ->where('id_empleado', $id)
-                    ->where('leida', 0)
-                    ->where('emisor', '!=', $tipo)
-                    ->orderBy('notificaciones.id', 'desc')
-                    ->get();
-                   
-            } else {
-                $notificaciones = DB::table('notificaciones')
-                    ->join('empleados', 'notificaciones.id_empleado', 'empleados.id')
-                    ->select(
-                        'notificaciones.*',
-                        DB::raw('CONCAT(empleados.nombres, " ", empleados.apellidos) as nombre_completo')
-                    )
-                    ->where('id_lider', Auth::user()->id)
-                    ->where('leida', 0)
-                    ->where('emisor', '!=', $tipo)
-                    ->orderBy('notificaciones.id', 'desc')
+            if ($empleado) {
+                $notificaciones = DB::table('notif_generales')->where('id_receptor', $empleado->id_usuario)
+                    ->where('tipo_receptor', 'empleado')
+                    ->where('leido', 0)
+                    ->orderBy('notif_generales.id', 'desc')
                     ->get();
             }
+        } else {
+            // Usuario administrador o líder
+            $notificaciones = DB::table('notif_generales')->where('id_receptor', $usuarioActual->id)
+                ->where('tipo_receptor', 'usuario')
+                ->where('leido', 0)
+                ->orderBy('notif_generales.id', 'desc')
+                ->get();
         }
+
 
         //agregar notificaciones de tareas atrasadas
         // $notificaciones = $notificaciones->merge($notificacion);
@@ -368,11 +312,88 @@ class EmpleadosController extends Controller
             return $tarea;
         });
 
+        //obtener notificaciones de las tareas atrasadas
+        self::obtenerNotificacionesTareasAtrasadas();
 
 
         return response()->json([
             'tareas' => $tareas
         ]);
+    }
+
+    function obtenerNotificacionesTareasAtrasadas()
+    {
+        $tareasAtrasadas = DB::table('tareas_empleados')
+        ->join('empleados', 'tareas_empleados.empleado', 'empleados.id')
+        ->where('fecha_pactada', '<', now())
+        ->where('tareas_empleados.estado', '!=', 'Completada')
+        ->where('tareas_empleados.estado_reg', 'Activo')
+        ->select(
+            DB::raw('CONCAT(empleados.nombres, " ", empleados.apellidos) as nombre_empleado'),
+            'tareas_empleados.*'
+        )
+        ->get();
+
+        foreach ($tareasAtrasadas as $tarea) {
+            // Verificar si ya existe una notificación para esta tarea
+            $notificacionExistente = DB::table('notif_generales')
+                ->where('tarea_id', $tarea->id)
+                ->where('tipo', 'TareaAtrasada')
+                ->where('leido', 0)
+                ->first();
+
+             //fecha Formateada
+             $fechaPactada = date('d/m/Y', strtotime($tarea->fecha_pactada));
+
+            if (!$notificacionExistente) {
+                // Obtener el líder del empleado
+                $lider = DB::table('lideres_empleados')
+                    ->where('empleado', $tarea->empleado)
+                    ->first();
+
+                if ($lider) {
+                    // Obtener el usuario líder
+                    $usuarioLider = DB::table('users')
+                        ->where('empleado', $lider->lider)
+                        ->first();
+
+                    if ($usuarioLider) {
+                        // Crear la notificación para el líder
+                        DB::table('notif_generales')->insert([
+                            'id_emisor' => $tarea->empleado,
+                            'tipo_emisor' => 'empleado',
+                            'id_receptor' => $usuarioLider->id,
+                            'tipo_receptor' => 'usuario',
+                            'mensaje' => 'El empleado ' . $tarea->nombre_empleado . ' tiene una tarea atrasada: ' . $tarea->titulo . ' (Fecha pactada: ' . $fechaPactada . ')',
+                            'tarea_id' => $tarea->id,
+                            'leido' => 0,
+                            'fecha' => now(),
+                            'tipo' => 'TareaAtrasada'
+                        ]);
+                    }
+                } else {
+                    // Si no hay líder, notificar al administrador
+                    $admin = DB::table('users')
+                        ->where('tipo_usuario', 'Administrador')
+                        ->where('lider_seguimiento', 'Si')
+                        ->first();
+
+                    if ($admin) {
+                        DB::table('notif_generales')->insert([
+                            'id_emisor' => $tarea->empleado,
+                            'tipo_emisor' => 'empleado',
+                            'id_receptor' => $admin->id,
+                            'tipo_receptor' => 'usuario',
+                            'mensaje' => 'El empleado ' . $tarea->nombre_empleado . ' tiene una tarea atrasada: ' . $tarea->titulo . ' (Fecha pactada: ' . $fechaPactada . ')',
+                            'tarea_id' => $tarea->id,
+                            'leido' => 0,
+                            'fecha' => now(),
+                            'tipo' => 'TareaAtrasada'
+                        ]);
+                    }
+                }
+            }
+        }
     }
 
     function guardarTarea(Request $request)
@@ -414,64 +435,8 @@ class EmpleadosController extends Controller
                 }
             }
 
-            //consultar lider del empleado
-            $lider = DB::table('lideres_empleados')
-                ->leftJoin('users', 'lideres_empleados.lider', 'users.empleado')
-                ->select('users.id')
-                ->where('lideres_empleados.empleado', $tarea['empleado'])
-                ->first();
-
-            $liderEmpleado = "No";
-            if ($lider) {
-                $lider = $lider;
-                $liderEmpleado = "Si";
-            } else {
-                $lider = DB::table('users')->where('lider_seguimiento', 'Si')->first();
-           
-                if ($lider) {
-                    $lider = $lider->id;
-                } else {
-                    $lider = DB::table('users')->where('tipo_usuario', 'Administrador')->first();
-                    $lider = $lider->id;
-                }
-            }
-
-            //insertar notificacion
-
-
-            if ($liderEmpleado == 'Si' || Auth::user()->tipo_usuario == 'Administrador') {
-
-                $descripcion = 'Te ha asignado una nueva tarea, "' . $tarea['titulo'] . '"';
-                $emisor = 'Lider';
-
-
-                DB::table('notificaciones')->insert([
-                    'id_lider' => Auth::user()->id,
-                    'id_empleado' => $tarea['empleado'],
-                    'id_tarea' => $IdTarea,
-                    'descripcion' => $descripcion,
-                    'leida' => 0,
-                    'fecha' => now(),
-                    'tipo' => 'Tarea',
-                    'emisor' => 'Lider'
-                ]);
-
-                //      $this->enviarNotificacion($descripcion, $tarea['empleado'], $emisor, $lider->id);
-            } else {
-                $descripcion = 'Ha creado una nueva tarea, "' . $tarea['titulo'] . '"';
-                $emisor = 'Empleado';
-                DB::table('notificaciones')->insert([
-                    'id_lider' => $lider,
-                    'id_empleado' => $tarea['empleado'],
-                    'id_tarea' => $IdTarea,
-                    'descripcion' => $descripcion,
-                    'leida' => 0,
-                    'fecha' => now(),
-                    'tipo' => 'Tarea',
-                    'emisor' => 'Empleado'
-                ]);
-                //     $this->enviarNotificacion($descripcion, $tarea['empleado'], $emisor, $lider->id);
-            }
+            //guardar notificacion
+            self::guardarNotificacion($IdTarea, 'Tarea');
 
             //consultar tareas del empleado
             DB::commit();
@@ -490,35 +455,6 @@ class EmpleadosController extends Controller
             'success' => 'Tarea guardada correctamente',
             'tareas' => $tareas
         ], 200);
-    }
-
-    function enviarNotificacion($descripcion, $empleado, $emisor, $lider)
-    {
-        if ($emisor == 'Lider') {
-            $empleado = DB::table('empleados')->where('id', $empleado)->first();
-            $notificacion = [
-                'name' => $empleado->nombres . ' ' . $empleado->apellidos,
-                'message' => $descripcion,
-                'tipo' => 'nueva-tarea',
-                'emisor' => 'Lider'
-            ];
-            $email = $empleado->email;
-        } else {
-            $lider = DB::table('users')->where('id', $lider)->first();
-            $empleado = DB::table('empleados')->where('id', $empleado)->first();
-            $notificacion = [
-                'name' => $lider->name,
-                'message' => $descripcion,
-                'tipo' => 'nueva-tarea',
-                'empleado' => $empleado->nombres . ' ' . $empleado->apellidos,
-                'emisor' => 'Empleado'
-            ];
-            $email = $lider->email;
-        }
-
-
-        Mail::to($email)->send(new NotificacionMailable($notificacion));
-        return response()->json(['success' => 'Notificación enviada correctamente'], 200);
     }
 
 
@@ -599,55 +535,14 @@ class EmpleadosController extends Controller
                 }
             }
 
+
             //consultar evidencias de la tarea
             $evidencias = DB::table('evidencia_tarea')->where('tarea', $id)->get();
 
-            //consultar empleado de la tarea
-            $empleado = DB::table('tareas_empleados')->where('id', $id)->first();
+            //consuktar tarea
 
-
-            $lider = DB::table('lideres_empleados')
-                ->where('empleado', $empleado->empleado)
-                ->first();
-
-            if ($lider) {
-                $lider = $lider->lider;
-            } else {
-                $lider = DB::table('users')->where('lider_seguimiento', 'Si')->first();
-                if ($lider) {
-                    $lider = $lider->id;
-                } else {
-                    $lider = DB::table('users')->where('tipo_usuario', 'Administrador')->first();
-                    $lider = $lider->id;
-                }
-            }
-
-            //insertar notificacion
-            if (Auth::user()->lider == 'Si' || Auth::user()->tipo_usuario == 'Administrador') {
-                DB::table('notificaciones')->insert([
-                    'id_lider' => $lider,
-                    'id_empleado' => $empleado->empleado,
-                    'id_tarea' => $id,
-                    'descripcion' => 'Te ha actualizado el estado de la tarea a ' . $tarea['estado'],
-                    'leida' => 0,
-                    'fecha' => now(),
-                    'tipo' => 'Mensaje',
-                    'emisor' => 'Lider'
-                ]);
-            } else {
-                DB::table('notificaciones')->insert([
-                    'id_lider' => $lider->lider,
-                    'id_empleado' => $empleado->empleado,
-                    'id_tarea' => $id,
-                    'descripcion' => 'Ha actualizado el estado de la tarea a ' . $tarea['estado'],
-                    'leida' => 0,
-                    'fecha' => now(),
-                    'tipo' => 'Mensaje',
-                    'emisor' => 'Empleado'
-                ]);
-            }
-
-
+            ///guardar notificacion
+            self::guardarNotificacion($id, 'Estado');
             DB::commit();
             return response()->json([
                 'success' => 'Estado de la tarea actualizado correctamente',
@@ -657,6 +552,177 @@ class EmpleadosController extends Controller
             DB::rollBack();
             return response()->json(['error' => $e->getMessage()], 500);
         }
+    }
+
+    function guardarNotificacion($idTarea, $tipo)
+    {
+
+        $tarea = DB::table('tareas_empleados')->where('id', $idTarea)->first();
+        $titulo = $tarea->titulo;
+        $empleado = $tarea->empleado;
+
+        $usuarioActual = Auth::user();
+        // CASO 1: Empleado crea tarea
+        if ($usuarioActual->tipo_usuario == 'Empleado' && $usuarioActual->lider == 'No') {
+
+            $empleado = DB::table('empleados')
+                ->join('users', 'empleados.id', 'users.empleado')
+                ->select('empleados.*', 'users.id as id_usuario')
+                ->where('users.id', $usuarioActual->id)->first();
+
+            $lider = DB::table('lideres_empleados')
+                ->where('empleado', $empleado->id)
+                ->first();
+
+            if ($empleado && $lider && $lider->lider) {
+                // Tiene líder → notificar al líder
+                $receptor = DB::table('empleados')
+                    ->join('users', 'empleados.id', 'users.empleado')
+                    ->select('users.*')
+                    ->where('empleados.id', $lider->lider)->first();
+                $tipoReceptor = 'empleado';
+            } else {
+                // No tiene líder → notificar a administrador
+                $receptor = DB::table('users')
+                    ->where('tipo_usuario', 'Administrador')
+                    ->select('users.*')
+                    ->first();
+                $tipoReceptor = 'usuario';
+            }
+
+            $tipoAccion = '';
+            if ($tipo == 'Tarea') {
+                $tipoAccion = ' ha creado una tarea.';
+            } else if ($tipo == 'Estado') {
+                $tipoAccion = ' ha actualizado el estado de la tarea a ' . $tarea->estado;
+            }
+
+            if ($receptor) {
+                $mensaje = 'El empleado ' . $empleado->nombres . ' ' . $empleado->apellidos . $tipoAccion . ' (' . $titulo . ')';
+                $notif = DB::table('notif_generales')->insertGetId([
+                    'id_emisor' => $empleado->id_usuario,
+                    'tipo_emisor' => 'empleado',
+                    'id_receptor' => $receptor->id,
+                    'tipo_receptor' => $tipoReceptor,
+                    'mensaje' => $mensaje,
+                    'tarea_id' => $idTarea,
+                    'leido' => 0,
+                    'fecha' => now(),
+                    'tipo' => $tipo
+                ]);
+            }
+
+            // ----------------------------------------------
+            // CASO 2: Líder o Administrador asigna tarea a otro
+            // ----------------------------------------------
+        } else if ($usuarioActual->lider == 'Si' || $usuarioActual->tipo_usuario == 'Administrador') {
+            // $empleadoReceptor debe estar definido
+            // Validamos si la tarea fue asignada a otra persona
+            $empleadoReceptor = DB::table('users')
+                ->where('empleado', $empleado)
+                ->first();
+
+            $tipoAccion = '';
+            if ($tipo == 'Tarea') {
+                $tipoAccion = ' te ha asignado una tarea.';
+            } else if ($tipo == 'Estado') {
+                $tipoAccion = ' te ha actualizado el estado de la tarea a ' . $tarea->estado;
+            } else if ($tipo == 'Aprobada') {
+                if ($tarea->aprobada == 1) {
+                    $tipoAccion = ' ha aprobado la tarea';
+                } else {
+                    $tipoAccion = ' ha definido la tarea como no aprobada';
+                }
+            } else if ($tipo == 'Rechazada') {
+                $tipoAccion = ' ha rechazado la tarea';
+            } else if ($tipo == 'VistoBueno') {
+                $tipoAccion = ' ha generado un visto bueno para la tarea';
+            } else if ($tipo == 'Observacion') {
+                $tipoAccion = ' ha realizado observaciones a la tarea';
+            }
+
+
+            if ($empleadoReceptor->id != $usuarioActual->id) {
+                $mensaje = 'El usuario ' . $usuarioActual->name . $tipoAccion . ' (' . $titulo . ')';
+                $notif = DB::table('notif_generales')->insertGetId([
+                    'id_emisor' => $usuarioActual->id,
+                    'tipo_emisor' => 'usuario',
+                    'id_receptor' => $empleadoReceptor->id,
+                    'tipo_receptor' => 'empleado',
+                    'mensaje' => $mensaje,
+                    'tarea_id' => $idTarea,
+                    'leido' => 0,
+                    'fecha' => now(),
+                    'tipo' => $tipo
+                ]);
+            } else {
+                // ----------------------------------------------
+                // CASO 3: Líder crea tarea para sí mismo
+                // ----------------------------------------------
+                $adminReceptor = DB::table('users')
+                    ->where('tipo_usuario', 'Administrador')
+                    ->where('lider_seguimiento', 'Si')
+                    ->first();
+
+                $tipoAccion = '';
+                if ($tipo == 'Tarea') {
+                    $tipoAccion = ' ha creado una tarea.';
+                } else if ($tipo == 'Estado') {
+                    $tipoAccion = ' ha actualizado el estado de la tarea a ' . $tarea->estado;
+                } else if ($tipo == 'Aprobada') {
+                    if ($tarea->aprobada == 1) {
+                        $tipoAccion = ' ha aprobado la tarea';
+                    } else {
+                        $tipoAccion = ' ha definido la tarea como no aprobada';
+                    }
+                } else if ($tipo == 'Rechazada') {
+                    $tipoAccion = ' ha rechazado la tarea';
+                } else if ($tipo == 'VistoBueno') {
+                    $tipoAccion = ' ha generado un visto bueno para la tarea';
+                } else if ($tipo == 'Observacion') {
+                    $tipoAccion = ' ha realizado observaciones a la tarea';
+                }
+
+                if ($adminReceptor) {
+                    $mensaje = 'El usuario ' . $usuarioActual->name . ' (líder) ' . $tipoAccion . ' (' . $titulo . ')';
+                    $notif = DB::table('notif_generales')->insertGetId([
+                        'id_emisor' => $usuarioActual->id,
+                        'tipo_emisor' => 'usuario',
+                        'id_receptor' => $adminReceptor->id,
+                        'tipo_receptor' => 'usuario',
+                        'mensaje' => $mensaje,
+                        'tarea_id' => $idTarea,
+                        'leido' => 0,
+                        'fecha' => now(),
+                        'tipo' => $tipo
+                    ]);
+                }
+            }
+        }
+
+        //enviar notificacion a los usuarios
+        if ($tipo == 'Tarea' || ($tipo == 'Estado' && $tarea->estado == 'Completada') || $tipo == 'Aprobada' || $tipo == 'Rechazada' || $tipo == 'VistoBueno' || $tipo == 'Observacion') {
+            self::enviarNotificacion($notif);
+        }
+    }
+
+    function enviarNotificacion($notif)
+    {
+        $notificacion = DB::table('notif_generales')->where('id', $notif)->first();
+        $usuario = DB::table('users')->where('id', $notificacion->id_receptor)->first();
+        $usuarioEmisor = DB::table('users')->where('id', $notificacion->id_emisor)->first();
+
+        $notificacion = [
+            'name' => $usuarioEmisor->name,
+            'message' => $notificacion->mensaje,
+            'tipo' => $notificacion->tipo,
+            'emisor' => 'Lider'
+        ];
+
+        $email = $usuario->email;
+
+        Mail::to($email)->send(new NotificacionMailable($notificacion));
+        return response()->json(['success' => 'Notificación enviada correctamente'], 200);
     }
 
     function cargarEmpleadosTareas()
@@ -802,7 +868,7 @@ class EmpleadosController extends Controller
     function cambiarEstadoNotificacion(Request $request, $id)
     {
         $notificacion = $request->all();
-        DB::table('notificaciones')->where('id', $id)->update(['leida' => 1]);
+        DB::table('notif_generales')->where('id', $id)->update(['leido' => 1]);
         return response()->json(['success' => 'Notificación actualizada correctamente'], 200);
     }
 
@@ -818,17 +884,7 @@ class EmpleadosController extends Controller
             'creador' => Auth::user()->id
         ]);
 
-        //generar notificacion
-        $notificacion = DB::table('notificaciones')->insert([
-            'id_tarea' => $id,
-            'descripcion' => 'Se han realizado observaciones a la tarea',
-            'fecha' => now(),
-            'tipo' => 'Observaciones',
-            'leida' => 0,
-            'emisor' => 'Lider',
-            'id_empleado' => $data['id_empleado'],
-            'id_lider' => $data['id_lider']
-        ]);
+        self::guardarNotificacion($id, 'Observacion');
 
         return response()->json(['success' => 'Observaciones realizadas correctamente'], 200);
     }
@@ -845,40 +901,7 @@ class EmpleadosController extends Controller
                     'visto_bueno' => (int) filter_var($data['visto_bueno'], FILTER_VALIDATE_BOOLEAN)
                 ]);
 
-            //consultar empleado de la tarea
-            $empleado = DB::table('tareas_empleados')->where('id', $id)->first();
-
-            //consultar lider de la tarea
-            $lider = DB::table('lideres_empleados')
-                ->join('users', 'lideres_empleados.lider', 'users.empleado')
-                ->select('users.id')
-                ->where('lideres_empleados.empleado', $empleado->empleado)->first();
-
-
-            if ($lider) {
-                $lider = $lider->id;
-            } else {
-                $lider = Auth::user()->id;
-            }
-
-
-            if ($data['visto_bueno']) {
-                $descripcion = 'ha generado un visto bueno para la tarea';
-            } else {
-                $descripcion = 'ha quitado el visto bueno de la tarea';
-            }
-
-            //generar notificacion
-            $notificacion = DB::table('notificaciones')->insert([
-                'id_tarea' => $id,
-                'descripcion' => $descripcion,
-                'fecha' => now(),
-                'tipo' => 'Mensaje',
-                'leida' => 0,
-                'emisor' => 'Lider',
-                'id_empleado' => $empleado->empleado,
-                'id_lider' => $lider
-            ]);
+            self::guardarNotificacion($id, 'VistoBueno');
 
 
             return response()->json(['success' => 'Visto bueno actualizado correctamente'], 200);
@@ -1176,42 +1199,9 @@ class EmpleadosController extends Controller
                     'estado' => $data['rechazada'] ? 'En Proceso' : 'Completada'
                 ]);
 
-                $empleado = DB::table('tareas_empleados')->where('id', $id)->first();
+            self::guardarNotificacion($id, 'Rechazada');
 
-                //consultar lider de la tarea
-                $lider = DB::table('lideres_empleados')
-                    ->join('users', 'lideres_empleados.lider', 'users.empleado')
-                    ->select('users.id')
-                    ->where('lideres_empleados.empleado', $empleado->empleado)->first();
-    
-    
-                if ($lider) {
-                    $lider = $lider->id;
-                } else {
-                    $lider = Auth::user()->id;
-                }
-    
-    
-                if ($data['rechazada']) {
-                    $descripcion = 'ha rechazado la tarea';
-                } else {
-                    $descripcion = 'ha generado un visto bueno para la tarea';
-                }
-    
-                //generar notificacion
-                $notificacion = DB::table('notificaciones')->insert([
-                    'id_tarea' => $id,
-                    'descripcion' => $descripcion,
-                    'fecha' => now(),
-                    'tipo' => 'Mensaje',
-                    'leida' => 0,
-                    'emisor' => 'Lider',
-                    'id_empleado' => $empleado->empleado,
-                    'id_lider' => $lider
-                ]);
-
-                return response()->json(['success' => 'Tarea rechazada correctamente'], 200);
-
+            return response()->json(['success' => 'Tarea rechazada correctamente'], 200);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }
@@ -1223,6 +1213,9 @@ class EmpleadosController extends Controller
         $tarea = DB::table('tareas_empleados')->where('id', $id)->update([
             'aprobada' => (int) filter_var($data['aprobada'], FILTER_VALIDATE_BOOLEAN)
         ]);
+
+
+        self::guardarNotificacion($id, 'Aprobada');
 
         return response()->json(['success' => 'Tarea aprobada correctamente'], 200);
     }

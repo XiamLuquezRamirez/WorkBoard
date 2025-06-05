@@ -102,7 +102,6 @@ const LoginForm = () => {
                 </div>
                 {error && <div className="login-error">{error}</div>}
             
-                 
                     <form onSubmit={handleSubmit} className="login-form">
                         <div className="form-group">
                         <div className="input-icon">
@@ -115,7 +114,6 @@ const LoginForm = () => {
                                 onChange={handleChange}
                                 required
                             />
-                              
                         </div>
                     </div>
                     <div className="form-group">

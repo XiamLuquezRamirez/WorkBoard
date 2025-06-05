@@ -45,6 +45,30 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton }) 
         fecha_pactada: task.fecha_pactada
     });
 
+    // Agregar useEffect para actualizar estados cuando task cambia
+    useEffect(() => {
+        setCurrentStatus(task.estado);
+        setEvidencias(
+            task.evidencias
+                ? task.evidencias.map(evidencia => ({
+                    id: evidencia.id,
+                    nombre: evidencia.nombre,
+                    ruta: evidencia.evidencia,
+                    tipo: evidencia.tipo
+                }))
+                : []
+        );
+        setVistoBueno(task.visto_bueno === 1);
+        setAprobada(task.aprobada === 1);
+        setRechazada(task.rechazada === 1);
+        setEditedTask({
+            titulo: task.titulo,
+            descripcion: task.descripcion,
+            prioridad: task.prioridad,
+            fecha_pactada: task.fecha_pactada
+        });
+    }, [task]);
+
     const currentUser = user;
     const isLider = currentUser?.lider === 'Si';
     const isOwnTask = currentUser?.empleado === task.empleado;
@@ -453,21 +477,21 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton }) 
                             <h2 className='modal-title'>
                                 Detalles de la Tarea
                                  {/* Mostrar Aprobación */}
-                                 {task.aprobada ? (
+                                 {aprobada ? (
                                     <FaCircleCheck color='green' title='Aprobada' style={{ marginRight: '0.5rem' }} />
                                 ) : (
                                     <FaCircleCheck color='grey' title='No aprobada' style={{ marginRight: '0.5rem', opacity: 0.5 }} />
                                 )}
 
                                 {/* Mostrar Visto Bueno */}
-                                {(task.estado === 'Completada' || (task.estado === 'En Proceso' && task.visto_bueno)) && !task.rechazada ? (
+                                {(currentStatus === 'Completada' || (currentStatus === 'En Proceso' && vistoBueno)) && !rechazada ? (
                                     <FaEye color='green' title='Visto bueno' style={{ marginRight: '0.5rem' }} />
                                 ) : (
                                     <FaEye color='grey' title='Pendiente de visto bueno' style={{ marginRight: '0.5rem', opacity: 0.5 }} />
                                 )}
 
                                 {/* Mostrar Rechazada */}
-                                {(task.estado === 'Completada' || task.estado === 'En Proceso') && task.rechazada ? (
+                                {(currentStatus === 'Completada' || currentStatus === 'En Proceso') && rechazada ? (
                                     <FaCircleXmark color='red' title='Rechazada' style={{ marginRight: '0.5rem' }} />
                                 ): null}
                             </h2>
