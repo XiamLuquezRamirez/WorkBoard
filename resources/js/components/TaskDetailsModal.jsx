@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import {
     FaFileUpload, FaCheck,
     FaClock, FaSpinner, FaDownload,
-    FaTrash, FaFile, FaImage, FaEdit, FaSave, FaEye
+    FaTrash, FaFile, FaImage, FaEdit, FaSave, FaEye, FaPause
 } from 'react-icons/fa';
 import axios from 'axios';
 import Swal from 'sweetalert2';
@@ -11,7 +11,7 @@ import NotificationsModal from './NotificationsModal';
 import config from '../config';
 import { useUser } from './UserContext';
 import axiosInstance from '../axiosConfig';
-import { FaCircleCheck, FaCircle,FaCircleXmark } from 'react-icons/fa6';
+import { FaCircleCheck, FaCircle, FaCircleXmark } from 'react-icons/fa6';
 
 const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton }) => {
     const [loading, setLoading] = useState(false);
@@ -37,6 +37,8 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton }) 
     const [isButtonObservaciones, setIsButtonObservaciones] = useState(false);
     const [aprobada, setAprobada] = useState(task.aprobada === 1);
     const [rechazada, setRechazada] = useState(task.rechazada === 1);
+    const [isUploading, setIsUploading] = useState(false);
+    const [pausada, setPausada] = useState(task.pausada === 1);
     //fecha de tarea en fomao local
     const [editedTask, setEditedTask] = useState({
         titulo: task.titulo,
@@ -362,19 +364,24 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton }) 
     const handleVistoBueno = async (checked) => {
 
         setVistoBueno(checked);
+        setIsUploading(true);
         try {
             await axiosInstance.put(`/vistoBueno/${task.id}`, {
                 visto_bueno: checked
             });
             onUpdate();
+            setIsUploading(false);
             Swal.fire('¡Éxito!', 'Visto bueno actualizado correctamente', 'success');
         } catch (error) {
             Swal.fire('Error', 'Error al actualizar el visto bueno', 'error');
+        } finally {
+            setIsUploading(false);
         }
     };
 
     const handleAprobada = async (checked) => {
         setAprobada(checked);
+        setIsUploading(true);
         try {
             await axiosInstance.put(`/aprobarTarea/${task.id}`, {
                 aprobada: checked
@@ -383,11 +390,31 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton }) 
             Swal.fire('¡Éxito!', 'Tarea aprobada correctamente', 'success');
         } catch (error) {
             Swal.fire('Error', 'Error al aprobar la tarea', 'error');
+        } finally {
+            setIsUploading(false);
+        }
+    };
+
+
+    const handlePausada = async (checked) => {
+        setPausada(checked);
+        setIsUploading(true);
+        try {
+            await axiosInstance.put(`/pausarTarea/${task.id}`, {
+                pausada: checked
+            });
+            onUpdate();
+            Swal.fire('¡Éxito!', 'Tarea pausada correctamente', 'success');
+        } catch (error) {
+            Swal.fire('Error', 'Error al pausar la tarea', 'error');
+        } finally {
+            setIsUploading(false);
         }
     };
 
     const handleRechazada = async (checked) => {
         setRechazada(checked);
+        setIsUploading(true);
         try {
             await axiosInstance.put(`/rechazarTarea/${task.id}`, {
                 rechazada: checked
@@ -396,6 +423,8 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton }) 
             Swal.fire('¡Éxito!', 'Tarea rechazada correctamente', 'success');
         } catch (error) {
             Swal.fire('Error', 'Error al rechazar la tarea', 'error');
+        } finally {
+            setIsUploading(false);
         }
     };
 
@@ -470,21 +499,26 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton }) 
     return (
         <>
             {/* Modal principal de detalles */}
+            {isUploading && (
+                <div className="loader">
+                    <div className="justify-content-center jimu-primary-loading"></div>
+                </div>
+            )}
             {task && (
                 <div className="modal-overlay" onClick={(e) => e.target.className === 'modal-overlay' && onClose()}>
                     <div className="task-details-modal">
                         <div className="modal-header">
                             <h2 className='modal-title'>
                                 Detalles de la Tarea
-                                 {/* Mostrar Aprobación */}
-                                 {aprobada ? (
+                                {/* Mostrar Aprobación */}
+                                {aprobada ? (
                                     <FaCircleCheck color='green' title='Aprobada' style={{ marginRight: '0.5rem' }} />
                                 ) : (
                                     <FaCircleCheck color='grey' title='No aprobada' style={{ marginRight: '0.5rem', opacity: 0.5 }} />
                                 )}
 
                                 {/* Mostrar Visto Bueno */}
-                                {(currentStatus === 'Completada' || (currentStatus === 'En Proceso' && vistoBueno)) && !rechazada ? (
+                                {(currentStatus === 'Completada' && vistoBueno && !rechazada) ? (
                                     <FaEye color='green' title='Visto bueno' style={{ marginRight: '0.5rem' }} />
                                 ) : (
                                     <FaEye color='grey' title='Pendiente de visto bueno' style={{ marginRight: '0.5rem', opacity: 0.5 }} />
@@ -493,7 +527,14 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton }) 
                                 {/* Mostrar Rechazada */}
                                 {(currentStatus === 'Completada' || currentStatus === 'En Proceso') && rechazada ? (
                                     <FaCircleXmark color='red' title='Rechazada' style={{ marginRight: '0.5rem' }} />
-                                ): null}
+                                ) : null}
+
+                                {/* Mostrar Pausada */}
+                                {pausada ? (
+                                    <FaPause color='orange' title='Pausada' style={{ marginRight: '0.5rem' }} />
+                                ) : (
+                                    <FaPause color='grey' title='No pausada' style={{ marginRight: '0.5rem', opacity: 0.5 }} />
+                                )}
                             </h2>
 
 
@@ -807,6 +848,23 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton }) 
                                                 </div>
                                             </div>
                                         )}
+
+                                            <div className='aprobacion-panel'>
+                                            <h4>Pausar tarea</h4>
+                                            <div className="aprobacion-checkbox">
+                                                <label>
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={pausada}
+                                                        onChange={(e) => {
+                                                            handlePausada(e.target.checked);
+                                                        }} />
+                                                    Tarea pausada
+                                                </label>
+                                            </div>
+                                        </div>
+
+
 
                                     </div>
                                     <div className="observations-panel">

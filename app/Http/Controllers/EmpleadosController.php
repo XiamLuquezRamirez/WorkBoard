@@ -410,7 +410,8 @@ class EmpleadosController extends Controller
                     'prioridad' => $tarea['prioridad'],
                     'estado' => $tarea['estado'],
                     'estado_reg' => 'Activo',
-                    'fecha_creacion' => now()
+                    'fecha_creacion' => now(),
+                    'pausada' => 0
                 ]);
             } else {
                 $IdTarea = DB::table('tareas_empleados')->where('id', $tarea['id'])->update([
@@ -508,6 +509,7 @@ class EmpleadosController extends Controller
     function actualizarEstadoTarea(Request $request, $id)
     {
         $tarea = $request->all();
+        
 
         DB::beginTransaction();
         try {
@@ -523,19 +525,19 @@ class EmpleadosController extends Controller
                 ]);
             }
             //insertar evidencias
-            if (isset($tarea['evidencias'])) {
-                $evidencias = $tarea['evidencias'];
-                foreach ($evidencias as $evidencia) {
-                    $evidencia = DB::table('evidencia_tarea')->insert([
+            if (isset($tarea['evidencias']['evidencias'])) {
+                foreach ($tarea['evidencias']['evidencias'] as $evidencia) {
+                    DB::table('evidencia_tarea')->insert([
                         'tarea' => $id,
                         'evidencia' => $evidencia['ruta'],
-                        'nombre' => $evidencia['nombre'],
+                        'nombre' => $evidencia['nombre_original'],
                         'tipo' => $evidencia['tipo']
                     ]);
                 }
             }
+            
 
-
+           
             //consultar evidencias de la tarea
             $evidencias = DB::table('evidencia_tarea')->where('tarea', $id)->get();
 
@@ -581,7 +583,7 @@ class EmpleadosController extends Controller
                     ->select('users.*')
                     ->where('empleados.id', $lider->lider)->first();
                 $tipoReceptor = 'empleado';
-            } else {
+            } else {    
                 // No tiene líder → notificar a administrador
                 $receptor = DB::table('users')
                     ->where('tipo_usuario', 'Administrador')
@@ -596,6 +598,8 @@ class EmpleadosController extends Controller
             } else if ($tipo == 'Estado') {
                 $tipoAccion = ' ha actualizado el estado de la tarea a ' . $tarea->estado;
             }
+
+           
 
             if ($receptor) {
                 $mensaje = 'El empleado ' . $empleado->nombres . ' ' . $empleado->apellidos . $tipoAccion . ' (' . $titulo . ')';
@@ -702,7 +706,7 @@ class EmpleadosController extends Controller
 
         //enviar notificacion a los usuarios
         if ($tipo == 'Tarea' || ($tipo == 'Estado' && $tarea->estado == 'Completada') || $tipo == 'Aprobada' || $tipo == 'Rechazada' || $tipo == 'VistoBueno' || $tipo == 'Observacion') {
-            self::enviarNotificacion($notif);
+            //self::enviarNotificacion($notif);
         }
     }
 
@@ -710,10 +714,10 @@ class EmpleadosController extends Controller
     {
         $notificacion = DB::table('notif_generales')->where('id', $notif)->first();
         $usuario = DB::table('users')->where('id', $notificacion->id_receptor)->first();
-        $usuarioEmisor = DB::table('users')->where('id', $notificacion->id_emisor)->first();
+        $usuarioReceptor = DB::table('users')->where('id', $notificacion->id_receptor)->first();
 
         $notificacion = [
-            'name' => $usuarioEmisor->name,
+            'name' => $usuarioReceptor->name,
             'message' => $notificacion->mensaje,
             'tipo' => $notificacion->tipo,
             'emisor' => 'Lider'
@@ -1126,6 +1130,8 @@ class EmpleadosController extends Controller
                 DB::raw('concat(empleados.nombres, " ", empleados.apellidos) as empleado'),
                 'empresas.nombre as empresa'
             )
+            ->where('aprobada', 1)
+            ->where('pausada', 0)
             ->where('estado_reg', 'Activo')
             ->get();
 
@@ -1210,13 +1216,23 @@ class EmpleadosController extends Controller
     function aprobarTarea($id, Request $request)
     {
         $data = $request->all();
+        
         $tarea = DB::table('tareas_empleados')->where('id', $id)->update([
-            'aprobada' => (int) filter_var($data['aprobada'], FILTER_VALIDATE_BOOLEAN)
+            'aprobada' => (int) filter_var($data['aprobada'], FILTER_VALIDATE_BOOLEAN),
+            'fecha_aprobacion' => $data['aprobada'] ? now() : null
         ]);
-
 
         self::guardarNotificacion($id, 'Aprobada');
 
         return response()->json(['success' => 'Tarea aprobada correctamente'], 200);
+    }
+
+    function pausarTarea($id, Request $request)
+    {
+        $data = $request->all();
+        $tarea = DB::table('tareas_empleados')->where('id', $id)->update([
+            'pausada' => (int) filter_var($data['pausada'], FILTER_VALIDATE_BOOLEAN)
+        ]);
+
     }
 }

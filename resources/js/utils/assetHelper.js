@@ -6,7 +6,7 @@
 export const getAssetUrl = (path) => {
     const baseUrl = process.env.NODE_ENV === 'production' 
         ? 'https://ingeer.co/WorkBoard/public'
-        : 'http://localhost:8000/WorkBoard/public';
+        : 'http://localhost:8000';
     
     return `${baseUrl}/${path}`;
 };

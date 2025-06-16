@@ -1,5 +1,6 @@
 import React from 'react';
 import { FaTimes } from 'react-icons/fa';
+import { getImageUrl, getAssetUrl } from '../utils/assetHelper';
 
 const FileViewerModal = ({ isOpen, onClose, fileUrl, fileName, fileType }) => {
     if (!isOpen) return null;
@@ -15,9 +16,9 @@ const FileViewerModal = ({ isOpen, onClose, fileUrl, fileName, fileType }) => {
     // Construir la URL completa del archivo
     const fullFileUrl = fileUrl?.startsWith('http') 
         ? fileUrl 
-        : fileUrl?.startsWith('/storage/') 
+        : fileUrl?.startsWith('storage/') 
             ? fileUrl 
-            : `/storage/${fileUrl}`;
+            : `storage/${fileUrl}`;
             
     return (
         <div className="file-viewer-modal-overlay" onClick={onClose}>
@@ -35,7 +36,7 @@ const FileViewerModal = ({ isOpen, onClose, fileUrl, fileName, fileType }) => {
                     {isViewable ? (
                         isImage ? (
                             <img
-                                src={fullFileUrl} Z  
+                                src={getImageUrl(fullFileUrl)}  
                                 alt={fileName}
                                 className="file-viewer-image"
                                 onError={(e) => {
@@ -45,7 +46,7 @@ const FileViewerModal = ({ isOpen, onClose, fileUrl, fileName, fileType }) => {
                             />
                         ) : (
                             <iframe
-                                src={fullFileUrl}
+                                src={getImageUrl(fullFileUrl)}
                                 className="file-viewer-iframe"
                                 title={fileName}
                                 onError={(e) => {
@@ -59,7 +60,7 @@ const FileViewerModal = ({ isOpen, onClose, fileUrl, fileName, fileType }) => {
                                 Este tipo de archivo no se puede previsualizar.
                             </p>
                             <a
-                                href={fullFileUrl}
+                                href={getImageUrl(fullFileUrl)}
                                 download={fileName}
                                 className="file-viewer-download-button"
                             >

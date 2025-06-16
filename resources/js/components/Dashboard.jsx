@@ -20,7 +20,9 @@ import {
     FaCheck,
     FaEnvelope,
     FaUserTie,
-    FaBuilding
+    FaBuilding,
+    FaCalendar,
+    FaPause
 } from 'react-icons/fa';
 import { FaCircleCheck, FaCircle, FaCircleXmark } from 'react-icons/fa6';
 
@@ -87,6 +89,18 @@ const Dashboard = () => {
                 setIsLoading2(false);
             });
     };
+
+    //calcular efcieincia de empleado
+    const calcularEficiencia = (empleado) => {
+        const tareas = empleado.tareas;
+        const tareasCompletadas = tareas.filter(tarea => tarea.estado === 'Completada');
+        const tareasPendientes = tareas.filter(tarea => tarea.estado === 'Pendiente' && tarea.pausada === 0 && tarea.aprobada === 1);
+        const eficiencia = (tareasCompletadas.length / tareasPendientes.length) * 100;
+        if (isNaN(eficiencia)) {
+            return 0;
+        }
+        return eficiencia;
+    }
 
 
     const getStatusIcon = (status) => {
@@ -192,6 +206,7 @@ const Dashboard = () => {
                                     <h1>Tablero de seguimiento de empleados</h1>
                                     <div className="search-container">
                                         <div className="search-box">
+                                            <FaSearch />
                                             <input
                                                 type="text"
                                                 placeholder="Buscar empleado por nombre, departamento o empresa..."
@@ -199,6 +214,7 @@ const Dashboard = () => {
                                                 onChange={(e) =>
                                                     setSearchTerm(e.target.value)
                                                 }
+                                                style={{ width: '400px' }}
                                                 className="search-input"
                                             />
                                         </div>
@@ -309,11 +325,11 @@ const Dashboard = () => {
                                                             <div
                                                                 className="progress-fill"
                                                                 style={{
-                                                                    width: `${empleado.avance}%`,
+                                                                    width: `${calcularEficiencia(empleado)}%`,
                                                                 }}
                                                             />
                                                             <span className="progress-value">
-                                                                {empleado.avance}%
+                                                                {calcularEficiencia(empleado)}%
                                                             </span>
                                                         </div>
                                                     </div>
@@ -565,7 +581,7 @@ const Dashboard = () => {
                                                                     )}
 
                                                                     {/* Mostrar Visto Bueno */}
-                                                                    {(tarea.estado === 'Completada' || (tarea.estado === 'En Proceso' && tarea.visto_bueno)) && !tarea.rechazada ? (
+                                                                    {(tarea.estado === 'Completada' && tarea.visto_bueno && !tarea.rechazada) ? (
                                                                         <FaEye color='green' title='Visto bueno' style={{ marginRight: '0.5rem' }} />
                                                                     ) : (
                                                                         <FaEye color='grey' title='Pendiente de visto bueno' style={{ marginRight: '0.5rem', opacity: 0.5 }} />
@@ -576,13 +592,33 @@ const Dashboard = () => {
                                                                         <FaCircleXmark color='red' title='Rechazada' style={{ marginRight: '0.5rem' }} />
                                                                     ) : null}
 
+                                                                    {/* Mostrar Pausada */}
+                                                                    {tarea.pausada ? (
+                                                                        <FaPause color='orange' title='Pausada' style={{ marginRight: '0.5rem' }} />
+                                                                    ) : (
+                                                                        <FaPause color='grey' title='No pausada' style={{ marginRight: '0.5rem', opacity: 0.5 }} />
+                                                                    )}
+
                                                                 </div>
                                                             </div>
                                                 </div>
                                                 <p className="tarea-descripcion">{tarea.descripcion}</p>
                                                 <div className="tarea-footer">
                                                     <span className="fecha">
-                                                        {new Date(tarea.fecha_pactada).toLocaleDateString()}
+                                                        <FaCalendar style={{ color: '#215ACC' }} size={13}/>
+                                                        {" "}
+                                                        <label style={{ fontSize: '14px', fontWeight: 'bold' }}>Fecha creación:</label> {new Date(new Date(tarea.fecha_creacion).getTime() + 24 * 60 * 60 * 1000).toLocaleDateString()}
+                                                        {tarea.fecha_aprobacion && (
+                                                            <span>
+                                                                {" "} <FaCheck style={{ color: '#008000' }} size={13}/> <label style={{ fontSize: '14px', fontWeight: 'bold' }}>Fecha aprobación:</label> {new Date(new Date(tarea.fecha_aprobacion).getTime() + 24 * 60 * 60 * 1000).toLocaleDateString()}
+                                                            </span>
+                                                        )}
+
+                                                        {tarea.fecha_pactada && (
+                                                            <span>
+                                                                {" "} <FaClock style={{ color: '#C2410C', backgroundColor: '#f9cccf', borderRadius: '50%', padding: '2px' }} size={13}/> <label style={{ fontSize: '14px', fontWeight: 'bold' }}>Fecha pactada:</label> {new Date(new Date(tarea.fecha_pactada).getTime() + 24 * 60 * 60 * 1000).toLocaleDateString()}
+                                                            </span>
+                                                        )}
                                                     </span>
                                                     <button className="ver-detalles">
                                                         <FaEye /> Ver detalles

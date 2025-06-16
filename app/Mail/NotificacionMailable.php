@@ -31,10 +31,10 @@ class NotificacionMailable extends Mailable
 
     public function build()
     {
-        if ($this->tipo === 'nueva-tarea') {
-            $subject = 'Nueva tarea en WorkBoard';
-            $view = 'emails.notificaciones';
-        }
+       
+        $subject = 'Notificación WorkBoard';
+        
+        $view = 'emails.notificaciones';
 
         return $this->from(config('mail.from.address'), config('mail.from.name'))
             ->subject($subject)

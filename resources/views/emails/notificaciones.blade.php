@@ -52,7 +52,7 @@
 </head>
 <body>
     <div class="header">
-        <h2>Gestion de tareas - WorkBoard</h2>
+            <h2>Gestió	n de tareas - WorkBoard</h2>
     </div>
     
     <div class="content">

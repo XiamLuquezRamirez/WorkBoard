@@ -19,6 +19,8 @@ class LoginController extends Controller
         if (Auth::attempt($credentials)) {
             $request->session()->regenerate();
             
+            //conevtar a otra  base de datos para obtener usuario
+
             $user = Auth::user();
             
             // Obtener empleados asignados

@@ -621,29 +621,25 @@ const EmployeeInterface = ({ user }) => {
                                                         onClick={() => handleTaskClick(task)}
                                                     >
                                                         <div className="kanban-column-visto-bueno">
-                                                            {task.aprobada ? <FaCircleCheck color='green' title='Aprobada' fontSize='1.5rem' /> : <FaCircleCheck color='grey' title='No aprobada' fontSize='1.5rem' style={{ opacity: 0.5 }} />}
-                                                            {(task.estado === 'Completada' || (task.estado === 'En Proceso' && task.rechazada)) && (
-                                                                task.rechazada ? (
-                                                                    <FaCircleXmark
-                                                                        color='red'
-                                                                        title='Rechazada por el líder'
-                                                                        fontSize='1.5rem'
-                                                                    />
-                                                                ) : task.visto_bueno ? (
-                                                                    <FaEye
-                                                                        color='green'
-                                                                        title='Visto bueno del líder'
-                                                                        fontSize='1.5rem'
-                                                                    />
-                                                                ) : (
-                                                                    <FaEye
-                                                                        color='grey'
-                                                                        title='Pendiente de visto bueno'
-                                                                        fontSize='1.5rem'
-                                                                        style={{ opacity: 0.5 }}
-                                                                    />
-                                                                )
-                                                            )}
+                                                              {/* Mostrar Aprobación */}
+                                                              {task.aprobada ? (
+                                                                        <FaCircleCheck color='green' title='Aprobada' style={{ marginRight: '0.5rem' }} />
+                                                                    ) : (
+                                                                        <FaCircleCheck color='grey' title='No aprobada' style={{ marginRight: '0.5rem', opacity: 0.5 }} />
+                                                                    )}
+
+                                                                    {/* Mostrar Visto Bueno */}
+                                                                    {(task.estado === 'Completada' || (task.estado === 'En Proceso' && task.visto_bueno)) && !task.rechazada ? (
+                                                                        <FaEye color='green' title='Visto bueno' style={{ marginRight: '0.5rem' }} />
+                                                                    ) : (
+                                                                        <FaEye color='grey' title='Pendiente de visto bueno' style={{ marginRight: '0.5rem', opacity: 0.5 }} />
+                                                                    )}
+
+                                                                    {/* Mostrar Rechazada */}
+                                                                    {(task.estado === 'Completada' || task.estado === 'En Proceso') && task.rechazada ? (
+                                                                        <FaCircleXmark color='red' title='Rechazada' style={{ marginRight: '0.5rem' }} />
+                                                                    ) : null}
+
 
                                                         </div>
                                                         <div className="task-card-header">

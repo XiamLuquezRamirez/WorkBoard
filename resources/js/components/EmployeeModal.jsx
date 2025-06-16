@@ -8,6 +8,7 @@ import Paginador from './Paginador';
 import { getImageUrl, getAssetUrl } from '../utils/assetHelper';
 
 
+
 const EmployeeModal = ({ isOpen, onClose }) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [showAddForm, setShowAddForm] = useState(false);
@@ -653,7 +654,8 @@ const EmployeeModal = ({ isOpen, onClose }) => {
                     fecha_pactada: '',
                     estado: 'Pendiente',
                     prioridad: 'Media',
-                    evidencias: []
+                    evidencias: [],
+                    accion: 'guardar'
                 });
                 setEvidencias([]);
                 setMostrarFormularioTarea(false);
@@ -1531,7 +1533,7 @@ const EmployeeModal = ({ isOpen, onClose }) => {
                                                                     <div key={evidencia.id} className="evidencia-item">
                                                                         {evidencia.tipo?.startsWith('image/') ? (
                                                                             <img
-                                                                                src={`/storage/${evidencia.evidencia}`}
+                                                                                src={getImageUrl(`storage/${evidencia.evidencia}`)}
                                                                                 alt={evidencia.nombre || 'Sin nombre'}
                                                                                 className="evidencia-thumbnail"
                                                                             />
