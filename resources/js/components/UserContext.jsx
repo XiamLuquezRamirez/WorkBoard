@@ -23,7 +23,7 @@ export const UserProvider = ({ children }) => {
                 return;
             }
 
-            const usuario = JSON.parse(localStorage.getItem('user'));
+            const usuario = JSON.parse(localStorage.getItem('userWorkBoard'));
         
             setUser(usuario);
            

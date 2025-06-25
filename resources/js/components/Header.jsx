@@ -46,7 +46,7 @@ const Header = ({ currentUser, showUserMenu, setShowUserMenu, setIsSidebarOpen }
         try {
             await axiosInstance.post('/logout');
             // Limpiar el localStorage
-            localStorage.removeItem('user');
+            localStorage.removeItem('userWorkBoard');
             // Redirigir inmediatamente a la página de login
             //obtener la url actual
             const url = getAssetUrl('login');
@@ -62,7 +62,7 @@ const Header = ({ currentUser, showUserMenu, setShowUserMenu, setIsSidebarOpen }
         const response = await axiosInstance.get("/notificaciones", {
             params: {
                 tipo: tipo,
-                id: currentUser.empleado
+                id: currentUser.id
             },
         });
         setNotifications(response.data);

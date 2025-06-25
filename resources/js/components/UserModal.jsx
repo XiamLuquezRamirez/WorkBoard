@@ -266,7 +266,9 @@ const UserModal = ({ isOpen, onClose }) => {
                 {/* Encabezado */}
                 <div className="modal-header">
                     <h2>Gestión de Usuarios</h2>
-                    <button className="close-button" onClick={onClose}>&times;</button>
+                    <button className="close-button" onClick={onClose}>
+                        <FaTimes />
+                    </button>
                 </div>
 
                 {/* Barra de herramientas (Buscar + Nuevo Usuario) */}

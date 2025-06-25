@@ -126,7 +126,9 @@ const LeaderModal = ({ isOpen, onClose }) => {
             <div className="modal-leader" >
                 <div className="modal-header">
                     <h2>Gestión de Líderes</h2>
-                    <button className="close-button" onClick={onClose}>&times;</button>
+                    <button className="close-button" onClick={onClose}>
+                        <FaTimes />
+                    </button>
                 </div>
 
                 {/* Contenido */}

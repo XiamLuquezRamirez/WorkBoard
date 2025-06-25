@@ -1,7 +1,5 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-import LoginForm from './components/LoginForm';
-import Dashboard from './components/Dashboard';
 import { UserProvider } from './components/UserContext';
 import App from './components/App';
 // Determinar qué componente mostrar basado en la ruta actual

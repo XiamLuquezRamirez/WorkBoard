@@ -53,7 +53,7 @@ const LoginForm = () => {
 
                 //guardar el token en el localStorage
                 localStorage.setItem('token', response.data.token);
-                localStorage.setItem('user', JSON.stringify(response.data.user));
+                localStorage.setItem('userWorkBoard', JSON.stringify(response.data.user));
             }else{
                 Swal.fire({
                     title: 'Error',

@@ -13,20 +13,17 @@ class EmpleadosController extends Controller
 {
     function cargarNotificaciones(Request $request)
     {
-        $tipo = $request->input('tipo');
         $id = $request->input('id');
-
-        $usuarioActual = Auth::user();
-
-        if ($usuarioActual->tipo_usuario === 'Empleado') {
+        $tipo = $request->input('tipo');
+        // $usuarioActual = Auth::user();
+        if ($tipo === 'empleado') {
             // Obtener ID del empleado asociado
-            $empleado = DB::table('empleados')
+            $empleado = DB::connection('mysql2')->table('empleados')
                 ->join('users', 'empleados.id', 'users.empleado')
                 ->select('users.id as id_usuario', 'empleados.*')
-                ->where('users.id', $usuarioActual->id)->first();
-
+                ->where('users.id', $id)->first();
             if ($empleado) {
-                $notificaciones = DB::table('notif_generales')->where('id_receptor', $empleado->id_usuario)
+                $notificaciones = DB::connection('mysql2')->table('notif_generales')->where('id_receptor', $empleado->id_usuario)
                     ->where('tipo_receptor', 'empleado')
                     ->where('leido', 0)
                     ->orderBy('notif_generales.id', 'desc')
@@ -34,7 +31,7 @@ class EmpleadosController extends Controller
             }
         } else {
             // Usuario administrador o líder
-            $notificaciones = DB::table('notif_generales')->where('id_receptor', $usuarioActual->id)
+            $notificaciones = DB::connection('mysql2')->table('notif_generales')->where('id_receptor', $id)
                 ->where('tipo_receptor', 'usuario')
                 ->where('leido', 0)
                 ->orderBy('notif_generales.id', 'desc')
@@ -50,24 +47,34 @@ class EmpleadosController extends Controller
     function actualizarUsuario(Request $request)
     {
         $usuario = $request->all();
-
-        if (!$usuario['cambiar_password']) {
-            $usuarios = DB::table('users')->where('id', $usuario['id'])->update([
+        if (isset($usuario['cambiar_password']) && $usuario['cambiar_password']) {
+            $usuarios = DB::connection('mysql2')->table('users')->where('id', $usuario['id'])->update([
                 'name' => $usuario['name'],
                 'email' => $usuario['email'],
                 'password' => Hash::make($usuario['new_password']),
                 'foto' => $usuario['foto']
             ]);
+            //insertra en la tabla de usuario de chat empresarial
+            DB::connection('mysql')->table('users')->where('id_usuario_tarea', $usuario['id'])->update([
+                'name' => $usuario['name'],
+                'email' => $usuario['email'],
+                'password' => Hash::make($usuario['new_password'])
+            ]);
         } else {
 
-            $usuarios = DB::table('users')->where('id', $usuario['id'])->update([
+            $usuarios = DB::connection('mysql2')->table('users')->where('id', $usuario['id'])->update([
                 'name' => $usuario['name'],
                 'email' => $usuario['email'],
                 'foto' => $usuario['foto']
             ]);
+            //insertra en la tabla de usuario de chat empresarial
+            DB::connection('mysql')->table('users')->where('id_usuario_tarea', $usuario['id'])->update([
+                'name' => $usuario['name'],
+                'email' => $usuario['email']
+            ]);
         }
 
-        $usuario = DB::table('users')->where('id', $usuario['id'])->first();
+        $usuario = DB::connection('mysql2')->table('users')->where('id', $usuario['id'])->first();
 
         return response()->json([
             'success' => 'Usuario actualizado correctamente',
@@ -76,10 +83,18 @@ class EmpleadosController extends Controller
         ], 200);
     }
 
+    function eliminarTarea($id)
+    {
+        $tarea = DB::connection('mysql2')->table('tareas_empleados')->where('id', $id)->delete();
+        $evidencias = DB::connection('mysql2')->table('evidencia_tarea')->where('tarea', $id)->delete();
+        $notificaciones = DB::connection('mysql2')->table('notif_generales')->where('tarea_id', $id)->delete();
+        return response()->json(['success' => 'Tarea eliminada correctamente'], 200);
+    }
+
 
     function cargarEmpleados()
     {
-        $empleados = DB::table('empleados')
+        $empleados = DB::connection('mysql2')->table('empleados')
             ->join('empresas', 'empleados.empresa', 'empresas.id')
             ->join('departamentos', 'empleados.departamento', '=', 'departamentos.id')
             ->join('cargos', 'empleados.cargo', '=', 'cargos.id')
@@ -94,7 +109,7 @@ class EmpleadosController extends Controller
 
         $searchTerm = request('params.search');
 
-        $empleados = DB::table('empleados')
+        $empleados = DB::connection('mysql2')->table('empleados')
             ->join('empresas', 'empleados.empresa', 'empresas.id')
             ->join('cargos', 'empleados.cargo', 'cargos.id')
             ->select('empleados.*', 'empresas.nombre as nombre_empresa', 'cargos.nombre as nombre_cargo')
@@ -112,7 +127,7 @@ class EmpleadosController extends Controller
 
     function cargarEmpresas()
     {
-        $empresas = DB::table('empresas')
+        $empresas = DB::connection('mysql2')->table('empresas')
             ->where('estado', 'ACTIVO')
             ->get();
         return response()->json($empresas);
@@ -120,13 +135,13 @@ class EmpleadosController extends Controller
 
     function cargarDepartamentos()
     {
-        $departamentos = DB::table('departamentos')->get();
+        $departamentos = DB::connection('mysql2')->table('departamentos')->get();
         return response()->json($departamentos);
     }
 
     function cargarCargos()
     {
-        $cargos = DB::table('cargos')->get();
+        $cargos = DB::connection('mysql2')->table('cargos')->get();
         return response()->json($cargos);
     }
 
@@ -135,11 +150,11 @@ class EmpleadosController extends Controller
         $empleado = $request->all();
 
 
-        DB::beginTransaction();
+        DB::connection('mysql2')->beginTransaction();
         try {
             if ($empleado['accion'] == 'guardar') {
 
-                $empleadoId = DB::table('empleados')->insertGetId(
+                $empleadoId = DB::connection('mysql2')->table('empleados')->insertGetId(
                     [
                         'identificacion' => $empleado['identificacion'],
                         'nombres' => $empleado['nombres'],
@@ -161,7 +176,7 @@ class EmpleadosController extends Controller
                     ]
                 );
 
-                $usuario = DB::table('users')->insert([
+                $usuario = DB::connection('mysql2')->table('users')->insertGetId([
                     'name' => $empleado['nombres'] . ' ' . $empleado['apellidos'],
                     'email' => $empleado['email'],
                     'password' => Hash::make($empleado['identificacion']),
@@ -171,10 +186,19 @@ class EmpleadosController extends Controller
                     'lider' => $empleado['lider'],
                     'foto' => $empleado['foto']
                 ]);
+
+                //insertra en la tabla de usuario de chat empresarial
+                DB::connection('mysql')->table('users')->insert([
+                    'name' => $empleado['nombres'] . ' ' . $empleado['apellidos'],
+                    'email' => $empleado['email'],
+                    'password' => Hash::make($empleado['identificacion']),
+                    'avatar' => 'otro.png',
+                    'id_usuario_tarea' => $usuario
+                ]);
             } else {
                 $empleadoData = $empleado; // Guardamos los datos originales
 
-                $updateResult = DB::table('empleados')->where('id', $empleadoData['id'])->update([
+                $updateResult = DB::connection('mysql2')->table('empleados')->where('id', $empleadoData['id'])->update([
                     'identificacion' => $empleadoData['identificacion'],
                     'nombres' => $empleadoData['nombres'],
                     'apellidos' => $empleadoData['apellidos'],
@@ -191,21 +215,27 @@ class EmpleadosController extends Controller
                     'estado' => $empleadoData['estado'],
                     'lider' => $empleadoData['lider']
                 ]);
-                $usuario = DB::table('users')->where('email', $empleadoData['email'])->update([
+
+                $usuario = DB::connection('mysql2')->table('users')->where('email', $empleadoData['email'])->update([
                     'name' => $empleadoData['nombres'] . ' ' . $empleadoData['apellidos'],
                     'email' => $empleadoData['email'],
-                    'password' => Hash::make($empleadoData['identificacion']),
                     'tipo_usuario' => 'Empleado',
                     'empleado' => $empleadoData['id'],
                     'lider' => $empleadoData['lider'],
                     'foto' => $empleadoData['foto']
                 ]);
+
+                //insertra en la tabla de usuario de chat empresarial
+                DB::connection('mysql')->table('users')->where('email', $empleadoData['email'])->update([
+                    'name' => $empleadoData['nombres'] . ' ' . $empleadoData['apellidos'],
+                    'email' => $empleadoData['email']
+                ]);
             }
 
 
-            DB::commit();
+            DB::connection('mysql2')->commit();
         } catch (\Exception $e) {
-            DB::rollBack();
+            DB::connection('mysql2')->rollBack();
             return response()->json(['error' => $e->getMessage()], 500);
         }
 
@@ -216,7 +246,7 @@ class EmpleadosController extends Controller
 
     function eliminarEmpleado($id)
     {
-        $empleado = DB::table('empleados')
+        $empleado = DB::connection('mysql2')->table('empleados')
             ->where('id', $id)
             ->update([
                 'estado_registro' => 'Eliminado'
@@ -226,7 +256,7 @@ class EmpleadosController extends Controller
 
     function cargarFunciones($id)
     {
-        $funciones = DB::table('funciones_empleado')
+        $funciones = DB::connection('mysql2')->table('funciones_empleado')
             ->join('empleados', 'funciones_empleado.empleado', '=', 'empleados.id')
             ->select('funciones_empleado.*', 'empleados.nombres', 'empleados.apellidos')
             ->where('funciones_empleado.empleado', $id)
@@ -238,22 +268,22 @@ class EmpleadosController extends Controller
     function guardarFuncion(Request $request)
     {
         $funcionEmpleado = $request->all();
-        DB::beginTransaction();
+        DB::connection('mysql2')->beginTransaction();
         try {
 
-            $funcion = DB::table('funciones_empleado')->insert([
+            $funcion = DB::connection('mysql2')->table('funciones_empleado')->insert([
                 'empleado' => $funcionEmpleado['empleado'],
                 'descripcion' => $funcionEmpleado['funcion'],
                 'estado' => 'Activo'
             ]);
 
-            DB::commit();
+            DB::connection('mysql2')->commit();
         } catch (\Exception $e) {
-            DB::rollBack();
+            DB::connection('mysql2')->rollBack();
             return response()->json(['error' => $e->getMessage()], 500);
         }
         //obtener la ultima funcion insertada
-        $funcion = DB::table('funciones_empleado')
+        $funcion = DB::connection('mysql2')->table('funciones_empleado')
             ->where('empleado', $funcionEmpleado['empleado'])
             ->where('estado', 'Activo')
             ->orderBy('id', 'desc')
@@ -267,7 +297,7 @@ class EmpleadosController extends Controller
     function actualizarFuncion(Request $request, $id)
     {
         $funcionEmpleado = $request->all();
-        $funcion = DB::table('funciones_empleado')->where('id', $id)->update([
+        $funcion = DB::connection('mysql2')->table('funciones_empleado')->where('id', $id)->update([
             'descripcion' => $funcionEmpleado['descripcion']
         ]);
         return response()->json(['success' => 'Función actualizada correctamente'], 200);
@@ -275,14 +305,15 @@ class EmpleadosController extends Controller
 
     function cargarTareas($id)
     {
-        $tareas = DB::table('tareas_empleados')
-            ->where('empleado', $id)
-            ->where('estado_reg', 'Activo')
-            ->orderBy('id', 'desc')
-            ->get();
-
+        $tareas = DB::connection('mysql2')->table('tareas_empleados')
+        ->where('empleado', $id)
+        ->where('estado_reg', 'Activo')
+        ->orderByRaw("FIELD(prioridad, 'Alta', 'Media', 'Baja')")
+        ->orderBy('id', 'desc')
+        ->get();
+    
         //obtener observaciones de las tareas
-        $observaciones = DB::table('observaciones_tareas')
+        $observaciones = DB::connection('mysql2')->table('observaciones_tareas')
             ->join('users', 'observaciones_tareas.creador', 'users.id')
             ->select('observaciones_tareas.*', 'users.name as creador')
             ->whereIn('id_tarea', $tareas->pluck('id'))
@@ -302,7 +333,7 @@ class EmpleadosController extends Controller
         $tareasIds = $tareas->pluck('id');
 
         // Obtener las evidencias relacionadas a esas tareas
-        $evidencias = DB::table('evidencia_tarea')
+        $evidencias = DB::connection('mysql2')->table('evidencia_tarea')
             ->whereIn('tarea', $tareasIds)
             ->get();
 
@@ -323,43 +354,43 @@ class EmpleadosController extends Controller
 
     function obtenerNotificacionesTareasAtrasadas()
     {
-        $tareasAtrasadas = DB::table('tareas_empleados')
-        ->join('empleados', 'tareas_empleados.empleado', 'empleados.id')
-        ->where('fecha_pactada', '<', now())
-        ->where('tareas_empleados.estado', '!=', 'Completada')
-        ->where('tareas_empleados.estado_reg', 'Activo')
-        ->select(
-            DB::raw('CONCAT(empleados.nombres, " ", empleados.apellidos) as nombre_empleado'),
-            'tareas_empleados.*'
-        )
-        ->get();
+        $tareasAtrasadas = DB::connection('mysql2')->table('tareas_empleados')
+            ->join('empleados', 'tareas_empleados.empleado', 'empleados.id')
+            ->where('fecha_pactada', '<', now())
+            ->where('tareas_empleados.estado', '!=', 'Completada')
+            ->where('tareas_empleados.estado_reg', 'Activo')
+            ->select(
+                DB::connection('mysql2')->raw('CONCAT(empleados.nombres, " ", empleados.apellidos) as nombre_empleado'),
+                'tareas_empleados.*'
+            )
+            ->get();
 
         foreach ($tareasAtrasadas as $tarea) {
             // Verificar si ya existe una notificación para esta tarea
-            $notificacionExistente = DB::table('notif_generales')
+            $notificacionExistente = DB::connection('mysql2')->table('notif_generales')
                 ->where('tarea_id', $tarea->id)
                 ->where('tipo', 'TareaAtrasada')
                 ->where('leido', 0)
                 ->first();
 
-             //fecha Formateada
-             $fechaPactada = date('d/m/Y', strtotime($tarea->fecha_pactada));
+            //fecha Formateada
+            $fechaPactada = date('d/m/Y', strtotime($tarea->fecha_pactada));
 
             if (!$notificacionExistente) {
                 // Obtener el líder del empleado
-                $lider = DB::table('lideres_empleados')
+                $lider = DB::connection('mysql2')->table('lideres_empleados')
                     ->where('empleado', $tarea->empleado)
                     ->first();
 
                 if ($lider) {
                     // Obtener el usuario líder
-                    $usuarioLider = DB::table('users')
+                    $usuarioLider = DB::connection('mysql2')->table('users')
                         ->where('empleado', $lider->lider)
                         ->first();
 
                     if ($usuarioLider) {
                         // Crear la notificación para el líder
-                        DB::table('notif_generales')->insert([
+                        DB::connection('mysql2')->table('notif_generales')->insert([
                             'id_emisor' => $tarea->empleado,
                             'tipo_emisor' => 'empleado',
                             'id_receptor' => $usuarioLider->id,
@@ -373,13 +404,13 @@ class EmpleadosController extends Controller
                     }
                 } else {
                     // Si no hay líder, notificar al administrador
-                    $admin = DB::table('users')
+                    $admin = DB::connection('mysql2')->table('users')
                         ->where('tipo_usuario', 'Administrador')
                         ->where('lider_seguimiento', 'Si')
                         ->first();
 
                     if ($admin) {
-                        DB::table('notif_generales')->insert([
+                        DB::connection('mysql2')->table('notif_generales')->insert([
                             'id_emisor' => $tarea->empleado,
                             'tipo_emisor' => 'empleado',
                             'id_receptor' => $admin->id,
@@ -399,10 +430,10 @@ class EmpleadosController extends Controller
     function guardarTarea(Request $request)
     {
         $tarea = $request->all();
-        DB::beginTransaction();
+        DB::connection('mysql2')->beginTransaction();
         try {
             if ($tarea['accion'] == 'guardar') {
-                $IdTarea = DB::table('tareas_empleados')->insertGetId([
+                $IdTarea = DB::connection('mysql2')->table('tareas_empleados')->insertGetId([
                     'titulo' => $tarea['titulo'],
                     'empleado' => $tarea['empleado'],
                     'descripcion' => $tarea['descripcion'],
@@ -414,7 +445,7 @@ class EmpleadosController extends Controller
                     'pausada' => 0
                 ]);
             } else {
-                $IdTarea = DB::table('tareas_empleados')->where('id', $tarea['id'])->update([
+                $IdTarea = DB::connection('mysql2')->table('tareas_empleados')->where('id', $tarea['id'])->update([
                     'titulo' => $tarea['titulo'],
                     'descripcion' => $tarea['descripcion'],
                     'fecha_pactada' => $tarea['fecha_pactada'],
@@ -427,7 +458,7 @@ class EmpleadosController extends Controller
             if (isset($tarea['evidencias']) && count($tarea['evidencias']) > 0) {
                 $evidencias = $tarea['evidencias'];
                 foreach ($evidencias as $evidencia) {
-                    $evidencia = DB::table('evidencia_tarea')->insert([
+                    $evidencia = DB::connection('mysql2')->table('evidencia_tarea')->insert([
                         'tarea' => $IdTarea,
                         'evidencia' => $evidencia['ruta'],
                         'nombre' => $evidencia['nombre'],
@@ -440,14 +471,14 @@ class EmpleadosController extends Controller
             self::guardarNotificacion($IdTarea, 'Tarea');
 
             //consultar tareas del empleado
-            DB::commit();
+            DB::connection('mysql2')->commit();
         } catch (\Exception $e) {
-            DB::rollBack();
+            DB::connection('mysql2')->rollBack();
             return response()->json(['error' => $e->getMessage()], 500);
         }
 
 
-        $tareas = DB::table('tareas_empleados')
+        $tareas = DB::connection('mysql2')->table('tareas_empleados')
             ->where('empleado', $tarea['empleado'])
             ->orderBy('id', 'desc')
             ->get();
@@ -463,7 +494,7 @@ class EmpleadosController extends Controller
     function buscarTareas($id, Request $request)
     {
         $searchTerm = $request->input('search');
-        $tareas = DB::table('tareas_empleados')
+        $tareas = DB::connection('mysql2')->table('tareas_empleados')
             ->where('empleado', $id)
             ->where('estado_reg', 'Activo')
             ->orderBy('id', 'desc')
@@ -478,7 +509,7 @@ class EmpleadosController extends Controller
         $tareasIds = $tareas->pluck('id');
 
         // Obtener las evidencias relacionadas a esas tareas
-        $evidencias = DB::table('evidencia_tarea')
+        $evidencias = DB::connection('mysql2')->table('evidencia_tarea')
             ->whereIn('tarea', $tareasIds)
             ->get();
 
@@ -496,7 +527,7 @@ class EmpleadosController extends Controller
     function actualizarTarea(Request $request, $id)
     {
         $tarea = $request->all();
-        DB::table('tareas_empleados')->where('id', $id)->update([
+        DB::connection('mysql2')->table('tareas_empleados')->where('id', $id)->update([
             'titulo' => $tarea['titulo'],
             'descripcion' => $tarea['descripcion'],
             'fecha_pactada' => $tarea['fecha_pactada'],
@@ -509,25 +540,25 @@ class EmpleadosController extends Controller
     function actualizarEstadoTarea(Request $request, $id)
     {
         $tarea = $request->all();
-        
 
-        DB::beginTransaction();
+
+        DB::connection('mysql2')->beginTransaction();
         try {
             // actualizar estado de la tarea si es completada agregar fecha entregada
             if ($tarea['estado'] == 'Completada') {
-                $tareas = DB::table('tareas_empleados')->where('id', $id)->update([
+                $tareas = DB::connection('mysql2')->table('tareas_empleados')->where('id', $id)->update([
                     'estado' => $tarea['estado'],
                     'fecha_entregada' => $tarea['fecha_entregada']
                 ]);
             } else {
-                $tareas = DB::table('tareas_empleados')->where('id', $id)->update([
+                $tareas = DB::connection('mysql2')->table('tareas_empleados')->where('id', $id)->update([
                     'estado' => $tarea['estado']
                 ]);
             }
             //insertar evidencias
             if (isset($tarea['evidencias']['evidencias'])) {
                 foreach ($tarea['evidencias']['evidencias'] as $evidencia) {
-                    DB::table('evidencia_tarea')->insert([
+                    DB::connection('mysql2')->table('evidencia_tarea')->insert([
                         'tarea' => $id,
                         'evidencia' => $evidencia['ruta'],
                         'nombre' => $evidencia['nombre_original'],
@@ -535,23 +566,23 @@ class EmpleadosController extends Controller
                     ]);
                 }
             }
-            
 
-           
+
+
             //consultar evidencias de la tarea
-            $evidencias = DB::table('evidencia_tarea')->where('tarea', $id)->get();
+            $evidencias = DB::connection('mysql2')->table('evidencia_tarea')->where('tarea', $id)->get();
 
             //consuktar tarea
 
             ///guardar notificacion
             self::guardarNotificacion($id, 'Estado');
-            DB::commit();
+            DB::connection('mysql2')->commit();
             return response()->json([
                 'success' => 'Estado de la tarea actualizado correctamente',
                 'evidencias' => $evidencias
             ], 200);
         } catch (\Exception $e) {
-            DB::rollBack();
+            DB::connection('mysql2')->rollBack();
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
@@ -559,33 +590,33 @@ class EmpleadosController extends Controller
     function guardarNotificacion($idTarea, $tipo)
     {
 
-        $tarea = DB::table('tareas_empleados')->where('id', $idTarea)->first();
+        $tarea = DB::connection('mysql2')->table('tareas_empleados')->where('id', $idTarea)->first();
         $titulo = $tarea->titulo;
         $empleado = $tarea->empleado;
 
-        $usuarioActual = Auth::user();
+        $usuarioActual = DB::connection('mysql2')->table('users')->where('email', Auth::user()->email)->first();
         // CASO 1: Empleado crea tarea
         if ($usuarioActual->tipo_usuario == 'Empleado' && $usuarioActual->lider == 'No') {
 
-            $empleado = DB::table('empleados')
+            $empleado = DB::connection('mysql2')->table('empleados')
                 ->join('users', 'empleados.id', 'users.empleado')
                 ->select('empleados.*', 'users.id as id_usuario')
                 ->where('users.id', $usuarioActual->id)->first();
 
-            $lider = DB::table('lideres_empleados')
+            $lider = DB::connection('mysql2')->table('lideres_empleados')
                 ->where('empleado', $empleado->id)
                 ->first();
 
             if ($empleado && $lider && $lider->lider) {
                 // Tiene líder → notificar al líder
-                $receptor = DB::table('empleados')
+                $receptor = DB::connection('mysql2')->table('empleados')
                     ->join('users', 'empleados.id', 'users.empleado')
                     ->select('users.*')
                     ->where('empleados.id', $lider->lider)->first();
                 $tipoReceptor = 'empleado';
-            } else {    
+            } else {
                 // No tiene líder → notificar a administrador
-                $receptor = DB::table('users')
+                $receptor = DB::connection('mysql2')->table('users')
                     ->where('tipo_usuario', 'Administrador')
                     ->select('users.*')
                     ->first();
@@ -599,11 +630,11 @@ class EmpleadosController extends Controller
                 $tipoAccion = ' ha actualizado el estado de la tarea a ' . $tarea->estado;
             }
 
-           
+
 
             if ($receptor) {
                 $mensaje = 'El empleado ' . $empleado->nombres . ' ' . $empleado->apellidos . $tipoAccion . ' (' . $titulo . ')';
-                $notif = DB::table('notif_generales')->insertGetId([
+                $notif = DB::connection('mysql2')->table('notif_generales')->insertGetId([
                     'id_emisor' => $empleado->id_usuario,
                     'tipo_emisor' => 'empleado',
                     'id_receptor' => $receptor->id,
@@ -622,7 +653,7 @@ class EmpleadosController extends Controller
         } else if ($usuarioActual->lider == 'Si' || $usuarioActual->tipo_usuario == 'Administrador') {
             // $empleadoReceptor debe estar definido
             // Validamos si la tarea fue asignada a otra persona
-            $empleadoReceptor = DB::table('users')
+            $empleadoReceptor = DB::connection('mysql2')->table('users')
                 ->where('empleado', $empleado)
                 ->first();
 
@@ -648,7 +679,7 @@ class EmpleadosController extends Controller
 
             if ($empleadoReceptor->id != $usuarioActual->id) {
                 $mensaje = 'El usuario ' . $usuarioActual->name . $tipoAccion . ' (' . $titulo . ')';
-                $notif = DB::table('notif_generales')->insertGetId([
+                $notif = DB::connection('mysql2')->table('notif_generales')->insertGetId([
                     'id_emisor' => $usuarioActual->id,
                     'tipo_emisor' => 'usuario',
                     'id_receptor' => $empleadoReceptor->id,
@@ -663,7 +694,7 @@ class EmpleadosController extends Controller
                 // ----------------------------------------------
                 // CASO 3: Líder crea tarea para sí mismo
                 // ----------------------------------------------
-                $adminReceptor = DB::table('users')
+                $adminReceptor = DB::connection('mysql2')->table('users')
                     ->where('tipo_usuario', 'Administrador')
                     ->where('lider_seguimiento', 'Si')
                     ->first();
@@ -689,7 +720,7 @@ class EmpleadosController extends Controller
 
                 if ($adminReceptor) {
                     $mensaje = 'El usuario ' . $usuarioActual->name . ' (líder) ' . $tipoAccion . ' (' . $titulo . ')';
-                    $notif = DB::table('notif_generales')->insertGetId([
+                    $notif = DB::connection('mysql2')->table('notif_generales')->insertGetId([
                         'id_emisor' => $usuarioActual->id,
                         'tipo_emisor' => 'usuario',
                         'id_receptor' => $adminReceptor->id,
@@ -706,15 +737,15 @@ class EmpleadosController extends Controller
 
         //enviar notificacion a los usuarios
         if ($tipo == 'Tarea' || ($tipo == 'Estado' && $tarea->estado == 'Completada') || $tipo == 'Aprobada' || $tipo == 'Rechazada' || $tipo == 'VistoBueno' || $tipo == 'Observacion') {
-            //self::enviarNotificacion($notif);
+          //  self::enviarNotificacion($notif);
         }
     }
 
     function enviarNotificacion($notif)
     {
-        $notificacion = DB::table('notif_generales')->where('id', $notif)->first();
-        $usuario = DB::table('users')->where('id', $notificacion->id_receptor)->first();
-        $usuarioReceptor = DB::table('users')->where('id', $notificacion->id_receptor)->first();
+        $notificacion = DB::connection('mysql2')->table('notif_generales')->where('id', $notif)->first();
+        $usuario = DB::connection('mysql2')->table('users')->where('id', $notificacion->id_receptor)->first();
+        $usuarioReceptor = DB::connection('mysql2')->table('users')->where('id', $notificacion->id_receptor)->first();
 
         $notificacion = [
             'name' => $usuarioReceptor->name,
@@ -731,13 +762,12 @@ class EmpleadosController extends Controller
 
     function cargarEmpleadosTareas()
     {
-        $empleados = DB::table('empleados')
+        $empleados = DB::connection('mysql2')->table('empleados')
             ->where('estado_registro', 'Activo')
             ->leftJoin("cargos", "empleados.cargo", "cargos.id")
             ->leftJoin("departamentos", "empleados.departamento", "departamentos.id")
             ->leftJoin("empresas", "empleados.empresa", "empresas.id")
             ->select("empleados.*", "cargos.nombre as cargo", "departamentos.nombre as departamento", "empresas.nombre as empresa")
-
             ->get();
 
         $empleadosData = [];
@@ -745,13 +775,13 @@ class EmpleadosController extends Controller
 
         foreach ($empleados as $empleado) {
             // Obtener las tareas asignadas al empleado
-            $tareas = DB::table('tareas_empleados')
+            $tareas = DB::connection('mysql2')->table('tareas_empleados')
                 ->where('empleado', $empleado->id)
                 ->where('estado_reg', 'Activo')
                 ->get();
 
             // Obtener las funciones del empleado
-            $funciones = DB::table('funciones_empleado')
+            $funciones = DB::connection('mysql2')->table('funciones_empleado')
                 ->where('empleado', $empleado->id)
                 ->where('estado', 'Activo')
                 ->get();
@@ -769,14 +799,14 @@ class EmpleadosController extends Controller
             }
 
             //agregar evidencias a las tareas
-            $evidencias = DB::table('evidencia_tarea')->whereIn('tarea', $tareas->pluck('id'))->get();
+            $evidencias = DB::connection('mysql2')->table('evidencia_tarea')->whereIn('tarea', $tareas->pluck('id'))->get();
             $tareas = $tareas->map(function ($tarea) use ($evidencias) {
                 $tarea->evidencias = $evidencias->where('tarea', $tarea->id)->values();
                 return $tarea;
             });
 
             //cargar observaciones de las tareas
-            $observaciones = DB::table('observaciones_tareas')
+            $observaciones = DB::connection('mysql2')->table('observaciones_tareas')
                 ->join('users', 'observaciones_tareas.creador', 'users.id')
                 ->select('observaciones_tareas.*', 'users.name as creador')
                 ->whereIn('id_tarea', $tareas->pluck('id'))
@@ -794,6 +824,29 @@ class EmpleadosController extends Controller
             $totalTareas = $tareas->count();
             $eficiencia = $totalTareas > 0 ? round(($tareasCompletadas / $totalTareas) * 100, 2) : 0;
             $avance = $totalTareas > 0 ? round(($tareasCompletadas / $totalTareas) * 100, 2) : 0;
+            
+            //eficiencia operativa
+            $inicioMes = date('Y-m-01'); // Primer día del mes actual
+            $finMes = date('Y-m-t');     // Último día del mes actual
+           
+            
+            $eficienciaOperativa = DB::connection('mysql2')->table('tareas_empleados')
+                ->selectRaw('
+                    COUNT(*) as total_completadas,
+                    SUM(CASE WHEN fecha_entregada <= fecha_pactada THEN 1 ELSE 0 END) as completadas_a_tiempo,
+                    ROUND(SUM(CASE WHEN fecha_entregada <= fecha_pactada THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) as eficiencia
+                ')
+                ->where('estado', 'Completada')
+                ->where('empleado', $empleado->id)
+                ->whereBetween('fecha_entregada', [$inicioMes, $finMes])
+                ->first();
+
+                    if($eficienciaOperativa->eficiencia > 0){
+                        $eficienciaOperativa = $eficienciaOperativa->eficiencia ?? 0;
+                    }else{
+                        $eficienciaOperativa = 0;
+                    }
+            
 
             // Obtener últimas 3 tareas
             $tareasRecientes = $tareas->sortByDesc('fecha_creacion')->take(3)->map(function ($tarea) {
@@ -828,6 +881,7 @@ class EmpleadosController extends Controller
                     ],
                     'tiempoPromedioTarea' => '2.5 días', // Esto podrías calcularlo según la BD
                     'eficiencia' => $eficiencia,
+                    'eficienciaOperativa' => $eficienciaOperativa,
                     'ultimaActividad' => $empleado->ultima_actividad ?? null,
                     'ranking' => rand(1, 10) // Puedes definir una lógica real para esto
                 ],
@@ -841,16 +895,16 @@ class EmpleadosController extends Controller
 
     function eliminarEvidencia($id)
     {
-        $evidencia = DB::table('evidencia_tarea')->where('id', $id)->delete();
+        $evidencia = DB::connection('mysql2')->table('evidencia_tarea')->where('id', $id)->delete();
         return response()->json(['success' => 'Evidencia eliminada correctamente'], 200);
     }
 
     function cargarTareaSeleccionada($id)
     {
-        $tarea = DB::table('tareas_empleados')->where('id', $id)->first();
+        $tarea = DB::connection('mysql2')->table('tareas_empleados')->where('id', $id)->first();
 
         //obtener observaciones de las tareas
-        $observaciones = DB::table('observaciones_tareas')
+        $observaciones = DB::connection('mysql2')->table('observaciones_tareas')
             ->join('users', 'observaciones_tareas.creador', 'users.id')
             ->select('observaciones_tareas.*', 'users.name as creador')
             ->where('id_tarea', $tarea->id)
@@ -862,7 +916,7 @@ class EmpleadosController extends Controller
 
 
 
-        $evidencias = DB::table('evidencia_tarea')->where('tarea', $id)->get();
+        $evidencias = DB::connection('mysql2')->table('evidencia_tarea')->where('tarea', $id)->get();
 
         $tarea->evidencias = $evidencias;
 
@@ -872,20 +926,19 @@ class EmpleadosController extends Controller
     function cambiarEstadoNotificacion(Request $request, $id)
     {
         $notificacion = $request->all();
-        DB::table('notif_generales')->where('id', $id)->update(['leido' => 1]);
+        DB::connection('mysql2')->table('notif_generales')->where('id', $id)->update(['leido' => 1]);
         return response()->json(['success' => 'Notificación actualizada correctamente'], 200);
     }
 
     function realizarObservaciones(Request $request, $id)
     {
-
         $data = $request->all();
-
-        $observaciones = DB::table('observaciones_tareas')->insert([
+        $usuarioActual = DB::connection('mysql2')->table('users')->where('email', Auth::user()->email)->first();
+        $observaciones = DB::connection('mysql2')->table('observaciones_tareas')->insert([
             'id_tarea' => $id,
             'observaciones' => $data['observaciones'],
             'fecha' => now(),
-            'creador' => Auth::user()->id
+            'creador' => $usuarioActual->id
         ]);
 
         self::guardarNotificacion($id, 'Observacion');
@@ -899,7 +952,7 @@ class EmpleadosController extends Controller
         //manejo de errores
         try {
 
-            DB::table('tareas_empleados')
+            DB::connection('mysql2')->table('tareas_empleados')
                 ->where('id', $id)
                 ->update([
                     'visto_bueno' => (int) filter_var($data['visto_bueno'], FILTER_VALIDATE_BOOLEAN)
@@ -917,11 +970,11 @@ class EmpleadosController extends Controller
 
     function cargarUsuarios()
     {
-        $usuarios = DB::table('users')
+        $usuarios = DB::connection('mysql2')->table('users')
             ->leftJoin('empleados', 'users.empleado', '=', 'empleados.id') // 🔹 LEFT JOIN para incluir admins
             ->select(
                 'users.*',
-                DB::raw('IFNULL(CONCAT(empleados.nombres, " ", empleados.apellidos), "---") as nombre_empleado')
+                DB::connection('mysql2')->raw('IFNULL(CONCAT(empleados.nombres, " ", empleados.apellidos), "---") as nombre_empleado')
             )
             ->get();
 
@@ -931,11 +984,11 @@ class EmpleadosController extends Controller
     function buscarUsuarios(Request $request)
     {
         $searchTerm = $request->input('search');
-        $usuarios = DB::table('users')
+        $usuarios = DB::connection('mysql2')->table('users')
             ->leftJoin('empleados', 'users.empleado', 'empleados.id')
             ->select(
                 'users.*',
-                DB::raw('IFNULL(CONCAT(empleados.nombres, " ", empleados.apellidos), "---") as nombre_empleado')
+                DB::connection('mysql2')->raw('IFNULL(CONCAT(empleados.nombres, " ", empleados.apellidos), "---") as nombre_empleado')
             )
             ->where('users.estado', 'Activo')
             ->where(function ($query) use ($searchTerm) {
@@ -950,11 +1003,11 @@ class EmpleadosController extends Controller
 
     function listaEmpleados()
     {
-        $empleados = DB::table('empleados')
+        $empleados = DB::connection('mysql2')->table('empleados')
             ->where('estado_registro', 'Activo')
             ->select(
                 'id',
-                DB::raw('CONCAT(nombres, " ", apellidos) as nombre')
+                DB::connection('mysql2')->raw('CONCAT(nombres, " ", apellidos) as nombre')
             )
             ->get();
         return response()->json($empleados);
@@ -966,7 +1019,7 @@ class EmpleadosController extends Controller
     {
         $usuario = $request->all();
         if ($usuario['accion'] == 'guardar') {
-            $usuario = DB::table('users')->insert([
+            $usuarioId = DB::connection('mysql2')->table('users')->insertGetId([
                 'name' => $usuario['name'],
                 'email' => $usuario['email'],
                 'password' => Hash::make($usuario['password']),
@@ -976,9 +1029,19 @@ class EmpleadosController extends Controller
                 'foto' => $usuario['foto'],
                 'lider_seguimiento' => $usuario['lider_seguimiento']
             ]);
+
+            //insertra en la tabla de usuario de chat empresarial
+            DB::connection('mysql')->table('users')->insert([
+                'name' => $usuario['name'],
+                'email' => $usuario['email'],
+                'password' => Hash::make($usuario['password']),
+                'avatar' => 'otro.png',
+                'id_usuario_tarea' => $usuarioId
+            ]);
         } else {
+
             if ($usuario['cambiar_password']) {
-                $usuario = DB::table('users')->where('id', $usuario['id'])->update([
+                $usuario = DB::connection('mysql2')->table('users')->where('id', $usuario['id'])->update([
                     'name' => $usuario['name'],
                     'email' => $usuario['email'],
                     'password' => Hash::make($usuario['password']),
@@ -988,8 +1051,16 @@ class EmpleadosController extends Controller
                     'foto' => $usuario['foto'],
                     'lider_seguimiento' => $usuario['lider_seguimiento']
                 ]);
+
+
+                //insertra en la tabla de usuario de chat empresarial
+                DB::connection('mysql')->table('users')->where('id_usuario_tarea', $usuario['id'])->update([
+                    'name' => $usuario['name'],
+                    'email' => $usuario['email'],
+                    'password' => Hash::make($usuario['password'])
+                ]);
             } else {
-                $usuario = DB::table('users')->where('id', $usuario['id'])->update([
+                $usuarioUpdate = DB::connection('mysql2')->table('users')->where('id', $usuario['id'])->update([
                     'name' => $usuario['name'],
                     'email' => $usuario['email'],
                     'tipo_usuario' => $usuario['role'],
@@ -998,6 +1069,11 @@ class EmpleadosController extends Controller
                     'foto' => $usuario['foto'],
                     'lider_seguimiento' => $usuario['lider_seguimiento']
                 ]);
+
+                DB::connection('mysql')->table('users')->where('id_usuario_tarea', $usuario['id'])->update([
+                    'name' => $usuario['name'],
+                    'email' => $usuario['email']
+                ]);
             }
         }
         return response()->json(['success' => 'Usuario guardado correctamente'], 200);
@@ -1005,14 +1081,14 @@ class EmpleadosController extends Controller
 
     function eliminarUsuario($id)
     {
-        $usuario = DB::table('users')->where('id', $id)->delete();
+        $usuario = DB::connection('mysql2')->table('users')->where('id', $id)->delete();
         return response()->json(['success' => 'Usuario eliminado correctamente'], 200);
     }
 
     function buscarEmpresas(Request $request)
     {
         $searchTerm = $request->input('search');
-        $empresas = DB::table('empresas')
+        $empresas = DB::connection('mysql2')->table('empresas')
             ->where('nombre', 'like', '%' . $searchTerm . '%')
             ->where('estado', 'Activo')
             ->get();
@@ -1023,10 +1099,10 @@ class EmpleadosController extends Controller
     {
         $compania = $request->all();
 
-        DB::beginTransaction();
+        DB::connection('mysql2')->beginTransaction();
         try {
             if ($compania['accion'] == 'guardar') {
-                $empresa = DB::table('empresas')->insert([
+                $empresa = DB::connection('mysql2')->table('empresas')->insert([
                     'nombre' => $compania['nombre'],
                     'direccion' => $compania['direccion'],
                     'telefono' => $compania['telefono'],
@@ -1040,7 +1116,7 @@ class EmpleadosController extends Controller
                     throw new \Exception('Error al guardar la empresa');
                 }
             } else {
-                $empresa = DB::table('empresas')->where('id', $compania['id'])->update([
+                $empresa = DB::connection('mysql2')->table('empresas')->where('id', $compania['id'])->update([
                     'nombre' => $compania['nombre'],
                     'direccion' => $compania['direccion'],
                     'telefono' => $compania['telefono'],
@@ -1054,17 +1130,17 @@ class EmpleadosController extends Controller
                 }
             }
 
-            DB::commit();
+            DB::connection('mysql2')->commit();
             return response()->json(['success' => 'Empresa guardada correctamente'], 200);
         } catch (\Exception $e) {
-            DB::rollBack();
+            DB::connection('mysql2')->rollBack();
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
 
     function eliminarEmpresa($id)
     {
-        $empresa = DB::table('empresas')->where('id', $id)->update([
+        $empresa = DB::connection('mysql2')->table('empresas')->where('id', $id)->update([
             'estado' => 'ELIMINADO'
         ]);
         return response()->json(['success' => 'Empresa eliminada correctamente'], 200);
@@ -1072,7 +1148,7 @@ class EmpleadosController extends Controller
 
     function cargarLideres()
     {
-        $lideres = DB::table('empleados')
+        $lideres = DB::connection('mysql2')->table('empleados')
             ->join('empresas', 'empleados.empresa', 'empresas.id')
             ->join('departamentos', 'empleados.departamento', '=', 'departamentos.id')
             ->join('cargos', 'empleados.cargo', '=', 'cargos.id')
@@ -1081,7 +1157,7 @@ class EmpleadosController extends Controller
                 'empresas.nombre as nombre_empresa',
                 'departamentos.nombre as nombre_departamento',
                 'cargos.nombre as nombre_cargo',
-                DB::raw('(SELECT COUNT(*) FROM lideres_empleados WHERE lider = empleados.id) as empleados_asignados')
+                DB::connection('mysql2')->raw('(SELECT COUNT(*) FROM lideres_empleados WHERE lider = empleados.id) as empleados_asignados')
             )
             ->where('empleados.estado_registro', 'Activo')
             ->where('empleados.lider', 'Si')
@@ -1091,7 +1167,7 @@ class EmpleadosController extends Controller
 
     function cargarEmpleadosLider($id)
     {
-        $empleados = DB::table('lideres_empleados')
+        $empleados = DB::connection('mysql2')->table('lideres_empleados')
             ->join('empleados', 'lideres_empleados.empleado', '=', 'empleados.id')
             ->select('empleados.*', 'lideres_empleados.lider')
             ->where('lideres_empleados.lider', $id)
@@ -1106,12 +1182,12 @@ class EmpleadosController extends Controller
         $empleados = $asignaciones['empleados'];
 
         //eliminar las asignaciones anteriores
-        DB::table('lideres_empleados')->where('lider', $liderId)->delete();
+        DB::connection('mysql2')->table('lideres_empleados')->where('lider', $liderId)->delete();
 
         foreach ($empleados as $empleado) {
             $empleadoId = $empleado['id'];
 
-            $asignacion = DB::table('lideres_empleados')->insert([
+            $asignacion = DB::connection('mysql2')->table('lideres_empleados')->insert([
                 'lider' => $liderId,
                 'empleado' => $empleadoId
             ]);
@@ -1122,12 +1198,12 @@ class EmpleadosController extends Controller
 
     function informeTareas()
     {
-        $tareas = DB::table('tareas_empleados')
+        $tareas = DB::connection('mysql2')->table('tareas_empleados')
             ->join('empleados', 'tareas_empleados.empleado', 'empleados.id')
             ->join('empresas', 'empleados.empresa', 'empresas.id')
             ->select(
                 'tareas_empleados.*',
-                DB::raw('concat(empleados.nombres, " ", empleados.apellidos) as empleado'),
+                DB::connection('mysql2')->raw('concat(empleados.nombres, " ", empleados.apellidos) as empleado'),
                 'empresas.nombre as empresa'
             )
             ->where('aprobada', 1)
@@ -1140,7 +1216,7 @@ class EmpleadosController extends Controller
 
     function verificarEmpleadoLider($id)
     {
-        $empleado = DB::table('lideres_empleados')->where('empleado', $id)->first();
+        $empleado = DB::connection('mysql2')->table('lideres_empleados')->where('empleado', $id)->first();
         if ($empleado) {
             return response()->json(['existe' => true]);
         } else {
@@ -1150,25 +1226,25 @@ class EmpleadosController extends Controller
 
     function eliminarFuncion($id)
     {
-        $funcion = DB::table('funciones_empleado')->where('id', $id)->delete();
+        $funcion = DB::connection('mysql2')->table('funciones_empleado')->where('id', $id)->delete();
         return response()->json(['success' => 'Funcion eliminada correctamente'], 200);
     }
 
     function cargarActividades($id)
     {
-        $actividades = DB::table('actividades_empleado')->where('empleado', $id)->get();
+        $actividades = DB::connection('mysql2')->table('actividades_empleado')->where('empleado', $id)->get();
         return response()->json($actividades);
     }
 
     function guardarActividad(Request $request)
     {
         $actividadActual = $request->all();
-        $actividad = DB::table('actividades_empleado')->insert([
+        $actividad = DB::connection('mysql2')->table('actividades_empleado')->insert([
             'empleado' => $actividadActual['empleado'],
             'descripcion' => $actividadActual['actividad']
         ]);
 
-        $actividad = DB::table('actividades_empleado')
+        $actividad = DB::connection('mysql2')->table('actividades_empleado')
             ->where('empleado', $actividadActual['empleado'])
             ->orderBy('id', 'desc')
             ->first();
@@ -1178,14 +1254,14 @@ class EmpleadosController extends Controller
 
     function eliminarActividad($id)
     {
-        $actividad = DB::table('actividades_empleado')->where('id', $id)->delete();
+        $actividad = DB::connection('mysql2')->table('actividades_empleado')->where('id', $id)->delete();
         return response()->json(['success' => 'Actividad eliminada correctamente'], 200);
     }
 
     function actualizarActividad($id, Request $request)
     {
         $actividadActual = $request->all();
-        $actividad = DB::table('actividades_empleado')->where('id', $id)->update([
+        $actividad = DB::connection('mysql2')->table('actividades_empleado')->where('id', $id)->update([
             'descripcion' => $actividadActual['descripcion']
         ]);
 
@@ -1198,7 +1274,7 @@ class EmpleadosController extends Controller
         $data = $request->all();
         try {
 
-            DB::table('tareas_empleados')
+            DB::connection('mysql2')->table('tareas_empleados')
                 ->where('id', $id)
                 ->update([
                     'rechazada' => (int) filter_var($data['rechazada'], FILTER_VALIDATE_BOOLEAN),
@@ -1216,8 +1292,8 @@ class EmpleadosController extends Controller
     function aprobarTarea($id, Request $request)
     {
         $data = $request->all();
-        
-        $tarea = DB::table('tareas_empleados')->where('id', $id)->update([
+
+        $tarea = DB::connection('mysql2')->table('tareas_empleados')->where('id', $id)->update([
             'aprobada' => (int) filter_var($data['aprobada'], FILTER_VALIDATE_BOOLEAN),
             'fecha_aprobacion' => $data['aprobada'] ? now() : null
         ]);
@@ -1230,9 +1306,17 @@ class EmpleadosController extends Controller
     function pausarTarea($id, Request $request)
     {
         $data = $request->all();
-        $tarea = DB::table('tareas_empleados')->where('id', $id)->update([
+        $tarea = DB::connection('mysql2')->table('tareas_empleados')->where('id', $id)->update([
             'pausada' => (int) filter_var($data['pausada'], FILTER_VALIDATE_BOOLEAN)
         ]);
+    }
 
+    function obtenerObservacion($id)
+    {
+        $observacion = DB::connection('mysql2')->table('observaciones_tareas')->where('id', $id)->first();
+        $usuario = DB::connection('mysql2')->table('users')->where('id', $observacion->creador)->first();
+        $receptor = DB::connection('mysql')->table('users')->where('email', $usuario->email)->first();
+
+        return response()->json(['idReceptor' => $receptor->id]);
     }
 }

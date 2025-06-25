@@ -393,7 +393,6 @@ const EmployeeInterface = ({ user }) => {
                                     <select id="estado" name="estado" required>
                                         <option value="Pendiente">Pendiente</option>
                                         <option value="En Proceso">En Proceso</option>
-                                        <option value="Completada">Completada</option>
                                     </select>
                                 </div>
                                 <div className="modal-actions">

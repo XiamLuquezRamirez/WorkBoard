@@ -4,6 +4,7 @@ import {
     FaChartArea,
     FaChartBar,
     FaChartLine,
+    FaTimes,
 } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import Header from "./Header";
@@ -109,16 +110,16 @@ const Reportes = () => {
 
         if (
             tarea.estado === "Completada" &&
-            tarea.fecha_creacion &&
+            tarea.fecha_aprobacion &&
             tarea.fecha_entregada &&
-            tarea.fecha_creacion >= startDate &&
-            tarea.fecha_creacion <= endDate &&
+            tarea.fecha_aprobacion >= startDate &&
+            tarea.fecha_aprobacion <= endDate &&
             tarea.fecha_entregada >= startDate &&
             tarea.fecha_entregada <= endDate
         ) {
             const dias =
                 (new Date(tarea.fecha_entregada) -
-                    new Date(tarea.fecha_creacion)) /
+                    new Date(tarea.fecha_aprobacion)) /
                 (1000 * 60 * 60 * 24);
             if (!acc[tarea.empleado])
                 acc[tarea.empleado] = { totalDias: 0, tareas: 0 };
@@ -141,6 +142,7 @@ const Reportes = () => {
         const promedio = promedioTiempoArray.find(
             (p) => p.empleado === item.empleado
         );
+        
         const productividad = promedio
             ? (item.tareasCompletadas / promedio.promedioTiempo).toFixed(1)
             : 0;
@@ -163,11 +165,11 @@ const Reportes = () => {
     const informe = tareas
         .filter(tarea => {
             // Filtrar tareas que se crearon dentro del rango de fechas
-            return tarea.fecha_creacion >= startDate && tarea.fecha_creacion <= endDate;
+            return tarea.fecha_aprobacion >= startDate && tarea.fecha_aprobacion <= endDate;
         })
         .map((tarea) => {
-            const diasEstimados = calcularDias(tarea.fecha_creacion, tarea.fecha_pactada);
-            const diasReales = tarea.fecha_entregada ? calcularDias(tarea.fecha_creacion, tarea.fecha_entregada) : null;
+            const diasEstimados = calcularDias(tarea.fecha_aprobacion, tarea.fecha_pactada);
+            const diasReales = tarea.fecha_entregada ? calcularDias(tarea.fecha_aprobacion, tarea.fecha_entregada) : null;
             const retrasada = tarea.fecha_entregada && tarea.fecha_entregada > tarea.fecha_pactada;
 
             return {
@@ -185,7 +187,7 @@ const Reportes = () => {
 
     const resumen = empleados.map(empleado => {
         const tareasEmpleado = tareas
-            .filter(t => t.empleado === empleado && t.fecha_creacion >= startDate && t.fecha_creacion <= endDate);
+            .filter(t => t.empleado === empleado && t.fecha_aprobacion >= startDate && t.fecha_aprobacion <= endDate);
         const total = tareasEmpleado.length;
         const completadas = tareasEmpleado.filter(t => t.estado === "Completada").length;
         const porcentaje = total > 0 ? ((completadas / total) * 100).toFixed(1) : 0;
@@ -204,30 +206,30 @@ const Reportes = () => {
     //informe de cumplimiento de tareas
     // 1. No iniciadas vs completadas
     const noIniciadas = tareas
-        .filter(t => t.estado === "Pendiente" && t.fecha_creacion >= startDate && t.fecha_creacion <= endDate)
+        .filter(t => t.estado === "Pendiente" && t.fecha_aprobacion >= startDate && t.fecha_aprobacion <= endDate)
         .length;
     const completadas = tareas
-        .filter(t => t.estado === "Completada" && t.fecha_creacion >= startDate && t.fecha_creacion <= endDate)
+        .filter(t => t.estado === "Completada" && t.fecha_aprobacion >= startDate && t.fecha_aprobacion <= endDate)
         .length;
 
     // 2. Recurrentes no cumplidas (mismo título + no completada)
     const titulos = tareas
-        .filter(t => t.fecha_creacion >= startDate && t.fecha_creacion <= endDate)
+        .filter(t => t.fecha_aprobacion >= startDate && t.fecha_aprobacion <= endDate)
         .map(t => t.titulo);
     const titulosRecurrentes = titulos.filter((titulo, i, arr) => arr.indexOf(titulo) !== i);
     const recurrentesNoCumplidas = tareas.filter(
         t => titulosRecurrentes.includes(t.titulo) &&
             t.estado !== "Completada" &&
-            t.fecha_creacion >= startDate &&
-            t.fecha_creacion <= endDate
+            t.fecha_aprobacion >= startDate &&
+            t.fecha_aprobacion <= endDate
     );
 
     // 3. Incumplimiento de fechas (fecha_entregada > fecha_pactada)
     const incumplidas = tareas.filter(t => {
         if (!t.fecha_entregada) return false;
         return new Date(t.fecha_entregada) > new Date(t.fecha_pactada) &&
-            t.fecha_creacion >= startDate &&
-            t.fecha_creacion <= endDate;
+            t.fecha_aprobacion >= startDate &&
+            t.fecha_aprobacion <= endDate;
     });
 
 
@@ -300,7 +302,7 @@ const Reportes = () => {
                         <div className="modal-header">
                             <h2>Informe de Productividad</h2>
                             <button className="close-button" onClick={() => setShowReportModal(false)} >
-                                X
+                                <FaTimes />
                             </button>
                         </div>
                         <div className="tab-buttons">
@@ -424,7 +426,7 @@ const Reportes = () => {
 
                                     <ResponsiveContainer
                                         width="100%"
-                                        height={300}
+                                        height={500}
                                         style={{ textTransform: "capitalize" }}
                                     >
                                         <LineChart
@@ -535,7 +537,7 @@ const Reportes = () => {
                         <div className="modal-header">
                             <h2>Informe de Tiempo</h2>
                             <button className="close-button" onClick={() => setShowReportModal(false)}>
-                                X
+                                <FaTimes />
                             </button>
                         </div>
                         <div className="tab-content">
@@ -583,7 +585,7 @@ const Reportes = () => {
                         <div className="modal-header">
                             <h2>Informe de Avance</h2>
                             <button className="close-button" onClick={() => setShowReportModal(false)}>
-                                X
+                            <FaTimes />
                             </button>
                         </div>
                         <div className="tab-content">
@@ -625,7 +627,7 @@ const Reportes = () => {
                         <div className="modal-header">
                             <h2>Informe de Cumplimiento</h2>
                             <button className="close-button" onClick={() => setShowReportModal(false)}>
-                                X
+                                <FaTimes />
                             </button>
                         </div>
                         <div className="tab-content">

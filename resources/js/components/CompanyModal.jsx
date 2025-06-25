@@ -206,7 +206,7 @@ const CompanyModal = ({ isOpen, onClose }) => {
                 <div className="modal-header">
                     <h2>Gestión de Empresas</h2>
                     <button className="close-button" onClick={onClose}>
-                        &times;
+                        <FaTimes />
                     </button>
                 </div>
 

@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import {
     FaFileUpload, FaCheck,
     FaClock, FaSpinner, FaDownload,
-    FaTrash, FaFile, FaImage, FaEdit, FaSave, FaEye, FaPause
+    FaTrash, FaFile, FaImage, FaEdit, FaSave, FaEye, FaPause, FaComment
 } from 'react-icons/fa';
 import axios from 'axios';
 import Swal from 'sweetalert2';
@@ -39,6 +39,10 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton }) 
     const [rechazada, setRechazada] = useState(task.rechazada === 1);
     const [isUploading, setIsUploading] = useState(false);
     const [pausada, setPausada] = useState(task.pausada === 1);
+    const [isChatModalOpen, setIsChatModalOpen] = useState(false);
+    const [chatReceptor, setChatReceptor] = useState(task.empleado);
+    const [isIframeLoading, setIsIframeLoading] = useState(true);
+    const [habilitarEdicion, setHabilitarEdicion] = useState(false);
     //fecha de tarea en fomao local
     const [editedTask, setEditedTask] = useState({
         titulo: task.titulo,
@@ -46,6 +50,10 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton }) 
         prioridad: task.prioridad,
         fecha_pactada: task.fecha_pactada
     });
+    //obtener el id del usuario logueado de variable de sesion laravel
+    const chatUser = user.user_id_chat;
+
+    console.log(chatUser);
 
     // Agregar useEffect para actualizar estados cuando task cambia
     useEffect(() => {
@@ -309,6 +317,28 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton }) 
         }
     };
 
+    const handleDeleteTask = async () => {
+        try {
+            const result = await Swal.fire({
+                title: '¿Está seguro?',
+                text: 'Esta acción no se puede deshacer',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Sí, eliminar',
+                cancelButtonText: 'Cancelar'
+            });
+
+            if (result.isConfirmed) {
+                await axiosInstance.delete(`/eliminarTarea/${task.id}`);
+                onUpdate();
+                onClose();
+                Swal.fire('¡Eliminado!', 'La tarea ha sido eliminada', 'success');
+            }
+        } catch (error) {
+            Swal.fire('Error', 'Error al eliminar la tarea', 'error');
+        }
+    };
+
     const handleDeleteEvidence = async (evidenceId) => {
         try {
             const result = await Swal.fire({
@@ -438,6 +468,13 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton }) 
 
     };
 
+    const handleChat = async (observationId) => {
+        //conmsultar en la base de datos de la tarea el id del empleado que realizo la observacion
+        const observation = await axiosInstance.get(`/obtenerObservacion/${observationId}`);
+        setChatReceptor(observation.data.idReceptor);
+        setIsChatModalOpen(true);
+    };
+
     const handleCloseFileViewer = () => {
         setSelectedFile(null);
     };
@@ -448,6 +485,10 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton }) 
 
     const handleEditTask = () => {
         setIsEditingTask(true);
+    };
+
+    const handleHabilitarEdicion = (checked) => {
+        setHabilitarEdicion(checked);
     };
 
     const handleSaveTask = async () => {
@@ -537,8 +578,6 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton }) 
                                 )}
                             </h2>
 
-
-
                             <button className="close-button" onClick={onClose}>&times;</button>
 
                         </div>
@@ -549,9 +588,19 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton }) 
                                 <div className="edit-buttons">
                                     {!isAdmin ? (
                                         !isEditingTask ? (
-                                            <button className="edit-button" onClick={handleEditTask}>
-                                                <FaEdit /> Editar Tarea
-                                            </button>
+                                            <>
+                                                {(task.aprobada === 0 || task.aprobada === null) && (
+                                                    <>
+                                                        <button className="edit-button" onClick={handleEditTask}>
+                                                            <FaEdit /> Editar Tarea
+                                                        </button>
+
+                                                        <button className="delete-button" onClick={handleDeleteTask}>
+                                                            <FaTrash /> Eliminar Tarea
+                                                        </button>
+                                                    </>
+                                                )}
+                                            </>
                                         ) : (
                                             <>
                                                 <button className="save-button" onClick={handleSaveTask} disabled={loading}>
@@ -562,7 +611,47 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton }) 
                                                 </button>
                                             </>
                                         )
-                                    ) : null}
+                                    ) : (
+                                        !isEditingTask ? (
+
+                                            <>
+                                                {(task.aprobada === 1) && (
+                                                    <>
+                                                        <div className="habilitar-checkbox">
+                                                            <label>
+                                                                <input
+                                                                    type="checkbox"
+                                                                    checked={habilitarEdicion}
+                                                                    onChange={(e) => {
+                                                                        handleHabilitarEdicion(e.target.checked);
+                                                                    }} />
+                                                                Habilitar edición empleado
+                                                            </label>
+                                                        </div>
+                                                    </>
+                                                )}
+
+                                                <button className="edit-button" onClick={handleEditTask}>
+                                                    <FaEdit /> Editar Tarea
+                                                </button>
+
+                                                <button className="delete-button" onClick={handleDeleteTask}>
+                                                    <FaTrash /> Eliminar Tarea
+                                                </button>
+                                            </>
+
+
+                                        ) : (
+                                            <>
+                                                <button className="save-button" onClick={handleSaveTask} disabled={loading}>
+                                                    {loading ? <FaSpinner className="spinner" /> : <FaSave />} Guardar
+                                                </button>
+                                                <button className="cancel-button" onClick={handleCancelEdit}>
+                                                    Cancelar
+                                                </button>
+                                            </>
+                                        )
+                                    )}
 
                                 </div>
                                 <div className="task-header">
@@ -849,7 +938,7 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton }) 
                                             </div>
                                         )}
 
-                                            <div className='aprobacion-panel'>
+                                        <div className='aprobacion-panel'>
                                             <h4>Pausar tarea</h4>
                                             <div className="aprobacion-checkbox">
                                                 <label>
@@ -920,6 +1009,11 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton }) 
                                                     <span><strong>Creador:</strong> {observacion.creador}</span>
                                                     <span><strong>Fecha:</strong> {fechaFormateada}</span>
                                                 </div>
+                                                <div className="observation-actions">
+                                                    <button className="chat-button" title="Chat" onClick={() => handleChat(observacion.id)}>
+                                                        <FaComment />
+                                                    </button>
+                                                </div>
                                             </div>
                                         );
                                     })
@@ -928,6 +1022,36 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton }) 
                                 )}
                             </div>
 
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal de chat */}
+            {isChatModalOpen && (
+                <div className="modal-overlay">
+                    <div className="modal-chat">
+                        <div className="modal-header">
+                            <h2 className='modal-title'>Chat</h2>
+                            <button className="close-button" onClick={() => setIsChatModalOpen(false)}>
+                                &times;
+                            </button>
+                        </div>
+                        <div className="modal-content">
+                            {isIframeLoading && (
+                                <div className="loader">
+                                    <div className="justify-content-center jimu-primary-loading"></div>
+                                </div>
+                            )}
+                            <iframe
+                                src={`https://ingeer.co/chat-empresarial/public/chat-redireccionado-workboard/${chatUser}/${chatReceptor}`}
+                                title="Chat"
+                                className="chat-iframe"
+                                style={{ width: '100%', height: '100%' }}
+                                onLoad={() => {
+                                    setIsIframeLoading(false);
+                                }}
+                            ></iframe>
                         </div>
                     </div>
                 </div>

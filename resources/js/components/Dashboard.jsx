@@ -95,11 +95,16 @@ const Dashboard = () => {
         const tareas = empleado.tareas;
         const tareasCompletadas = tareas.filter(tarea => tarea.estado === 'Completada');
         const tareasPendientes = tareas.filter(tarea => tarea.estado === 'Pendiente' && tarea.pausada === 0 && tarea.aprobada === 1);
-        const eficiencia = (tareasCompletadas.length / tareasPendientes.length) * 100;
+        let eficiencia = 0;
+
+        eficiencia = (tareasCompletadas.length + tareasPendientes.length) > 0
+        ? (tareasCompletadas.length / (tareasCompletadas.length + tareasPendientes.length)) * 100
+        : 0;
+        
         if (isNaN(eficiencia)) {
             return 0;
         }
-        return eficiencia;
+        return Math.round(eficiencia);
     }
 
 
@@ -164,6 +169,7 @@ const Dashboard = () => {
     }
 
     if (user.tipo_usuario !== "Administrador") {
+        
         return (
             <div className="dashboard-container">
                 <Header
@@ -306,9 +312,7 @@ const Dashboard = () => {
                                                     </div>
                                                     <div className="stat-item urgent">
                                                         <span className="stat-number">
-                                                            {empleado.rendimiento
-                                                                ?.tareas.pendientes ||
-                                                                0}
+                                                            {empleado.rendimiento?.tareas.pendientes || 0}
                                                         </span>
                                                         <span className="stat-label">
                                                             Pendientes
@@ -316,20 +320,20 @@ const Dashboard = () => {
                                                     </div>
                                                 </div>
 
-                                                <div className="kpi-section">
+                                                <div className="kpi-section" title="Porcentaje de tareas completadas dentro del plazo establecido.">
                                                     <div className="kpi-item">
                                                         <span className="kpi-label">
-                                                            Eficiencia
+                                                            Eficiencia Operativa
                                                         </span>
                                                         <div className="progress-bar">
                                                             <div
                                                                 className="progress-fill"
                                                                 style={{
-                                                                    width: `${calcularEficiencia(empleado)}%`,
+                                                                    width: `${empleado.rendimiento.eficienciaOperativa}%`,
                                                                 }}
                                                             />
                                                             <span className="progress-value">
-                                                                {calcularEficiencia(empleado)}%
+                                                                {Math.round(empleado.rendimiento.eficienciaOperativa, 2)}%
                                                             </span>
                                                         </div>
                                                     </div>
@@ -610,7 +614,11 @@ const Dashboard = () => {
                                                         <label style={{ fontSize: '14px', fontWeight: 'bold' }}>Fecha creación:</label> {new Date(new Date(tarea.fecha_creacion).getTime() + 24 * 60 * 60 * 1000).toLocaleDateString()}
                                                         {tarea.fecha_aprobacion && (
                                                             <span>
-                                                                {" "} <FaCheck style={{ color: '#008000' }} size={13}/> <label style={{ fontSize: '14px', fontWeight: 'bold' }}>Fecha aprobación:</label> {new Date(new Date(tarea.fecha_aprobacion).getTime() + 24 * 60 * 60 * 1000).toLocaleDateString()}
+                                                                {" "} <FaCheck style={{ color: '#008000' }} size={13}/> <label style={{ fontSize: '14px', fontWeight: 'bold' }}>Fecha aprobación:</label> {
+                                                                tarea.fecha_aprobacion !== '0000-00-00' ?
+                                                                new Date(new Date(tarea.fecha_aprobacion).getTime() + 24 * 60 * 60 * 1000).toLocaleDateString()
+                                                                : "No aprobada"
+                                                                }
                                                             </span>
                                                         )}
 

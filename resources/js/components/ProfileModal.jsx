@@ -10,7 +10,6 @@ const ProfileModal = ({ isOpen, onClose, currentUser, updateUser }) => {
         id: '',
         name: '',
         email: '',
-        current_password: '',
         new_password: '',
         new_password_confirmation: '',
         foto: null,
@@ -51,12 +50,13 @@ const ProfileModal = ({ isOpen, onClose, currentUser, updateUser }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-
+        //limpiar el formdata
+       
         const formData = new FormData();
+      
         formData.append('id', profileData.id);
         formData.append('name', profileData.name);
         formData.append('email', profileData.email);
-        formData.append('cambiar_password', profileData.changePassword);
         formData.append('foto', profileData.foto);
 
 
@@ -69,8 +69,18 @@ const ProfileModal = ({ isOpen, onClose, currentUser, updateUser }) => {
                 });
                 return;
             }
+
+
+            if( profileData.new_password === '' || profileData.new_password_confirmation === ''){
+                Swal.fire({
+                    title: 'Error',
+                    text: 'La contraseña actual no puede estar vacía',
+                    icon: 'error'
+                });
+                return;
+            }
+
             formData.append('cambiar_password', true);
-            formData.append('current_password', profileData.current_password);
             formData.append('new_password', profileData.new_password);
             formData.append('new_password_confirmation', profileData.new_password_confirmation);
         }
@@ -202,20 +212,7 @@ const ProfileModal = ({ isOpen, onClose, currentUser, updateUser }) => {
 
                         {profileData.changePassword && (
                             <>
-                                <div className="form-group">
-                                    <label>Contraseña actual</label>
-                                    <div className="input-icon">
-                                        <FaLock />
-                                        <input
-                                            type="password"
-                                            value={profileData.current_password}
-                                            onChange={(e) => setProfileData(prev => ({
-                                                ...prev,
-                                                current_password: e.target.value
-                                            }))}
-                                        />
-                                    </div>
-                                </div>
+                                
 
                                 <div className="form-group">
                                     <label>Nueva contraseña</label>

@@ -24,33 +24,33 @@ const EmployeeModal = ({ isOpen, onClose }) => {
     useEffect(() => {
         tomarFoto(getImageUrl('images/default.png'));
     }, []);
-    
+
     const tomarFoto = (ruta) => {
         const img = new Image();
-    
+
         // Necesario si la imagen está en otro dominio o ruta
         img.crossOrigin = 'anonymous';
-    
+
         img.onload = () => {
             const canvas = document.createElement('canvas');
             canvas.width = img.width;
             canvas.height = img.height;
-    
+
             const ctx = canvas.getContext('2d');
             ctx.drawImage(img, 0, 0);
-    
+
             const base64 = canvas.toDataURL('image/png');
-        
+
             setFoto(base64);
         };
-    
+
         img.onerror = () => {
             console.error('Error al cargar la imagen.');
         };
-    
+
         img.src = ruta;
     };
-    
+
 
     const initialEmpleadoState = {
         id: '',
@@ -486,7 +486,7 @@ const EmployeeModal = ({ isOpen, onClose }) => {
                         confirmButtonText: 'OK',
                     });
 
-                    
+
                 }
             })
             .catch((error) => {
@@ -696,7 +696,19 @@ const EmployeeModal = ({ isOpen, onClose }) => {
             fecha_entregada: nuevoEstado === 'Completada' ? tareaActual.fecha_entregada : null,
             evidencias: evidencias
         };
-
+        //preguntar si exixte contro fecha de entrega
+        if (nuevoEstado === 'Completada') {
+            console.log(tareaActual.fecha_entregada);
+            if (tareaActual.fecha_entregada === null ) {
+                Swal.fire({
+                    title: 'Error',
+                    text: 'Debes seleccionar una fecha de entrega',
+                    icon: 'error',
+                    confirmButtonText: 'OK',
+                });
+                return;
+            }
+        }
         axiosInstance.put(`/actualizarEstadoTarea/${tareaId}`, data)
             .then((response) => {
                 setTareasEmpleado(tareasEmpleado.map(tarea =>
@@ -757,7 +769,9 @@ const EmployeeModal = ({ isOpen, onClose }) => {
                 <div className="modal-employee">
                     <div className="modal-header">
                         <h2>Gestión de Empleados</h2>
-                        <button className="close-button" onClick={onClose}>&times;</button>
+                        <button className="close-button" onClick={onClose}>
+                            <FaTimes />
+                        </button>
                     </div>
                     <div className="modal-toolbar">
                         <div className="search-box">
@@ -1113,20 +1127,20 @@ const EmployeeModal = ({ isOpen, onClose }) => {
                             </button>
                         </div>
                         <div className='tab-container-funciones'>
-                            <div 
+                            <div
                                 className={`tab-item ${activeTab === 'funciones' ? 'active' : ''}`}
                                 onClick={() => setActiveTab('funciones')}
                             >
                                 <h3>Funciones</h3>
                             </div>
-                            <div 
+                            <div
                                 className={`tab-item ${activeTab === 'actividades' ? 'active' : ''}`}
                                 onClick={() => setActiveTab('actividades')}
                             >
                                 <h3>Actividades</h3>
                             </div>
                         </div>
-                        
+
                         <div className="funciones-content">
                             {activeTab === 'funciones' ? (
                                 <>
@@ -1499,23 +1513,23 @@ const EmployeeModal = ({ isOpen, onClose }) => {
                                                         )}
                                                     </div>
                                                     <div className='container-editar-tarea'>
-                                                    <div className="tarea-estado">
-                                                        <select
-                                                            value={tarea.estado}
-                                                            onChange={(e) => handleActualizarEstadoTarea(tarea, e.target.value)}
-                                                            className={`estado-select ${tarea.estado.toLowerCase()}`}
-                                                        >
-                                                            <option value="Pendiente">Pendiente</option>
-                                                            <option value="En Proceso">En Proceso</option>
-                                                            <option value="Completada">Completada</option>
-                                                            <option value="Cancelada">Cancelada</option>
-                                                        </select>
-                                                    </div>
-                                                    <div className='btn-editar-tarea'>
-                                                        <button className='btn-editar-tarea-button' onClick={()=> handleEditarTarea(tarea)}>
-                                                            <FaEdit /> Editar
-                                                        </button>
-                                                    </div>
+                                                        <div className="tarea-estado">
+                                                            <select
+                                                                value={tarea.estado}
+                                                                onChange={(e) => handleActualizarEstadoTarea(tarea, e.target.value)}
+                                                                className={`estado-select ${tarea.estado.toLowerCase()}`}
+                                                            >
+                                                                <option value="Pendiente">Pendiente</option>
+                                                                <option value="En Proceso">En Proceso</option>
+                                                                <option value="Completada">Completada</option>
+                                                                <option value="Cancelada">Cancelada</option>
+                                                            </select>
+                                                        </div>
+                                                        <div className='btn-editar-tarea'>
+                                                            <button className='btn-editar-tarea-button' onClick={() => handleEditarTarea(tarea)}>
+                                                                <FaEdit /> Editar
+                                                            </button>
+                                                        </div>
                                                     </div>
                                                 </div>
                                                 {tarea.evidencias && tarea.evidencias.length > 0 && (
@@ -1675,7 +1689,7 @@ const EmployeeModal = ({ isOpen, onClose }) => {
                                         ));
                                     }}
                                 >
-                                    Cancelar
+                                    <FaTimes /> {' '} Cancelar
                                 </button>
                                 <button
                                     className="complete-button"
@@ -1693,7 +1707,7 @@ const EmployeeModal = ({ isOpen, onClose }) => {
                                     }}
                                     disabled={isUploading || evidencias.length === 0}
                                 >
-                                    Completar Tarea
+                                    <FaCheck /> {' '} Completar Tarea
                                 </button>
                             </div>
                         </div>

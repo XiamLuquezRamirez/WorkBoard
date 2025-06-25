@@ -18,13 +18,29 @@ class LoginController extends Controller
 
         if (Auth::attempt($credentials)) {
             $request->session()->regenerate();
+
+            //guardar en una variable de sesion el id del usuario
+            $userActualChat = $credentials['email'];
+
+            $userActualChat = DB::connection('mysql')->table('users')
+                ->where('email', $credentials['email'])
+                ->first();
+
+            if(!$userActualChat){
+                return response()->json([
+                    'message' => 'Las credenciales proporcionadas son incorrectas.'
+                ]);
+            }
             
             //conevtar a otra  base de datos para obtener usuario
+            $user = DB::connection('mysql2')->table('users')
+                ->where('email', $credentials['email'])
+                ->first();
 
-            $user = Auth::user();
+
             
             // Obtener empleados asignados
-            $empleadosAsignados = DB::table('lideres_empleados')
+            $empleadosAsignados = DB::connection('mysql2')->table('lideres_empleados')
                 ->join('empleados', 'lideres_empleados.empleado', 'empleados.id')
                 ->select('empleados.id', 
                 DB::raw('CONCAT(empleados.nombres, " ", empleados.apellidos) as nombre'))
@@ -41,7 +57,8 @@ class LoginController extends Controller
                     'empleado' => $user->empleado,
                     'lider' => $user->lider,
                     'foto' => $user->foto,
-                    'empleados_asignados' => $empleadosAsignados
+                    'empleados_asignados' => $empleadosAsignados,
+                    'user_id_chat' => $userActualChat->id
                 ]
             ]);
         }

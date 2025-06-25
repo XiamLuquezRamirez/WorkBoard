@@ -163,6 +163,12 @@ Route::middleware(['auth:sanctum'])->group(function () {
     //pausar tarea
     Route::put('/pausarTarea/{id}', [empleadosController::class, 'pausarTarea']);
 
+    //obtener observacion
+    Route::get('/obtenerObservacion/{id}', [empleadosController::class, 'obtenerObservacion']);
+
+    //eliminar tarea
+    Route::delete('/eliminarTarea/{id}', [empleadosController::class, 'eliminarTarea']);
+
 });
 
 
