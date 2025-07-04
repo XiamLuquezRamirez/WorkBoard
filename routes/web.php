@@ -68,6 +68,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
         //subir evidencias
         Route::post('/subirEvidencias', [EvidenciasController::class, 'subirEvidencias']);
 
+        //guardar link de Drive como evidencia
+        Route::post('/guardarEvidenciaLink', [EvidenciasController::class, 'guardarEvidenciaLink']);
+
         //guardar tarea
         Route::post('/guardarTarea', [EmpleadosController::class, 'guardarTarea']);
 
@@ -168,6 +171,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     //eliminar tarea
     Route::delete('/eliminarTarea/{id}', [empleadosController::class, 'eliminarTarea']);
+
+    //habilitar edicion
+    Route::put('/habilitarEdicion/{id}', [empleadosController::class, 'habilitarEdicion']);
 
 });
 

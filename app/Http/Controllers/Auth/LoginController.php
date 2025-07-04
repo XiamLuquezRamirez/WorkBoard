@@ -37,8 +37,6 @@ class LoginController extends Controller
                 ->where('email', $credentials['email'])
                 ->first();
 
-
-            
             // Obtener empleados asignados
             $empleadosAsignados = DB::connection('mysql2')->table('lideres_empleados')
                 ->join('empleados', 'lideres_empleados.empleado', 'empleados.id')
@@ -81,4 +79,4 @@ class LoginController extends Controller
 
         return response()->json(['message' => 'Logout exitoso']);
     }
-} 
+}

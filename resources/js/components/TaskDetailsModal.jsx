@@ -2,7 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import {
     FaFileUpload, FaCheck,
     FaClock, FaSpinner, FaDownload,
-    FaTrash, FaFile, FaImage, FaEdit, FaSave, FaEye, FaPause, FaComment
+    FaTrash, FaFile, FaImage, FaEdit, FaSave, FaEye, FaPause, FaComment,
+    FaLink, FaGoogleDrive
 } from 'react-icons/fa';
 import axios from 'axios';
 import Swal from 'sweetalert2';
@@ -42,7 +43,7 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton }) 
     const [isChatModalOpen, setIsChatModalOpen] = useState(false);
     const [chatReceptor, setChatReceptor] = useState(task.empleado);
     const [isIframeLoading, setIsIframeLoading] = useState(true);
-    const [habilitarEdicion, setHabilitarEdicion] = useState(false);
+    const [editable, setEditable] = useState(task.editable === 1);
     //fecha de tarea en fomao local
     const [editedTask, setEditedTask] = useState({
         titulo: task.titulo,
@@ -52,8 +53,13 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton }) 
     });
     //obtener el id del usuario logueado de variable de sesion laravel
     const chatUser = user.user_id_chat;
-
-    console.log(chatUser);
+    // Nuevo estado para el link de Drive
+    const [driveLink, setDriveLink] = useState('');
+    const [showDriveInput, setShowDriveInput] = useState(false);
+    // Estado para manejar links temporales (no guardados en BD aún)
+    const [tempDriveLinks, setTempDriveLinks] = useState([]);
+    // Estado para manejar la selección de radio buttons
+    const [revisionSelection, setRevisionSelection] = useState('');
 
     // Agregar useEffect para actualizar estados cuando task cambia
     useEffect(() => {
@@ -77,6 +83,15 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton }) 
             prioridad: task.prioridad,
             fecha_pactada: task.fecha_pactada
         });
+        
+        // Inicializar selección de radio buttons
+        if (task.visto_bueno === 1 && task.rechazada !== 1) {
+            setRevisionSelection('visto_bueno');
+        } else if (task.rechazada === 1) {
+            setRevisionSelection('rechazada');
+        } else {
+            setRevisionSelection('');
+        }
     }, [task]);
 
     const currentUser = user;
@@ -84,7 +99,7 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton }) 
     const isOwnTask = currentUser?.empleado === task.empleado;
     const isAdmin = currentUser?.tipo_usuario === 'Administrador';
 
-    console.log(`isOwnTask ${isOwnTask}`);
+    
 
     const handleFileChange = (e) => {
         const files = Array.from(e.target.files);
@@ -112,6 +127,10 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton }) 
             newFiles.splice(index, 1);
             return newFiles;
         });
+    };
+
+    const removeTempLink = (index) => {
+        setTempDriveLinks(prev => prev.filter((_, i) => i !== index));
     };
 
     const handleUploadEvidences = async () => {
@@ -172,6 +191,145 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton }) 
         }
     };
 
+    // Función para validar y procesar links de Drive
+    const validateDriveLink = (link) => {
+        // Validar que sea un link de Google Drive
+        const drivePatterns = [
+            /^https:\/\/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/,
+            /^https:\/\/drive\.google\.com\/open\?id=([a-zA-Z0-9_-]+)/,
+            /^https:\/\/docs\.google\.com\/document\/d\/([a-zA-Z0-9_-]+)/,
+            /^https:\/\/docs\.google\.com\/spreadsheets\/d\/([a-zA-Z0-9_-]+)/,
+            /^https:\/\/docs\.google\.com\/presentation\/d\/([a-zA-Z0-9_-]+)/,
+            /^https:\/\/drive\.google\.com\/drive\/folders\/([a-zA-Z0-9_-]+)/,
+        ];
+
+        for (let pattern of drivePatterns) {
+            if (pattern.test(link)) {
+                return true;
+            }
+        }
+        return false;
+    };
+
+    // Función para agregar link de Drive como evidencia
+    const handleAddDriveLink = () => {
+        if (!driveLink.trim()) {
+            Swal.fire('Error', 'Por favor ingrese un link de Drive', 'error');
+            return;
+        }
+
+        if (!validateDriveLink(driveLink)) {
+            Swal.fire('Error', 'Por favor ingrese un link válido de Google Drive', 'error');
+            return;
+        }
+
+        // Agregar el link a la lista temporal (no se guarda en BD aún)
+        const nuevoLink = {
+            id: Date.now(), // ID temporal
+            nombre: 'Link de Drive',
+            ruta: driveLink,
+            tipo: 'application/link',
+            created_at: new Date().toISOString()
+        };
+
+        // Agregar a la lista de links temporales
+        setTempDriveLinks(prevLinks => [...prevLinks, nuevoLink]);
+        
+        // Limpiar el campo y ocultar el input
+        setDriveLink('');
+        setShowDriveInput(false);
+        
+        Swal.fire('¡Éxito!', 'Link de Drive agregado a la lista. Presione "Subir evidencias" para guardarlo.', 'success');
+    };
+
+    // Función para subir archivos y links de Drive
+    const handleUploadEvidencesAndLinks = async () => {
+        if (previewFiles.length === 0 && tempDriveLinks.length === 0) {
+            Swal.fire('Error', 'Seleccione archivos o agregue links de Drive', 'error');
+            return;
+        }
+
+        setLoading(true);
+
+        try {
+            let nuevasEvidencias = [];
+
+            // Subir archivos si existen
+            if (previewFiles.length > 0) {
+                const formData = new FormData();
+                previewFiles.forEach(fileData => {
+                    formData.append('evidencias[]', fileData.file);
+                });
+                formData.append('tarea_id', task.id);
+
+                const response = await axiosInstance.post('/subirEvidencias', formData, {
+                    headers: {
+                        'Content-Type': 'multipart/form-data'
+                    }
+                });
+
+                nuevasEvidencias = response.data.evidencias.map(evidencia => ({
+                    id: evidencia.id,
+                    nombre: evidencia.nombre_original,
+                    ruta: evidencia.ruta,
+                    tipo: evidencia.tipo,
+                    created_at: new Date().toISOString()
+                }));
+
+                // Limpiar previsualizaciones
+                previewFiles.forEach(fileData => {
+                    if (fileData.preview) {
+                        URL.revokeObjectURL(fileData.preview);
+                    }
+                });
+                setPreviewFiles([]);
+            }
+
+            // Guardar links de Drive temporales en la base de datos
+            if (tempDriveLinks.length > 0) {
+                for (const linkData of tempDriveLinks) {
+                    const response = await axiosInstance.post('/guardarEvidenciaLink', {
+                        tarea_id: task.id,
+                        evidencia: linkData.ruta,
+                        nombre: linkData.nombre,
+                        tipo: linkData.tipo
+                    });
+
+                    if (response.data.success) {
+                        nuevasEvidencias.push({
+                            id: response.data.evidencia_id,
+                            nombre: linkData.nombre,
+                            ruta: linkData.ruta,
+                            tipo: linkData.tipo,
+                            created_at: linkData.created_at
+                        });
+                    }
+                }
+                
+                // Limpiar links temporales
+                setTempDriveLinks([]);
+            }
+
+            setEvidencias(prevEvidencias => [...prevEvidencias, ...nuevasEvidencias]);
+            setDriveLink('');
+            setShowDriveInput(false);
+
+            // Actualizar estado de la tarea
+            await axiosInstance.put(`/actualizarEstadoTarea/${task.id}`, {
+                estado: currentStatus,
+                evidencias: nuevasEvidencias,
+                fecha_entregada: new Date().toISOString().split('T')[0]
+            });
+
+            onUpdate();
+            Swal.fire('¡Éxito!', 'Evidencias subidas correctamente', 'success');
+        } catch (error) {
+            Swal.fire('Error', 'Error al subir las evidencias', 'error');
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const handleStatusChange = async (newStatus) => {
         if (newStatus === currentStatus) return;
         setIsChangingStatus(true);
@@ -215,78 +373,204 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton }) 
                         title: 'Subir evidencias',
                         html: `
                             <div class="swal-evidence-upload">
-                                <div id="preview-container" class="preview-container"></div>
-                                <input type="file" id="swal-evidence" multiple class="swal2-file">
+                                <div class="upload-options">
+                                    <div class="file-upload-section">
+                                        <div id="preview-container" class="preview-container"></div>
+                                        <input type="file" id="swal-evidence" multiple class="swal2-file">
+                                    </div>
+                                    <div class="drive-link-section">
+                                        <button type="button" id="swal-drive-toggle" class="drive-link-button">
+                                            <i class="fas fa-google-drive"></i> Agregar Link de Drive
+                                        </button>
+                                        <div id="swal-drive-input" class="drive-link-input" style="display: none;">
+                                            <input type="text" id="swal-link-evidencia" placeholder="Ingrese el link de la evidencia" class="drive-link-field">
+                                            <button type="button" id="swal-add-link" class="add-link-button">
+                                                <i class="fas fa-link"></i> Agregar
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         `,
                         didOpen: () => {
                             const fileInput = document.getElementById('swal-evidence');
                             const previewContainer = document.getElementById('preview-container');
+                            const driveToggle = document.getElementById('swal-drive-toggle');
+                            const driveInput = document.getElementById('swal-drive-input');
+                            const linkInput = document.getElementById('swal-link-evidencia');
+                            const addLinkBtn = document.getElementById('swal-add-link');
                             let selectedFiles = [];
+                            let driveLinks = [];
+
+                            // Toggle para mostrar/ocultar input de Drive
+                            driveToggle.addEventListener('click', () => {
+                                const isVisible = driveInput.style.display !== 'none';
+                                driveInput.style.display = isVisible ? 'none' : 'flex';
+                                driveToggle.innerHTML = isVisible ? 
+                                    '<i class="fas fa-google-drive"></i> Agregar Link de Drive' : 
+                                    '<i class="fas fa-google-drive"></i> Ocultar Link de Drive';
+                            });
+
+                            // Agregar link de Drive
+                            addLinkBtn.addEventListener('click', () => {
+                                const link = linkInput.value.trim();
+                                if (link && validateDriveLink(link)) {
+                                    driveLinks.push(link);
+                                    linkInput.value = '';
+                                    updatePreview();
+                                } else {
+                                    Swal.showValidationMessage('Por favor ingrese un link válido de Google Drive');
+                                }
+                            });
 
                             fileInput.addEventListener('change', (e) => {
                                 const files = Array.from(e.target.files);
                                 selectedFiles = files;
+                                updatePreview();
+                            });
 
-                                previewContainer.innerHTML = files.map((file, index) => `
-                                    <div class="preview-item">
-                                        ${file.type.startsWith('image/')
-                                        ? `<img src="${URL.createObjectURL(file)}" class="preview-image">`
-                                        : `<div class="preview-file-icon">
-                                                <i class="fas fa-file"></i>
-                                            </div>`
-                                    }
-                                        <span class="preview-filename">${file.name}</span>
-                                        <button type="button" class="preview-remove" data-index="${index}">
-                                            <i class="fas fa-times"></i>
-                                        </button>
-                                    </div>
-                                `).join('');
+                            function updatePreview() {
+                                let previewHTML = '';
+                                
+                                // Archivos
+                                if (selectedFiles.length > 0) {
+                                    previewHTML += '<h6>Archivos seleccionados:</h6>';
+                                    selectedFiles.forEach((file, index) => {
+                                        previewHTML += `
+                                            <div class="preview-item">
+                                                ${file.type.startsWith('image/')
+                                                ? `<img src="${URL.createObjectURL(file)}" class="preview-image">`
+                                                : `<div class="preview-file-icon">
+                                                        <i class="fas fa-file"></i>
+                                                    </div>`
+                                            }
+                                                <span class="preview-filename">${file.name}</span>
+                                                <button type="button" class="preview-remove" data-type="file" data-index="${index}">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            </div>
+                                        `;
+                                    });
+                                }
 
+                                // Links de Drive
+                                if (driveLinks.length > 0) {
+                                    previewHTML += '<h6>Links de Drive:</h6>';
+                                    driveLinks.forEach((link, index) => {
+                                        previewHTML += `
+                                            <div class="preview-item">
+                                                <div class="preview-file-icon">
+                                                    <i class="fas fa-google-drive"></i>
+                                                </div>
+                                                <span class="preview-filename">
+                                                    <a href="${link}" target="_blank">${link}</a>
+                                                </span>
+                                                <button type="button" class="preview-remove" data-type="link" data-index="${index}">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            </div>
+                                        `;
+                                    });
+                                }
+
+                                previewContainer.innerHTML = previewHTML;
+
+                                // Event listeners para botones de eliminar
                                 document.querySelectorAll('.preview-remove').forEach(button => {
                                     button.addEventListener('click', (e) => {
-                                        const index = e.currentTarget.dataset.index;
-                                        selectedFiles.splice(index, 1);
+                                        const type = e.currentTarget.dataset.type;
+                                        const index = parseInt(e.currentTarget.dataset.index);
+                                        
+                                        if (type === 'file') {
+                                            selectedFiles.splice(index, 1);
+                                        } else if (type === 'link') {
+                                            driveLinks.splice(index, 1);
+                                        }
+                                        
                                         e.currentTarget.closest('.preview-item').remove();
                                     });
                                 });
-                            });
+                            }
                         },
                         confirmButtonText: 'Subir y completar',
                         cancelButtonText: 'Cancelar',
                         showCancelButton: true,
                         preConfirm: async () => {
                             const fileInput = document.getElementById('swal-evidence');
+                            const linkInput = document.getElementById('swal-link-evidencia');
                             const files = Array.from(fileInput.files);
+                            const driveLinks = [];
 
-                            if (files.length === 0) {
-                                Swal.showValidationMessage('Seleccione al menos un archivo');
+                            // Obtener links de Drive del preview
+                            const previewItems = document.querySelectorAll('.preview-item');
+                            previewItems.forEach(item => {
+                                const linkElement = item.querySelector('a');
+                                if (linkElement) {
+                                    driveLinks.push(linkElement.href);
+                                }
+                            });
+
+                            if (files.length === 0 && driveLinks.length === 0) {
+                                Swal.showValidationMessage('Seleccione al menos un archivo o ingrese un link de Drive');
                                 return false;
                             }
 
                             try {
                                 setLoading(true);
-                                const formData = new FormData();
-                                files.forEach(file => {
-                                    formData.append('evidencias[]', file);
-                                });
+                                let nuevasEvidencias = [];
 
-                                // Subir evidencias
-                                const response = await axiosInstance.post('/subirEvidencias', formData, {
-                                    headers: {
-                                        'Content-Type': 'multipart/form-data'
+                                // Subir archivos si existen
+                                if (files.length > 0) {
+                                    const formData = new FormData();
+                                    files.forEach(file => {
+                                        formData.append('evidencias[]', file);
+                                    });
+
+                                    const response = await axiosInstance.post('/subirEvidencias', formData, {
+                                        headers: {
+                                            'Content-Type': 'multipart/form-data'
+                                        }
+                                    });
+
+                                    nuevasEvidencias = response.data.evidencias.map(evidencia => ({
+                                        id: evidencia.id,
+                                        nombre: evidencia.nombre_original,
+                                        ruta: evidencia.ruta,
+                                        tipo: evidencia.tipo
+                                    }));
+                                }
+
+                                // Agregar links de Drive si existen
+                                for (const link of driveLinks) {
+                                    const response = await axiosInstance.post('/guardarEvidenciaLink', {
+                                        tarea_id: task.id,
+                                        evidencia: link,
+                                        nombre: 'Link de Drive',
+                                        tipo: 'application/link'
+                                    });
+
+                                    if (response.data.success) {
+                                        nuevasEvidencias.push({
+                                            id: response.data.evidencia_id,
+                                            nombre: 'Link de Drive',
+                                            ruta: link,
+                                            tipo: 'application/link'
+                                        });
                                     }
-                                });
+                                }
 
                                 // Actualizar estado de la tarea
                                 await axiosInstance.put(`/actualizarEstadoTarea/${task.id}`, {
                                     estado: newStatus,
-                                    evidencias: response.data,
+                                    evidencias: nuevasEvidencias,
                                     fecha_entregada: fechaEntrega
                                 });
 
                                 setCurrentStatus(newStatus);
                                 onUpdate();
+                                Swal.fire('¡Éxito!', 'Tarea completada con evidencias', 'success');
+                                //actualizar la lista de evidencias
+                                setEvidencias(prevEvidencias => [...prevEvidencias, ...nuevasEvidencias]);
                                 return true;
                             } catch (error) {
                                 Swal.showValidationMessage('Error al subir las evidencias');
@@ -332,6 +616,7 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton }) 
                 await axiosInstance.delete(`/eliminarTarea/${task.id}`);
                 onUpdate();
                 onClose();
+                //actualizar la lista de tareas
                 Swal.fire('¡Eliminado!', 'La tarea ha sido eliminada', 'success');
             }
         } catch (error) {
@@ -392,8 +677,10 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton }) 
     };
 
     const handleVistoBueno = async (checked) => {
-
         setVistoBueno(checked);
+        if (checked) {
+            setRechazada(false); // Desactivar rechazada si se activa visto bueno
+        }
         setIsUploading(true);
         try {
             await axiosInstance.put(`/vistoBueno/${task.id}`, {
@@ -409,6 +696,25 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton }) 
         }
     };
 
+    const handleRechazada = async (checked) => {
+        setRechazada(checked);
+        if (checked) {
+            setVistoBueno(false); // Desactivar visto bueno si se activa rechazada
+        }
+        setIsUploading(true);
+        try {
+            await axiosInstance.put(`/rechazarTarea/${task.id}`, {
+                rechazada: checked
+            });
+            onUpdate();
+            Swal.fire('¡Éxito!', 'Tarea rechazada correctamente', 'success');
+        } catch (error) {
+            Swal.fire('Error', 'Error al rechazar la tarea', 'error');
+        } finally {
+            setIsUploading(false);
+        }
+    };
+
     const handleAprobada = async (checked) => {
         setAprobada(checked);
         setIsUploading(true);
@@ -417,7 +723,11 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton }) 
                 aprobada: checked
             });
             onUpdate();
-            Swal.fire('¡Éxito!', 'Tarea aprobada correctamente', 'success');
+            if (checked) {
+                Swal.fire('¡Éxito!', 'Tarea aprobada correctamente', 'success');
+            } else {
+                Swal.fire('¡Éxito!', 'Tarea desaprobada correctamente', 'success');
+            }
         } catch (error) {
             Swal.fire('Error', 'Error al aprobar la tarea', 'error');
         } finally {
@@ -425,6 +735,7 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton }) 
         }
     };
 
+   
 
     const handlePausada = async (checked) => {
         setPausada(checked);
@@ -442,21 +753,7 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton }) 
         }
     };
 
-    const handleRechazada = async (checked) => {
-        setRechazada(checked);
-        setIsUploading(true);
-        try {
-            await axiosInstance.put(`/rechazarTarea/${task.id}`, {
-                rechazada: checked
-            });
-            onUpdate();
-            Swal.fire('¡Éxito!', 'Tarea rechazada correctamente', 'success');
-        } catch (error) {
-            Swal.fire('Error', 'Error al rechazar la tarea', 'error');
-        } finally {
-            setIsUploading(false);
-        }
-    };
+ 
 
     const handleFileClick = (evidencia) => {
 
@@ -470,7 +767,7 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton }) 
 
     const handleChat = async (observationId) => {
         //conmsultar en la base de datos de la tarea el id del empleado que realizo la observacion
-        const observation = await axiosInstance.get(`/obtenerObservacion/${observationId}`);
+        const observation = await axiosInstance.get(`/obtenerObservacionUser/${observationId}`);
         setChatReceptor(observation.data.idReceptor);
         setIsChatModalOpen(true);
     };
@@ -487,8 +784,20 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton }) 
         setIsEditingTask(true);
     };
 
-    const handleHabilitarEdicion = (checked) => {
-        setHabilitarEdicion(checked);
+    const handleHabilitarEdicion = async (checked) => {
+        setEditable(checked);
+        setIsUploading(true);
+        try {
+            await axiosInstance.put(`/habilitarEdicion/${task.id}`, {
+                editable: checked
+            });
+            onUpdate();
+            Swal.fire('¡Éxito!', 'Tarea habilitada correctamente', 'success');
+        } catch (error) {
+            Swal.fire('Error', 'Error al habilitar la tarea', 'error');
+        } finally {
+            setIsUploading(false);
+        }
     };
 
     const handleSaveTask = async () => {
@@ -535,6 +844,16 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton }) 
             ...prev,
             [name]: value
         }));
+    };
+
+    // Nueva función para manejar el cambio de selección de radio buttons
+    const handleRevisionChange = (value) => {
+        setRevisionSelection(value);
+        if (value === 'visto_bueno') {
+            handleVistoBueno(true);
+        } else if (value === 'rechazada') {
+            handleRechazada(true);
+        }
     };
 
     return (
@@ -589,12 +908,12 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton }) 
                                     {!isAdmin ? (
                                         !isEditingTask ? (
                                             <>
-                                                {(task.aprobada === 0 || task.aprobada === null) && (
+                                                {(task.aprobada === 0 || task.aprobada === null || task.editable === 1) && (
                                                     <>
                                                         <button className="edit-button" onClick={handleEditTask}>
                                                             <FaEdit /> Editar Tarea
                                                         </button>
-
+                                                        
                                                         <button className="delete-button" onClick={handleDeleteTask}>
                                                             <FaTrash /> Eliminar Tarea
                                                         </button>
@@ -621,7 +940,7 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton }) 
                                                             <label>
                                                                 <input
                                                                     type="checkbox"
-                                                                    checked={habilitarEdicion}
+                                                                    checked={editable}
                                                                     onChange={(e) => {
                                                                         handleHabilitarEdicion(e.target.checked);
                                                                     }} />
@@ -774,57 +1093,125 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton }) 
                                 {/* Sección de carga de archivos - Solo para el dueño de la tarea */}
                                 {isOwnTask && (
                                     <div key={task.id} className="evidence-upload">
-                                        <input
-                                            type="file"
-                                            multiple
-                                            onChange={handleFileChange}
-                                            className="file-input"
-                                            id="evidence-files"
-                                            ref={fileInputRef}
-                                        />
-                                        <label htmlFor="evidence-files" className="upload-button">
-                                            <FaFileUpload /> Seleccionar archivos
-                                        </label>
+                                        <div className="upload-options">
+                                            <div className="file-upload-section">
+                                                <input
+                                                    type="file"
+                                                    multiple
+                                                    onChange={handleFileChange}
+                                                    className="file-input"
+                                                    id="evidence-files"
+                                                    ref={fileInputRef}
+                                                />
+                                                <label htmlFor="evidence-files" className="upload-button">
+                                                    <FaFileUpload /> Seleccionar archivos
+                                                </label>
+                                            </div>
+                                            
+                                            <div className="drive-link-section">
+                                                <button
+                                                    type="button"
+                                                    className="drive-link-button"
+                                                    onClick={() => setShowDriveInput(!showDriveInput)}
+                                                >
+                                                    <FaGoogleDrive /> {showDriveInput ? 'Ocultar' : 'Agregar'} Link de Drive
+                                                </button>
+                                                
+                                                {showDriveInput && (
+                                                    <div className="drive-link-input">
+                                                        <input
+                                                            type="text"
+                                                            value={driveLink}
+                                                            onChange={(e) => setDriveLink(e.target.value) }
+                                                            placeholder="Pegue aquí el link de Google Drive..."
+                                                            className="drive-link-field"
+                                                        />
+                                                        <button
+                                                            type="button"
+                                                            className="add-link-button"
+                                                            onClick={handleAddDriveLink}
+                                                            disabled={loading || !driveLink.trim()}
+                                                        >
+                                                            {loading ? <FaSpinner className="spinner" /> : <FaLink />}
+                                                            Agregar
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
                                     </div>
                                 )}
 
                                 {/* Preview de archivos seleccionados */}
-                                {previewFiles.length > 0 && (
+                                {(previewFiles.length > 0 || tempDriveLinks.length > 0) && (
                                     <div className="preview-files">
-                                        <h5>Archivos seleccionados</h5>
-                                        <div className="preview-list">
-                                            {previewFiles.map((fileData, index) => (
-                                                <div key={index} className="preview-item">
-                                                    <div className="preview-content">
-                                                        {fileData.preview ? (
-                                                            <img
-                                                                src={fileData.preview}
-                                                                alt={fileData.name}
-                                                                className="preview-image"
-                                                            />
-                                                        ) : (
-                                                            <div className="file-icon">
-                                                                {fileData.type.includes('image') ? (
-                                                                    <FaImage />
-                                                                ) : (
-                                                                    <FaFile />
-                                                                )}
-                                                            </div>
-                                                        )}
-                                                        <span className="preview-name">{fileData.name}</span>
+                                        <h5>Evidencias a subir</h5>
+                                        
+                                        {/* Preview de archivos */}
+                                        {previewFiles.length > 0 && (
+                                            <div className="preview-list">
+                                                <h6>Archivos seleccionados:</h6>
+                                                {previewFiles.map((fileData, index) => (
+                                                    <div key={index} className="preview-item">
+                                                        <div className="preview-content">
+                                                            {fileData.preview ? (
+                                                                <img
+                                                                    src={fileData.preview}
+                                                                    alt={fileData.name}
+                                                                    className="preview-image"
+                                                                />
+                                                            ) : (
+                                                                <div className="file-icon">
+                                                                    {fileData.type.includes('image') ? (
+                                                                        <FaImage />
+                                                                    ) : (
+                                                                        <FaFile />
+                                                                    )}
+                                                                </div>
+                                                            )}
+                                                            <span className="preview-name">{fileData.name}</span>
+                                                        </div>
+                                                        <button
+                                                            className="remove-file"
+                                                            onClick={() => removeFile(index)}
+                                                        >
+                                                            <FaTrash />
+                                                        </button>
                                                     </div>
-                                                    <button
-                                                        className="remove-file"
-                                                        onClick={() => removeFile(index)}
-                                                    >
-                                                        <FaTrash />
-                                                    </button>
-                                                </div>
-                                            ))}
-                                        </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                        
+                                        {/* Preview de links de Drive temporales */}
+                                        {tempDriveLinks.length > 0 && (
+                                            <div className="preview-list">
+                                                <h6>Links de Drive:</h6>
+                                                {tempDriveLinks.map((linkData, index) => (
+                                                    <div key={linkData.id} className="preview-item">
+                                                        <div className="preview-content">
+                                                            <div className="file-icon">
+                                                                <FaGoogleDrive />
+                                                            </div>
+                                                            <span className="preview-name">
+                                                                <a href={linkData.ruta} target="_blank" rel="noopener noreferrer">
+                                                                    {linkData.ruta}
+                                                                </a>
+                                                            </span>
+                                                        </div>
+                                                        <button
+                                                            className="remove-file"
+                                                            onClick={() => removeTempLink(index)}
+                                                        >
+                                                            <FaTrash />
+                                                        </button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                        
                                         <button
                                             className="upload-selected"
-                                            onClick={handleUploadEvidences}
+                                            onClick={handleUploadEvidencesAndLinks}
                                             disabled={loading}
                                         >
                                             {loading ? (
@@ -850,24 +1237,49 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton }) 
                                             <div key={evidencia.id} className="evidence-item">
                                                 <div className="evidence-info">
                                                     <div className="evidence-icon">
-                                                        {evidencia.tipo?.includes('image') ? (
+                                                        {evidencia.tipo === 'application/link' ? (
+                                                            <FaGoogleDrive />
+                                                        ) : evidencia.tipo?.includes('image') ? (
                                                             <FaImage />
                                                         ) : (
                                                             <FaFile />
                                                         )}
                                                     </div>
                                                     <div className="evidence-details">
-                                                        <span className="evidence-name">{evidencia.nombre}</span>
+                                                        <span className="evidence-name">
+                                                            {evidencia.tipo === 'application/link' ? (
+                                                                <a 
+                                                                    href={evidencia.ruta} 
+                                                                    target="_blank" 
+                                                                    rel="noopener noreferrer"
+                                                                    className="drive-link"
+                                                                >
+                                                                    {evidencia.nombre}
+                                                                </a>
+                                                            ) : (
+                                                                evidencia.nombre
+                                                            )}
+                                                        </span>
                                                     </div>
                                                 </div>
                                                 <div className="evidence-actions">
-                                                    <button
-                                                        onClick={() => handleFileClick(evidencia)}
-                                                        className="download-button"
-                                                        title="Ver archivo"
-                                                    >
-                                                        <FaDownload />
-                                                    </button>
+                                                    {evidencia.tipo === 'application/link' ? (
+                                                        <button
+                                                            onClick={() => window.open(evidencia.ruta, '_blank')}
+                                                            className="download-button"
+                                                            title="Abrir link"
+                                                        >
+                                                            <FaLink />
+                                                        </button>
+                                                    ) : (
+                                                        <button
+                                                            onClick={() => handleFileClick(evidencia)}
+                                                            className="download-button"
+                                                            title="Ver archivo"
+                                                        >
+                                                            <FaDownload />
+                                                        </button>
+                                                    )}
                                                     {isOwnTask && (
                                                         <button
                                                             className="delete-button"
@@ -913,11 +1325,8 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton }) 
                                                             type="radio"
                                                             name="revision"
                                                             value="visto_bueno"
-                                                            checked={vistoBueno && !rechazada}
-                                                            onChange={() => {
-                                                                handleVistoBueno(true);
-                                                                handleRechazada(false);
-                                                            }}
+                                                            checked={revisionSelection === 'visto_bueno'}
+                                                            onChange={() => handleRevisionChange('visto_bueno')}
                                                         />
                                                         Dar visto bueno
                                                     </label>
@@ -926,11 +1335,8 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton }) 
                                                             type="radio"
                                                             name="revision"
                                                             value="rechazada"
-                                                            checked={rechazada}
-                                                            onChange={() => {
-                                                                handleVistoBueno(false);
-                                                                handleRechazada(true);
-                                                            }}
+                                                            checked={revisionSelection === 'rechazada'}
+                                                            onChange={() => handleRevisionChange('rechazada')}
                                                         />
                                                         Rechazar tarea
                                                     </label>
@@ -1009,6 +1415,7 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton }) 
                                                     <span><strong>Creador:</strong> {observacion.creador}</span>
                                                     <span><strong>Fecha:</strong> {fechaFormateada}</span>
                                                 </div>
+                                                
                                                 <div className="observation-actions">
                                                     <button className="chat-button" title="Chat" onClick={() => handleChat(observacion.id)}>
                                                         <FaComment />

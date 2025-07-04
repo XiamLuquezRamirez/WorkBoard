@@ -5,6 +5,7 @@ import {
     FaChartBar,
     FaChartLine,
     FaTimes,
+    FaPrint,
 } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import Header from "./Header";
@@ -43,6 +44,16 @@ const Reportes = () => {
 
     const [tareas, setTareas] = useState([]);
     const navigate = useNavigate();
+    
+    // Estados para filtros de tareas por empleado
+    const [filterEmpleado, setFilterEmpleado] = useState('');
+    const [filterDepartamento, setFilterDepartamento] = useState('');
+    const [filterEstado, setFilterEstado] = useState('');
+    const [filterFechaInicio, setFilterFechaInicio] = useState('');
+    const [filterFechaFin, setFilterFechaFin] = useState('');
+    const [empleadosList, setEmpleadosList] = useState([]);
+    const [departamentos, setDepartamentos] = useState([]);
+    const [estados, setEstados] = useState([]);
 
     const reportCards = [
         {
@@ -86,6 +97,16 @@ const Reportes = () => {
                 abrirModalInformeCumplimiento();
             },
         },
+        {
+            id: 4,
+            title: "Informe de tareas por empleado",
+            icon: <FaChartBar size={25} />,
+            description: "Resumen de tareas por empleado",
+            color: "#0891b2",
+            onClick: () => {
+                abrirModalInformeTareasPorEmpleado();
+            },
+        },
 
     ];
 
@@ -104,6 +125,8 @@ const Reportes = () => {
             tareasCompletadas,
         })
     );
+
+    //informe de tareas por empleado
 
     // Promedio de días por tarea (solo completadas)
     const promedioTiempoData = tareas.reduce((acc, tarea) => {
@@ -199,9 +222,207 @@ const Reportes = () => {
             .get("/informes/tareas")
             .then((response) => {
                 setTareas(response.data);
+                // Generar listas para filtros
+                const empleadosUnicos = [...new Set(response.data.map(t => t.empleado))];
+                const departamentosUnicos = [...new Set(response.data.map(t => t.departamento).filter(Boolean))];
+                const estadosUnicos = [...new Set(response.data.map(t => t.estado))];
+                
+                setEmpleadosList(empleadosUnicos);
+                setDepartamentos(departamentosUnicos);
+                setEstados(estadosUnicos);
             })
             .catch((error) => console.error("Error fetching tasks:", error));
     }
+
+    // Función para generar datos de tareas por empleado
+    const generarTareasPorEmpleado = () => {
+        let tareasFiltradas = tareas;
+
+        // Aplicar filtros
+        if (filterEmpleado) {
+            tareasFiltradas = tareasFiltradas.filter(t => t.empleado === filterEmpleado);
+        }
+        if (filterDepartamento) {
+            tareasFiltradas = tareasFiltradas.filter(t => t.departamento === filterDepartamento);
+        }
+        if (filterEstado) {
+            tareasFiltradas = tareasFiltradas.filter(t => t.estado === filterEstado);
+        }
+        
+        // Filtro por rango de fecha pactada
+        if (filterFechaInicio) {
+            tareasFiltradas = tareasFiltradas.filter(t => {
+                if (!t.fecha_pactada) return false;
+                return t.fecha_pactada >= filterFechaInicio;
+            });
+        }
+        if (filterFechaFin) {
+            tareasFiltradas = tareasFiltradas.filter(t => {
+                if (!t.fecha_pactada) return false;
+                return t.fecha_pactada <= filterFechaFin;
+            });
+        }
+
+        // Agrupar por empleado
+        const tareasPorEmpleado = {};
+        
+        tareasFiltradas.forEach(tarea => {
+            if (!tareasPorEmpleado[tarea.empleado]) {
+                tareasPorEmpleado[tarea.empleado] = {
+                    empleado: tarea.empleado,
+                    tareas: []
+                };
+            }
+            tareasPorEmpleado[tarea.empleado].tareas.push(tarea);
+        });
+
+        return Object.values(tareasPorEmpleado);
+    };
+
+    // Función para generar resumen de tareas por empleado
+    const generarResumenTareasPorEmpleado = () => {
+        const tareasPorEmpleado = generarTareasPorEmpleado();
+        
+        return tareasPorEmpleado.map(empleadoData => {
+            const tareas = empleadoData.tareas;
+            const total = tareas.length;
+            const completadas = tareas.filter(t => t.estado === 'Completada').length;
+            const pendientes = tareas.filter(t => t.estado === 'Pendiente').length;
+            const atrasadas = tareas.filter(t => t.estado === 'Atrasada').length;
+            const enProceso = tareas.filter(t => t.estado === 'En Proceso').length;
+            const retrasadas = tareas.filter(t => t.estado === 'Retrasada').length;
+            const noIniciadas = tareas.filter(t => t.estado === 'No Iniciada').length;
+            const recurrentes = tareas.filter(t => t.recurrente === 1).length;
+
+            return {
+                empleado: empleadoData.empleado,
+                total,
+                completadas,
+                pendientes,
+                atrasadas,
+                enProceso,
+                retrasadas,
+                noIniciadas,
+                recurrentes
+            };
+        });
+    };
+
+    // Función para imprimir PDF
+    const imprimirPDF = () => {
+        const tareasPorEmpleado = generarTareasPorEmpleado();
+        const resumen = generarResumenTareasPorEmpleado();
+        
+        // Crear contenido HTML para el PDF
+        let htmlContent = `
+            <html>
+            <head>
+                <style>
+                    body { font-family: Arial, sans-serif; margin: 20px; }
+                    h1 { color: #2b60e5; text-align: center; }
+                    h2 { color: #333; margin-top: 30px; }
+                    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                    th { background-color: #f2f2f2; font-weight: bold; }
+                    .filtros { margin-bottom: 20px; padding: 10px; background-color: #f9f9f9; }
+                    .resumen { margin-bottom: 30px; }
+                </style>
+            </head>
+            <body>
+                <h1>Informe de Tareas por Empleado</h1>
+                <div class="filtros">
+                    <h3>Filtros Aplicados:</h3>
+                    <p><strong>Empleado:</strong> ${filterEmpleado || 'Todos'}</p>
+                    <p><strong>Departamento:</strong> ${filterDepartamento || 'Todos'}</p>
+                    <p><strong>Estado:</strong> ${filterEstado || 'Todos'}</p>
+                    <p><strong>Fecha Pactada:</strong> ${filterFechaInicio && filterFechaFin ? `${filterFechaInicio} - ${filterFechaFin}` : filterFechaInicio ? `Desde ${filterFechaInicio}` : filterFechaFin ? `Hasta ${filterFechaFin}` : 'Todas las fechas'}</p>
+                    <p><strong>Fecha de generación:</strong> ${new Date().toLocaleDateString()}</p>
+                </div>
+        `;
+
+        // Agregar resumen
+        htmlContent += `
+            <div class="resumen">
+                <h2>Resumen por Empleado</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Empleado</th>
+                            <th>Total</th>
+                            <th>Completadas</th>
+                            <th>Pendientes</th>
+                            <th>Atrasadas</th>
+                            <th>En Proceso</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+        `;
+
+        resumen.forEach(item => {
+            htmlContent += `
+                <tr>
+                    <td>${item.empleado}</td>
+                    <td>${item.total}</td>
+                    <td>${item.completadas}</td>
+                    <td>${item.pendientes}</td>
+                    <td>${item.atrasadas}</td>
+                    <td>${item.enProceso}</td>
+                </tr>
+            `;
+        });
+
+        htmlContent += `
+                    </tbody>
+                </table>
+            </div>
+        `;
+
+        // Agregar detalle de tareas
+        tareasPorEmpleado.forEach(empleadoData => {
+            htmlContent += `
+                <h2>Tareas de ${empleadoData.empleado}</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Título</th>
+                            <th>Estado</th>
+                            <th>Fecha Pactada</th>
+                            <th>Fecha Entregada</th>
+                            <th>Prioridad</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            empleadoData.tareas.forEach(tarea => {
+                htmlContent += `
+                    <tr>
+                        <td>${tarea.titulo}</td>
+                        <td>${tarea.estado}</td>
+                        <td>${tarea.fecha_pactada || 'N/A'}</td>
+                        <td>${tarea.fecha_entregada || 'N/A'}</td>
+                        <td>${tarea.prioridad || 'N/A'}</td>
+                    </tr>
+                `;
+            });
+
+            htmlContent += `
+                    </tbody>
+                </table>
+            `;
+        });
+
+        htmlContent += `
+            </body>
+            </html>
+        `;
+
+        // Crear ventana de impresión
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write(htmlContent);
+        printWindow.document.close();
+        printWindow.print();
+    };
 
     //informe de cumplimiento de tareas
     // 1. No iniciadas vs completadas
@@ -258,6 +479,13 @@ const Reportes = () => {
         setSelectedReport("cumplimiento");
         setShowReportModal(true);
         setActiveTab("promedioTiempo");
+        consultarTareas();
+    };
+
+    const abrirModalInformeTareasPorEmpleado = () => {
+        setSelectedReport("tareasPorEmpleado");
+        setShowReportModal(true);
+        setActiveTab("tareasPorEmpleado");
         consultarTareas();
     };
 
@@ -761,6 +989,200 @@ const Reportes = () => {
                     </div>
                 </div>
             )}
+
+            {showReportModal && selectedReport === "tareasPorEmpleado" && (
+                <div className="modal-overlay">
+                    <div className="modal-report">
+                        <div className="modal-header">
+                            <h2>Informe de Tareas por Empleado</h2>
+                            <div className="header-actions">
+                                <button className="print-button" onClick={imprimirPDF}>
+                                    <FaPrint /> Imprimir PDF
+                                </button>
+                                <button className="close-button" onClick={() => setShowReportModal(false)}>
+                                    <FaTimes />
+                                </button>
+                            </div>
+                        </div>
+                        <div className="tab-content">
+                            <div className="bg-white shadow-xl rounded-2xl p-8 space-y-8 border border-gray-200">
+                                <div className="text-center mb-10">
+                                    <h3 className="text-3xl font-bold text-gray-800 mb-3">Tareas por Empleado</h3>
+                                    <p className="text-gray-600 text-lg">Informe detallado de tareas por empleado</p>
+                                    <div className="w-24 h-1 bg-blue-500 mx-auto mt-4 rounded-full"></div>
+                                </div>
+
+                                {/* Filtros */}
+                                <div className="filters-section">
+                                    <h4 className="text-xl font-semibold mb-4">Filtros</h4>
+                                    <div className="filters-grid">
+                                        <div className="filter-group">
+                                            <label>Empleado:</label>
+                                            <select 
+                                                value={filterEmpleado} 
+                                                onChange={(e) => setFilterEmpleado(e.target.value)}
+                                                className="filter-select"
+                                            >
+                                                <option value="">Todos los empleados</option>
+                                                {empleadosList.map(emp => (
+                                                    <option key={emp} value={emp}>{emp}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        
+                                        <div className="filter-group">
+                                            <label>Departamento:</label>
+                                            <select 
+                                                value={filterDepartamento} 
+                                                onChange={(e) => setFilterDepartamento(e.target.value)}
+                                                className="filter-select"
+                                            >
+                                                <option value="">Todos los departamentos</option>
+                                                {departamentos.map(dept => (
+                                                    <option key={dept} value={dept}>{dept}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        
+                                        <div className="filter-group">
+                                            <label>Estado:</label>
+                                            <select 
+                                                value={filterEstado} 
+                                                onChange={(e) => setFilterEstado(e.target.value)}
+                                                className="filter-select"
+                                            >
+                                                <option value="">Todos los estados</option>
+                                                {estados.map(estado => (
+                                                    <option key={estado} value={estado}>{estado}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        
+                                        <div className="filter-group">
+                                            <label>Fecha Pactada - Desde:</label>
+                                            <input 
+                                                type="date" 
+                                                value={filterFechaInicio} 
+                                                onChange={(e) => setFilterFechaInicio(e.target.value)}
+                                                className="filter-select"
+                                            />
+                                        </div>
+                                        
+                                        <div className="filter-group">
+                                            <label>Fecha Pactada - Hasta:</label>
+                                            <input 
+                                                type="date" 
+                                                value={filterFechaFin} 
+                                                onChange={(e) => setFilterFechaFin(e.target.value)}
+                                                className="filter-select"
+                                            />
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="filters-actions">
+                                        <button 
+                                            className="clear-filters-button"
+                                            onClick={() => {
+                                                setFilterEmpleado('');
+                                                setFilterDepartamento('');
+                                                setFilterEstado('');
+                                                setFilterFechaInicio('');
+                                                setFilterFechaFin('');
+                                            }}
+                                        >
+                                            Limpiar Filtros
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Resumen */}
+                                <div className="summary-section">
+                                    <div className="summary-header">
+                                        <h4 className="text-xl font-semibold">Resumen por Empleado</h4>
+                                        <div className="summary-stats">
+                                            <span className="stats-badge">
+                                                {generarTareasPorEmpleado().reduce((total, emp) => total + emp.tareas.length, 0)} tareas encontradas
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div className="overflow-x-auto">
+                                        <table className="table-productivity">
+                                            <thead className="table-productivity-thead">
+                                                <tr>
+                                                    <th>Empleado</th>
+                                                    <th>Total</th>
+                                                    <th>Completadas</th>
+                                                    <th>Pendientes</th>
+                                                    <th>Atrasadas</th>
+                                                    <th>En Proceso</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {generarResumenTareasPorEmpleado().map((item, i) => (
+                                                    <tr key={i}>
+                                                        <td>{item.empleado}</td>
+                                                        <td>{item.total}</td>
+                                                        <td>{item.completadas}</td>
+                                                        <td>{item.pendientes}</td>
+                                                        <td>{item.atrasadas}</td>
+                                                        <td>{item.enProceso}</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                {/* Detalle de tareas */}
+                                <div className="detail-section">
+                                    <h4 className="text-xl font-semibold mb-4">Detalle de Tareas</h4>
+                                    {generarTareasPorEmpleado().map((empleadoData, index) => (
+                                        <div key={index} className="empleado-tasks mb-8">
+                                            <h5 className="text-lg font-medium text-blue-600 mb-3">
+                                                {empleadoData.empleado} ({empleadoData.tareas.length} tareas)
+                                            </h5>
+                                            <div className="overflow-x-auto">
+                                                <table className="table-productivity">
+                                                    <thead className="table-productivity-thead">
+                                                        <tr>
+                                                            <th>Título</th>
+                                                            <th>Estado</th>
+                                                            <th>Fecha Pactada</th>
+                                                            <th>Fecha Entregada</th>
+                                                            <th>Prioridad</th>
+                                                            <th>Departamento</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {empleadoData.tareas.map((tarea, tareaIndex) => (
+                                                            <tr key={tareaIndex}>
+                                                                <td>{tarea.titulo}</td>
+                                                                <td>
+                                                                    <span className={`status-badge status-${tarea.estado.toLowerCase().replace(' ', '-')}`}>
+                                                                        {tarea.estado}
+                                                                    </span>
+                                                                </td>
+                                                                <td>{tarea.fecha_pactada || 'N/A'}</td>
+                                                                <td>{tarea.fecha_entregada || 'N/A'}</td>
+                                                                <td>{tarea.prioridad || 'N/A'}</td>
+                                                                <td>{tarea.departamento || 'N/A'}</td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+
+
+
         </>
     );
 };

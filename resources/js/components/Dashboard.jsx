@@ -647,7 +647,7 @@ const Dashboard = () => {
                 {showTaskDetails && selectedTask && (
                     <TaskDetailsModal
                         task={selectedTask}
-                        onClose={() => setShowTaskDetails(false)}
+                        onClose={() => setShowTaskDetails(false)}                    
                         onUpdate={() => {
                             //actualizar la lista de tareas
                             axiosInstance
@@ -655,6 +655,7 @@ const Dashboard = () => {
                                 .then((response) => {
                                     // Actualizar el empleado seleccionado con los nuevos datos
                                     const empleadoActualizado = response.data.find(emp => emp.id === selectedEmployee.id);
+                                  
                                     if (empleadoActualizado) {
                                         // Encontrar la tarea actualizada
                                         const tareaActualizada = empleadoActualizado.tareas.find(t => t.id === selectedTask.id);
@@ -665,10 +666,10 @@ const Dashboard = () => {
                                             // Mantener el estado seleccionado
                                             setSelectedEstado(tareaActualizada.estado);
                                             // Actualizar las tareas filtradas usando el estado actual de la tarea
-                                            const tareasDelEstado = empleadoActualizado.tareas
-                                            setTareasFiltradas(tareasDelEstado);
+                                          
                                         }
-
+                                        const tareasDelEstado = empleadoActualizado.tareas                                           
+                                        setTareasFiltradas(tareasDelEstado);
 
                                         setSelectedEmployee(empleadoActualizado);
                                         // Actualizar la lista de empleados
@@ -683,6 +684,7 @@ const Dashboard = () => {
                                     console.error("Error al actualizar los datos:", error);
                                 });
                         }}
+                       
                     />
                 )}
             </div>

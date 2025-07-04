@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Exception;
+use Illuminate\Support\Facades\DB;
 
 class EvidenciasController extends Controller
 {
@@ -110,6 +111,64 @@ class EvidenciasController extends Controller
             return response()->json([
                 'error' => true,
                 'mensaje' => "Error general: " . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function guardarEvidenciaLink(Request $request)
+    {
+        try {
+            $request->validate([
+                'tarea_id' => 'required|integer',
+                'evidencia' => 'required|url',
+                'nombre' => 'required|string',
+                'tipo' => 'required|string'
+            ]);
+
+            // Validar que sea un link de Google Drive
+            $drivePatterns = [
+                '/^https:\/\/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/',
+                '/^https:\/\/drive\.google\.com\/open\?id=([a-zA-Z0-9_-]+)/',
+                '/^https:\/\/docs\.google\.com\/document\/d\/([a-zA-Z0-9_-]+)/',
+                '/^https:\/\/docs\.google\.com\/spreadsheets\/d\/([a-zA-Z0-9_-]+)/',
+                '/^https:\/\/docs\.google\.com\/presentation\/d\/([a-zA-Z0-9_-]+)/',
+                '/^https:\/\/drive\.google\.com\/drive\/folders\/([a-zA-Z0-9_-]+)/'
+            ];
+
+            $isValidDriveLink = false;
+            foreach ($drivePatterns as $pattern) {
+                if (preg_match($pattern, $request->evidencia)) {
+                    $isValidDriveLink = true;
+                    break;
+                }
+            }
+
+            if (!$isValidDriveLink) {
+                return response()->json([
+                    'error' => true,
+                    'mensaje' => 'El link proporcionado no es un link válido de Google Drive'
+                ], 400);
+            }
+
+            // Guardar en la base de datos
+            $evidenciaId = DB::connection('mysql2')->table('evidencia_tarea')->insertGetId([
+                'tarea' => $request->tarea_id,
+                'evidencia' => $request->evidencia,
+                'nombre' => $request->nombre,
+                'tipo' => $request->tipo
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'evidencia_id' => $evidenciaId,
+                'mensaje' => 'Link de Drive guardado correctamente'
+            ]);
+
+        } catch (Exception $e) {
+            Log::error("Error al guardar link de Drive: " . $e->getMessage());
+            return response()->json([
+                'error' => true,
+                'mensaje' => 'Error al guardar el link de Drive: ' . $e->getMessage()
             ], 500);
         }
     }

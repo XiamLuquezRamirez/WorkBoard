@@ -4,7 +4,7 @@ import {
     FaPlus, FaClock, FaSpinner, FaCheck,
     FaEye, FaSearch, FaFile, FaFileWord,
     FaFileImage, FaFilePdf, FaTimes,
-    FaSave, FaArrowLeft, FaLock
+    FaSave, FaArrowLeft, FaLock, FaLink
 } from 'react-icons/fa';
 import TaskDetailsModal from './TaskDetailsModal';
 import axiosInstance from '../axiosConfig';
@@ -57,6 +57,8 @@ const EmployeeInterface = ({ user }) => {
             case 'image/jpeg':
             case 'image/png':
                 return <FaFileImage />;
+            case 'application/link':
+                return <FaLink />;
             default:
                 return <FaFile />;
         }
@@ -250,6 +252,16 @@ const EmployeeInterface = ({ user }) => {
                 empleado = empleadoAsignado;
             } else {
                 empleado = user.empleado;
+            }
+
+            if (formData.get('fecha_pactada') < new Date().toISOString().split('T')[0]) {
+                Swal.fire({
+                    title: 'Error',
+                    text: 'La fecha pactada no puede ser menor a la fecha actual',
+                    icon: 'error',
+                    confirmButtonText: 'OK',
+                });
+                return;
             }
 
             const response = await axiosInstance.post('/guardarTarea', {
@@ -498,11 +510,12 @@ const EmployeeInterface = ({ user }) => {
                                     // Vista de tareas de un estado (nivel 2)
                                     <div className="tareas-estado-container">
 
-                                        <div className="estado-tareas-header">
+                                        <div className="estado-tareas-header" >
 
-                                            <h3>Tareas {estadoSeleccionado}</h3>
+                                            <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>Tareas {estadoSeleccionado}</div>
                                         </div>
-                                        <div className="tareas-list">
+                                        <div className="tareas-list-container">
+                                        <div className="tareas-list" >
                                             {tareasEmpleado
                                                 .filter(task => task.estado === estadoSeleccionado)
                                                 .map(task => (
@@ -542,7 +555,7 @@ const EmployeeInterface = ({ user }) => {
                                                                 </div>
                                                             </div>
                                                         </div>
-                                                        <p className="task-description">{task.descripcion}</p>
+                                                        <p className="task-description">{task.descripcion.substring(0, 100)}...</p>
                                                         <div className="task-dates">
                                                             {(task.estado === 'Pendiente' || task.estado === 'En Proceso') && task.fecha_pactada && (
                                                                 <span className="date-badge due-date">
@@ -571,7 +584,8 @@ const EmployeeInterface = ({ user }) => {
                                                             </div>
                                                         )}
                                                     </div>
-                                                ))}
+                                                    ))}
+                                            </div>
                                         </div>
                                         <button
                                             className="back-button"
@@ -649,7 +663,8 @@ const EmployeeInterface = ({ user }) => {
                                                                 </span>
                                                             )}
                                                         </div>
-                                                        <p className="task-description">{task.descripcion}</p>
+                                                        {/* cortar descripcion a 100 caracteres */}
+                                                        <p className="task-description">{task.descripcion.substring(0, 100)}...</p>
                                                         <div className="task-dates">
                                                             {(task.estado === 'Pendiente' || task.estado === 'En Proceso') && task.fecha_pactada && (
                                                                 <span className="date-badge due-date">

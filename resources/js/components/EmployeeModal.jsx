@@ -638,6 +638,16 @@ const EmployeeModal = ({ isOpen, onClose }) => {
             return;
         }
 
+        if (nuevaTarea.fecha_pactada < new Date().toISOString().split('T')[0]) {
+            Swal.fire({
+                title: 'Error',
+                text: 'La fecha pactada no puede ser menor a la fecha actual',
+                icon: 'error',
+                confirmButtonText: 'OK',
+            });
+            return;
+        }
+
         setIsSaving(true);
         const tareaData = {
             ...nuevaTarea,
