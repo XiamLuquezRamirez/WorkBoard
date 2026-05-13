@@ -587,6 +587,7 @@ const Dashboard = () => {
     const [showChecklist, setShowChecklist] = useState(false);
     const [checklistsExistentes, setChecklistsExistentes] = useState([]);
     const [selectedChecklistId, setSelectedChecklistId] = useState('');
+    const [filterDepartamento, setFilterDepartamento] = useState('');
 
 
 
@@ -827,14 +828,14 @@ const Dashboard = () => {
     };
 
     // Función para filtrar empleados
-    const filteredEmpleados = empleados.filter(
-        (empleado) =>
+    const filteredEmpleados = empleados.filter((empleado) => {
+        const matchSearch =
             empleado.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            empleado.departamento
-                .toLowerCase()
-                .includes(searchTerm.toLowerCase()) ||
-            empleado.empresa.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+            empleado.departamento.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            empleado.empresa.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchDept = !filterDepartamento || empleado.departamento === filterDepartamento;
+        return matchSearch && matchDept;
+    });
 
     const renderContent = () => {
         switch (currentView) {
@@ -842,6 +843,7 @@ const Dashboard = () => {
                 return <Parameters />;
             case "home":
             default: {
+                const departamentosUnicos = [...new Set(empleados.map(e => e.departamento).filter(Boolean))].sort();
                 const stats = calcularStatsGlobales(filteredEmpleados);
                 return (
                     //loading
@@ -867,6 +869,18 @@ const Dashboard = () => {
                                                 style={{ width: '400px' }}
                                                 className="search-input"
                                             />
+                                        </div>
+                                        <div className="dept-filter-container">
+                                            <select
+                                                value={filterDepartamento}
+                                                onChange={(e) => setFilterDepartamento(e.target.value)}
+                                                className="dept-filter-select"
+                                            >
+                                                <option value="">Todos los departamentos</option>
+                                                {departamentosUnicos.map(dept => (
+                                                    <option key={dept} value={dept}>{dept}</option>
+                                                ))}
+                                            </select>
                                         </div>
                                     </div>
                                 </div>
