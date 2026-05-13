@@ -7524,3 +7524,22 @@ search-container .employee-card:hover::before {
     border-color: #2563eb;
     box-shadow: 0 0 0 2px rgba(37,99,235,0.15);
 }
+
+/* ===== BADGE TAREAS ATRASADAS EN TARJETA ===== */
+.employee-card-alert-banner {
+    background: #fef2f2;
+    border: 1px solid #fca5a5;
+    border-radius: 6px;
+    padding: 0.35rem 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.78rem;
+    color: #b91c1c;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.alert-icon {
+    font-size: 0.85rem;
+}

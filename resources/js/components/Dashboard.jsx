@@ -681,6 +681,14 @@ const Dashboard = () => {
         };
     };
 
+    const contarTareasAtrasadas = (empleado) => {
+        const hoy = new Date().toISOString().split('T')[0];
+        return (empleado.tareas || []).filter(t =>
+            t.fecha_pactada && t.fecha_pactada < hoy &&
+            t.estado !== 'Completada' && t.pausada !== 1
+        ).length;
+    };
+
     const getStatusIcon = (status) => {
         switch (status) {
             case "Completada":
@@ -903,7 +911,9 @@ const Dashboard = () => {
                                     </div>
                                 </div>
                                 <div className="cards-grid">
-                                    {filteredEmpleados.map((empleado) => (
+                                    {filteredEmpleados.map((empleado) => {
+                                        const atrasadas = contarTareasAtrasadas(empleado);
+                                        return (
                                         <div
                                             key={empleado.id}
                                             className="employee-card"
@@ -930,6 +940,12 @@ const Dashboard = () => {
                                                 </div>
 
                                             </div>
+                                            {atrasadas > 0 && (
+                                                <div className="employee-card-alert-banner">
+                                                    <span className="alert-icon">⚠</span>
+                                                    <span>{atrasadas} tarea{atrasadas > 1 ? 's' : ''} atrasada{atrasadas > 1 ? 's' : ''}</span>
+                                                </div>
+                                            )}
                                             <div className="employee-actions">
                                                 <button
                                                     className="action-button profile-btn"
@@ -1041,7 +1057,8 @@ const Dashboard = () => {
                                                 </div>
                                             </div>
                                         </div>
-                                    ))}
+                                    );
+                                    })}
                                 </div>
                             </div>
                         )}
