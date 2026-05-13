@@ -70,6 +70,18 @@ const Reportes = () => {
             },
         },
         {
+            id: 6,
+            title: "Informe por Departamento",
+            icon: <FaChartBar size={25} />,
+            description: "Comparativa entre áreas de la empresa",
+            color: "#7c3aed",
+            onClick: () => {
+                setSelectedReport("departamentos");
+                setShowReportModal(true);
+                consultarTareas();
+            },
+        },
+        {
             id: 1,
             title: "Informe de productividad",
             icon: <FaChartBar size={25} />,
@@ -302,6 +314,40 @@ const Reportes = () => {
         })).sort((a, b) => b.eficiencia - a.eficiencia);
 
         return { totalCompletadas, totalEnProceso, totalPendientes, totalAtrasadas, deptData, eficienciaData };
+    };
+
+    const calcularInformeDepartamentos = () => {
+        const hoy = new Date().toISOString().split('T')[0];
+
+        const porDept = tareas.reduce((acc, t) => {
+            const dept = t.departamento || 'Sin departamento';
+            if (!acc[dept]) {
+                acc[dept] = {
+                    departamento: dept,
+                    total: 0, completadas: 0, enProceso: 0,
+                    pendientes: 0, atrasadas: 0,
+                    sumaEficiencia: 0, countEficiencia: 0,
+                };
+            }
+            acc[dept].total += 1;
+            if (t.estado === 'Completada') acc[dept].completadas += 1;
+            if (t.estado === 'En Proceso') acc[dept].enProceso += 1;
+            if (t.estado === 'Pendiente') acc[dept].pendientes += 1;
+            if (t.fecha_pactada && t.fecha_pactada < hoy && t.estado !== 'Completada') {
+                acc[dept].atrasadas += 1;
+            }
+            if (t.estado === 'Completada' && t.fecha_entregada && t.fecha_pactada) {
+                acc[dept].countEficiencia += 1;
+                if (t.fecha_entregada <= t.fecha_pactada) acc[dept].sumaEficiencia += 1;
+            }
+            return acc;
+        }, {});
+
+        return Object.values(porDept).map(d => ({
+            ...d,
+            porcentajeCompletado: d.total > 0 ? Math.round((d.completadas / d.total) * 100) : 0,
+            eficiencia: d.countEficiencia > 0 ? Math.round((d.sumaEficiencia / d.countEficiencia) * 100) : 0,
+        })).sort((a, b) => b.porcentajeCompletado - a.porcentajeCompletado);
     };
 
     // Función para generar datos de tareas por empleado
@@ -1334,6 +1380,80 @@ const Reportes = () => {
                                         <Bar dataKey="eficiencia" fill="#0f766e" name="Eficiencia" radius={[4,4,0,0]} />
                                     </BarChart>
                                 </ResponsiveContainer>
+                            </div>
+                        </div>
+                    </div>
+                );
+            })()}
+
+            {showReportModal && selectedReport === "departamentos" && (() => {
+                const deptData = calcularInformeDepartamentos();
+                return (
+                    <div className="modal-overlay">
+                        <div className="modal-report">
+                            <div className="modal-header">
+                                <h2>Informe por Departamento</h2>
+                                <button className="close-button" onClick={() => setShowReportModal(false)}>
+                                    <FaTimes />
+                                </button>
+                            </div>
+                            <div className="tab-content">
+                                <h3 style={{ margin: '0 0 0.75rem', fontSize: '1rem', color: '#374151' }}>
+                                    Comparativa entre departamentos
+                                </h3>
+                                <ResponsiveContainer width="100%" height={260}>
+                                    <BarChart data={deptData} margin={{ top: 5, right: 20, left: 0, bottom: 50 }}>
+                                        <CartesianGrid strokeDasharray="3 3" />
+                                        <XAxis dataKey="departamento" angle={-30} textAnchor="end" interval={0} tick={{ fontSize: 11 }} />
+                                        <YAxis />
+                                        <Tooltip />
+                                        <Legend />
+                                        <Bar dataKey="completadas" fill="#16a34a" name="Completadas" radius={[3,3,0,0]} />
+                                        <Bar dataKey="enProceso" fill="#2563eb" name="En Proceso" radius={[3,3,0,0]} />
+                                        <Bar dataKey="pendientes" fill="#f97316" name="Pendientes" radius={[3,3,0,0]} />
+                                        <Bar dataKey="atrasadas" fill="#dc2626" name="Atrasadas" radius={[3,3,0,0]} />
+                                    </BarChart>
+                                </ResponsiveContainer>
+
+                                <table className="table-productivity" style={{ marginTop: '1.5rem' }}>
+                                    <thead className="table-productivity-thead">
+                                        <tr>
+                                            <th>Departamento</th>
+                                            <th>Total</th>
+                                            <th>Completadas</th>
+                                            <th>En Proceso</th>
+                                            <th>Pendientes</th>
+                                            <th>Atrasadas</th>
+                                            <th>% Avance</th>
+                                            <th>Eficiencia</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {deptData.map((d, i) => (
+                                            <tr key={i}>
+                                                <td>{d.departamento}</td>
+                                                <td>{d.total}</td>
+                                                <td style={{ color: '#16a34a', fontWeight: 600 }}>{d.completadas}</td>
+                                                <td style={{ color: '#2563eb' }}>{d.enProceso}</td>
+                                                <td style={{ color: '#f97316' }}>{d.pendientes}</td>
+                                                <td style={{ color: d.atrasadas > 0 ? '#dc2626' : 'inherit', fontWeight: d.atrasadas > 0 ? 600 : 400 }}>
+                                                    {d.atrasadas}
+                                                </td>
+                                                <td>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                        <div style={{ flex: 1, background: '#e5e7eb', borderRadius: 4, height: 8 }}>
+                                                            <div style={{ width: `${d.porcentajeCompletado}%`, background: '#0891b2', borderRadius: 4, height: 8 }} />
+                                                        </div>
+                                                        <span style={{ fontSize: '0.8rem', minWidth: 32 }}>{d.porcentajeCompletado}%</span>
+                                                    </div>
+                                                </td>
+                                                <td style={{ color: d.eficiencia >= 70 ? '#16a34a' : d.eficiencia >= 50 ? '#f97316' : '#dc2626', fontWeight: 600 }}>
+                                                    {d.eficiencia}%
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     </div>
