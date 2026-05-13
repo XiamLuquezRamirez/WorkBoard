@@ -60,6 +60,8 @@ const Reportes = () => {
     const [loadingEficiencia, setLoadingEficiencia] = useState(false);
     const [eficienciaStart, setEficienciaStart] = useState('');
     const [eficienciaEnd, setEficienciaEnd] = useState('');
+    const [eficienciaFilterArea, setEficienciaFilterArea] = useState('');
+    const [eficienciaFilterEmpleado, setEficienciaFilterEmpleado] = useState('');
     const [estados, setEstados] = useState([]);
 
     const reportCards = [
@@ -379,7 +381,9 @@ const Reportes = () => {
     const calcularEficienciaOperativa = () => {
         const filtradas = datosEficiencia.filter(t =>
             (!eficienciaStart || t.fecha_pactada >= eficienciaStart) &&
-            (!eficienciaEnd   || t.fecha_pactada <= eficienciaEnd)
+            (!eficienciaEnd   || t.fecha_pactada <= eficienciaEnd) &&
+            (!eficienciaFilterArea || t.departamento === eficienciaFilterArea) &&
+            (!eficienciaFilterEmpleado || t.nombre_empleado === eficienciaFilterEmpleado)
         );
 
         const porEmpleado = filtradas.reduce((acc, t) => {
@@ -1819,11 +1823,42 @@ const Reportes = () => {
                                             onChange={e => setEficienciaEnd(e.target.value)}
                                         />
                                     </label>
+                                    <label className="eficiencia-filtro-label">
+                                        Área
+                                        <select
+                                            className="eficiencia-filtro-input"
+                                            value={eficienciaFilterArea}
+                                            onChange={e => { setEficienciaFilterArea(e.target.value); setEficienciaFilterEmpleado(''); }}
+                                        >
+                                            <option value="">Todas</option>
+                                            {[...new Set(datosEficiencia.map(t => t.departamento).filter(Boolean))].sort().map(d => (
+                                                <option key={d} value={d}>{d}</option>
+                                            ))}
+                                        </select>
+                                    </label>
+                                    <label className="eficiencia-filtro-label">
+                                        Empleado
+                                        <select
+                                            className="eficiencia-filtro-input"
+                                            value={eficienciaFilterEmpleado}
+                                            onChange={e => setEficienciaFilterEmpleado(e.target.value)}
+                                        >
+                                            <option value="">Todos</option>
+                                            {[...new Set(
+                                                datosEficiencia
+                                                    .filter(t => !eficienciaFilterArea || t.departamento === eficienciaFilterArea)
+                                                    .map(t => t.nombre_empleado)
+                                                    .filter(Boolean)
+                                            )].sort().map(n => (
+                                                <option key={n} value={n}>{n}</option>
+                                            ))}
+                                        </select>
+                                    </label>
                                     <button
                                         className="eficiencia-filtro-clear"
-                                        onClick={() => { setEficienciaStart(''); setEficienciaEnd(''); }}
+                                        onClick={() => { setEficienciaStart(''); setEficienciaEnd(''); setEficienciaFilterArea(''); setEficienciaFilterEmpleado(''); }}
                                     >
-                                        Todo
+                                        Limpiar
                                     </button>
                                     {loadingEficiencia && <span style={{ color: '#6b7280', fontSize: '0.85rem' }}>Cargando...</span>}
                                 </div>

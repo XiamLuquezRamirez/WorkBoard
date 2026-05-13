@@ -153837,10 +153837,18 @@ var Reportes = function Reportes() {
     _useState36 = _slicedToArray(_useState35, 2),
     eficienciaEnd = _useState36[0],
     setEficienciaEnd = _useState36[1];
-  var _useState37 = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)([]),
+  var _useState37 = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(''),
     _useState38 = _slicedToArray(_useState37, 2),
-    estados = _useState38[0],
-    setEstados = _useState38[1];
+    eficienciaFilterArea = _useState38[0],
+    setEficienciaFilterArea = _useState38[1];
+  var _useState39 = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(''),
+    _useState40 = _slicedToArray(_useState39, 2),
+    eficienciaFilterEmpleado = _useState40[0],
+    setEficienciaFilterEmpleado = _useState40[1];
+  var _useState41 = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)([]),
+    _useState42 = _slicedToArray(_useState41, 2),
+    estados = _useState42[0],
+    setEstados = _useState42[1];
   var reportCards = [{
     id: 0,
     title: "Informe Ejecutivo",
@@ -154180,7 +154188,7 @@ var Reportes = function Reportes() {
   };
   var calcularEficienciaOperativa = function calcularEficienciaOperativa() {
     var filtradas = datosEficiencia.filter(function (t) {
-      return (!eficienciaStart || t.fecha_pactada >= eficienciaStart) && (!eficienciaEnd || t.fecha_pactada <= eficienciaEnd);
+      return (!eficienciaStart || t.fecha_pactada >= eficienciaStart) && (!eficienciaEnd || t.fecha_pactada <= eficienciaEnd) && (!eficienciaFilterArea || t.departamento === eficienciaFilterArea) && (!eficienciaFilterEmpleado || t.nombre_empleado === eficienciaFilterEmpleado);
     });
     var porEmpleado = filtradas.reduce(function (acc, t) {
       var key = t.nombre_empleado;
@@ -155838,13 +155846,58 @@ var Reportes = function Reportes() {
                     return setEficienciaEnd(e.target.value);
                   }
                 })]
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("label", {
+                className: "eficiencia-filtro-label",
+                children: ["\xC1rea", /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("select", {
+                  className: "eficiencia-filtro-input",
+                  value: eficienciaFilterArea,
+                  onChange: function onChange(e) {
+                    setEficienciaFilterArea(e.target.value);
+                    setEficienciaFilterEmpleado('');
+                  },
+                  children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("option", {
+                    value: "",
+                    children: "Todas"
+                  }), _toConsumableArray(new Set(datosEficiencia.map(function (t) {
+                    return t.departamento;
+                  }).filter(Boolean))).sort().map(function (d) {
+                    return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("option", {
+                      value: d,
+                      children: d
+                    }, d);
+                  })]
+                })]
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("label", {
+                className: "eficiencia-filtro-label",
+                children: ["Empleado", /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("select", {
+                  className: "eficiencia-filtro-input",
+                  value: eficienciaFilterEmpleado,
+                  onChange: function onChange(e) {
+                    return setEficienciaFilterEmpleado(e.target.value);
+                  },
+                  children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("option", {
+                    value: "",
+                    children: "Todos"
+                  }), _toConsumableArray(new Set(datosEficiencia.filter(function (t) {
+                    return !eficienciaFilterArea || t.departamento === eficienciaFilterArea;
+                  }).map(function (t) {
+                    return t.nombre_empleado;
+                  }).filter(Boolean))).sort().map(function (n) {
+                    return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("option", {
+                      value: n,
+                      children: n
+                    }, n);
+                  })]
+                })]
               }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("button", {
                 className: "eficiencia-filtro-clear",
                 onClick: function onClick() {
                   setEficienciaStart('');
                   setEficienciaEnd('');
+                  setEficienciaFilterArea('');
+                  setEficienciaFilterEmpleado('');
                 },
-                children: "Todo"
+                children: "Limpiar"
               }), loadingEficiencia && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("span", {
                 style: {
                   color: '#6b7280',
