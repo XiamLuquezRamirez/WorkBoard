@@ -15,6 +15,7 @@ import { useUser } from './UserContext';
 import {
     BarChart,
     Bar,
+    Cell,
     XAxis,
     YAxis,
     CartesianGrid,
@@ -55,6 +56,8 @@ const Reportes = () => {
     const [filterAtrasadas, setFilterAtrasadas] = useState(false);
     const [empleadosList, setEmpleadosList] = useState([]);
     const [departamentos, setDepartamentos] = useState([]);
+    const [datosEficiencia, setDatosEficiencia] = useState([]);
+    const [loadingEficiencia, setLoadingEficiencia] = useState(false);
     const [estados, setEstados] = useState([]);
 
     const reportCards = [
@@ -131,6 +134,18 @@ const Reportes = () => {
             color: "#0891b2",
             onClick: () => {
                 abrirModalInformeTareasPorEmpleado();
+            },
+        },
+        {
+            id: 7,
+            title: "Eficiencia Operativa",
+            icon: <FaChartArea size={25} />,
+            description: "Ranking de eficiencia por empleado y área",
+            color: "#1d4ed8",
+            onClick: () => {
+                setSelectedReport("eficiencia");
+                setShowReportModal(true);
+                consultarEficiencia();
             },
         },
 
@@ -270,6 +285,14 @@ const Reportes = () => {
             .catch((error) => console.error("Error fetching tasks:", error));
     }
 
+    const consultarEficiencia = () => {
+        setLoadingEficiencia(true);
+        axiosInstance.get('/informes/eficiencia')
+            .then(res => setDatosEficiencia(res.data))
+            .catch(err => console.error('Error cargando eficiencia:', err))
+            .finally(() => setLoadingEficiencia(false));
+    };
+
     const calcularInformeEjecutivo = () => {
         const hoy = new Date().toISOString().split('T')[0];
 
@@ -349,6 +372,59 @@ const Reportes = () => {
             porcentajeCompletado: d.total > 0 ? Math.round((d.completadas / d.total) * 100) : 0,
             eficiencia: d.countEficiencia > 0 ? Math.round((d.sumaEficiencia / d.countEficiencia) * 100) : 0,
         })).sort((a, b) => b.porcentajeCompletado - a.porcentajeCompletado);
+    };
+
+    const calcularEficienciaOperativa = () => {
+        const filtradas = datosEficiencia.filter(t =>
+            (!startDate || t.fecha_pactada >= startDate) &&
+            (!endDate   || t.fecha_pactada <= endDate)
+        );
+
+        const porEmpleado = filtradas.reduce((acc, t) => {
+            const key = t.nombre_empleado;
+            if (!acc[key]) acc[key] = {
+                nombre: t.nombre_empleado,
+                cargo: t.cargo,
+                departamento: t.departamento,
+                total: 0, completadas: 0, aTiempo: 0, reprocesos: 0
+            };
+            acc[key].total++;
+            if (t.estado === 'Completada') acc[key].completadas++;
+            if (t.estado === 'Completada' && t.fecha_entregada && t.fecha_entregada <= t.fecha_pactada)
+                acc[key].aTiempo++;
+            if (t.rechazada == 1) acc[key].reprocesos++;
+            return acc;
+        }, {});
+
+        return Object.values(porEmpleado).map(emp => {
+            const score = emp.total > 0
+                ? (emp.completadas / emp.total) * 0.4
+                  + (emp.aTiempo / emp.total) * 0.3
+                  + ((emp.total - emp.reprocesos) / emp.total) * 0.3
+                : 0;
+            const scoreRound = Math.round(score * 100) / 100;
+            const nivel = scoreRound >= 0.75 ? '🟢 Alto' : scoreRound >= 0.50 ? '🟡 Medio' : '🔴 Crítico';
+            return { ...emp, score: scoreRound, nivel };
+        }).sort((a, b) => b.score - a.score);
+    };
+
+    const calcularDeptEficiencia = (empleados) => {
+        const porDept = empleados.reduce((acc, emp) => {
+            const d = emp.departamento || 'Sin área';
+            if (!acc[d]) acc[d] = { departamento: d, count: 0, sumaScore: 0, empleadosList: [] };
+            acc[d].count++;
+            acc[d].sumaScore += emp.score;
+            acc[d].empleadosList.push(emp);
+            return acc;
+        }, {});
+        return Object.values(porDept).map(d => {
+            const avg = Math.round((d.sumaScore / d.count) * 100) / 100;
+            return {
+                ...d,
+                scorePromedio: avg,
+                nivel: avg >= 0.75 ? '🟢 Alto' : avg >= 0.50 ? '🟡 Medio' : '🔴 Crítico'
+            };
+        }).sort((a, b) => b.scorePromedio - a.scorePromedio);
     };
 
     // Función para generar datos de tareas por empleado
