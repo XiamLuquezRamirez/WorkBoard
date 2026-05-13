@@ -146449,31 +146449,40 @@ var Dashboard = function Dashboard() {
                 children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsxs)("div", {
                   className: "dashboard-header",
                   children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsx)("h1", {
+                    className: "dashboard-header__title",
                     children: "Tablero de seguimiento de empleados"
                   }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsxs)("div", {
-                    className: "search-container",
+                    className: "dashboard-header__toolbar",
+                    role: "search",
+                    "aria-label": "Buscar y filtrar empleados",
                     children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsxs)("div", {
                       className: "search-box",
-                      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_10__.FaSearch, {}), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsx)("input", {
-                        type: "text",
-                        placeholder: "Buscar empleado por nombre, departamento o empresa...",
+                      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsx)("span", {
+                        className: "search-icon",
+                        "aria-hidden": "true",
+                        children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_10__.FaSearch, {})
+                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsx)("input", {
+                        type: "search",
+                        id: "dashboard-empleados-buscar",
+                        placeholder: "Nombre, departamento o empresa\u2026",
                         value: searchTerm,
                         onChange: function onChange(e) {
                           return setSearchTerm(e.target.value);
                         },
-                        style: {
-                          width: '400px'
-                        },
-                        className: "search-input"
+                        className: "search-input",
+                        autoComplete: "off",
+                        "aria-label": "Buscar empleado por nombre, departamento o empresa"
                       })]
                     }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsx)("div", {
                       className: "dept-filter-container",
                       children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsxs)("select", {
+                        id: "dashboard-filtro-depto",
                         value: filterDepartamento,
                         onChange: function onChange(e) {
                           return setFilterDepartamento(e.target.value);
                         },
                         className: "dept-filter-select",
+                        "aria-label": "Filtrar por departamento",
                         children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsx)("option", {
                           value: "",
                           children: "Todos los departamentos"
@@ -146487,185 +146496,188 @@ var Dashboard = function Dashboard() {
                     })]
                   })]
                 }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsxs)("div", {
-                  className: "dashboard-stats-panel",
+                  className: "dashboard-content-column",
                   children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsxs)("div", {
-                    className: "stat-kpi",
-                    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsx)("span", {
-                      className: "stat-kpi-number",
-                      children: stats.totalEmpleados
-                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsx)("span", {
-                      className: "stat-kpi-label",
-                      children: "Empleados activos"
-                    })]
-                  }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsxs)("div", {
-                    className: "stat-kpi",
-                    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsx)("span", {
-                      className: "stat-kpi-number",
-                      children: stats.tareasActivas
-                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsx)("span", {
-                      className: "stat-kpi-label",
-                      children: "Tareas en curso"
-                    })]
-                  }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsxs)("div", {
-                    className: "stat-kpi ".concat(stats.tareasAtrasadas > 0 ? 'stat-kpi--alert' : ''),
-                    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsx)("span", {
-                      className: "stat-kpi-number",
-                      children: stats.tareasAtrasadas
-                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsx)("span", {
-                      className: "stat-kpi-label",
-                      children: "Tareas atrasadas"
-                    })]
-                  }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsxs)("div", {
-                    className: "stat-kpi",
-                    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsxs)("span", {
-                      className: "stat-kpi-number",
-                      children: [stats.eficienciaPromedio, "%"]
-                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsx)("span", {
-                      className: "stat-kpi-label",
-                      children: "Eficiencia promedio"
-                    })]
-                  })]
-                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsx)("div", {
-                  className: "cards-grid",
-                  children: filteredEmpleados.map(function (empleado) {
-                    var _empleado$contacto, _empleado$rendimiento, _empleado$rendimiento2, _empleado$rendimiento3, _empleado$rendimiento4, _empleado$tareasRecie;
-                    var atrasadas = contarTareasAtrasadas(empleado);
-                    return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsxs)("div", {
-                      className: "employee-card",
-                      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsxs)("div", {
-                        className: "employee-main-info",
-                        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsx)("img", {
-                          src: empleado.foto,
-                          alt: empleado.nombre,
-                          className: "employee-photo"
-                        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsxs)("div", {
-                          className: "employee-details",
-                          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsx)("h3", {
-                            children: empleado.nombre
-                          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsxs)("p", {
-                            className: "cargo",
-                            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_10__.FaUserTie, {
-                              size: 13
-                            }), " ", " ", "   ", empleado.cargo]
-                          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsxs)("p", {
-                            className: "empresa",
-                            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_10__.FaBuilding, {
-                              size: 13
-                            }), " ", " ", "   ", empleado.empresa, " -", " ", empleado.departamento]
-                          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsxs)("p", {
-                            className: "contacto",
-                            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_10__.FaEnvelope, {}), " ", (_empleado$contacto = empleado.contacto) === null || _empleado$contacto === void 0 ? void 0 : _empleado$contacto.email]
-                          })]
-                        })]
-                      }), atrasadas > 0 && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsxs)("div", {
-                        className: "employee-card-alert-banner",
-                        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsx)("span", {
-                          className: "alert-icon",
-                          children: "\u26A0"
-                        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsxs)("span", {
-                          children: [atrasadas, " tarea", atrasadas > 1 ? 's' : '', " atrasada", atrasadas > 1 ? 's' : '']
-                        })]
-                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsxs)("div", {
-                        className: "employee-actions",
-                        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsxs)("button", {
-                          className: "action-button profile-btn",
-                          onClick: function onClick() {
-                            setSelectedEmployee(empleado);
-                            setShowProfileModal(true);
-                          },
-                          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_10__.FaUser, {}), " Perfil"]
-                        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsxs)("button", {
-                          className: "action-button tasks-btn",
-                          onClick: function onClick() {
-                            setSelectedEmployee(empleado);
-                            setShowTasksModal(true);
-                            setSelectedEstado(null);
-                          },
-                          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_10__.FaTasks, {}), " Tareas"]
-                        })]
-                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsxs)("div", {
-                        className: "performance-section",
-                        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsx)("h4", {
-                          children: "Rendimiento"
-                        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsxs)("div", {
-                          className: "task-stats-grid",
-                          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsxs)("div", {
-                            className: "stat-item",
-                            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsx)("span", {
-                              className: "stat-number",
-                              children: ((_empleado$rendimiento = empleado.rendimiento) === null || _empleado$rendimiento === void 0 ? void 0 : _empleado$rendimiento.tareasAsignadas) || 0
-                            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsx)("span", {
-                              className: "stat-label",
-                              children: "Asignadas"
-                            })]
-                          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsxs)("div", {
-                            className: "stat-item",
-                            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsx)("span", {
-                              className: "stat-number",
-                              children: ((_empleado$rendimiento2 = empleado.rendimiento) === null || _empleado$rendimiento2 === void 0 ? void 0 : _empleado$rendimiento2.tareas.completadas) || 0
-                            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsx)("span", {
-                              className: "stat-label",
-                              children: "Completadas"
-                            })]
-                          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsxs)("div", {
-                            className: "stat-item",
-                            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsx)("span", {
-                              className: "stat-number",
-                              children: ((_empleado$rendimiento3 = empleado.rendimiento) === null || _empleado$rendimiento3 === void 0 ? void 0 : _empleado$rendimiento3.tareas.enProceso) || 0
-                            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsx)("span", {
-                              className: "stat-label",
-                              children: "En Proceso"
-                            })]
-                          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsxs)("div", {
-                            className: "stat-item urgent",
-                            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsx)("span", {
-                              className: "stat-number",
-                              children: ((_empleado$rendimiento4 = empleado.rendimiento) === null || _empleado$rendimiento4 === void 0 ? void 0 : _empleado$rendimiento4.tareas.pendientes) || 0
-                            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsx)("span", {
-                              className: "stat-label",
-                              children: "Pendientes"
-                            })]
-                          })]
-                        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsx)("div", {
-                          className: "kpi-section",
-                          title: "Porcentaje de tareas completadas dentro del plazo establecido.",
-                          children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsxs)("div", {
-                            className: "kpi-item",
-                            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsx)("span", {
-                              className: "kpi-label",
-                              children: "Eficiencia Operativa"
-                            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsxs)("div", {
-                              className: "progress-bar",
-                              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsx)("div", {
-                                className: "progress-fill",
-                                style: {
-                                  width: "".concat(empleado.rendimiento.eficienciaOperativa, "%")
-                                }
-                              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsxs)("span", {
-                                className: "progress-value",
-                                children: [Math.round(empleado.rendimiento.eficienciaOperativa, 2), "%"]
-                              })]
-                            })]
-                          })
-                        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsxs)("div", {
-                          className: "urgent-tasks",
-                          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsx)("h5", {
-                            children: "Tareas Recientes"
-                          }), (_empleado$tareasRecie = empleado.tareasRecientes) === null || _empleado$tareasRecie === void 0 ? void 0 : _empleado$tareasRecie.map(function (tarea) {
-                            return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsxs)("div", {
-                              className: "urgent-task-item",
-                              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsx)("span", {
-                                children: tarea.titulo
-                              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsx)("span", {
-                                className: "status ".concat(getStatusClass(tarea.estado)),
-                                children: getStatusIcon(tarea.estado)
-                              })]
-                            }, tarea.id);
-                          })]
-                        })]
+                    className: "dashboard-stats-panel",
+                    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsxs)("div", {
+                      className: "stat-kpi",
+                      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsx)("span", {
+                        className: "stat-kpi-number",
+                        children: stats.totalEmpleados
+                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsx)("span", {
+                        className: "stat-kpi-label",
+                        children: "Empleados activos"
                       })]
-                    }, empleado.id);
-                  })
+                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsxs)("div", {
+                      className: "stat-kpi",
+                      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsx)("span", {
+                        className: "stat-kpi-number",
+                        children: stats.tareasActivas
+                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsx)("span", {
+                        className: "stat-kpi-label",
+                        children: "Tareas en curso"
+                      })]
+                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsxs)("div", {
+                      className: "stat-kpi ".concat(stats.tareasAtrasadas > 0 ? 'stat-kpi--alert' : ''),
+                      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsx)("span", {
+                        className: "stat-kpi-number",
+                        children: stats.tareasAtrasadas
+                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsx)("span", {
+                        className: "stat-kpi-label",
+                        children: "Tareas atrasadas"
+                      })]
+                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsxs)("div", {
+                      className: "stat-kpi",
+                      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsxs)("span", {
+                        className: "stat-kpi-number",
+                        children: [stats.eficienciaPromedio, "%"]
+                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsx)("span", {
+                        className: "stat-kpi-label",
+                        children: "Eficiencia promedio"
+                      })]
+                    })]
+                  }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsx)("div", {
+                    className: "cards-grid",
+                    children: filteredEmpleados.map(function (empleado) {
+                      var _empleado$contacto, _empleado$rendimiento, _empleado$rendimiento2, _empleado$rendimiento3, _empleado$rendimiento4, _empleado$tareasRecie;
+                      var atrasadas = contarTareasAtrasadas(empleado);
+                      return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsxs)("div", {
+                        className: "employee-card",
+                        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsxs)("div", {
+                          className: "employee-main-info",
+                          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsx)("img", {
+                            src: empleado.foto,
+                            alt: empleado.nombre,
+                            className: "employee-photo"
+                          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsxs)("div", {
+                            className: "employee-details",
+                            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsx)("h3", {
+                              children: empleado.nombre
+                            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsxs)("p", {
+                              className: "cargo",
+                              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_10__.FaUserTie, {
+                                size: 13
+                              }), " ", " ", "   ", empleado.cargo]
+                            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsxs)("p", {
+                              className: "empresa",
+                              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_10__.FaBuilding, {
+                                size: 13
+                              }), " ", " ", "   ", empleado.empresa, " -", " ", empleado.departamento]
+                            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsxs)("p", {
+                              className: "contacto",
+                              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_10__.FaEnvelope, {}), " ", (_empleado$contacto = empleado.contacto) === null || _empleado$contacto === void 0 ? void 0 : _empleado$contacto.email]
+                            })]
+                          })]
+                        }), atrasadas > 0 && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsxs)("div", {
+                          className: "employee-card-alert-banner",
+                          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsx)("span", {
+                            className: "alert-icon",
+                            children: "\u26A0"
+                          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsxs)("span", {
+                            children: [atrasadas, " tarea", atrasadas > 1 ? 's' : '', " atrasada", atrasadas > 1 ? 's' : '']
+                          })]
+                        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsxs)("div", {
+                          className: "employee-actions",
+                          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsxs)("button", {
+                            className: "action-button profile-btn",
+                            onClick: function onClick() {
+                              setSelectedEmployee(empleado);
+                              setShowProfileModal(true);
+                            },
+                            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_10__.FaUser, {}), " Perfil"]
+                          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsxs)("button", {
+                            className: "action-button tasks-btn",
+                            onClick: function onClick() {
+                              setSelectedEmployee(empleado);
+                              setShowTasksModal(true);
+                              setSelectedEstado(null);
+                            },
+                            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_10__.FaTasks, {}), " Tareas"]
+                          })]
+                        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsxs)("div", {
+                          className: "performance-section",
+                          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsx)("h4", {
+                            children: "Rendimiento"
+                          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsxs)("div", {
+                            className: "task-stats-grid",
+                            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsxs)("div", {
+                              className: "stat-item",
+                              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsx)("span", {
+                                className: "stat-number",
+                                children: ((_empleado$rendimiento = empleado.rendimiento) === null || _empleado$rendimiento === void 0 ? void 0 : _empleado$rendimiento.tareasAsignadas) || 0
+                              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsx)("span", {
+                                className: "stat-label",
+                                children: "Asignadas"
+                              })]
+                            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsxs)("div", {
+                              className: "stat-item",
+                              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsx)("span", {
+                                className: "stat-number",
+                                children: ((_empleado$rendimiento2 = empleado.rendimiento) === null || _empleado$rendimiento2 === void 0 ? void 0 : _empleado$rendimiento2.tareas.completadas) || 0
+                              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsx)("span", {
+                                className: "stat-label",
+                                children: "Completadas"
+                              })]
+                            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsxs)("div", {
+                              className: "stat-item",
+                              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsx)("span", {
+                                className: "stat-number",
+                                children: ((_empleado$rendimiento3 = empleado.rendimiento) === null || _empleado$rendimiento3 === void 0 ? void 0 : _empleado$rendimiento3.tareas.enProceso) || 0
+                              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsx)("span", {
+                                className: "stat-label",
+                                children: "En Proceso"
+                              })]
+                            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsxs)("div", {
+                              className: "stat-item urgent",
+                              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsx)("span", {
+                                className: "stat-number",
+                                children: ((_empleado$rendimiento4 = empleado.rendimiento) === null || _empleado$rendimiento4 === void 0 ? void 0 : _empleado$rendimiento4.tareas.pendientes) || 0
+                              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsx)("span", {
+                                className: "stat-label",
+                                children: "Pendientes"
+                              })]
+                            })]
+                          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsx)("div", {
+                            className: "kpi-section",
+                            title: "Porcentaje de tareas completadas dentro del plazo establecido.",
+                            children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsxs)("div", {
+                              className: "kpi-item",
+                              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsx)("span", {
+                                className: "kpi-label",
+                                children: "Eficiencia Operativa"
+                              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsxs)("div", {
+                                className: "progress-bar",
+                                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsx)("div", {
+                                  className: "progress-fill",
+                                  style: {
+                                    width: "".concat(empleado.rendimiento.eficienciaOperativa, "%")
+                                  }
+                                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsxs)("span", {
+                                  className: "progress-value",
+                                  children: [Math.round(empleado.rendimiento.eficienciaOperativa, 2), "%"]
+                                })]
+                              })]
+                            })
+                          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsxs)("div", {
+                            className: "urgent-tasks",
+                            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsx)("h5", {
+                              children: "Tareas Recientes"
+                            }), (_empleado$tareasRecie = empleado.tareasRecientes) === null || _empleado$tareasRecie === void 0 ? void 0 : _empleado$tareasRecie.map(function (tarea) {
+                              return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsxs)("div", {
+                                className: "urgent-task-item",
+                                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsx)("span", {
+                                  children: tarea.titulo
+                                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_9__.jsx)("span", {
+                                  className: "status ".concat(getStatusClass(tarea.estado)),
+                                  children: getStatusIcon(tarea.estado)
+                                })]
+                              }, tarea.id);
+                            })]
+                          })]
+                        })]
+                      }, empleado.id);
+                    })
+                  })]
                 })]
               })
             })
@@ -153705,6 +153717,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var recharts__WEBPACK_IMPORTED_MODULE_17__ = __webpack_require__(/*! recharts */ "./node_modules/recharts/es6/cartesian/Bar.js");
 /* harmony import */ var recharts__WEBPACK_IMPORTED_MODULE_18__ = __webpack_require__(/*! recharts */ "./node_modules/recharts/es6/chart/LineChart.js");
 /* harmony import */ var recharts__WEBPACK_IMPORTED_MODULE_19__ = __webpack_require__(/*! recharts */ "./node_modules/recharts/es6/cartesian/Line.js");
+/* harmony import */ var recharts__WEBPACK_IMPORTED_MODULE_20__ = __webpack_require__(/*! recharts */ "./node_modules/recharts/es6/component/Cell.js");
 /* harmony import */ var _Sidebar__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./Sidebar */ "./resources/js/components/Sidebar.jsx");
 /* harmony import */ var xlsx__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! xlsx */ "./node_modules/xlsx/xlsx.mjs");
 /* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! react/jsx-runtime */ "./node_modules/react/jsx-runtime.js");
@@ -153810,8 +153823,16 @@ var Reportes = function Reportes() {
     setDepartamentos = _useState28[1];
   var _useState29 = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)([]),
     _useState30 = _slicedToArray(_useState29, 2),
-    estados = _useState30[0],
-    setEstados = _useState30[1];
+    datosEficiencia = _useState30[0],
+    setDatosEficiencia = _useState30[1];
+  var _useState31 = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(false),
+    _useState32 = _slicedToArray(_useState31, 2),
+    loadingEficiencia = _useState32[0],
+    setLoadingEficiencia = _useState32[1];
+  var _useState33 = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)([]),
+    _useState34 = _slicedToArray(_useState33, 2),
+    estados = _useState34[0],
+    setEstados = _useState34[1];
   var reportCards = [{
     id: 0,
     title: "Informe Ejecutivo",
@@ -153892,6 +153913,19 @@ var Reportes = function Reportes() {
     color: "#0891b2",
     onClick: function onClick() {
       abrirModalInformeTareasPorEmpleado();
+    }
+  }, {
+    id: 7,
+    title: "Eficiencia Operativa",
+    icon: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_8__.FaChartArea, {
+      size: 25
+    }),
+    description: "Ranking de eficiencia por empleado y área",
+    color: "#1d4ed8",
+    onClick: function onClick() {
+      setSelectedReport("eficiencia");
+      setShowReportModal(true);
+      consultarEficiencia();
     }
   }];
   var cambiarFormatoFecha = function cambiarFormatoFecha(fecha) {
@@ -154022,6 +154056,16 @@ var Reportes = function Reportes() {
       return console.error("Error fetching tasks:", error);
     });
   };
+  var consultarEficiencia = function consultarEficiencia() {
+    setLoadingEficiencia(true);
+    _axiosConfig__WEBPACK_IMPORTED_MODULE_2__["default"].get('/informes/eficiencia').then(function (res) {
+      return setDatosEficiencia(res.data);
+    })["catch"](function (err) {
+      return console.error('Error cargando eficiencia:', err);
+    })["finally"](function () {
+      return setLoadingEficiencia(false);
+    });
+  };
   var calcularInformeEjecutivo = function calcularInformeEjecutivo() {
     var hoy = new Date().toISOString().split('T')[0];
     var totalCompletadas = tareas.filter(function (t) {
@@ -154124,6 +154168,63 @@ var Reportes = function Reportes() {
       });
     }).sort(function (a, b) {
       return b.porcentajeCompletado - a.porcentajeCompletado;
+    });
+  };
+  var calcularEficienciaOperativa = function calcularEficienciaOperativa() {
+    var filtradas = datosEficiencia.filter(function (t) {
+      return (!startDate || t.fecha_pactada >= startDate) && (!endDate || t.fecha_pactada <= endDate);
+    });
+    var porEmpleado = filtradas.reduce(function (acc, t) {
+      var key = t.nombre_empleado;
+      if (!acc[key]) acc[key] = {
+        nombre: t.nombre_empleado,
+        cargo: t.cargo,
+        departamento: t.departamento,
+        total: 0,
+        completadas: 0,
+        aTiempo: 0,
+        reprocesos: 0
+      };
+      acc[key].total++;
+      if (t.estado === 'Completada') acc[key].completadas++;
+      if (t.estado === 'Completada' && t.fecha_entregada && t.fecha_entregada <= t.fecha_pactada) acc[key].aTiempo++;
+      if (t.rechazada === 1) acc[key].reprocesos++;
+      return acc;
+    }, {});
+    return Object.values(porEmpleado).map(function (emp) {
+      var score = emp.total > 0 ? emp.completadas / emp.total * 0.4 + emp.aTiempo / emp.total * 0.3 + (emp.total - emp.reprocesos) / emp.total * 0.3 : 0;
+      var scoreRound = Math.round(score * 100) / 100;
+      var nivel = scoreRound >= 0.75 ? '🟢 Alto' : scoreRound >= 0.50 ? '🟡 Medio' : '🔴 Crítico';
+      return _objectSpread(_objectSpread({}, emp), {}, {
+        score: scoreRound,
+        nivel: nivel
+      });
+    }).sort(function (a, b) {
+      return b.score - a.score;
+    });
+  };
+  var calcularDeptEficiencia = function calcularDeptEficiencia(empleados) {
+    var porDept = empleados.reduce(function (acc, emp) {
+      var d = emp.departamento || 'Sin área';
+      if (!acc[d]) acc[d] = {
+        departamento: d,
+        count: 0,
+        sumaScore: 0,
+        empleadosList: []
+      };
+      acc[d].count++;
+      acc[d].sumaScore += emp.score;
+      acc[d].empleadosList.push(emp);
+      return acc;
+    }, {});
+    return Object.values(porDept).map(function (d) {
+      var avg = Math.round(d.sumaScore / d.count * 100) / 100;
+      return _objectSpread(_objectSpread({}, d), {}, {
+        scorePromedio: avg,
+        nivel: avg >= 0.75 ? '🟢 Alto' : avg >= 0.50 ? '🟡 Medio' : '🔴 Crítico'
+      });
+    }).sort(function (a, b) {
+      return b.scorePromedio - a.scorePromedio;
     });
   };
 
@@ -154255,6 +154356,111 @@ var Reportes = function Reportes() {
     printWindow.document.write(htmlContent);
     printWindow.document.close();
     printWindow.print();
+  };
+  var imprimirEficienciaGeneral = function imprimirEficienciaGeneral(empleados, deptos) {
+    var hoy = new Date().toLocaleDateString();
+    var html = "<html><head><style>\n            body{font-family:Arial,sans-serif;margin:20px;font-size:13px}\n            h1{color:#1d4ed8;text-align:center}\n            h2{color:#374151;margin-top:24px;font-size:15px}\n            table{width:100%;border-collapse:collapse;margin-top:8px}\n            th,td{border:1px solid #d1d5db;padding:6px 8px;text-align:left}\n            th{background:#f3f4f6;font-weight:600}\n            .kpis{display:flex;gap:12px;margin:12px 0;flex-wrap:wrap}\n            .kpi{border:1px solid #e5e7eb;border-radius:6px;padding:8px 14px;min-width:100px}\n            .kpi strong{display:block;font-size:20px}\n            .alert{background:#fef2f2;border:1px solid #fecaca;padding:6px 10px;border-radius:4px;margin:4px 0}\n            .ok{background:#f0fdf4;border:1px solid #bbf7d0;padding:6px 10px;border-radius:4px;margin:4px 0}\n            .info{background:#eff6ff;border:1px solid #bfdbfe;padding:6px 10px;border-radius:4px;margin:4px 0}\n        </style></head><body>\n        <h1>Informe de Eficiencia Operativa</h1>\n        <p style=\"text-align:center;color:#6b7280\">Per\xEDodo: ".concat(startDate, " \u2014 ").concat(endDate, " | Generado: ").concat(hoy, "</p>");
+    var alto = empleados.filter(function (e) {
+      return e.score >= 0.75;
+    }).length;
+    var medio = empleados.filter(function (e) {
+      return e.score >= 0.50 && e.score < 0.75;
+    }).length;
+    var critico = empleados.filter(function (e) {
+      return e.score < 0.50;
+    }).length;
+    var promedio = empleados.length > 0 ? Math.round(empleados.reduce(function (s, e) {
+      return s + e.score;
+    }, 0) / empleados.length * 100) : 0;
+    html += "<h2>KPIs Globales</h2>\n        <div class=\"kpis\">\n            <div class=\"kpi\"><strong>".concat(alto, "</strong>\uD83D\uDFE2 Alto</div>\n            <div class=\"kpi\"><strong>").concat(medio, "</strong>\uD83D\uDFE1 Medio</div>\n            <div class=\"kpi\"><strong>").concat(critico, "</strong>\uD83D\uDD34 Cr\xEDtico</div>\n            <div class=\"kpi\"><strong>").concat(promedio, "%</strong>Promedio global</div>\n        </div>\n        <h2>Ranking por Empleado</h2>\n        <table><thead><tr><th>#</th><th>Nombre</th><th>Cargo</th><th>\xC1rea</th><th>Nivel</th><th>Score</th><th>Completadas</th><th>A tiempo</th><th>Reprocesos</th></tr></thead><tbody>");
+    empleados.forEach(function (emp, i) {
+      html += "<tr><td>".concat(i + 1, "</td><td>").concat(emp.nombre, "</td><td>").concat(emp.cargo, "</td><td>").concat(emp.departamento, "</td>\n                <td>").concat(emp.nivel, "</td><td>").concat(emp.score.toFixed(2), "</td>\n                <td>").concat(emp.completadas, "/").concat(emp.total, "</td><td>").concat(emp.aTiempo, "</td><td>").concat(emp.reprocesos, "</td></tr>");
+    });
+    html += "</tbody></table>\n        <h2>Resumen por \xC1rea</h2>\n        <table><thead><tr><th>\xC1rea</th><th>Empleados</th><th>Score Promedio</th><th>Nivel</th></tr></thead><tbody>";
+    deptos.forEach(function (d) {
+      html += "<tr><td>".concat(d.departamento, "</td><td>").concat(d.count, "</td><td>").concat(d.scorePromedio.toFixed(2), "</td><td>").concat(d.nivel, "</td></tr>");
+    });
+    html += "</tbody></table><h2>Alertas</h2>";
+    if (critico > 0) html += "<p class=\"alert\">\u26A0 ".concat(critico, " empleado(s) en zona cr\xEDtica: ").concat(empleados.filter(function (e) {
+      return e.score < 0.50;
+    }).map(function (e) {
+      return e.nombre;
+    }).join(', '), "</p>");
+    deptos.filter(function (d) {
+      return d.scorePromedio < 0.60;
+    }).forEach(function (d) {
+      html += "<p class=\"alert\">\u26A0 \xC1rea ".concat(d.departamento, " con score ").concat(d.scorePromedio.toFixed(2), "</p>");
+    });
+    if (deptos.length > 0) html += "<p class=\"ok\">\u2705 Mejor \xE1rea: ".concat(deptos[0].departamento, " (").concat(deptos[0].scorePromedio.toFixed(2), ")</p>");
+    html += "</body></html>";
+    var win = window.open('', '_blank');
+    if (!win) return;
+    win.document.write(html);
+    win.document.close();
+    win.print();
+  };
+  var imprimirEficienciaPorEmpleado = function imprimirEficienciaPorEmpleado(empleados) {
+    var hoy = new Date().toLocaleDateString();
+    var html = "<html><head><style>\n            body{font-family:Arial,sans-serif;margin:20px;font-size:13px}\n            h1{color:#1d4ed8;text-align:center}\n            .emp-block{border:1px solid #e5e7eb;border-radius:6px;padding:14px;margin-bottom:16px;page-break-inside:avoid}\n            .emp-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}\n            .emp-name{font-size:15px;font-weight:700;color:#111827}\n            .emp-meta{color:#6b7280;font-size:12px}\n            .badge{padding:3px 8px;border-radius:99px;font-size:12px;font-weight:600}\n            .badge-alto{background:#dcfce7;color:#15803d}\n            .badge-medio{background:#ffedd5;color:#c2410c}\n            .badge-critico{background:#fee2e2;color:#b91c1c}\n            table{width:100%;border-collapse:collapse;margin-top:8px;font-size:12px}\n            th,td{border:1px solid #e5e7eb;padding:4px 8px}\n            th{background:#f9fafb}\n        </style></head><body>\n        <h1>Eficiencia Operativa \u2014 Por Empleado</h1>\n        <p style=\"text-align:center;color:#6b7280\">Per\xEDodo: ".concat(startDate, " \u2014 ").concat(endDate, " | Generado: ").concat(hoy, "</p>");
+    empleados.forEach(function (emp, i) {
+      var pctCompleto = emp.total > 0 ? Math.round(emp.completadas / emp.total * 100) : 0;
+      var badgeClass = emp.score >= 0.75 ? 'badge-alto' : emp.score >= 0.50 ? 'badge-medio' : 'badge-critico';
+      html += "<div class=\"emp-block\">\n                <div class=\"emp-header\">\n                    <div>\n                        <div class=\"emp-name\">".concat(i + 1, ". ").concat(emp.nombre, "</div>\n                        <div class=\"emp-meta\">").concat(emp.cargo, " \xB7 ").concat(emp.departamento, "</div>\n                    </div>\n                    <span class=\"badge ").concat(badgeClass, "\">").concat(emp.nivel, " \xB7 Score ").concat(emp.score.toFixed(2), "</span>\n                </div>\n                <table><thead><tr><th>Total tareas</th><th>Completadas</th><th>A tiempo</th><th>Reprocesos</th><th>% Completado</th></tr></thead>\n                <tbody><tr><td>").concat(emp.total, "</td><td>").concat(emp.completadas, "</td><td>").concat(emp.aTiempo, "</td><td>").concat(emp.reprocesos, "</td><td>").concat(pctCompleto, "%</td></tr></tbody>\n                </table>\n            </div>");
+    });
+    html += "</body></html>";
+    var win = window.open('', '_blank');
+    if (!win) return;
+    win.document.write(html);
+    win.document.close();
+    win.print();
+  };
+  var imprimirEficienciaPorArea = function imprimirEficienciaPorArea(deptos) {
+    var hoy = new Date().toLocaleDateString();
+    var html = "<html><head><style>\n            body{font-family:Arial,sans-serif;margin:20px;font-size:13px}\n            h1{color:#1d4ed8;text-align:center}\n            .area-block{border:1px solid #e5e7eb;border-radius:6px;padding:14px;margin-bottom:20px;page-break-inside:avoid}\n            .area-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}\n            .area-name{font-size:16px;font-weight:700;color:#111827}\n            .badge{padding:3px 10px;border-radius:99px;font-size:12px;font-weight:600}\n            .badge-alto{background:#dcfce7;color:#15803d}\n            .badge-medio{background:#ffedd5;color:#c2410c}\n            .badge-critico{background:#fee2e2;color:#b91c1c}\n            table{width:100%;border-collapse:collapse;font-size:12px}\n            th,td{border:1px solid #e5e7eb;padding:4px 8px}\n            th{background:#f9fafb}\n        </style></head><body>\n        <h1>Eficiencia Operativa \u2014 Por \xC1rea</h1>\n        <p style=\"text-align:center;color:#6b7280\">Per\xEDodo: ".concat(startDate, " \u2014 ").concat(endDate, " | Generado: ").concat(hoy, "</p>");
+    deptos.forEach(function (dept) {
+      var badgeClass = dept.scorePromedio >= 0.75 ? 'badge-alto' : dept.scorePromedio >= 0.50 ? 'badge-medio' : 'badge-critico';
+      html += "<div class=\"area-block\">\n                <div class=\"area-header\">\n                    <div class=\"area-name\">".concat(dept.departamento, " (").concat(dept.count, " empleados)</div>\n                    <span class=\"badge ").concat(badgeClass, "\">").concat(dept.nivel, " \xB7 Score ").concat(dept.scorePromedio.toFixed(2), "</span>\n                </div>\n                <table><thead><tr><th>#</th><th>Empleado</th><th>Cargo</th><th>Nivel</th><th>Score</th><th>Completadas</th><th>A tiempo</th><th>Reprocesos</th></tr></thead>\n                <tbody>");
+      dept.empleadosList.forEach(function (emp, i) {
+        var bc = emp.score >= 0.75 ? 'badge-alto' : emp.score >= 0.50 ? 'badge-medio' : 'badge-critico';
+        html += "<tr><td>".concat(i + 1, "</td><td>").concat(emp.nombre, "</td><td>").concat(emp.cargo, "</td>\n                    <td><span class=\"badge ").concat(bc, "\">").concat(emp.nivel, "</span></td>\n                    <td>").concat(emp.score.toFixed(2), "</td>\n                    <td>").concat(emp.completadas, "/").concat(emp.total, "</td>\n                    <td>").concat(emp.aTiempo, "</td><td>").concat(emp.reprocesos, "</td></tr>");
+      });
+      html += "</tbody></table></div>";
+    });
+    html += "</body></html>";
+    var win = window.open('', '_blank');
+    if (!win) return;
+    win.document.write(html);
+    win.document.close();
+    win.print();
+  };
+  var exportarEficienciaExcel = function exportarEficienciaExcel(empleados, deptos) {
+    var wb = xlsx__WEBPACK_IMPORTED_MODULE_9__.utils.book_new();
+    var wsEmpleados = xlsx__WEBPACK_IMPORTED_MODULE_9__.utils.json_to_sheet(empleados.map(function (emp, i) {
+      return {
+        '#': i + 1,
+        'Nombre': emp.nombre,
+        'Cargo': emp.cargo,
+        'Área': emp.departamento,
+        'Nivel': emp.nivel,
+        'Score': emp.score,
+        'Total tareas': emp.total,
+        'Completadas': emp.completadas,
+        'A tiempo': emp.aTiempo,
+        'Reprocesos': emp.reprocesos,
+        '% Completado': emp.total > 0 ? Math.round(emp.completadas / emp.total * 100) + '%' : '0%'
+      };
+    }));
+    xlsx__WEBPACK_IMPORTED_MODULE_9__.utils.book_append_sheet(wb, wsEmpleados, 'Por Empleado');
+    var wsAreas = xlsx__WEBPACK_IMPORTED_MODULE_9__.utils.json_to_sheet(deptos.map(function (d) {
+      return {
+        'Área': d.departamento,
+        'Empleados': d.count,
+        'Score Promedio': d.scorePromedio,
+        'Nivel': d.nivel
+      };
+    }));
+    xlsx__WEBPACK_IMPORTED_MODULE_9__.utils.book_append_sheet(wb, wsAreas, 'Por Área');
+    xlsx__WEBPACK_IMPORTED_MODULE_9__.writeFile(wb, "eficiencia-operativa-".concat(startDate, "-").concat(endDate, ".xlsx"));
   };
   var exportarExcel = function exportarExcel() {
     var tareasPorEmpleado = generarTareasPorEmpleado();
@@ -155529,6 +155735,416 @@ var Reportes = function Reportes() {
                     })]
                   }, i);
                 })
+              })]
+            })]
+          })]
+        })
+      });
+    }(), showReportModal && selectedReport === "eficiencia" && function () {
+      var empleados = calcularEficienciaOperativa();
+      var deptos = calcularDeptEficiencia(empleados);
+      var alto = empleados.filter(function (e) {
+        return e.score >= 0.75;
+      }).length;
+      var medio = empleados.filter(function (e) {
+        return e.score >= 0.50 && e.score < 0.75;
+      }).length;
+      var critico = empleados.filter(function (e) {
+        return e.score < 0.50;
+      }).length;
+      var promedioGlobal = empleados.length > 0 ? Math.round(empleados.reduce(function (s, e) {
+        return s + e.score;
+      }, 0) / empleados.length * 100) : 0;
+      var totalSum = empleados.reduce(function (s, e) {
+        return s + e.total;
+      }, 0);
+      var pctATiempo = totalSum > 0 ? Math.round(empleados.reduce(function (s, e) {
+        return s + e.aTiempo;
+      }, 0) / totalSum * 100) : 0;
+      var pctReprocesos = totalSum > 0 ? Math.round(empleados.reduce(function (s, e) {
+        return s + e.reprocesos;
+      }, 0) / totalSum * 100) : 0;
+      return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
+        className: "modal-overlay",
+        children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+          className: "modal-report",
+          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+            className: "modal-header",
+            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("h2", {
+              children: "Informe de Eficiencia Operativa"
+            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+              className: "header-actions",
+              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("button", {
+                className: "eficiencia-print-btn",
+                onClick: function onClick() {
+                  return imprimirEficienciaGeneral(empleados, deptos);
+                },
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_8__.FaPrint, {}), " General"]
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("button", {
+                className: "eficiencia-print-btn",
+                onClick: function onClick() {
+                  return imprimirEficienciaPorEmpleado(empleados);
+                },
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_8__.FaPrint, {}), " Por Empleado"]
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("button", {
+                className: "eficiencia-print-btn",
+                onClick: function onClick() {
+                  return imprimirEficienciaPorArea(deptos);
+                },
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_8__.FaPrint, {}), " Por \xC1rea"]
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("button", {
+                className: "excel-button",
+                onClick: function onClick() {
+                  return exportarEficienciaExcel(empleados, deptos);
+                },
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_8__.FaChartBar, {}), " Excel"]
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("button", {
+                className: "close-button",
+                onClick: function onClick() {
+                  return setShowReportModal(false);
+                },
+                children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_8__.FaTimes, {})
+              })]
+            })]
+          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+            className: "tab-content",
+            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("p", {
+              className: "eficiencia-periodo",
+              children: ["Per\xEDodo: ", /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("strong", {
+                children: cambiarFormatoFecha(startDate)
+              }), " \u2014 ", /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("strong", {
+                children: cambiarFormatoFecha(endDate)
+              }), loadingEficiencia && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("span", {
+                style: {
+                  marginLeft: '1rem',
+                  color: '#6b7280'
+                },
+                children: "Cargando..."
+              })]
+            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+              className: "executive-kpis",
+              style: {
+                marginBottom: '1.5rem'
+              },
+              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+                className: "exec-kpi exec-kpi--green",
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("span", {
+                  className: "exec-kpi-number",
+                  children: alto
+                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("span", {
+                  className: "exec-kpi-label",
+                  children: "\uD83D\uDFE2 Alto"
+                })]
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+                className: "exec-kpi exec-kpi--orange",
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("span", {
+                  className: "exec-kpi-number",
+                  children: medio
+                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("span", {
+                  className: "exec-kpi-label",
+                  children: "\uD83D\uDFE1 Medio"
+                })]
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+                className: "exec-kpi exec-kpi--red",
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("span", {
+                  className: "exec-kpi-number",
+                  children: critico
+                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("span", {
+                  className: "exec-kpi-label",
+                  children: "\uD83D\uDD34 Cr\xEDtico"
+                })]
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+                className: "exec-kpi exec-kpi--blue",
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("span", {
+                  className: "exec-kpi-number",
+                  children: [promedioGlobal, "%"]
+                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("span", {
+                  className: "exec-kpi-label",
+                  children: "Eficiencia promedio"
+                })]
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+                className: "exec-kpi",
+                style: {
+                  background: '#f0fdf4',
+                  border: '1px solid #bbf7d0'
+                },
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("span", {
+                  className: "exec-kpi-number",
+                  style: {
+                    color: '#16a34a'
+                  },
+                  children: [pctATiempo, "%"]
+                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("span", {
+                  className: "exec-kpi-label",
+                  children: "A tiempo"
+                })]
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+                className: "exec-kpi",
+                style: {
+                  background: '#fef2f2',
+                  border: '1px solid #fecaca'
+                },
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("span", {
+                  className: "exec-kpi-number",
+                  style: {
+                    color: '#dc2626'
+                  },
+                  children: [pctReprocesos, "%"]
+                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("span", {
+                  className: "exec-kpi-label",
+                  children: "Reprocesos"
+                })]
+              })]
+            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("h3", {
+              style: {
+                margin: '0 0 0.75rem',
+                fontSize: '1rem',
+                color: '#374151'
+              },
+              children: "Ranking por Empleado"
+            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
+              style: {
+                overflowX: 'auto',
+                marginBottom: '1.5rem'
+              },
+              children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("table", {
+                className: "eficiencia-ranking-table",
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("thead", {
+                  children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("tr", {
+                    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("th", {
+                      children: "#"
+                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("th", {
+                      children: "Nombre"
+                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("th", {
+                      children: "Cargo"
+                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("th", {
+                      children: "\xC1rea"
+                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("th", {
+                      children: "Nivel"
+                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("th", {
+                      children: "Score"
+                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("th", {
+                      children: "Completadas"
+                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("th", {
+                      children: "A tiempo"
+                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("th", {
+                      children: "Reprocesos"
+                    })]
+                  })
+                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("tbody", {
+                  children: empleados.map(function (emp, idx) {
+                    return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("tr", {
+                      className: emp.score < 0.50 ? 'eficiencia-row-critico' : '',
+                      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("td", {
+                        style: {
+                          fontWeight: 700,
+                          color: '#6b7280'
+                        },
+                        children: idx + 1
+                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("td", {
+                        style: {
+                          fontWeight: 600
+                        },
+                        children: emp.nombre
+                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("td", {
+                        style: {
+                          color: '#6b7280',
+                          fontSize: '0.85rem'
+                        },
+                        children: emp.cargo
+                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("td", {
+                        style: {
+                          color: '#6b7280',
+                          fontSize: '0.85rem'
+                        },
+                        children: emp.departamento
+                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("td", {
+                        children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("span", {
+                          className: "eficiencia-nivel-badge ".concat(emp.score >= 0.75 ? 'badge-alto' : emp.score >= 0.50 ? 'badge-medio' : 'badge-critico'),
+                          children: emp.nivel
+                        })
+                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("td", {
+                        children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+                          className: "eficiencia-score-bar-wrap",
+                          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
+                            className: "eficiencia-score-bar",
+                            style: {
+                              width: "".concat(emp.score * 100, "%"),
+                              background: emp.score >= 0.75 ? '#16a34a' : emp.score >= 0.50 ? '#f97316' : '#dc2626'
+                            }
+                          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("span", {
+                            className: "eficiencia-score-num",
+                            children: emp.score.toFixed(2)
+                          })]
+                        })
+                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("td", {
+                        style: {
+                          textAlign: 'center'
+                        },
+                        children: [emp.completadas, "/", emp.total]
+                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("td", {
+                        style: {
+                          textAlign: 'center'
+                        },
+                        children: emp.aTiempo
+                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("td", {
+                        style: {
+                          textAlign: 'center',
+                          color: emp.reprocesos > 0 ? '#dc2626' : '#16a34a'
+                        },
+                        children: emp.reprocesos
+                      })]
+                    }, emp.nombre);
+                  })
+                })]
+              })
+            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("h3", {
+              style: {
+                margin: '0 0 0.75rem',
+                fontSize: '1rem',
+                color: '#374151'
+              },
+              children: "An\xE1lisis por \xC1rea"
+            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(recharts__WEBPACK_IMPORTED_MODULE_10__.ResponsiveContainer, {
+              width: "100%",
+              height: 220,
+              children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)(recharts__WEBPACK_IMPORTED_MODULE_11__.BarChart, {
+                data: deptos,
+                margin: {
+                  top: 5,
+                  right: 20,
+                  left: 0,
+                  bottom: 40
+                },
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(recharts__WEBPACK_IMPORTED_MODULE_12__.CartesianGrid, {
+                  strokeDasharray: "3 3"
+                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(recharts__WEBPACK_IMPORTED_MODULE_13__.XAxis, {
+                  dataKey: "departamento",
+                  angle: -30,
+                  textAnchor: "end",
+                  interval: 0,
+                  tick: {
+                    fontSize: 12
+                  }
+                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(recharts__WEBPACK_IMPORTED_MODULE_14__.YAxis, {
+                  domain: [0, 1],
+                  tickFormatter: function tickFormatter(v) {
+                    return v.toFixed(1);
+                  }
+                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(recharts__WEBPACK_IMPORTED_MODULE_15__.Tooltip, {
+                  formatter: function formatter(v) {
+                    return v.toFixed(2);
+                  }
+                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(recharts__WEBPACK_IMPORTED_MODULE_17__.Bar, {
+                  dataKey: "scorePromedio",
+                  name: "Score",
+                  radius: [4, 4, 0, 0],
+                  children: deptos.map(function (d) {
+                    return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(recharts__WEBPACK_IMPORTED_MODULE_20__.Cell, {
+                      fill: d.scorePromedio >= 0.75 ? '#16a34a' : d.scorePromedio >= 0.50 ? '#f97316' : '#dc2626'
+                    }, d.departamento);
+                  })
+                })]
+              })
+            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
+              style: {
+                overflowX: 'auto',
+                marginBottom: '1.5rem'
+              },
+              children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("table", {
+                className: "eficiencia-ranking-table",
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("thead", {
+                  children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("tr", {
+                    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("th", {
+                      children: "\xC1rea"
+                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("th", {
+                      children: "Empleados"
+                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("th", {
+                      children: "Score Promedio"
+                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("th", {
+                      children: "Nivel"
+                    })]
+                  })
+                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("tbody", {
+                  children: deptos.map(function (d) {
+                    return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("tr", {
+                      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("td", {
+                        style: {
+                          fontWeight: 600
+                        },
+                        children: d.departamento
+                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("td", {
+                        style: {
+                          textAlign: 'center'
+                        },
+                        children: d.count
+                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("td", {
+                        children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+                          className: "eficiencia-score-bar-wrap",
+                          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
+                            className: "eficiencia-score-bar",
+                            style: {
+                              width: "".concat(d.scorePromedio * 100, "%"),
+                              background: d.scorePromedio >= 0.75 ? '#16a34a' : d.scorePromedio >= 0.50 ? '#f97316' : '#dc2626'
+                            }
+                          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("span", {
+                            className: "eficiencia-score-num",
+                            children: d.scorePromedio.toFixed(2)
+                          })]
+                        })
+                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("td", {
+                        children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("span", {
+                          className: "eficiencia-nivel-badge ".concat(d.scorePromedio >= 0.75 ? 'badge-alto' : d.scorePromedio >= 0.50 ? 'badge-medio' : 'badge-critico'),
+                          children: d.nivel
+                        })
+                      })]
+                    }, d.departamento);
+                  })
+                })]
+              })
+            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("h3", {
+              style: {
+                margin: '0 0 0.75rem',
+                fontSize: '1rem',
+                color: '#374151'
+              },
+              children: "Alertas e Insights"
+            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+              className: "eficiencia-insights",
+              children: [critico > 0 && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+                className: "insight-card insight-card--alert",
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("strong", {
+                  children: ["\u26A0 ", critico, " empleado", critico > 1 ? 's' : '', " en zona cr\xEDtica:"]
+                }), ' ', empleados.filter(function (e) {
+                  return e.score < 0.50;
+                }).map(function (e) {
+                  return e.nombre;
+                }).join(', ')]
+              }), deptos.filter(function (d) {
+                return d.scorePromedio < 0.60;
+              }).map(function (d) {
+                return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+                  className: "insight-card insight-card--alert",
+                  children: ["\u26A0 \xC1rea ", /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("strong", {
+                    children: d.departamento
+                  }), " con score promedio ", d.scorePromedio.toFixed(2), " \u2014 requiere atenci\xF3n"]
+                }, d.departamento);
+              }), deptos.length > 0 && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+                className: "insight-card insight-card--ok",
+                children: ["\u2705 \xC1rea con mejor desempe\xF1o: ", /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("strong", {
+                  children: deptos[0].departamento
+                }), " (score ", deptos[0].scorePromedio.toFixed(2), ")"]
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+                className: "insight-card insight-card--info",
+                children: ["\uD83D\uDCCA ", pctATiempo, "% de tareas entregadas a tiempo en el per\xEDodo"]
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+                className: "insight-card insight-card--info",
+                children: ["\uD83D\uDCCA \xCDndice de reprocesos global: ", pctReprocesos, "%"]
+              }), critico === 0 && deptos.filter(function (d) {
+                return d.scorePromedio < 0.60;
+              }).length === 0 && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
+                className: "insight-card insight-card--ok",
+                children: "\u2705 Todos los empleados y \xE1reas est\xE1n en niveles aceptables o superiores"
               })]
             })]
           })]
