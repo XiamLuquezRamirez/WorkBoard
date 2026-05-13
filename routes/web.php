@@ -6,7 +6,9 @@ use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\EmpleadosController;
 use App\Http\Controllers\EvidenciasController;
 // Ruta para el CSRF cookie de Sanctum
-Route::get('/sanctum/csrf-cookie', function () {
+
+// Rutas de Sanctum para CSRF
+Route::get('api/sanctum/csrf-cookie', function () {
     return response()->json(['message' => 'CSRF cookie set']);
 });
 
@@ -14,22 +16,27 @@ Route::get('/sanctum/csrf-cookie', function () {
 Route::post('/login', [LoginController::class, 'login'])
     ->name('login');
 
-Route::post('/logout', [LoginController::class, 'logout'])
-    ->middleware('auth')
-    ->name('logout');
+// Compatibilidad SPA: axios baseURL = /api → /api/login y /api/logout deben correr con middleware "web"
+Route::prefix('api')->group(function () {
+    Route::post('/login', [LoginController::class, 'login']);
+    Route::post('/logout', [LoginController::class, 'logout'])->middleware('auth:sanctum');
+});
 
 // Rutas protegidas
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::prefix('api')->group(function () {
-      
         Route::get('/user', function () {
             return response()->json([
                 'user' => Auth::user()
             ]);
         });
+        
+        Route::post('/logout', [LoginController::class, 'logout'])
+        ->name('logout');
+
         Route::get('/notificaciones', [EmpleadosController::class, 'cargarNotificaciones']);
 
-         //actualizar usuario
+        //actualizar usuario
         Route::post('/profile/update', [EmpleadosController::class, 'actualizarUsuario']);
 
         //cargar empleados
@@ -109,7 +116,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
         //lista de empleados
         Route::get('/listaEmpleados', [EmpleadosController::class, 'listaEmpleados']);
-        
+
         //guardar usuario
         Route::post('/guardarUsuario', [EmpleadosController::class, 'guardarUsuario']);
 
@@ -135,49 +142,78 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::get('/cargarEmpleadosLider/{id}', [EmpleadosController::class, 'cargarEmpleadosLider']);
 
         //guardar asignaciones lider
-        Route::post('/guardarAsignacionesLider', [EmpleadosController::class, 'guardarAsignacionesLider']); 
+        Route::post('/guardarAsignacionesLider', [EmpleadosController::class, 'guardarAsignacionesLider']);
 
-           // informe de tareas
-    Route::get('/informes/tareas', [empleadosController::class, 'informeTareas']);
+        // informe de tareas
+        Route::get('/informes/tareas', [empleadosController::class, 'informeTareas']);
 
-    //verificar empleado lider
-    Route::get('/verificarEmpleadoLider/{id}', [empleadosController::class, 'verificarEmpleadoLider']);
+        // informe de eficiencia operativa
+        Route::get('/informes/eficiencia', [empleadosController::class, 'informeEficiencia']);
+
+        //verificar empleado lider
+        Route::get('/verificarEmpleadoLider/{id}', [empleadosController::class, 'verificarEmpleadoLider']);
         //eliminar funcion
-    Route::delete('/eliminarFuncion/{id}', [empleadosController::class, 'eliminarFuncion']);
-    
-    //cargar actividades
-    Route::get('/cargarActividades/{id}', [empleadosController::class, 'cargarActividades']);
+        Route::delete('/eliminarFuncion/{id}', [empleadosController::class, 'eliminarFuncion']);
 
-    //guardar actividad
-    Route::post('/guardarActividad', [empleadosController::class, 'guardarActividad']);
+        //cargar actividades
+        Route::get('/cargarActividades/{id}', [empleadosController::class, 'cargarActividades']);
 
-    //eliminar actividad
-    Route::delete('/eliminarActividad/{id}', [empleadosController::class, 'eliminarActividad']);
+        //guardar actividad
+        Route::post('/guardarActividad', [empleadosController::class, 'guardarActividad']);
 
-    //actualizar actividad
-    Route::put('/actualizarActividad/{id}', [empleadosController::class, 'actualizarActividad']);
+        //eliminar actividad
+        Route::delete('/eliminarActividad/{id}', [empleadosController::class, 'eliminarActividad']);
 
-    //rechazar tarea
-    Route::put('/rechazarTarea/{id}', [empleadosController::class, 'rechazarTarea']);
+        //actualizar actividad
+        Route::put('/actualizarActividad/{id}', [empleadosController::class, 'actualizarActividad']);
 
-    //aprobar tarea
-    Route::put('/aprobarTarea/{id}', [empleadosController::class, 'aprobarTarea']);
+        //rechazar tarea
+        Route::put('/rechazarTarea/{id}', [empleadosController::class, 'rechazarTarea']);
 
-    //pausar tarea
-    Route::put('/pausarTarea/{id}', [empleadosController::class, 'pausarTarea']);
+        //aprobar tarea
+        Route::put('/aprobarTarea/{id}', [empleadosController::class, 'aprobarTarea']);
 
-    //obtener observacion
-    Route::get('/obtenerObservacion/{id}', [empleadosController::class, 'obtenerObservacion']);
+        //pausar tarea
+        Route::put('/pausarTarea/{id}', [empleadosController::class, 'pausarTarea']);
 
-    //eliminar tarea
-    Route::delete('/eliminarTarea/{id}', [empleadosController::class, 'eliminarTarea']);
+        // solicitud formal de pausa (motivo + fecha reanudación + correo a líder o administrador)
+        Route::post('/solicitarPausa', [EmpleadosController::class, 'solicitarPausa']);
 
-    //habilitar edicion
-    Route::put('/habilitarEdicion/{id}', [empleadosController::class, 'habilitarEdicion']);
+        //reprogramar tarea
+        Route::put('/reprogramarTarea/{id}', [empleadosController::class, 'reprogramarTarea']);
 
-});
+        //obtener observacion
+        Route::get('/obtenerObservacion/{id}', [empleadosController::class, 'obtenerObservacion']);
+
+        //eliminar tarea
+        Route::delete('/eliminarTarea/{id}', [empleadosController::class, 'eliminarTarea']);
+
+        //habilitar edicion
+        Route::put('/habilitarEdicion/{id}', [empleadosController::class, 'habilitarEdicion']);
+
+        //archivar tarea
+        Route::put('/archivarTarea/{id}', [empleadosController::class, 'archivarTarea']);
+
+        //desarchivar tarea
+        Route::put('/desarchivarTarea/{id}', [empleadosController::class, 'desarchivarTarea']);
+
+        //guardar observaciones
+        Route::put('/guardarObservacionesEmpleado/{id}', [empleadosController::class, 'guardarObservacionesEmpleado']);
+
+        // proyectos
+        Route::get('/cargarProyectos', [EmpleadosController::class, 'cargarProyectos']);
+        Route::post('/guardarProyecto', [EmpleadosController::class, 'guardarProyecto']);
+        Route::delete('/eliminarProyecto/{id}', [EmpleadosController::class, 'eliminarProyecto']);
+
+        // subtareas
+        Route::get('/subtareas/{tarea_id}', [EmpleadosController::class, 'cargarSubtareas']);
+        Route::post('/subtareas', [EmpleadosController::class, 'guardarSubtarea']);
+        Route::put('/subtareas/{id}', [EmpleadosController::class, 'actualizarSubtarea']);
+        Route::delete('/subtareas/{id}', [EmpleadosController::class, 'eliminarSubtarea']);
+        Route::get('/checklists-empleado/{empleado_id}', [EmpleadosController::class, 'checklistsEmpleado']);
 
 
+    });
 });
 
 // Ruta catch-all para el SPA

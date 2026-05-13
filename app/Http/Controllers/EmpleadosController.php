@@ -7,6 +7,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Carbon;
 use App\Mail\NotificacionMailable;
 
 class EmpleadosController extends Controller
@@ -82,6 +84,33 @@ class EmpleadosController extends Controller
             'status' => 'success'
         ], 200);
     }
+    
+
+    function guardarObservacionesEmpleado(Request $request, $id)
+    {
+        $observaciones = $request->all();
+        $observaciones = DB::connection('mysql2')->table('tareas_empleados')->where('id', $id)->update([
+            'observacion_entrega' => $observaciones['observacion_entrega']
+        ]);
+        return response()->json(['success' => 'Observaciones guardadas correctamente'], 200);
+    }
+
+    function archivarTarea($id)
+    {
+        $tarea = DB::connection('mysql2')->table('tareas_empleados')->where('id', $id)->update([
+            'archivar' => 1,
+            'fecha_archivada' => date('Y-m-d H:i:s')
+        ]);
+        return response()->json(['success' => 'Tarea archivada correctamente'], 200);
+    }
+
+    function desarchivarTarea($id)
+    {
+        $tarea = DB::connection('mysql2')->table('tareas_empleados')->where('id', $id)->update([
+            'archivar' => 0
+        ]);
+        return response()->json(['success' => 'Tarea desarchivada correctamente'], 200);
+    }
 
     function eliminarTarea($id)
     {
@@ -149,10 +178,9 @@ class EmpleadosController extends Controller
     {
         $empleado = $request->all();
 
-
         DB::connection('mysql2')->beginTransaction();
         try {
-            if ($empleado['accion'] == 'guardar') {
+            if ($empleado['accion'] == 'guardar') {   
 
                 $empleadoId = DB::connection('mysql2')->table('empleados')->insertGetId(
                     [
@@ -186,7 +214,6 @@ class EmpleadosController extends Controller
                     'lider' => $empleado['lider'],
                     'foto' => $empleado['foto']
                 ]);
-
                 //insertra en la tabla de usuario de chat empresarial
                 DB::connection('mysql')->table('users')->insert([
                     'name' => $empleado['nombres'] . ' ' . $empleado['apellidos'],
@@ -234,6 +261,7 @@ class EmpleadosController extends Controller
 
 
             DB::connection('mysql2')->commit();
+
         } catch (\Exception $e) {
             DB::connection('mysql2')->rollBack();
             return response()->json(['error' => $e->getMessage()], 500);
@@ -306,10 +334,12 @@ class EmpleadosController extends Controller
     function cargarTareas($id)
     {
         $tareas = DB::connection('mysql2')->table('tareas_empleados')
+            ->leftJoin('proyectos', 'tareas_empleados.proyecto_id', '=', 'proyectos.id')
+            ->select('tareas_empleados.*', 'proyectos.nombre as proyecto_nombre')
             ->where('empleado', $id)
             ->where('estado_reg', 'Activo')
             ->orderByRaw("FIELD(prioridad, 'Alta', 'Media', 'Baja')")
-            ->orderBy('id', 'desc')
+            ->orderBy('tareas_empleados.id', 'desc')
             ->get();
 
         //obtener observaciones de las tareas
@@ -432,9 +462,10 @@ class EmpleadosController extends Controller
     function guardarTarea(Request $request)
     {
         $tarea = $request->all();
+        $accion = $tarea['accion'] ?? 'guardar';
         DB::connection('mysql2')->beginTransaction();
         try {
-            if ($tarea['accion'] == 'guardar') {
+            if ($accion == 'guardar') {
                 $IdTarea = DB::connection('mysql2')->table('tareas_empleados')->insertGetId([
                     'titulo' => $tarea['titulo'],
                     'empleado' => $tarea['empleado'],
@@ -445,16 +476,19 @@ class EmpleadosController extends Controller
                     'estado_reg' => 'Activo',
                     'fecha_creacion' => now(),
                     'pausada' => 0,
-                    'editable' => 1
+                    'editable' => 1,
+                    'proyecto_id' => $tarea['proyecto_id'] ?? null,
                 ]);
             } else {
-                $IdTarea = DB::connection('mysql2')->table('tareas_empleados')->where('id', $tarea['id'])->update([
+                DB::connection('mysql2')->table('tareas_empleados')->where('id', $tarea['id'])->update([
                     'titulo' => $tarea['titulo'],
                     'descripcion' => $tarea['descripcion'],
                     'fecha_pactada' => $tarea['fecha_pactada'],
                     'prioridad' => $tarea['prioridad'],
                     'estado' => $tarea['estado'],
+                    'proyecto_id' => $tarea['proyecto_id'] ?? null,
                 ]);
+                $IdTarea = $tarea['id'];
             }
 
             /// isertar evidencia
@@ -470,8 +504,10 @@ class EmpleadosController extends Controller
                 }
             }
 
-            //guardar notificacion
-            self::guardarNotificacion($IdTarea, 'Tarea');
+            //guardar notificacion solo al crear
+            if ($accion == 'guardar') {
+                self::guardarNotificacion($IdTarea, 'Tarea');
+            }
 
             //consultar tareas del empleado
             DB::connection('mysql2')->commit();
@@ -482,12 +518,15 @@ class EmpleadosController extends Controller
 
 
         $tareas = DB::connection('mysql2')->table('tareas_empleados')
+            ->leftJoin('proyectos', 'tareas_empleados.proyecto_id', '=', 'proyectos.id')
+            ->select('tareas_empleados.*', 'proyectos.nombre as proyecto_nombre')
             ->where('empleado', $tarea['empleado'])
-            ->orderBy('id', 'desc')
+            ->orderBy('tareas_empleados.id', 'desc')
             ->get();
 
         return response()->json([
             'success' => 'Tarea guardada correctamente',
+            'tarea_id' => $IdTarea,
             'tareas' => $tareas
         ], 200);
     }
@@ -498,9 +537,11 @@ class EmpleadosController extends Controller
     {
         $searchTerm = $request->input('search');
         $tareas = DB::connection('mysql2')->table('tareas_empleados')
+            ->leftJoin('proyectos', 'tareas_empleados.proyecto_id', '=', 'proyectos.id')
+            ->select('tareas_empleados.*', 'proyectos.nombre as proyecto_nombre')
             ->where('empleado', $id)
             ->where('estado_reg', 'Activo')
-            ->orderBy('id', 'desc')
+            ->orderBy('tareas_empleados.id', 'desc')
             ->where(function ($query) use ($searchTerm) {
                 $query->where('titulo', 'like', '%' . $searchTerm . '%')
                     ->orWhere('descripcion', 'like', '%' . $searchTerm . '%')
@@ -547,8 +588,7 @@ class EmpleadosController extends Controller
 
         DB::connection('mysql2')->beginTransaction();
         try {
-            // actualizar estado de la tarea si es completada agregar fecha entregada
-            if ($tarea['estado'] == 'Completada') {
+            if ($tarea['estado'] == 'Completada' &&  !empty($tarea['fecha_entregada'])) {
                 $tareas = DB::connection('mysql2')->table('tareas_empleados')->where('id', $id)->update([
                     'estado' => $tarea['estado'],
                     'fecha_entregada' => $tarea['fecha_entregada']
@@ -594,6 +634,7 @@ class EmpleadosController extends Controller
     {
 
         $tarea = DB::connection('mysql2')->table('tareas_empleados')->where('id', $idTarea)->first();
+        if (!$tarea) return;
         $titulo = $tarea->titulo;
         $empleado = $tarea->empleado;
 
@@ -683,6 +724,8 @@ class EmpleadosController extends Controller
                 $tipoAccion = ' ha generado un visto bueno para la tarea';
             } else if ($tipo == 'Observacion') {
                 $tipoAccion = ' ha realizado observaciones a la tarea';
+            } else if ($tipo == 'Reprogramada') {
+                $tipoAccion = ' ha reprogramado la tarea';
             }
 
 
@@ -725,6 +768,8 @@ class EmpleadosController extends Controller
                     $tipoAccion = ' ha generado un visto bueno para la tarea';
                 } else if ($tipo == 'Observacion') {
                     $tipoAccion = ' ha realizado observaciones a la tarea';
+                } else if ($tipo == 'Reprogramada') {
+                    $tipoAccion = ' ha reprogramado la tarea';
                 }
 
                 if ($adminReceptor) {
@@ -747,8 +792,8 @@ class EmpleadosController extends Controller
 
 
         //enviar notificacion a los usuarios
-        if ($tipo == 'Tarea' || ($tipo == 'Estado' && $tarea->estado == 'Completada') || $tipo == 'Aprobada' || $tipo == 'Rechazada' || $tipo == 'VistoBueno' || $tipo == 'Observacion') {
-            self::enviarNotificacion($notif);
+        if ($tipo == 'Tarea' || ($tipo == 'Estado' && $tarea->estado == 'Completada') || $tipo == 'Aprobada' || $tipo == 'Rechazada' || $tipo == 'VistoBueno' || $tipo == 'Observacion' || $tipo == 'Reprogramada') {
+           // self::enviarNotificacion($notif);
         }
     }
 
@@ -787,6 +832,8 @@ class EmpleadosController extends Controller
         foreach ($empleados as $empleado) {
             // Obtener las tareas asignadas al empleado
             $tareas = DB::connection('mysql2')->table('tareas_empleados')
+                ->leftJoin('proyectos', 'tareas_empleados.proyecto_id', '=', 'proyectos.id')
+                ->select('tareas_empleados.*', 'proyectos.nombre as proyecto_nombre')
                 ->where('empleado', $empleado->id)
                 ->where('estado_reg', 'Activo')
                 ->get();
@@ -1208,6 +1255,29 @@ class EmpleadosController extends Controller
         return response()->json($tareas);
     }
 
+    function informeEficiencia()
+    {
+        $tareas = DB::connection('mysql2')->table('tareas_empleados')
+            ->join('empleados', 'tareas_empleados.empleado', 'empleados.id')
+            ->join('cargos', 'empleados.cargo', 'cargos.id')
+            ->join('departamentos', 'empleados.departamento', 'departamentos.id')
+            ->select(
+                'tareas_empleados.id',
+                'tareas_empleados.estado',
+                'tareas_empleados.fecha_pactada',
+                'tareas_empleados.fecha_entregada',
+                'tareas_empleados.rechazada',
+                DB::connection('mysql2')->raw('concat(empleados.nombres, " ", empleados.apellidos) as nombre_empleado'),
+                'cargos.nombre as cargo',
+                'departamentos.nombre as departamento'
+            )
+            ->where('tareas_empleados.estado_reg', 'Activo')
+            ->orderBy('empleados.id')
+            ->get();
+
+        return response()->json($tareas);
+    }
+
     function verificarEmpleadoLider($id)
     {
         $empleado = DB::connection('mysql2')->table('lideres_empleados')->where('empleado', $id)->first();
@@ -1344,9 +1414,238 @@ class EmpleadosController extends Controller
     function pausarTarea($id, Request $request)
     {
         $data = $request->all();
-        $tarea = DB::connection('mysql2')->table('tareas_empleados')->where('id', $id)->update([
-            'pausada' => (int) filter_var($data['pausada'], FILTER_VALIDATE_BOOLEAN)
+        try {
+            $pausada = (int) filter_var($data['pausada'], FILTER_VALIDATE_BOOLEAN);
+            $update = ['pausada' => $pausada];
+            if (!$pausada) {
+                $row = DB::connection('mysql2')->table('tareas_empleados')->where('id', $id)->first();
+                if (Schema::connection('mysql2')->hasColumn('tareas_empleados', 'fecha_reprogramacion')) {
+                    $update['fecha_reprogramacion'] = null;
+                }
+                // No borrar motivo si la tarea quedó marcada como reprogramada (cambio de fecha pactada)
+                if (
+                    Schema::connection('mysql2')->hasColumn('tareas_empleados', 'motivo_reprogramacion') &&
+                    $row &&
+                    !(int) ($row->reprogramada ?? 0)
+                ) {
+                    $update['motivo_reprogramacion'] = null;
+                }
+            }
+            DB::connection('mysql2')->table('tareas_empleados')->where('id', $id)->update($update);
+            return response()->json(['success' => 'Estado de pausa actualizado correctamente'], 200);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Solicitud de pausa con motivo y fecha de reanudación esperada.
+     * Envía correo: empleado → su líder; líder → administrador de seguimiento.
+     */
+    public function solicitarPausa(Request $request)
+    {
+        $data = $request->validate([
+            'tarea_id' => 'required|integer',
+            'motivo' => 'required|string|min:3|max:5000',
+            'fecha_reanudacion' => 'required|date',
         ]);
+
+        $usuarioActual = DB::connection('mysql2')->table('users')->where('email', Auth::user()->email)->first();
+        if (!$usuarioActual) {
+            return response()->json(['ok' => false, 'mensaje' => 'Usuario no encontrado'], 403);
+        }
+
+        $tarea = DB::connection('mysql2')->table('tareas_empleados')->where('id', $data['tarea_id'])->first();
+        if (!$tarea) {
+            return response()->json(['ok' => false, 'mensaje' => 'Tarea no encontrada'], 404);
+        }
+
+        $esDueño = $usuarioActual->empleado && (int) $usuarioActual->empleado === (int) $tarea->empleado;
+        $esAdmin = strcasecmp($usuarioActual->tipo_usuario ?? '', 'Administrador') === 0;
+        $esLiderDeAsignado = false;
+        if (!$esDueño && !$esAdmin && $usuarioActual->empleado) {
+            $esLiderDeAsignado = DB::connection('mysql2')->table('lideres_empleados')
+                ->where('lider', $usuarioActual->empleado)
+                ->where('empleado', $tarea->empleado)
+                ->exists();
+        }
+        if (!$esDueño && !$esAdmin && !$esLiderDeAsignado) {
+            return response()->json(['ok' => false, 'mensaje' => 'No autorizado para solicitar pausa en esta tarea'], 403);
+        }
+
+        $update = [
+            'pausada' => 1,
+        ];
+
+        if (Schema::connection('mysql2')->hasColumn('tareas_empleados', 'reprogramada')) {
+            $update['reprogramada'] = 1;
+        }
+
+        // Mismos campos que la reprogramación: motivo + fecha (no toca reprogramada ni fecha_pactada)
+        if (Schema::connection('mysql2')->hasColumn('tareas_empleados', 'motivo_reprogramacion')) {
+            $update['motivo_reprogramacion'] = $data['motivo'];
+        }
+        if (Schema::connection('mysql2')->hasColumn('tareas_empleados', 'fecha_reprogramacion')) {
+            $update['fecha_reprogramacion'] = Carbon::parse($data['fecha_reanudacion'])->startOfDay();
+        }
+
+
+
+        try {
+            DB::connection('mysql2')->table('tareas_empleados')->where('id', $tarea->id)->update($update);
+        } catch (\Exception $e) {
+            return response()->json(['ok' => false, 'mensaje' => $e->getMessage()], 500);
+        }
+
+        $this->notificarSolicitudPausa($tarea, $usuarioActual, $data['motivo'], $data['fecha_reanudacion']);
+
+        return response()->json([
+            'ok' => true,
+            'mensaje' => 'Pausa registrada correctamente',
+            'tarea' => DB::connection('mysql2')->table('tareas_empleados')->where('id', $tarea->id)->first(),
+        ], 200);
+    }
+
+    private function usuarioEsLiderParaNotificaciones($u): bool
+    {
+        if (!$u || strcasecmp($u->tipo_usuario ?? '', 'Administrador') === 0) {
+            return false;
+        }
+        if (strcasecmp(trim($u->tipo_usuario ?? ''), 'Lider') === 0) {
+            return true;
+        }
+        $tipo = strtolower($u->tipo_usuario ?? '');
+        if ($tipo !== '' && str_contains($tipo, 'lider')) {
+            return true;
+        }
+        $lid = strtolower(trim((string) ($u->lider ?? '')));
+
+        return $lid === 'si' || $lid === 'sí';
+    }
+
+    /**
+     * Inserta notificación in-app y envía correo al líder (empleado) o al administrador (líder).
+     */
+    private function notificarSolicitudPausa($tarea, $usuarioActual, string $motivo, string $fechaReanudacion): void
+    {
+        $titulo = $tarea->titulo ?? 'Tarea';
+        $actorNombre = $usuarioActual->name ?? 'Usuario';
+
+        $empleadoAsignado = DB::connection('mysql2')->table('empleados')->where('id', $tarea->empleado)->first();
+        $nombreAsignado = $empleadoAsignado
+            ? trim(($empleadoAsignado->nombres ?? '') . ' ' . ($empleadoAsignado->apellidos ?? ''))
+            : 'Asignado';
+
+        $mensajeBase = $actorNombre . ' ha solicitado pausa para la tarea «' . $titulo . '» (asignada a ' . $nombreAsignado . '). '
+            . 'Motivo: ' . $motivo . '. Fecha de reanudación prevista: ' . $fechaReanudacion . '.';
+
+        $receptor = null;
+        $tipoReceptor = 'usuario';
+        $idEmisor = (int) $usuarioActual->id;
+        $tipoEmisor = 'usuario';
+
+        if (strcasecmp($usuarioActual->tipo_usuario ?? '', 'Administrador') === 0) {
+            return;
+        }
+
+        if ($this->usuarioEsLiderParaNotificaciones($usuarioActual)) {
+            $receptor = DB::connection('mysql2')->table('users')
+                ->where('tipo_usuario', 'Administrador')
+                ->where('lider_seguimiento', 'Si')
+                ->first();
+            if (!$receptor) {
+                $receptor = DB::connection('mysql2')->table('users')
+                    ->where('tipo_usuario', 'Administrador')
+                    ->orderBy('id')
+                    ->first();
+            }
+            $tipoReceptor = 'usuario';
+        } else {
+            $empleadoActor = null;
+            if ($usuarioActual->empleado) {
+                $empleadoActor = DB::connection('mysql2')->table('empleados')
+                    ->join('users', 'empleados.id', 'users.empleado')
+                    ->select('empleados.*', 'users.id as id_usuario')
+                    ->where('empleados.id', $usuarioActual->empleado)
+                    ->first();
+            }
+
+            if ($empleadoActor) {
+                $idEmisor = (int) $empleadoActor->id_usuario;
+                $tipoEmisor = 'empleado';
+            }
+
+            $liderRow = null;
+            if ($empleadoActor) {
+                $liderRow = DB::connection('mysql2')->table('lideres_empleados')
+                    ->where('empleado', $empleadoActor->id)
+                    ->first();
+            }
+
+            if ($liderRow && $liderRow->lider) {
+                $receptor = DB::connection('mysql2')->table('empleados')
+                    ->join('users', 'empleados.id', 'users.empleado')
+                    ->select('users.*')
+                    ->where('empleados.id', $liderRow->lider)
+                    ->first();
+                $tipoReceptor = 'empleado';
+            } else {
+                $receptor = DB::connection('mysql2')->table('users')
+                    ->where('tipo_usuario', 'Administrador')
+                    ->orderBy('id')
+                    ->first();
+                $tipoReceptor = 'usuario';
+            }
+        }
+
+        if (!$receptor || empty($receptor->email)) {
+            return;
+        }
+
+        try {
+            DB::connection('mysql2')->table('notif_generales')->insert([
+                'id_emisor' => $idEmisor,
+                'tipo_emisor' => $tipoEmisor,
+                'id_receptor' => $receptor->id,
+                'tipo_receptor' => $tipoReceptor,
+                'mensaje' => $mensajeBase,
+                'tarea_id' => $tarea->id,
+                'leido' => 0,
+                'fecha' => now(),
+                'tipo' => 'PausaSolicitada',
+            ]);
+        } catch (\Exception $e) {
+            // Si el tipo no está permitido en ENUM, omitir notificación in-app pero intentar correo
+        }
+
+        try {
+            Mail::to($receptor->email)->send(new NotificacionMailable([
+                'name' => $receptor->name ?? 'Usuario',
+                'message' => $mensajeBase,
+            ]));
+        } catch (\Exception $e) {
+            // No bloquear la solicitud de pausa si el correo falla
+        }
+    }
+
+    function reprogramarTarea($id, Request $request)
+    {
+        $data = $request->all();
+        
+        try {
+            $tarea = DB::connection('mysql2')->table('tareas_empleados')->where('id', $id)->update([
+                'fecha_pactada' => $data['fecha_pactada'],
+                'motivo_reprogramacion' => $data['motivo_reprogramacion'],
+                'reprogramada' => 1
+            ]);
+
+            // Guardar notificación de reprogramación
+            self::guardarNotificacion($id, 'Reprogramada');
+
+            return response()->json(['success' => 'Tarea reprogramada correctamente'], 200);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
     }
 
     function obtenerObservacion($id)
@@ -1356,5 +1655,145 @@ class EmpleadosController extends Controller
         $receptor = DB::connection('mysql')->table('users')->where('email', $usuario->email)->first();
 
         return response()->json(['idReceptor' => $receptor->id]);
+    }
+
+    // ─── Proyectos ──────────────────────────────────────────────────────────────
+
+    function cargarProyectos()
+    {
+        $proyectos = DB::connection('mysql2')->table('proyectos')
+            ->orderBy('nombre')
+            ->get();
+
+        return response()->json($proyectos);
+    }
+
+    function guardarProyecto(Request $request)
+    {
+        $datos = $request->validate([
+            'nombre'            => 'required|string|max:255',
+            'descripcion'       => 'nullable|string',
+            'estado'            => 'nullable|in:Activo,Pausado,Completado,Cancelado',
+            'fecha_inicio'      => 'nullable|date',
+            'fecha_fin_estimada'=> 'nullable|date',
+        ]);
+
+        $datos['estado'] = $datos['estado'] ?? 'Activo';
+
+        if ($request->has('id') && $request->id) {
+            DB::connection('mysql2')->table('proyectos')->where('id', $request->id)->update($datos + ['updated_at' => now()]);
+            $proyecto = DB::connection('mysql2')->table('proyectos')->where('id', $request->id)->first();
+        } else {
+            $datos['created_at'] = now();
+            $datos['updated_at'] = now();
+            $id = DB::connection('mysql2')->table('proyectos')->insertGetId($datos);
+            $proyecto = DB::connection('mysql2')->table('proyectos')->where('id', $id)->first();
+        }
+
+        return response()->json(['success' => true, 'proyecto' => $proyecto]);
+    }
+
+    function eliminarProyecto($id)
+    {
+        DB::connection('mysql2')->table('tareas_empleados')->where('proyecto_id', $id)->update(['proyecto_id' => null]);
+        DB::connection('mysql2')->table('proyectos')->where('id', $id)->delete();
+
+        return response()->json(['success' => true]);
+    }
+
+    // ─── Subtareas ───────────────────────────────────────────────────────────────
+
+    function cargarSubtareas($tarea_id)
+    {
+        $subtareas = DB::connection('mysql2')->table('subtareas')
+            ->where('tarea_id', $tarea_id)
+            ->orderBy('orden')
+            ->orderBy('id')
+            ->get();
+
+        return response()->json($subtareas);
+    }
+
+    function guardarSubtarea(Request $request)
+    {
+        $id = DB::connection('mysql2')->table('subtareas')->insertGetId([
+            'tarea_id'          => $request->tarea_id,
+            'titulo'            => $request->titulo,
+            'completada'        => 0,
+            'fecha_vencimiento' => $request->fecha_vencimiento ?: null,
+            'orden'             => $request->orden ?? 0,
+            'checklist_titulo'  => $request->checklist_titulo ?? null,
+            'created_at'        => now(),
+            'updated_at'        => now(),
+        ]);
+
+        $subtarea = DB::connection('mysql2')->table('subtareas')->where('id', $id)->first();
+
+        return response()->json(['success' => true, 'subtarea' => $subtarea]);
+    }
+
+    function actualizarSubtarea(Request $request, $id)
+    {
+        $data = ['updated_at' => now()];
+
+        if ($request->has('completada')) {
+            $data['completada'] = $request->completada ? 1 : 0;
+        }
+        if ($request->has('titulo')) {
+            $data['titulo'] = $request->titulo;
+        }
+        if ($request->has('fecha_vencimiento')) {
+            $data['fecha_vencimiento'] = $request->fecha_vencimiento ?: null;
+        }
+        if ($request->has('checklist_titulo')) {
+            $data['checklist_titulo'] = $request->checklist_titulo ?: null;
+        }
+
+        DB::connection('mysql2')->table('subtareas')->where('id', $id)->update($data);
+
+        $subtarea = DB::connection('mysql2')->table('subtareas')->where('id', $id)->first();
+
+        return response()->json(['success' => true, 'subtarea' => $subtarea]);
+    }
+
+    function eliminarSubtarea($id)
+    {
+        DB::connection('mysql2')->table('subtareas')->where('id', $id)->delete();
+
+        return response()->json(['success' => true]);
+    }
+
+    function checklistsEmpleado($empleado_id)
+    {
+        $tareas = DB::connection('mysql2')->table('tareas_empleados')
+            ->whereIn('id', function($q) {
+                $q->select('tarea_id')->from('subtareas');
+            })
+            ->where('empleado', $empleado_id)
+            ->select('id', 'titulo')
+            ->orderBy('id', 'desc')
+            ->get();
+
+        $result = [];
+        foreach ($tareas as $tarea) {
+            $items = DB::connection('mysql2')->table('subtareas')
+                ->where('tarea_id', $tarea->id)
+                ->select('titulo', 'fecha_vencimiento', 'checklist_titulo')
+                ->orderBy('orden')->orderBy('id')
+                ->get();
+            if ($items->isNotEmpty()) {
+                $result[] = [
+                    'tarea_id'        => $tarea->id,
+                    'tarea_titulo'    => $tarea->titulo,
+                    'checklist_titulo'=> $items->first()->checklist_titulo ?? null,
+                    'items'           => $items->map(fn($s) => [
+                        'titulo'           => $s->titulo,
+                        'fecha_vencimiento'=> $s->fecha_vencimiento,
+                    ])->values()
+                ];
+            }
+        }
+
+        return response()->json($result);
     }
 }
