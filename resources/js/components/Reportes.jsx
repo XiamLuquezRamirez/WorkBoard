@@ -1583,13 +1583,12 @@ const Reportes = () => {
                 const promedioGlobal = empleados.length > 0
                     ? Math.round((empleados.reduce((s, e) => s + e.score, 0) / empleados.length) * 100)
                     : 0;
-                const pctATiempo = empleados.reduce((s, e) => s + e.total, 0) > 0
-                    ? Math.round(empleados.reduce((s, e) => s + e.aTiempo, 0) /
-                                 empleados.reduce((s, e) => s + e.total, 0) * 100)
+                const totalSum = empleados.reduce((s, e) => s + e.total, 0);
+                const pctATiempo = totalSum > 0
+                    ? Math.round(empleados.reduce((s, e) => s + e.aTiempo, 0) / totalSum * 100)
                     : 0;
-                const pctReprocesos = empleados.reduce((s, e) => s + e.total, 0) > 0
-                    ? Math.round(empleados.reduce((s, e) => s + e.reprocesos, 0) /
-                                 empleados.reduce((s, e) => s + e.total, 0) * 100)
+                const pctReprocesos = totalSum > 0
+                    ? Math.round(empleados.reduce((s, e) => s + e.reprocesos, 0) / totalSum * 100)
                     : 0;
 
                 return (
