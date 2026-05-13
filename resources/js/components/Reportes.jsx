@@ -277,7 +277,7 @@ const Reportes = () => {
         const totalEnProceso = tareas.filter(t => t.estado === 'En Proceso').length;
         const totalPendientes = tareas.filter(t => t.estado === 'Pendiente').length;
         const totalAtrasadas = tareas.filter(t =>
-            t.fecha_pactada && t.fecha_pactada < hoy && t.estado !== 'Completada'
+            t.fecha_pactada && t.fecha_pactada < hoy && t.estado !== 'Completada' && t.pausada !== 1
         ).length;
 
         // Completadas por departamento
@@ -334,7 +334,7 @@ const Reportes = () => {
             if (t.estado === 'Completada') acc[dept].completadas += 1;
             if (t.estado === 'En Proceso') acc[dept].enProceso += 1;
             if (t.estado === 'Pendiente') acc[dept].pendientes += 1;
-            if (t.fecha_pactada && t.fecha_pactada < hoy && t.estado !== 'Completada') {
+            if (t.fecha_pactada && t.fecha_pactada < hoy && t.estado !== 'Completada' && t.pausada !== 1) {
                 acc[dept].atrasadas += 1;
             }
             if (t.estado === 'Completada' && t.fecha_entregada && t.fecha_pactada) {
@@ -368,14 +368,10 @@ const Reportes = () => {
         
         // Filtro específico para tareas atrasadas
         if (filterAtrasadas) {
-            tareasFiltradas = tareasFiltradas.filter(t => {
-                // Tareas que están atrasadas (fecha pactada pasó y no están completadas)
-                if (!t.fecha_pactada) return false;
-                const fechaPactada = new Date(t.fecha_pactada);
-                const fechaActual = new Date();
-                const estadoNoCompletado = t.estado !== 'Completada';
-                return fechaPactada < fechaActual && estadoNoCompletado;
-            });
+            const hoyStr = new Date().toISOString().split('T')[0];
+            tareasFiltradas = tareasFiltradas.filter(t =>
+                t.fecha_pactada && t.fecha_pactada < hoyStr && t.estado !== 'Completada'
+            );
         }
         
         // Filtro por rango de fecha pactada
