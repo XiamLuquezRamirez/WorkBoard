@@ -7589,3 +7589,23 @@ search-container .employee-card:hover::before {
         grid-template-columns: repeat(2, 1fr);
     }
 }
+
+/* ===== BOTÓN EXPORTAR EXCEL ===== */
+.excel-button {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.5rem 1rem;
+    background: #16a34a;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.excel-button:hover {
+    background: #15803d;
+}

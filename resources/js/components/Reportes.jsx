@@ -25,6 +25,7 @@ import {
     ResponsiveContainer,
 } from "recharts";
 import Sidebar from "./Sidebar";
+import * as XLSX from 'xlsx';
 
 const Reportes = () => {
     const { user } = useUser();
@@ -551,6 +552,44 @@ const Reportes = () => {
         printWindow.document.write(htmlContent);
         printWindow.document.close();
         printWindow.print();
+    };
+
+    const exportarExcel = () => {
+        const tareasPorEmpleado = generarTareasPorEmpleado();
+        const workbook = XLSX.utils.book_new();
+
+        // Hoja de resumen
+        const resumenData = generarResumenTareasPorEmpleado().map(item => ({
+            'Empleado': item.empleado,
+            'Total': item.total,
+            'Completadas': item.completadas,
+            'Pendientes': item.pendientes,
+            'En Proceso': item.enProceso,
+            'Atrasadas': item.atrasadas,
+        }));
+        const wsResumen = XLSX.utils.json_to_sheet(resumenData);
+        XLSX.utils.book_append_sheet(workbook, wsResumen, 'Resumen');
+
+        // Hoja de detalle
+        const detalleData = [];
+        tareasPorEmpleado.forEach(empData => {
+            empData.tareas.forEach(tarea => {
+                detalleData.push({
+                    'Empleado': empData.empleado,
+                    'Departamento': tarea.departamento || 'N/A',
+                    'Título': tarea.titulo,
+                    'Estado': tarea.estado,
+                    'Prioridad': tarea.prioridad || 'N/A',
+                    'Fecha Pactada': cambiarFormatoFecha(tarea.fecha_pactada),
+                    'Fecha Entregada': cambiarFormatoFecha(tarea.fecha_entregada),
+                });
+            });
+        });
+        const wsDetalle = XLSX.utils.json_to_sheet(detalleData);
+        XLSX.utils.book_append_sheet(workbook, wsDetalle, 'Detalle');
+
+        const fecha = new Date().toISOString().split('T')[0];
+        XLSX.writeFile(workbook, `Tareas_Empleados_${fecha}.xlsx`);
     };
 
     //informe de cumplimiento de tareas
@@ -1125,6 +1164,9 @@ const Reportes = () => {
                         <div className="modal-header">
                             <h2>Informe de Tareas por Empleado</h2>
                             <div className="header-actions">
+                                <button className="excel-button" onClick={exportarExcel}>
+                                    <FaChartBar /> Exportar Excel
+                                </button>
                                 <button className="print-button" onClick={imprimirPDF}>
                                     <FaPrint /> Imprimir PDF
                                 </button>
