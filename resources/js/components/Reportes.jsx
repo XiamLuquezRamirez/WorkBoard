@@ -392,7 +392,7 @@ const Reportes = () => {
             if (t.estado === 'Completada') acc[key].completadas++;
             if (t.estado === 'Completada' && t.fecha_entregada && t.fecha_entregada <= t.fecha_pactada)
                 acc[key].aTiempo++;
-            if (t.rechazada === 1) acc[key].reprocesos++;
+            if (t.rechazada == 1) acc[key].reprocesos++;
             return acc;
         }, {});
 
