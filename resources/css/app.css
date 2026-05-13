@@ -7543,3 +7543,49 @@ search-container .employee-card:hover::before {
 .alert-icon {
     font-size: 0.85rem;
 }
+
+/* ===== INFORME EJECUTIVO ===== */
+.executive-kpis {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.exec-kpi {
+    border-radius: 10px;
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.2rem;
+}
+
+.exec-kpi--green  { background: #f0fdf4; border: 1px solid #86efac; }
+.exec-kpi--blue   { background: #eff6ff; border: 1px solid #93c5fd; }
+.exec-kpi--orange { background: #fff7ed; border: 1px solid #fdba74; }
+.exec-kpi--red    { background: #fef2f2; border: 1px solid #fca5a5; }
+
+.exec-kpi-number {
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.exec-kpi--green  .exec-kpi-number { color: #16a34a; }
+.exec-kpi--blue   .exec-kpi-number { color: #2563eb; }
+.exec-kpi--orange .exec-kpi-number { color: #ea580c; }
+.exec-kpi--red    .exec-kpi-number { color: #dc2626; }
+
+.exec-kpi-label {
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #6b7280;
+}
+
+@media (max-width: 768px) {
+    .executive-kpis {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}

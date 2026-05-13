@@ -51,11 +51,24 @@ const Reportes = () => {
     const [filterEstado, setFilterEstado] = useState('');
     const [filterFechaInicio, setFilterFechaInicio] = useState('');
     const [filterFechaFin, setFilterFechaFin] = useState('');
+    const [filterAtrasadas, setFilterAtrasadas] = useState(false);
     const [empleadosList, setEmpleadosList] = useState([]);
     const [departamentos, setDepartamentos] = useState([]);
     const [estados, setEstados] = useState([]);
 
     const reportCards = [
+        {
+            id: 0,
+            title: "Informe Ejecutivo",
+            icon: <FaChartLine size={25} />,
+            description: "Resumen global y por departamento",
+            color: "#0f766e",
+            onClick: () => {
+                setSelectedReport("ejecutivo");
+                setShowReportModal(true);
+                consultarTareas();
+            },
+        },
         {
             id: 1,
             title: "Informe de productividad",
@@ -109,6 +122,16 @@ const Reportes = () => {
         },
 
     ];
+
+
+    const cambiarFormatoFecha = (fecha) => {
+        if (!fecha) return 'N/A';
+        const fechaObj = new Date(fecha + 'T12:00:00');
+        const dia = fechaObj.getDate().toString().padStart(2, '0');
+        const mes = (fechaObj.getMonth() + 1).toString().padStart(2, '0');
+        const anio = fechaObj.getFullYear();
+        return `${dia}/${mes}/${anio}`;
+    }
 
 
     // Tareas completadas por empleado
@@ -234,6 +257,53 @@ const Reportes = () => {
             .catch((error) => console.error("Error fetching tasks:", error));
     }
 
+    const calcularInformeEjecutivo = () => {
+        const hoy = new Date().toISOString().split('T')[0];
+
+        const totalCompletadas = tareas.filter(t => t.estado === 'Completada').length;
+        const totalEnProceso = tareas.filter(t => t.estado === 'En Proceso').length;
+        const totalPendientes = tareas.filter(t => t.estado === 'Pendiente').length;
+        const totalAtrasadas = tareas.filter(t =>
+            t.fecha_pactada && t.fecha_pactada < hoy && t.estado !== 'Completada'
+        ).length;
+
+        // Completadas por departamento
+        const porDept = tareas.reduce((acc, t) => {
+            if (!t.departamento) return acc;
+            if (!acc[t.departamento]) acc[t.departamento] = { departamento: t.departamento, completadas: 0, total: 0 };
+            acc[t.departamento].total += 1;
+            if (t.estado === 'Completada') acc[t.departamento].completadas += 1;
+            return acc;
+        }, {});
+
+        const deptData = Object.values(porDept).map(d => ({
+            ...d,
+            porcentaje: d.total > 0 ? Math.round((d.completadas / d.total) * 100) : 0,
+        }));
+
+        // Eficiencia por empleado (completadas a tiempo / total completadas)
+        const porEmpleado = tareas.reduce((acc, t) => {
+            if (!t.empleado) return acc;
+            if (!acc[t.empleado]) acc[t.empleado] = { empleado: t.empleado, completadasATiempo: 0, totalCompletadas: 0 };
+            if (t.estado === 'Completada') {
+                acc[t.empleado].totalCompletadas += 1;
+                if (t.fecha_entregada && t.fecha_pactada && t.fecha_entregada <= t.fecha_pactada) {
+                    acc[t.empleado].completadasATiempo += 1;
+                }
+            }
+            return acc;
+        }, {});
+
+        const eficienciaData = Object.values(porEmpleado).map(e => ({
+            empleado: e.empleado,
+            eficiencia: e.totalCompletadas > 0
+                ? Math.round((e.completadasATiempo / e.totalCompletadas) * 100)
+                : 0,
+        })).sort((a, b) => b.eficiencia - a.eficiencia);
+
+        return { totalCompletadas, totalEnProceso, totalPendientes, totalAtrasadas, deptData, eficienciaData };
+    };
+
     // Función para generar datos de tareas por empleado
     const generarTareasPorEmpleado = () => {
         let tareasFiltradas = tareas;
@@ -247,6 +317,18 @@ const Reportes = () => {
         }
         if (filterEstado) {
             tareasFiltradas = tareasFiltradas.filter(t => t.estado === filterEstado);
+        }
+        
+        // Filtro específico para tareas atrasadas
+        if (filterAtrasadas) {
+            tareasFiltradas = tareasFiltradas.filter(t => {
+                // Tareas que están atrasadas (fecha pactada pasó y no están completadas)
+                if (!t.fecha_pactada) return false;
+                const fechaPactada = new Date(t.fecha_pactada);
+                const fechaActual = new Date();
+                const estadoNoCompletado = t.estado !== 'Completada';
+                return fechaPactada < fechaActual && estadoNoCompletado;
+            });
         }
         
         // Filtro por rango de fecha pactada
@@ -335,7 +417,8 @@ const Reportes = () => {
                     <p><strong>Empleado:</strong> ${filterEmpleado || 'Todos'}</p>
                     <p><strong>Departamento:</strong> ${filterDepartamento || 'Todos'}</p>
                     <p><strong>Estado:</strong> ${filterEstado || 'Todos'}</p>
-                    <p><strong>Fecha Pactada:</strong> ${filterFechaInicio && filterFechaFin ? `${filterFechaInicio} - ${filterFechaFin}` : filterFechaInicio ? `Desde ${filterFechaInicio}` : filterFechaFin ? `Hasta ${filterFechaFin}` : 'Todas las fechas'}</p>
+                    <p><strong>Solo tareas atrasadas:</strong> ${filterAtrasadas ? 'Sí' : 'No'}</p>
+                    <p><strong>Fecha Pactada:</strong> ${filterFechaInicio && filterFechaFin ? `${cambiarFormatoFecha(filterFechaInicio)} - ${cambiarFormatoFecha(filterFechaFin)}` : filterFechaInicio ? `Desde ${cambiarFormatoFecha(filterFechaInicio)}` : filterFechaFin ? `Hasta ${cambiarFormatoFecha(filterFechaFin)}` : 'Todas las fechas'}</p>
                     <p><strong>Fecha de generación:</strong> ${new Date().toLocaleDateString()}</p>
                 </div>
         `;
@@ -399,8 +482,8 @@ const Reportes = () => {
                     <tr>
                         <td>${tarea.titulo}</td>
                         <td>${tarea.estado}</td>
-                        <td>${tarea.fecha_pactada || 'N/A'}</td>
-                        <td>${tarea.fecha_entregada || 'N/A'}</td>
+                        <td>${cambiarFormatoFecha(tarea.fecha_pactada) || 'N/A'}</td>
+                        <td>${cambiarFormatoFecha(tarea.fecha_entregada) || 'N/A'}</td>
                         <td>${tarea.prioridad || 'N/A'}</td>
                     </tr>
                 `;
@@ -971,8 +1054,8 @@ const Reportes = () => {
                                                                 <td>
                                                                     <span className="status-badge status-pending">{t.empleado}</span>
                                                                 </td>
-                                                                <td className="date-cell">{t.fecha_pactada}</td>
-                                                                <td className="date-cell text-red-600">{t.fecha_entregada}</td>
+                                                                <td className="date-cell">{cambiarFormatoFecha(t.fecha_pactada)}</td>
+                                                                <td className="date-cell text-red-600">{cambiarFormatoFecha(t.fecha_entregada)}</td>
                                                                 <td>
                                                                     <span className="status-badge status-delayed">Atrasada</span>
                                                                 </td>
@@ -1077,6 +1160,17 @@ const Reportes = () => {
                                                 className="filter-select"
                                             />
                                         </div>
+                                        
+                                        <div className="filter-group flex items-center gap-2" style={{justifyContent: 'flex-end'}}>
+                                            <label>
+                                                <input 
+                                                    type="checkbox" 
+                                                    checked={filterAtrasadas}
+                                                    onChange={(e) => setFilterAtrasadas(e.target.checked)}
+                                                />
+                                                Solo tareas atrasadas
+                                            </label>
+                                        </div>
                                     </div>
                                     
                                     <div className="filters-actions">
@@ -1088,6 +1182,7 @@ const Reportes = () => {
                                                 setFilterEstado('');
                                                 setFilterFechaInicio('');
                                                 setFilterFechaFin('');
+                                                setFilterAtrasadas(false);
                                             }}
                                         >
                                             Limpiar Filtros
@@ -1162,8 +1257,8 @@ const Reportes = () => {
                                                                         {tarea.estado}
                                                                     </span>
                                                                 </td>
-                                                                <td>{tarea.fecha_pactada || 'N/A'}</td>
-                                                                <td>{tarea.fecha_entregada || 'N/A'}</td>
+                                                                <td>{cambiarFormatoFecha(tarea.fecha_pactada) || 'N/A'}</td>
+                                                                <td>{cambiarFormatoFecha(tarea.fecha_entregada) || 'N/A'}</td>
                                                                 <td>{tarea.prioridad || 'N/A'}</td>
                                                                 <td>{tarea.departamento || 'N/A'}</td>
                                                             </tr>
@@ -1182,6 +1277,68 @@ const Reportes = () => {
 
 
 
+
+            {showReportModal && selectedReport === "ejecutivo" && (() => {
+                const { totalCompletadas, totalEnProceso, totalPendientes, totalAtrasadas, deptData, eficienciaData } = calcularInformeEjecutivo();
+                return (
+                    <div className="modal-overlay">
+                        <div className="modal-report">
+                            <div className="modal-header">
+                                <h2>Informe Ejecutivo</h2>
+                                <button className="close-button" onClick={() => setShowReportModal(false)}>
+                                    <FaTimes />
+                                </button>
+                            </div>
+                            <div className="tab-content">
+                                <div className="executive-kpis">
+                                    <div className="exec-kpi exec-kpi--green">
+                                        <span className="exec-kpi-number">{totalCompletadas}</span>
+                                        <span className="exec-kpi-label">Completadas</span>
+                                    </div>
+                                    <div className="exec-kpi exec-kpi--blue">
+                                        <span className="exec-kpi-number">{totalEnProceso}</span>
+                                        <span className="exec-kpi-label">En Proceso</span>
+                                    </div>
+                                    <div className="exec-kpi exec-kpi--orange">
+                                        <span className="exec-kpi-number">{totalPendientes}</span>
+                                        <span className="exec-kpi-label">Pendientes</span>
+                                    </div>
+                                    <div className="exec-kpi exec-kpi--red">
+                                        <span className="exec-kpi-number">{totalAtrasadas}</span>
+                                        <span className="exec-kpi-label">Atrasadas</span>
+                                    </div>
+                                </div>
+
+                                <h3 style={{ margin: '1.5rem 0 0.5rem', fontSize: '1rem', color: '#374151' }}>
+                                    Avance por Departamento
+                                </h3>
+                                <ResponsiveContainer width="100%" height={240}>
+                                    <BarChart data={deptData} margin={{ top: 5, right: 20, left: 0, bottom: 40 }}>
+                                        <CartesianGrid strokeDasharray="3 3" />
+                                        <XAxis dataKey="departamento" angle={-30} textAnchor="end" interval={0} tick={{ fontSize: 12 }} />
+                                        <YAxis domain={[0, 100]} tickFormatter={v => `${v}%`} />
+                                        <Tooltip formatter={(value) => `${value}%`} />
+                                        <Bar dataKey="porcentaje" fill="#0891b2" name="% Completado" radius={[4,4,0,0]} />
+                                    </BarChart>
+                                </ResponsiveContainer>
+
+                                <h3 style={{ margin: '1.5rem 0 0.5rem', fontSize: '1rem', color: '#374151' }}>
+                                    Eficiencia por Empleado (% entregado a tiempo)
+                                </h3>
+                                <ResponsiveContainer width="100%" height={240}>
+                                    <BarChart data={eficienciaData} margin={{ top: 5, right: 20, left: 0, bottom: 60 }}>
+                                        <CartesianGrid strokeDasharray="3 3" />
+                                        <XAxis dataKey="empleado" angle={-35} textAnchor="end" interval={0} tick={{ fontSize: 11 }} />
+                                        <YAxis domain={[0, 100]} tickFormatter={v => `${v}%`} />
+                                        <Tooltip formatter={(value) => `${value}%`} />
+                                        <Bar dataKey="eficiencia" fill="#0f766e" name="Eficiencia" radius={[4,4,0,0]} />
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </div>
+                    </div>
+                );
+            })()}
 
         </>
     );
