@@ -153829,10 +153829,18 @@ var Reportes = function Reportes() {
     _useState32 = _slicedToArray(_useState31, 2),
     loadingEficiencia = _useState32[0],
     setLoadingEficiencia = _useState32[1];
-  var _useState33 = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)([]),
+  var _useState33 = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(''),
     _useState34 = _slicedToArray(_useState33, 2),
-    estados = _useState34[0],
-    setEstados = _useState34[1];
+    eficienciaStart = _useState34[0],
+    setEficienciaStart = _useState34[1];
+  var _useState35 = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(''),
+    _useState36 = _slicedToArray(_useState35, 2),
+    eficienciaEnd = _useState36[0],
+    setEficienciaEnd = _useState36[1];
+  var _useState37 = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)([]),
+    _useState38 = _slicedToArray(_useState37, 2),
+    estados = _useState38[0],
+    setEstados = _useState38[1];
   var reportCards = [{
     id: 0,
     title: "Informe Ejecutivo",
@@ -154172,7 +154180,7 @@ var Reportes = function Reportes() {
   };
   var calcularEficienciaOperativa = function calcularEficienciaOperativa() {
     var filtradas = datosEficiencia.filter(function (t) {
-      return (!startDate || t.fecha_pactada >= startDate) && (!endDate || t.fecha_pactada <= endDate);
+      return (!eficienciaStart || t.fecha_pactada >= eficienciaStart) && (!eficienciaEnd || t.fecha_pactada <= eficienciaEnd);
     });
     var porEmpleado = filtradas.reduce(function (acc, t) {
       var key = t.nombre_empleado;
@@ -154188,7 +154196,7 @@ var Reportes = function Reportes() {
       acc[key].total++;
       if (t.estado === 'Completada') acc[key].completadas++;
       if (t.estado === 'Completada' && t.fecha_entregada && t.fecha_entregada <= t.fecha_pactada) acc[key].aTiempo++;
-      if (t.rechazada === 1) acc[key].reprocesos++;
+      if (t.rechazada == 1) acc[key].reprocesos++;
       return acc;
     }, {});
     return Object.values(porEmpleado).map(function (emp) {
@@ -154359,7 +154367,7 @@ var Reportes = function Reportes() {
   };
   var imprimirEficienciaGeneral = function imprimirEficienciaGeneral(empleados, deptos) {
     var hoy = new Date().toLocaleDateString();
-    var html = "<html><head><style>\n            body{font-family:Arial,sans-serif;margin:20px;font-size:13px}\n            h1{color:#1d4ed8;text-align:center}\n            h2{color:#374151;margin-top:24px;font-size:15px}\n            table{width:100%;border-collapse:collapse;margin-top:8px}\n            th,td{border:1px solid #d1d5db;padding:6px 8px;text-align:left}\n            th{background:#f3f4f6;font-weight:600}\n            .kpis{display:flex;gap:12px;margin:12px 0;flex-wrap:wrap}\n            .kpi{border:1px solid #e5e7eb;border-radius:6px;padding:8px 14px;min-width:100px}\n            .kpi strong{display:block;font-size:20px}\n            .alert{background:#fef2f2;border:1px solid #fecaca;padding:6px 10px;border-radius:4px;margin:4px 0}\n            .ok{background:#f0fdf4;border:1px solid #bbf7d0;padding:6px 10px;border-radius:4px;margin:4px 0}\n            .info{background:#eff6ff;border:1px solid #bfdbfe;padding:6px 10px;border-radius:4px;margin:4px 0}\n        </style></head><body>\n        <h1>Informe de Eficiencia Operativa</h1>\n        <p style=\"text-align:center;color:#6b7280\">Per\xEDodo: ".concat(startDate, " \u2014 ").concat(endDate, " | Generado: ").concat(hoy, "</p>");
+    var html = "<html><head><style>\n            body{font-family:Arial,sans-serif;margin:20px;font-size:13px}\n            h1{color:#1d4ed8;text-align:center}\n            h2{color:#374151;margin-top:24px;font-size:15px}\n            table{width:100%;border-collapse:collapse;margin-top:8px}\n            th,td{border:1px solid #d1d5db;padding:6px 8px;text-align:left}\n            th{background:#f3f4f6;font-weight:600}\n            .kpis{display:flex;gap:12px;margin:12px 0;flex-wrap:wrap}\n            .kpi{border:1px solid #e5e7eb;border-radius:6px;padding:8px 14px;min-width:100px}\n            .kpi strong{display:block;font-size:20px}\n            .alert{background:#fef2f2;border:1px solid #fecaca;padding:6px 10px;border-radius:4px;margin:4px 0}\n            .ok{background:#f0fdf4;border:1px solid #bbf7d0;padding:6px 10px;border-radius:4px;margin:4px 0}\n            .info{background:#eff6ff;border:1px solid #bfdbfe;padding:6px 10px;border-radius:4px;margin:4px 0}\n        </style></head><body>\n        <h1>Informe de Eficiencia Operativa</h1>\n        <p style=\"text-align:center;color:#6b7280\">Per\xEDodo: ".concat(eficienciaStart || 'Todo', " \u2014 ").concat(eficienciaEnd || 'Todo', " | Generado: ").concat(hoy, "</p>");
     var alto = empleados.filter(function (e) {
       return e.score >= 0.75;
     }).length;
@@ -154401,7 +154409,7 @@ var Reportes = function Reportes() {
   };
   var imprimirEficienciaPorEmpleado = function imprimirEficienciaPorEmpleado(empleados) {
     var hoy = new Date().toLocaleDateString();
-    var html = "<html><head><style>\n            body{font-family:Arial,sans-serif;margin:20px;font-size:13px}\n            h1{color:#1d4ed8;text-align:center}\n            .emp-block{border:1px solid #e5e7eb;border-radius:6px;padding:14px;margin-bottom:16px;page-break-inside:avoid}\n            .emp-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}\n            .emp-name{font-size:15px;font-weight:700;color:#111827}\n            .emp-meta{color:#6b7280;font-size:12px}\n            .badge{padding:3px 8px;border-radius:99px;font-size:12px;font-weight:600}\n            .badge-alto{background:#dcfce7;color:#15803d}\n            .badge-medio{background:#ffedd5;color:#c2410c}\n            .badge-critico{background:#fee2e2;color:#b91c1c}\n            table{width:100%;border-collapse:collapse;margin-top:8px;font-size:12px}\n            th,td{border:1px solid #e5e7eb;padding:4px 8px}\n            th{background:#f9fafb}\n        </style></head><body>\n        <h1>Eficiencia Operativa \u2014 Por Empleado</h1>\n        <p style=\"text-align:center;color:#6b7280\">Per\xEDodo: ".concat(startDate, " \u2014 ").concat(endDate, " | Generado: ").concat(hoy, "</p>");
+    var html = "<html><head><style>\n            body{font-family:Arial,sans-serif;margin:20px;font-size:13px}\n            h1{color:#1d4ed8;text-align:center}\n            .emp-block{border:1px solid #e5e7eb;border-radius:6px;padding:14px;margin-bottom:16px;page-break-inside:avoid}\n            .emp-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}\n            .emp-name{font-size:15px;font-weight:700;color:#111827}\n            .emp-meta{color:#6b7280;font-size:12px}\n            .badge{padding:3px 8px;border-radius:99px;font-size:12px;font-weight:600}\n            .badge-alto{background:#dcfce7;color:#15803d}\n            .badge-medio{background:#ffedd5;color:#c2410c}\n            .badge-critico{background:#fee2e2;color:#b91c1c}\n            table{width:100%;border-collapse:collapse;margin-top:8px;font-size:12px}\n            th,td{border:1px solid #e5e7eb;padding:4px 8px}\n            th{background:#f9fafb}\n        </style></head><body>\n        <h1>Eficiencia Operativa \u2014 Por Empleado</h1>\n        <p style=\"text-align:center;color:#6b7280\">Per\xEDodo: ".concat(eficienciaStart || 'Todo', " \u2014 ").concat(eficienciaEnd || 'Todo', " | Generado: ").concat(hoy, "</p>");
     empleados.forEach(function (emp, i) {
       var pctCompleto = emp.total > 0 ? Math.round(emp.completadas / emp.total * 100) : 0;
       var badgeClass = emp.score >= 0.75 ? 'badge-alto' : emp.score >= 0.50 ? 'badge-medio' : 'badge-critico';
@@ -154416,7 +154424,7 @@ var Reportes = function Reportes() {
   };
   var imprimirEficienciaPorArea = function imprimirEficienciaPorArea(deptos) {
     var hoy = new Date().toLocaleDateString();
-    var html = "<html><head><style>\n            body{font-family:Arial,sans-serif;margin:20px;font-size:13px}\n            h1{color:#1d4ed8;text-align:center}\n            .area-block{border:1px solid #e5e7eb;border-radius:6px;padding:14px;margin-bottom:20px;page-break-inside:avoid}\n            .area-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}\n            .area-name{font-size:16px;font-weight:700;color:#111827}\n            .badge{padding:3px 10px;border-radius:99px;font-size:12px;font-weight:600}\n            .badge-alto{background:#dcfce7;color:#15803d}\n            .badge-medio{background:#ffedd5;color:#c2410c}\n            .badge-critico{background:#fee2e2;color:#b91c1c}\n            table{width:100%;border-collapse:collapse;font-size:12px}\n            th,td{border:1px solid #e5e7eb;padding:4px 8px}\n            th{background:#f9fafb}\n        </style></head><body>\n        <h1>Eficiencia Operativa \u2014 Por \xC1rea</h1>\n        <p style=\"text-align:center;color:#6b7280\">Per\xEDodo: ".concat(startDate, " \u2014 ").concat(endDate, " | Generado: ").concat(hoy, "</p>");
+    var html = "<html><head><style>\n            body{font-family:Arial,sans-serif;margin:20px;font-size:13px}\n            h1{color:#1d4ed8;text-align:center}\n            .area-block{border:1px solid #e5e7eb;border-radius:6px;padding:14px;margin-bottom:20px;page-break-inside:avoid}\n            .area-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}\n            .area-name{font-size:16px;font-weight:700;color:#111827}\n            .badge{padding:3px 10px;border-radius:99px;font-size:12px;font-weight:600}\n            .badge-alto{background:#dcfce7;color:#15803d}\n            .badge-medio{background:#ffedd5;color:#c2410c}\n            .badge-critico{background:#fee2e2;color:#b91c1c}\n            table{width:100%;border-collapse:collapse;font-size:12px}\n            th,td{border:1px solid #e5e7eb;padding:4px 8px}\n            th{background:#f9fafb}\n        </style></head><body>\n        <h1>Eficiencia Operativa \u2014 Por \xC1rea</h1>\n        <p style=\"text-align:center;color:#6b7280\">Per\xEDodo: ".concat(eficienciaStart || 'Todo', " \u2014 ").concat(eficienciaEnd || 'Todo', " | Generado: ").concat(hoy, "</p>");
     deptos.forEach(function (dept) {
       var badgeClass = dept.scorePromedio >= 0.75 ? 'badge-alto' : dept.scorePromedio >= 0.50 ? 'badge-medio' : 'badge-critico';
       html += "<div class=\"area-block\">\n                <div class=\"area-header\">\n                    <div class=\"area-name\">".concat(dept.departamento, " (").concat(dept.count, " empleados)</div>\n                    <span class=\"badge ").concat(badgeClass, "\">").concat(dept.nivel, " \xB7 Score ").concat(dept.scorePromedio.toFixed(2), "</span>\n                </div>\n                <table><thead><tr><th>#</th><th>Empleado</th><th>Cargo</th><th>Nivel</th><th>Score</th><th>Completadas</th><th>A tiempo</th><th>Reprocesos</th></tr></thead>\n                <tbody>");
@@ -154460,7 +154468,7 @@ var Reportes = function Reportes() {
       };
     }));
     xlsx__WEBPACK_IMPORTED_MODULE_9__.utils.book_append_sheet(wb, wsAreas, 'Por Área');
-    xlsx__WEBPACK_IMPORTED_MODULE_9__.writeFile(wb, "eficiencia-operativa-".concat(startDate, "-").concat(endDate, ".xlsx"));
+    xlsx__WEBPACK_IMPORTED_MODULE_9__.writeFile(wb, "eficiencia-operativa-".concat(eficienciaStart || 'todo', "-").concat(eficienciaEnd || 'todo', ".xlsx"));
   };
   var exportarExcel = function exportarExcel() {
     var tareasPorEmpleado = generarTareasPorEmpleado();
@@ -155808,16 +155816,39 @@ var Reportes = function Reportes() {
             })]
           }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
             className: "tab-content",
-            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("p", {
-              className: "eficiencia-periodo",
-              children: ["Per\xEDodo: ", /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("strong", {
-                children: cambiarFormatoFecha(startDate)
-              }), " \u2014 ", /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("strong", {
-                children: cambiarFormatoFecha(endDate)
+            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+              className: "eficiencia-filtros",
+              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("label", {
+                className: "eficiencia-filtro-label",
+                children: ["Desde", /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("input", {
+                  type: "date",
+                  className: "eficiencia-filtro-input",
+                  value: eficienciaStart,
+                  onChange: function onChange(e) {
+                    return setEficienciaStart(e.target.value);
+                  }
+                })]
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("label", {
+                className: "eficiencia-filtro-label",
+                children: ["Hasta", /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("input", {
+                  type: "date",
+                  className: "eficiencia-filtro-input",
+                  value: eficienciaEnd,
+                  onChange: function onChange(e) {
+                    return setEficienciaEnd(e.target.value);
+                  }
+                })]
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("button", {
+                className: "eficiencia-filtro-clear",
+                onClick: function onClick() {
+                  setEficienciaStart('');
+                  setEficienciaEnd('');
+                },
+                children: "Todo"
               }), loadingEficiencia && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("span", {
                 style: {
-                  marginLeft: '1rem',
-                  color: '#6b7280'
+                  color: '#6b7280',
+                  fontSize: '0.85rem'
                 },
                 children: "Cargando..."
               })]

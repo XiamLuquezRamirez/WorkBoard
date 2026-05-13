@@ -58,6 +58,8 @@ const Reportes = () => {
     const [departamentos, setDepartamentos] = useState([]);
     const [datosEficiencia, setDatosEficiencia] = useState([]);
     const [loadingEficiencia, setLoadingEficiencia] = useState(false);
+    const [eficienciaStart, setEficienciaStart] = useState('');
+    const [eficienciaEnd, setEficienciaEnd] = useState('');
     const [estados, setEstados] = useState([]);
 
     const reportCards = [
@@ -376,8 +378,8 @@ const Reportes = () => {
 
     const calcularEficienciaOperativa = () => {
         const filtradas = datosEficiencia.filter(t =>
-            (!startDate || t.fecha_pactada >= startDate) &&
-            (!endDate   || t.fecha_pactada <= endDate)
+            (!eficienciaStart || t.fecha_pactada >= eficienciaStart) &&
+            (!eficienciaEnd   || t.fecha_pactada <= eficienciaEnd)
         );
 
         const porEmpleado = filtradas.reduce((acc, t) => {
@@ -643,7 +645,7 @@ const Reportes = () => {
             .info{background:#eff6ff;border:1px solid #bfdbfe;padding:6px 10px;border-radius:4px;margin:4px 0}
         </style></head><body>
         <h1>Informe de Eficiencia Operativa</h1>
-        <p style="text-align:center;color:#6b7280">Período: ${startDate} — ${endDate} | Generado: ${hoy}</p>`;
+        <p style="text-align:center;color:#6b7280">Período: ${eficienciaStart || 'Todo'} — ${eficienciaEnd || 'Todo'} | Generado: ${hoy}</p>`;
 
         const alto = empleados.filter(e => e.score >= 0.75).length;
         const medio = empleados.filter(e => e.score >= 0.50 && e.score < 0.75).length;
@@ -704,7 +706,7 @@ const Reportes = () => {
             th{background:#f9fafb}
         </style></head><body>
         <h1>Eficiencia Operativa — Por Empleado</h1>
-        <p style="text-align:center;color:#6b7280">Período: ${startDate} — ${endDate} | Generado: ${hoy}</p>`;
+        <p style="text-align:center;color:#6b7280">Período: ${eficienciaStart || 'Todo'} — ${eficienciaEnd || 'Todo'} | Generado: ${hoy}</p>`;
 
         empleados.forEach((emp, i) => {
             const pctCompleto = emp.total > 0 ? Math.round(emp.completadas/emp.total*100) : 0;
@@ -748,7 +750,7 @@ const Reportes = () => {
             th{background:#f9fafb}
         </style></head><body>
         <h1>Eficiencia Operativa — Por Área</h1>
-        <p style="text-align:center;color:#6b7280">Período: ${startDate} — ${endDate} | Generado: ${hoy}</p>`;
+        <p style="text-align:center;color:#6b7280">Período: ${eficienciaStart || 'Todo'} — ${eficienciaEnd || 'Todo'} | Generado: ${hoy}</p>`;
 
         deptos.forEach(dept => {
             const badgeClass = dept.scorePromedio >= 0.75 ? 'badge-alto' : dept.scorePromedio >= 0.50 ? 'badge-medio' : 'badge-critico';
@@ -804,7 +806,7 @@ const Reportes = () => {
         })));
         XLSX.utils.book_append_sheet(wb, wsAreas, 'Por Área');
 
-        XLSX.writeFile(wb, `eficiencia-operativa-${startDate}-${endDate}.xlsx`);
+        XLSX.writeFile(wb, `eficiencia-operativa-${eficienciaStart || 'todo'}-${eficienciaEnd || 'todo'}.xlsx`);
     };
 
     const exportarExcel = () => {
@@ -1797,11 +1799,34 @@ const Reportes = () => {
                             </div>
 
                             <div className="tab-content">
-                                {/* Período */}
-                                <p className="eficiencia-periodo">
-                                    Período: <strong>{cambiarFormatoFecha(startDate)}</strong> — <strong>{cambiarFormatoFecha(endDate)}</strong>
-                                    {loadingEficiencia && <span style={{ marginLeft: '1rem', color: '#6b7280' }}>Cargando...</span>}
-                                </p>
+                                {/* Filtros de fecha propios del informe */}
+                                <div className="eficiencia-filtros">
+                                    <label className="eficiencia-filtro-label">
+                                        Desde
+                                        <input
+                                            type="date"
+                                            className="eficiencia-filtro-input"
+                                            value={eficienciaStart}
+                                            onChange={e => setEficienciaStart(e.target.value)}
+                                        />
+                                    </label>
+                                    <label className="eficiencia-filtro-label">
+                                        Hasta
+                                        <input
+                                            type="date"
+                                            className="eficiencia-filtro-input"
+                                            value={eficienciaEnd}
+                                            onChange={e => setEficienciaEnd(e.target.value)}
+                                        />
+                                    </label>
+                                    <button
+                                        className="eficiencia-filtro-clear"
+                                        onClick={() => { setEficienciaStart(''); setEficienciaEnd(''); }}
+                                    >
+                                        Todo
+                                    </button>
+                                    {loadingEficiencia && <span style={{ color: '#6b7280', fontSize: '0.85rem' }}>Cargando...</span>}
+                                </div>
 
                                 {/* Sección 1: KPIs Globales */}
                                 <div className="executive-kpis" style={{ marginBottom: '1.5rem' }}>
