@@ -154034,7 +154034,7 @@ var Reportes = function Reportes() {
       return t.estado === 'Pendiente';
     }).length;
     var totalAtrasadas = tareas.filter(function (t) {
-      return t.fecha_pactada && t.fecha_pactada < hoy && t.estado !== 'Completada';
+      return t.fecha_pactada && t.fecha_pactada < hoy && t.estado !== 'Completada' && t.pausada !== 1;
     }).length;
 
     // Completadas por departamento
@@ -154108,7 +154108,7 @@ var Reportes = function Reportes() {
       if (t.estado === 'Completada') acc[dept].completadas += 1;
       if (t.estado === 'En Proceso') acc[dept].enProceso += 1;
       if (t.estado === 'Pendiente') acc[dept].pendientes += 1;
-      if (t.fecha_pactada && t.fecha_pactada < hoy && t.estado !== 'Completada') {
+      if (t.fecha_pactada && t.fecha_pactada < hoy && t.estado !== 'Completada' && t.pausada !== 1) {
         acc[dept].atrasadas += 1;
       }
       if (t.estado === 'Completada' && t.fecha_entregada && t.fecha_pactada) {
@@ -154150,13 +154150,9 @@ var Reportes = function Reportes() {
 
     // Filtro específico para tareas atrasadas
     if (filterAtrasadas) {
+      var hoyStr = new Date().toISOString().split('T')[0];
       tareasFiltradas = tareasFiltradas.filter(function (t) {
-        // Tareas que están atrasadas (fecha pactada pasó y no están completadas)
-        if (!t.fecha_pactada) return false;
-        var fechaPactada = new Date(t.fecha_pactada);
-        var fechaActual = new Date();
-        var estadoNoCompletado = t.estado !== 'Completada';
-        return fechaPactada < fechaActual && estadoNoCompletado;
+        return t.fecha_pactada && t.fecha_pactada < hoyStr && t.estado !== 'Completada';
       });
     }
 
