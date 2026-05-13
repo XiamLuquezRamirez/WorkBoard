@@ -392,7 +392,7 @@ const Reportes = () => {
             if (t.estado === 'Completada') acc[key].completadas++;
             if (t.estado === 'Completada' && t.fecha_entregada && t.fecha_entregada <= t.fecha_pactada)
                 acc[key].aTiempo++;
-            if (t.rechazada == 1) acc[key].reprocesos++;
+            if (t.rechazada === 1) acc[key].reprocesos++;
             return acc;
         }, {});
 
@@ -1568,6 +1568,234 @@ const Reportes = () => {
                                         ))}
                                     </tbody>
                                 </table>
+                            </div>
+                        </div>
+                    </div>
+                );
+            })()}
+
+            {showReportModal && selectedReport === "eficiencia" && (() => {
+                const empleados = calcularEficienciaOperativa();
+                const deptos = calcularDeptEficiencia(empleados);
+                const alto = empleados.filter(e => e.score >= 0.75).length;
+                const medio = empleados.filter(e => e.score >= 0.50 && e.score < 0.75).length;
+                const critico = empleados.filter(e => e.score < 0.50).length;
+                const promedioGlobal = empleados.length > 0
+                    ? Math.round((empleados.reduce((s, e) => s + e.score, 0) / empleados.length) * 100)
+                    : 0;
+                const pctATiempo = empleados.reduce((s, e) => s + e.total, 0) > 0
+                    ? Math.round(empleados.reduce((s, e) => s + e.aTiempo, 0) /
+                                 empleados.reduce((s, e) => s + e.total, 0) * 100)
+                    : 0;
+                const pctReprocesos = empleados.reduce((s, e) => s + e.total, 0) > 0
+                    ? Math.round(empleados.reduce((s, e) => s + e.reprocesos, 0) /
+                                 empleados.reduce((s, e) => s + e.total, 0) * 100)
+                    : 0;
+
+                return (
+                    <div className="modal-overlay">
+                        <div className="modal-report">
+                            <div className="modal-header">
+                                <h2>Informe de Eficiencia Operativa</h2>
+                                <div className="header-actions">
+                                    <button className="eficiencia-print-btn" onClick={() => imprimirEficienciaGeneral(empleados, deptos)}>
+                                        <FaPrint /> General
+                                    </button>
+                                    <button className="eficiencia-print-btn" onClick={() => imprimirEficienciaPorEmpleado(empleados)}>
+                                        <FaPrint /> Por Empleado
+                                    </button>
+                                    <button className="eficiencia-print-btn" onClick={() => imprimirEficienciaPorArea(deptos)}>
+                                        <FaPrint /> Por Área
+                                    </button>
+                                    <button className="excel-button" onClick={() => exportarEficienciaExcel(empleados, deptos)}>
+                                        <FaChartBar /> Excel
+                                    </button>
+                                    <button className="close-button" onClick={() => setShowReportModal(false)}>
+                                        <FaTimes />
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="tab-content">
+                                {/* Período */}
+                                <p className="eficiencia-periodo">
+                                    Período: <strong>{cambiarFormatoFecha(startDate)}</strong> — <strong>{cambiarFormatoFecha(endDate)}</strong>
+                                    {loadingEficiencia && <span style={{ marginLeft: '1rem', color: '#6b7280' }}>Cargando...</span>}
+                                </p>
+
+                                {/* Sección 1: KPIs Globales */}
+                                <div className="executive-kpis" style={{ marginBottom: '1.5rem' }}>
+                                    <div className="exec-kpi exec-kpi--green">
+                                        <span className="exec-kpi-number">{alto}</span>
+                                        <span className="exec-kpi-label">🟢 Alto</span>
+                                    </div>
+                                    <div className="exec-kpi exec-kpi--orange">
+                                        <span className="exec-kpi-number">{medio}</span>
+                                        <span className="exec-kpi-label">🟡 Medio</span>
+                                    </div>
+                                    <div className="exec-kpi exec-kpi--red">
+                                        <span className="exec-kpi-number">{critico}</span>
+                                        <span className="exec-kpi-label">🔴 Crítico</span>
+                                    </div>
+                                    <div className="exec-kpi exec-kpi--blue">
+                                        <span className="exec-kpi-number">{promedioGlobal}%</span>
+                                        <span className="exec-kpi-label">Eficiencia promedio</span>
+                                    </div>
+                                    <div className="exec-kpi" style={{ background: '#f0fdf4', border: '1px solid #bbf7d0' }}>
+                                        <span className="exec-kpi-number" style={{ color: '#16a34a' }}>{pctATiempo}%</span>
+                                        <span className="exec-kpi-label">A tiempo</span>
+                                    </div>
+                                    <div className="exec-kpi" style={{ background: '#fef2f2', border: '1px solid #fecaca' }}>
+                                        <span className="exec-kpi-number" style={{ color: '#dc2626' }}>{pctReprocesos}%</span>
+                                        <span className="exec-kpi-label">Reprocesos</span>
+                                    </div>
+                                </div>
+
+                                {/* Sección 2: Ranking por empleado */}
+                                <h3 style={{ margin: '0 0 0.75rem', fontSize: '1rem', color: '#374151' }}>
+                                    Ranking por Empleado
+                                </h3>
+                                <div style={{ overflowX: 'auto', marginBottom: '1.5rem' }}>
+                                    <table className="eficiencia-ranking-table">
+                                        <thead>
+                                            <tr>
+                                                <th>#</th>
+                                                <th>Nombre</th>
+                                                <th>Cargo</th>
+                                                <th>Área</th>
+                                                <th>Nivel</th>
+                                                <th>Score</th>
+                                                <th>Completadas</th>
+                                                <th>A tiempo</th>
+                                                <th>Reprocesos</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {empleados.map((emp, idx) => (
+                                                <tr key={emp.nombre} className={emp.score < 0.50 ? 'eficiencia-row-critico' : ''}>
+                                                    <td style={{ fontWeight: 700, color: '#6b7280' }}>{idx + 1}</td>
+                                                    <td style={{ fontWeight: 600 }}>{emp.nombre}</td>
+                                                    <td style={{ color: '#6b7280', fontSize: '0.85rem' }}>{emp.cargo}</td>
+                                                    <td style={{ color: '#6b7280', fontSize: '0.85rem' }}>{emp.departamento}</td>
+                                                    <td>
+                                                        <span className={`eficiencia-nivel-badge ${emp.score >= 0.75 ? 'badge-alto' : emp.score >= 0.50 ? 'badge-medio' : 'badge-critico'}`}>
+                                                            {emp.nivel}
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        <div className="eficiencia-score-bar-wrap">
+                                                            <div
+                                                                className="eficiencia-score-bar"
+                                                                style={{
+                                                                    width: `${emp.score * 100}%`,
+                                                                    background: emp.score >= 0.75 ? '#16a34a' : emp.score >= 0.50 ? '#f97316' : '#dc2626'
+                                                                }}
+                                                            />
+                                                            <span className="eficiencia-score-num">{emp.score.toFixed(2)}</span>
+                                                        </div>
+                                                    </td>
+                                                    <td style={{ textAlign: 'center' }}>{emp.completadas}/{emp.total}</td>
+                                                    <td style={{ textAlign: 'center' }}>{emp.aTiempo}</td>
+                                                    <td style={{ textAlign: 'center', color: emp.reprocesos > 0 ? '#dc2626' : '#16a34a' }}>
+                                                        {emp.reprocesos}
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                {/* Sección 3: Análisis por área */}
+                                <h3 style={{ margin: '0 0 0.75rem', fontSize: '1rem', color: '#374151' }}>
+                                    Análisis por Área
+                                </h3>
+                                <ResponsiveContainer width="100%" height={220}>
+                                    <BarChart data={deptos} margin={{ top: 5, right: 20, left: 0, bottom: 40 }}>
+                                        <CartesianGrid strokeDasharray="3 3" />
+                                        <XAxis dataKey="departamento" angle={-30} textAnchor="end" interval={0} tick={{ fontSize: 12 }} />
+                                        <YAxis domain={[0, 1]} tickFormatter={v => v.toFixed(1)} />
+                                        <Tooltip formatter={(v) => v.toFixed(2)} />
+                                        <Bar dataKey="scorePromedio" name="Score" radius={[4, 4, 0, 0]}>
+                                            {deptos.map((d) => (
+                                                <Cell
+                                                    key={d.departamento}
+                                                    fill={d.scorePromedio >= 0.75 ? '#16a34a' : d.scorePromedio >= 0.50 ? '#f97316' : '#dc2626'}
+                                                />
+                                            ))}
+                                        </Bar>
+                                    </BarChart>
+                                </ResponsiveContainer>
+                                <div style={{ overflowX: 'auto', marginBottom: '1.5rem' }}>
+                                    <table className="eficiencia-ranking-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Área</th>
+                                                <th>Empleados</th>
+                                                <th>Score Promedio</th>
+                                                <th>Nivel</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {deptos.map(d => (
+                                                <tr key={d.departamento}>
+                                                    <td style={{ fontWeight: 600 }}>{d.departamento}</td>
+                                                    <td style={{ textAlign: 'center' }}>{d.count}</td>
+                                                    <td>
+                                                        <div className="eficiencia-score-bar-wrap">
+                                                            <div
+                                                                className="eficiencia-score-bar"
+                                                                style={{
+                                                                    width: `${d.scorePromedio * 100}%`,
+                                                                    background: d.scorePromedio >= 0.75 ? '#16a34a' : d.scorePromedio >= 0.50 ? '#f97316' : '#dc2626'
+                                                                }}
+                                                            />
+                                                            <span className="eficiencia-score-num">{d.scorePromedio.toFixed(2)}</span>
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <span className={`eficiencia-nivel-badge ${d.scorePromedio >= 0.75 ? 'badge-alto' : d.scorePromedio >= 0.50 ? 'badge-medio' : 'badge-critico'}`}>
+                                                            {d.nivel}
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                {/* Sección 4: Alertas e insights */}
+                                <h3 style={{ margin: '0 0 0.75rem', fontSize: '1rem', color: '#374151' }}>
+                                    Alertas e Insights
+                                </h3>
+                                <div className="eficiencia-insights">
+                                    {critico > 0 && (
+                                        <div className="insight-card insight-card--alert">
+                                            <strong>⚠ {critico} empleado{critico > 1 ? 's' : ''} en zona crítica:</strong>{' '}
+                                            {empleados.filter(e => e.score < 0.50).map(e => e.nombre).join(', ')}
+                                        </div>
+                                    )}
+                                    {deptos.filter(d => d.scorePromedio < 0.60).map(d => (
+                                        <div key={d.departamento} className="insight-card insight-card--alert">
+                                            ⚠ Área <strong>{d.departamento}</strong> con score promedio {d.scorePromedio.toFixed(2)} — requiere atención
+                                        </div>
+                                    ))}
+                                    {deptos.length > 0 && (
+                                        <div className="insight-card insight-card--ok">
+                                            ✅ Área con mejor desempeño: <strong>{deptos[0].departamento}</strong> (score {deptos[0].scorePromedio.toFixed(2)})
+                                        </div>
+                                    )}
+                                    <div className="insight-card insight-card--info">
+                                        📊 {pctATiempo}% de tareas entregadas a tiempo en el período
+                                    </div>
+                                    <div className="insight-card insight-card--info">
+                                        📊 Índice de reprocesos global: {pctReprocesos}%
+                                    </div>
+                                    {critico === 0 && deptos.filter(d => d.scorePromedio < 0.60).length === 0 && (
+                                        <div className="insight-card insight-card--ok">
+                                            ✅ Todos los empleados y áreas están en niveles aceptables o superiores
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     </div>
