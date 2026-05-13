@@ -680,6 +680,7 @@ const Reportes = () => {
         html += `</body></html>`;
 
         const win = window.open('', '_blank');
+        if (!win) return;
         win.document.write(html);
         win.document.close();
         win.print();
@@ -724,6 +725,7 @@ const Reportes = () => {
 
         html += `</body></html>`;
         const win = window.open('', '_blank');
+        if (!win) return;
         win.document.write(html);
         win.document.close();
         win.print();
@@ -770,6 +772,7 @@ const Reportes = () => {
 
         html += `</body></html>`;
         const win = window.open('', '_blank');
+        if (!win) return;
         win.document.write(html);
         win.document.close();
         win.print();
