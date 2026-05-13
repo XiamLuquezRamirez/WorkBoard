@@ -841,7 +841,8 @@ const Dashboard = () => {
             case "settings":
                 return <Parameters />;
             case "home":
-            default:
+            default: {
+                const stats = calcularStatsGlobales(filteredEmpleados);
                 return (
                     //loading
                     <>
@@ -869,29 +870,24 @@ const Dashboard = () => {
                                         </div>
                                     </div>
                                 </div>
-                                {(() => {
-                                    const stats = calcularStatsGlobales(filteredEmpleados);
-                                    return (
-                                        <div className="dashboard-stats-panel">
-                                            <div className="stat-kpi">
-                                                <span className="stat-kpi-number">{stats.totalEmpleados}</span>
-                                                <span className="stat-kpi-label">Empleados activos</span>
-                                            </div>
-                                            <div className="stat-kpi">
-                                                <span className="stat-kpi-number">{stats.tareasActivas}</span>
-                                                <span className="stat-kpi-label">Tareas en curso</span>
-                                            </div>
-                                            <div className={`stat-kpi ${stats.tareasAtrasadas > 0 ? 'stat-kpi--alert' : ''}`}>
-                                                <span className="stat-kpi-number">{stats.tareasAtrasadas}</span>
-                                                <span className="stat-kpi-label">Tareas atrasadas</span>
-                                            </div>
-                                            <div className="stat-kpi">
-                                                <span className="stat-kpi-number">{stats.eficienciaPromedio}%</span>
-                                                <span className="stat-kpi-label">Eficiencia promedio</span>
-                                            </div>
-                                        </div>
-                                    );
-                                })()}
+                                <div className="dashboard-stats-panel">
+                                    <div className="stat-kpi">
+                                        <span className="stat-kpi-number">{stats.totalEmpleados}</span>
+                                        <span className="stat-kpi-label">Empleados activos</span>
+                                    </div>
+                                    <div className="stat-kpi">
+                                        <span className="stat-kpi-number">{stats.tareasActivas}</span>
+                                        <span className="stat-kpi-label">Tareas en curso</span>
+                                    </div>
+                                    <div className={`stat-kpi ${stats.tareasAtrasadas > 0 ? 'stat-kpi--alert' : ''}`}>
+                                        <span className="stat-kpi-number">{stats.tareasAtrasadas}</span>
+                                        <span className="stat-kpi-label">Tareas atrasadas</span>
+                                    </div>
+                                    <div className="stat-kpi">
+                                        <span className="stat-kpi-number">{stats.eficienciaPromedio}%</span>
+                                        <span className="stat-kpi-label">Eficiencia promedio</span>
+                                    </div>
+                                </div>
                                 <div className="cards-grid">
                                     {filteredEmpleados.map((empleado) => (
                                         <div
@@ -1037,6 +1033,7 @@ const Dashboard = () => {
                         )}
                     </>
                 );
+            }
         }
     };
 
