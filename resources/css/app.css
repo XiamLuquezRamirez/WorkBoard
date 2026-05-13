@@ -523,6 +523,11 @@ body {
     z-index: 1000;
 }
 
+/* Detalle de tarea encima de otros modales (stacking contexts) */
+.modal-overlay.task-details-overlay {
+    z-index: 10000;
+}
+
 .profile-modal {
     background: white;
     border-radius: 16px;
@@ -581,11 +586,11 @@ body {
     margin-bottom: 0.5rem;
 }
 
-.profile-modal {
+.profile-modal .modal-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 1rem;
+    padding: 1rem 1.5rem;
     border-bottom: 1px solid #e2e8f0;
     text-transform: capitalize;
 }
@@ -1144,6 +1149,7 @@ button:hover svg {
     padding: 0.5rem 1rem;
     border-radius: 4px;
     cursor: pointer;
+    font-weight: bold;
 }
 
 .modal-content {
@@ -1557,12 +1563,321 @@ button:hover svg {
     gap: 1rem;
 }
 
+.tarea-card {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    padding: 1rem;
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
+    cursor: pointer;
+    transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
+}
+
+.tarea-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 28px rgba(15, 23, 42, 0.10);
+    border-color: #c7d2fe;
+}
+
+.tarea-card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
+}
+
+.tarea-card-header h4 {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #0f172a;
+    line-height: 1.25;
+}
+
+.tarea-card .status {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 34px;
+    height: 34px;
+    padding: 0 0.55rem;
+    border-radius: 9999px;
+    border: 1px solid #e5e7eb;
+    background: #f8fafc;
+    color: #334155;
+    flex-shrink: 0;
+}
+
+.tarea-card .status.pendiente {
+    background: #fff7ed;
+    border-color: #fdba74;
+    color: #9a3412;
+}
+
+.tarea-card .status.en-proceso {
+    background: #eff6ff;
+    border-color: #93c5fd;
+    color: #1d4ed8;
+}
+
+.tarea-card .status.completada {
+    background: #ecfdf5;
+    border-color: #86efac;
+    color: #166534;
+}
+
+.tarea-descripcion {
+    color: #475569;
+    margin: 0 0 0.9rem 0;
+    font-size: 0.95rem;
+    line-height: 1.35;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.tarea-card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.tarea-fechas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    color: #64748b;
+}
+
+.tarea-fechas > span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.35rem 0.55rem;
+    border-radius: 9999px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
+}
+
+.tarea-fechas label {
+    margin: 0;
+}
+
+.ver-detalles {
+    border-radius: 9999px;
+    padding: 0.5rem 0.85rem;
+    font-size: 0.8rem;
+    background-color: #2563eb;
+}
+
+.ver-detalles:hover {
+    background-color: #1d4ed8;
+}
+
 .tarea-item {
     background-color: white;
     border: 1px solid #e2e8f0;
     border-radius: 8px;
     padding: 1rem;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Tarjeta de tareas (EmployeeModal): layout más claro sin cambiar el contenido */
+.tarea-item-empleado {
+    border-radius: 14px;
+    padding: 1rem 1.05rem;
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
+    border-color: #e5e7eb;
+}
+
+.tarea-item-empleado-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.35rem;
+}
+
+.tarea-item-empleado-title {
+    flex: 1 1 240px;
+    min-width: 0;
+}
+
+.tarea-item-empleado-title h4 {
+    margin: 0;
+    line-height: 1.25;
+    color: #0f172a;
+    font-size: 1.05rem;
+}
+
+.tarea-item-empleado-meta {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.45rem;
+    flex-wrap: wrap;
+}
+
+.tarea-item-empleado-meta .proyecto-badge {
+    margin-bottom: 0;
+}
+
+.tarea-item-empleado-descripcion {
+    margin: 0 0 0.85rem;
+    line-height: 1.45;
+}
+
+.tarea-item-empleado-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.tarea-item-empleado-fechas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    color: #64748b;
+}
+
+.tarea-item-empleado-fechas > span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.35rem 0.6rem;
+    border-radius: 9999px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
+}
+
+.tarea-item-empleado-acciones {
+    display: flex;
+    align-items: stretch;
+    justify-content: space-between;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.tarea-item-empleado-estado {
+    flex: 1 1 220px;
+    min-width: 200px;
+}
+
+.tarea-item-empleado-estado .estado-select {
+    width: 100%;
+    min-height: 40px;
+    padding: 0.45rem 0.65rem;
+}
+
+.tarea-item-empleado-botones {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    flex: 1 1 240px;
+}
+
+.tarea-item-empleado-evidencias h5 {
+    margin: 0 0 0.35rem;
+    color: #0f172a;
+    font-size: 0.95rem;
+}
+
+.evidencias-list-empleado {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 0.65rem;
+    margin-top: 0.65rem;
+}
+
+.evidencia-item-empleado {
+    display: flex;
+    gap: 0.65rem;
+    align-items: flex-start;
+    padding: 0.65rem;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+}
+
+.evidencia-item-empleado-preview {
+    flex: 0 0 auto;
+}
+
+.evidencia-thumbnail-empleado {
+    width: 52px;
+    height: 52px;
+    border-radius: 10px;
+    object-fit: cover;
+    border: 1px solid #e2e8f0;
+    background: #f8fafc;
+}
+
+.file-icon-empleado {
+    width: 52px;
+    height: 52px;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    background: #f8fafc;
+}
+
+.evidencia-item-empleado-body {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6rem;
+}
+
+.evidencia-nombre-empleado {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-size: 0.9rem;
+    line-height: 1.25;
+}
+
+.view-evidencia-empleado {
+    flex: 0 0 auto;
+    width: 38px;
+    height: 38px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    border: 1px solid #bfdbfe;
+    background: #eff6ff;
+    padding: 0;
+}
+
+.view-evidencia-empleado:hover {
+    background: #dbeafe;
+}
+
+@media (max-width: 520px) {
+    .tarea-item-empleado-acciones {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .tarea-item-empleado-botones {
+        justify-content: stretch;
+    }
+
+    .tarea-item-empleado-botones .btn-editar-tarea-button {
+        flex: 1 1 calc(50% - 0.25rem);
+        justify-content: center;
+    }
 }
 
 .tarea-header {
@@ -1594,6 +1909,18 @@ button:hover svg {
 .prioridad-badge.baja {
     background-color: #dcfce7;
     color: #16a34a;
+}
+
+.proyecto-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.2rem 0.6rem;
+    border-radius: 9999px;
+    font-size: 0.7rem;
+    font-weight: 500;
+    background-color: #ede9fe;
+    color: #6d28d9;
+    margin-bottom: 0.4rem;
 }
 
 .tarea-descripcion {
@@ -2973,6 +3300,11 @@ search-container .employee-card:hover::before {
     z-index: 1000;
 }
 
+/* Detalle de tarea encima de otros modales (stacking contexts) */
+.modal-overlay.task-details-overlay {
+    z-index: 10000;
+}
+
 .modal {
     background: white;
 }
@@ -3453,7 +3785,8 @@ search-container .employee-card:hover::before {
 
 .task-dates {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
+    flex-wrap: wrap;
     gap: 0.75rem;
     margin-bottom: 0.5rem;
 }
@@ -3739,6 +4072,13 @@ search-container .employee-card:hover::before {
     transition: all 0.2s ease;
     font-weight: bold;
 }
+
+.new-task-button:hover {
+    background: #092a96;
+    transform: translateY(-2px);
+}
+
+
 .search-task-button {
     background: #16a34a;
     color: white;
@@ -3999,10 +4339,59 @@ search-container .employee-card:hover::before {
 .new-task-modal {
     background: white;
     border-radius: 16px;
-    width: 90%;
+    width: 92%;
     max-width: 800px;
-    max-height: 90vh;
+    max-height: min(92vh, 900px);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.new-task-modal-form {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+}
+
+.new-task-modal-body {
+    flex: 1;
+    min-height: 0;
     overflow-y: auto;
+    padding: 0 1.5rem 1rem;
+    -webkit-overflow-scrolling: touch;
+}
+
+.new-task-modal .modal-header {
+    flex-shrink: 0;
+}
+
+.new-task-modal-actions.modal-actions,
+.new-task-modal .new-task-modal-actions {
+    flex-shrink: 0;
+    margin-top: auto;
+    padding: 1rem 1.5rem 1.25rem;
+    background: #fff;
+    border-top: 1px solid #e2e8f0;
+    box-shadow: 0 -8px 24px rgba(15, 23, 42, 0.06);
+}
+
+.plantilla-tarea-select {
+    width: 100%;
+    padding: 0.6rem 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    color: #1e293b;
+    background: #fff;
+    box-sizing: border-box;
+}
+
+.plantilla-tarea-hint {
+    margin: 0.4rem 0 0;
+    font-size: 0.8rem;
+    color: #64748b;
+    line-height: 1.35;
 }
 
 .notification-modal {
@@ -4200,6 +4589,115 @@ search-container .employee-card:hover::before {
     font-style: italic;
     color: #888;
     font-size: 1rem;
+}
+
+/* Estilos para observaciones del empleado */
+.employee-observations {
+    background: #f8fafc;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-top: 1rem;
+    border-left: 4px solid #4b7bec;
+}
+
+/* Estilos para la sección de observaciones dentro del panel de evidencias */
+.observations-section {
+    background: #f8fafc;
+    padding: 1.5rem;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+    border: 1px solid #e2e8f0;
+}
+
+.observations-section h5 {
+    margin-bottom: 1rem;
+    color: #1e293b;
+    font-size: 1.1rem;
+    font-weight: 600;
+    border-bottom: 2px solid #e2e8f0;
+    padding-bottom: 0.5rem;
+}
+
+.observations-section h6 {
+    margin-bottom: 0.75rem;
+    color: #374151;
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+
+.employee-observations h5 {
+    margin-bottom: 1rem;
+    color: #1e293b;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.employee-observation {
+    background: #ffffff;
+    border-left: 4px solid #10b981;
+    margin-bottom: 0.75rem;
+    padding: 0.75rem 1rem;
+    border-radius: 6px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.employee-observation .observation-text {
+    font-style: italic;
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+    color: #374151;
+}
+
+.employee-observation .observation-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    color: #6b7280;
+}
+
+.employee-observation .observation-meta span {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+/* Estilos para el mensaje cuando no hay evidencias */
+.observations-panel .observations-textarea {
+    border: 2px solid #e5e7eb;
+    background-color: #f9fafb;
+}
+
+.observations-panel .observations-textarea:focus {
+    border-color: #4b7bec;
+    background-color: #ffffff;
+    box-shadow: 0 0 0 3px rgba(75, 123, 236, 0.1);
+}
+
+/* Estilo para el botón de guardar observaciones del empleado */
+.observations-panel .save-observations-button {
+    background-color: #10b981;
+    border: none;
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.observations-panel .save-observations-button:hover:not(:disabled) {
+    background-color: #059669;
+    transform: translateY(-1px);
+}
+
+.observations-panel .save-observations-button:disabled {
+    background-color: #9ca3af;
+    cursor: not-allowed;
+    transform: none;
 }
 
 .modal-user {
@@ -4651,14 +5149,48 @@ search-container .employee-card:hover::before {
 /* Estilos para el Modal de Perfil */
 .profile-modal {
     background: white;
-    border-radius: 8px;
-    width: 50%;
+    border-radius: 12px;
+    width: 90%;
     max-width: 800px;
     max-height: 90vh;
-    overflow-y: auto;
+    min-height: 0;
+    overflow: hidden;
     position: relative;
     display: flex;
     flex-direction: column;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+.profile-modal .modal-content {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 0;
+    min-height: 0;
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 transparent;
+}
+
+.profile-modal .modal-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.profile-modal .modal-content::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.profile-modal .modal-content::-webkit-scrollbar-thumb {
+    background-color: #cbd5e1;
+    border-radius: 4px;
+}
+
+.profile-modal .modal-content::-webkit-scrollbar-thumb:hover {
+    background-color: #94a3b8;
+}
+
+.profile-modal .profile-section {
+    padding: 1.5rem 1.5rem 0;
+    margin-bottom: 1rem;
 }
 
 .modal-header {
@@ -5093,12 +5625,28 @@ search-container .employee-card:hover::before {
 }
 
 .btn-editar-tarea-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
     background-color: #3b82f6;
     color: #fff;
     border: none;
-    padding: 5px 10px;
-    border-radius: 5px;
+    padding: 0.55rem 0.85rem;
+    border-radius: 10px;
     cursor: pointer;
+    white-space: nowrap;
+    line-height: 1;
+}
+
+.btn-editar-tarea-button--secondary {
+    background-color: #ffffff;
+    color: #1d4ed8;
+    border: 1px solid #bfdbfe;
+}
+
+.btn-editar-tarea-button--secondary:hover {
+    background-color: #eff6ff;
 }
 
 .aprobacion-vistoBueno-container {
@@ -5595,5 +6143,1359 @@ search-container .employee-card:hover::before {
     .clear-filters-button {
         width: 100%;
         justify-content: center;
+    }
+}
+
+.calendar-button {
+    background: #6366f1;
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-weight: bold;
+}
+
+.calendar-button:hover {
+    background: #4f46e5;
+    transform: translateY(-2px);
+}
+
+.archive-button {
+    background: #10b981;
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-weight: bold;
+}
+
+.archive-button:hover {
+    background: #059669;
+    transform: translateY(-2px);
+}
+
+/* Estilos para el modal de tareas archivadas */
+.tareas-archivadas-modal {
+    background: white;
+    border-radius: 16px;
+    width: 90%;
+    max-width: 1000px;
+    max-height: 90vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.tareas-archivadas-container {
+    padding: 1.5rem;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.no-archived-tasks {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: #64748b;
+}
+
+.no-archived-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+.no-archived-tasks h3 {
+    margin: 0 0 0.5rem 0;
+    color: #374151;
+    font-size: 1.25rem;
+}
+
+.no-archived-tasks p {
+    margin: 0;
+    font-size: 0.875rem;
+}
+
+.tarea-archivada-card {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    position: relative;
+    overflow: hidden;
+}
+
+.tarea-archivada-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.05) 0%, rgba(59, 130, 246, 0.05) 100%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.tarea-archivada-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+    border-color: #8b5cf6;
+}
+
+.tarea-archivada-card:hover::before {
+    opacity: 1;
+}
+
+.archived-task-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+    position: relative;
+    z-index: 1;
+}
+
+.archived-task-info {
+    flex: 1;
+    margin-right: 1rem;
+}
+
+.archived-task-info h4 {
+    margin: 0 0 0.5rem 0;
+    color: #1f2937;
+    font-size: 1.125rem;
+    font-weight: 600;
+}
+
+.archived-task-description {
+    margin: 0;
+    color: #64748b;
+    font-size: 0.875rem;
+    line-height: 1.5;
+}
+
+.archived-task-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.5rem;
+    position: relative;
+    z-index: 1;
+}
+
+.archived-date {
+    font-size: 0.75rem;
+    color: #8b5cf6;
+    background: rgba(139, 92, 246, 0.1);
+    padding: 0.25rem 0.5rem;
+    border-radius: 12px;
+    font-weight: 500;
+}
+
+.archived-task-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    position: relative;
+    z-index: 1;
+}
+
+.archived-task-dates {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.evidence-count {
+    font-size: 0.75rem;
+    color: #64748b;
+    background: rgba(100, 116, 139, 0.1);
+    padding: 0.25rem 0.5rem;
+    border-radius: 12px;
+    font-weight: 500;
+}
+
+.evidence-more {
+    font-size: 0.75rem;
+    color: #64748b;
+    background: rgba(100, 116, 139, 0.1);
+    padding: 0.25rem 0.5rem;
+    border-radius: 12px;
+    font-weight: 500;
+}
+
+/* Estilos para el botón de desarchivar */
+.unarchive-button {
+    background: linear-gradient(135deg, #4372cc, #092a96);
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    box-shadow: 0 2px 4px rgba(139, 92, 246, 0.2);
+}
+
+.unarchive-button:hover {
+    background: linear-gradient(135deg, #7c3aed, #6d28d9);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(139, 92, 246, 0.3);
+}
+
+.unarchive-button:active {
+    transform: translateY(0);
+}
+
+/* Responsive para tareas archivadas */
+@media (max-width: 768px) {
+    .tareas-archivadas-modal {
+        width: 95%;
+        margin: 1rem;
+    }
+    
+    .archived-task-header {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .archived-task-meta {
+        align-items: flex-start;
+    }
+    
+    .archived-task-footer {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: flex-start;
+    }
+    
+    .archived-task-dates {
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+}
+
+/* Mejoras adicionales para el modal de tareas archivadas */
+.tareas-archivadas-modal .modal-header {
+    background: linear-gradient(135deg, #4372cc, #092a96);
+    color: white;
+    border-radius: 16px 16px 0 0;
+}
+
+.tareas-archivadas-modal .modal-header h2 {
+    color: white;
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.tareas-archivadas-modal .close-button {
+    color: white;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.tareas-archivadas-modal .close-button:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.1);
+}
+
+/* Animación de entrada para las tarjetas archivadas */
+.tarea-archivada-card {
+    animation: slideInFromBottom 0.3s ease-out;
+}
+
+@keyframes slideInFromBottom {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Estilos para indicador de tarea archivada en el modal de detalles */
+.task-details-modal.archived {
+    border: 2px solid #8b5cf6;
+}
+
+.task-details-modal.archived .modal-header {
+    background: linear-gradient(135deg, #4372cc, #092a96);
+    color: white;
+}
+
+.task-details-modal.archived .modal-header h2 {
+    color: white;
+}
+
+.task-details-modal.archived .close-button {
+    color: white;
+}
+
+/* Estilos para el badge de archivada */
+.archived-badge {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: linear-gradient(135deg, #4372cc, #092a96);
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    z-index: 10;
+}
+
+/* Estilos para el filtro de tareas atrasadas */
+.filter-group input[type="checkbox"] {
+    cursor: pointer;
+    accent-color: #dc2626;
+    width: 20px;
+    height: 20px;
+    border: 2px solid #d1d5db;
+    border-radius: 4px;
+    background-color: white;
+    transition: all 0.2s ease;
+    position: relative;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+}
+
+.filter-group input[type="checkbox"]:checked {
+    background-color: #dc2626;
+    border-color: #dc2626;
+    box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.2);
+}
+
+.filter-group input[type="checkbox"]:checked::after {
+    content: '✓';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 14px;
+    font-weight: bold;
+    line-height: 1;
+}
+
+.filter-group input[type="checkbox"]:hover {
+    border-color: #dc2626;
+    box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.1);
+}
+
+.filter-group input[type="checkbox"]:focus {
+    outline: none;
+    border-color: #dc2626;
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.3);
+}
+
+.filter-group label {
+    cursor: pointer;
+    user-select: none;
+    font-weight: 600;
+    color: #374151;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+}
+
+
+
+/* ── Subtareas ──────────────────────────────────────────────────────────── */
+.subtareas-section {
+    margin-top: 1.25rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e5e7eb;
+}
+.subtareas-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 0.75rem;
+}
+.subtareas-counter {
+    font-size: 0.75rem;
+    background: #e5e7eb;
+    color: #6b7280;
+    border-radius: 9999px;
+    padding: 0.1rem 0.5rem;
+    font-weight: 500;
+}
+.subtareas-progress {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+.subtareas-progress-pct {
+    font-size: 0.72rem;
+    color: #6b7280;
+    min-width: 2.2rem;
+    text-align: right;
+}
+.subtareas-progress-bar {
+    flex: 1;
+    height: 6px;
+    background: #e5e7eb;
+    border-radius: 9999px;
+    overflow: hidden;
+}
+.subtareas-progress-fill {
+    height: 100%;
+    background: #22c55e;
+    border-radius: 9999px;
+    transition: width 0.3s ease;
+}
+.subtareas-list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 0.75rem 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+.subtarea-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 0.5rem;
+    border-radius: 6px;
+    background: #f9fafb;
+    transition: background 0.15s;
+}
+.subtarea-item:hover { background: #f3f4f6; }
+.subtarea-item.completada .subtarea-texto {
+    text-decoration: line-through;
+    color: #9ca3af;
+}
+.subtarea-checkbox {
+    width: 15px;
+    height: 15px;
+    cursor: pointer;
+    accent-color: #22c55e;
+    flex-shrink: 0;
+}
+.subtarea-texto {
+    flex: 1;
+    font-size: 0.875rem;
+    color: #374151;
+    word-break: break-word;
+    cursor: text;
+}
+.subtarea-edit-input {
+    flex: 1;
+    font-size: 0.95rem;
+    border: 1px solid #6366f1;
+    border-radius: 6px;
+    padding: 0.55rem 0.8rem;
+    outline: none;
+    color: #374151;
+    background: #fff;
+    min-height: 42px;
+    box-sizing: border-box;
+}
+.subtarea-delete {
+    background: none;
+    border: none;
+    color: #d1d5db;
+    cursor: pointer;
+    padding: 0.2rem;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    font-size: 0.75rem;
+    transition: color 0.15s;
+    flex-shrink: 0;
+    opacity: 0;
+}
+.subtarea-item:hover .subtarea-delete { opacity: 1; }
+.subtarea-delete:hover { color: #ef4444; }
+.subtarea-add-row {
+    display: flex;
+    gap: 0.4rem;
+    align-items: center;
+    flex-wrap: nowrap;
+    width: 100%;
+    min-width: 0;
+}
+.subtarea-add-input {
+    flex: 1 1 auto;
+    font-size: 1rem;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    padding: 0.6rem 0.8rem;
+    outline: none;
+    color: #374151;
+    background: #fff;
+    transition: border-color 0.15s;
+    min-height: 42px;
+    min-width: 0;
+}
+.subtarea-add-input:focus { border-color: #6366f1; }
+.subtarea-add-input::placeholder { color: #9ca3af; }
+.subtarea-add-btn {
+    background: #6366f1;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 0.55rem 0.75rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    font-size: 0.8rem;
+    transition: background 0.15s;
+    min-height: 42px;
+}
+.subtarea-add-btn:hover:not(:disabled) { background: #4f46e5; }
+.subtarea-add-btn:disabled { background: #c7d2fe; cursor: not-allowed; }
+
+.subtarea-add-date {
+    width: 150px;
+    flex: 0 0 150px;
+    min-width: 150px;
+    max-width: 150px;
+    padding: 0.55rem 0.6rem;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    color: #374151;
+    background: #fff;
+    min-height: 42px;
+}
+.subtarea-add-date:focus { outline: none; border-color: #6366f1; }
+
+.subtarea-info {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex: 1;
+    min-width: 0;
+}
+
+.subtarea-fecha {
+    font-size: 0.72rem;
+    color: #6b7280;
+    white-space: nowrap;
+    padding: 0.1rem 0.4rem;
+    background: #f3f4f6;
+    border-radius: 4px;
+}
+.subtarea-fecha.vencida {
+    color: #dc2626;
+    background: #fee2e2;
+    font-weight: 600;
+}
+
+.vencida .subtarea-texto { color: #dc2626; }
+
+.subtarea-edit-group {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex: 1;
+    min-width: 0;
+}
+
+.subtarea-edit-date {
+    width: 150px;
+    flex: 0 0 150px;
+    min-width: 150px;
+    max-width: 150px;
+    padding: 0.55rem 0.6rem;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    color: #374151;
+    background: #fff;
+    min-height: 42px;
+    box-sizing: border-box;
+}
+
+/* ── Checklist toggle button & form section ── */
+.checklist-toggle-row {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-bottom: 0.5rem;
+}
+.checklist-toggle-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.4rem 0.9rem;
+    background: #f3f4f6;
+    border: 1.5px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    color: #374151;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.checklist-toggle-btn:hover:not(:disabled) { background: #e0e7ff; border-color: #6366f1; color: #4f46e5; }
+.checklist-toggle-btn.active { background: #e0e7ff; border-color: #6366f1; color: #4f46e5; font-weight: 600; }
+.checklist-toggle-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.checklist-hint { font-size: 0.78rem; color: #64748b; }
+
+.checklist-items-preview {
+    max-height: 200px;
+    overflow-y: auto;
+    margin-bottom: 0.5rem;
+    padding-right: 2px;
+}
+
+.new-task-modal-body .new-task-subtareas-editable .subtarea-item {
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.45rem;
+}
+
+.new-task-modal-body .new-task-subtareas-editable .subtarea-edit-input {
+    flex: 1 1 160px;
+    min-width: 0;
+}
+
+.new-task-modal-body .new-task-subtareas-editable .subtarea-delete {
+    opacity: 1;
+}
+
+.checklist-add-zone {
+    margin-top: 0.5rem;
+    padding: 0.65rem 0.75rem;
+    border: 1px dashed #c7d2fe;
+    border-radius: 8px;
+    background: #eef2ff;
+}
+
+.checklist-add-zone-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #4338ca;
+    margin-bottom: 0.45rem;
+    letter-spacing: 0.01em;
+}
+
+.checklist-form-section {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 0.75rem;
+    margin-top: 0.5rem;
+}
+.checklist-header-row {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.6rem;
+    flex-wrap: wrap;
+    align-items: center;
+}
+.checklist-titulo-input {
+    flex: 2;
+    min-width: 220px;
+    padding: 0.6rem 0.8rem;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 1rem;
+    color: #374151;
+    background: #fff;
+    min-height: 42px;
+    box-sizing: border-box;
+}
+.checklist-titulo-input:focus { outline: none; border-color: #6366f1; }
+.checklist-copy-select {
+    flex: 0 0 260px;
+    min-width: 220px;
+    max-width: 320px;
+    padding: 0.55rem 0.6rem;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    color: #374151;
+    background: #fff;
+    min-height: 42px;
+    box-sizing: border-box;
+}
+.checklist-titulo-display {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #6366f1;
+    margin: 0 0 0.4rem 0;
+    padding: 0.15rem 0;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+/* ===== Tabs del Modal de Perfil ===== */
+.profile-modal .profile-sections {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    padding: 0 1.5rem 1.5rem;
+    width: 100%;
+}
+
+.profile-tabs {
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    gap: 0.25rem;
+    margin: 0 -1.5rem 1rem;
+    padding: 0 1.5rem;
+    border-bottom: 1px solid #e5e7eb;
+    background: #ffffff;
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.profile-tabs::-webkit-scrollbar {
+    display: none;
+}
+
+.profile-tab {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.85rem 1.25rem;
+    border: 0;
+    background: transparent;
+    color: #6b7280;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    border-bottom: 2px solid transparent;
+    transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+    margin-bottom: -1px;
+    border-radius: 0;
+}
+
+.profile-tab:hover {
+    color: #1f2937;
+    background: #f9fafb;
+}
+
+.profile-tab:focus-visible {
+    outline: 2px solid #6366f1;
+    outline-offset: -2px;
+    border-radius: 4px;
+}
+
+.profile-tab.active {
+    color: #4f46e5;
+    border-bottom-color: #4f46e5;
+    background: transparent;
+    font-weight: 600;
+}
+
+.profile-tabpanel {
+    width: 100%;
+    animation: profileTabFadeIn 0.2s ease;
+}
+
+.profile-tabpanel[hidden] {
+    display: none !important;
+}
+
+@keyframes profileTabFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsive: tabs apilables en pantallas pequeñas */
+@media screen and (max-width: 576px) {
+    .profile-modal {
+        width: 95%;
+        max-height: 95vh;
+        border-radius: 8px;
+    }
+
+    .profile-modal .profile-section,
+    .profile-modal .profile-sections {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+
+    .profile-tabs {
+        margin-left: -1rem;
+        margin-right: -1rem;
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+
+    .profile-tab {
+        padding: 0.75rem 0.85rem;
+        font-size: 0.9rem;
+        flex: 1 1 auto;
+    }
+}
+
+/* Modal: solicitud de pausa (encima del detalle de tarea) */
+.task-pausa-solicitud-overlay {
+    background: rgba(15, 23, 42, 0.55);
+    backdrop-filter: blur(2px);
+    padding: 1rem;
+}
+
+.task-pausa-solicitud-modal {
+    position: relative;
+    width: 100%;
+    max-width: 480px;
+    background: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 24px 60px rgba(15, 23, 42, 0.28);
+    overflow: hidden;
+    animation: taskPausaModalIn 0.22s ease-out;
+}
+
+@keyframes taskPausaModalIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.task-pausa-solicitud-accent {
+    height: 4px;
+    width: 100%;
+    background: linear-gradient(90deg, #f59e0b, #ea580c);
+}
+
+.task-pausa-solicitud-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1.25rem 1.25rem 0.75rem;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.task-pausa-solicitud-heading {
+    display: flex;
+    gap: 0.85rem;
+    min-width: 0;
+}
+
+.task-pausa-solicitud-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: #fff7ed;
+    color: #c2410c;
+    flex-shrink: 0;
+}
+
+.task-pausa-solicitud-title {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #0f172a;
+    line-height: 1.25;
+}
+
+.task-pausa-solicitud-subtitle {
+    margin: 0.35rem 0 0;
+    font-size: 0.875rem;
+    color: #64748b;
+    line-height: 1.45;
+}
+
+.task-pausa-solicitud-close {
+    flex-shrink: 0;
+}
+
+.task-pausa-solicitud-body {
+    padding: 1.1rem 1.25rem 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.task-pausa-solicitud-field label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #334155;
+    margin-bottom: 0.35rem;
+}
+
+.task-pausa-solicitud-textarea,
+.task-pausa-solicitud-date {
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    padding: 0.65rem 0.75rem;
+    font-size: 0.95rem;
+    font-family: inherit;
+    color: #0f172a;
+    background: #f8fafc;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.task-pausa-solicitud-textarea:focus,
+.task-pausa-solicitud-date:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+    background: #ffffff;
+}
+
+.task-pausa-solicitud-textarea:disabled,
+.task-pausa-solicitud-date:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+}
+
+.task-pausa-solicitud-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.6rem;
+    margin-top: 0.25rem;
+}
+
+.task-pausa-solicitud-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    border-radius: 10px;
+    padding: 0.55rem 1rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+}
+
+.task-pausa-solicitud-btn:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+}
+
+.task-pausa-solicitud-btn-secondary {
+    background: #ffffff;
+    border-color: #cbd5e1;
+    color: #334155;
+}
+
+.task-pausa-solicitud-btn-secondary:hover:not(:disabled) {
+    background: #f1f5f9;
+}
+
+.task-pausa-solicitud-btn-primary {
+    background: #2563eb;
+    border-color: #1d4ed8;
+    color: #ffffff;
+}
+
+.task-pausa-solicitud-btn-primary:hover:not(:disabled) {
+    background: #1d4ed8;
+}
+
+.task-pausa-solicitud-btn-primary:active:not(:disabled) {
+    transform: translateY(1px);
+}
+
+.task-pausa-motivo-row {
+    align-items: flex-start;
+}
+
+.task-pausa-motivo-text {
+    line-height: 1.45;
+    word-break: break-word;
+}
+
+/* Panel de pausa (fuera del bloque de fechas de la tarea) */
+.task-pausa-info-panel {
+    margin-top: 1rem;
+    padding: 0.9rem 1rem;
+    border-radius: 12px;
+    border: 1px solid #fed7aa;
+    background: linear-gradient(135deg, #fffbeb 0%, #fff7ed 100%);
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+}
+
+.task-pausa-info-heading {
+    margin: 0 0 0.65rem 0;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #9a3412;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.task-pausa-info-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    padding: 0.45rem 0;
+    border-top: 1px solid rgba(251, 146, 60, 0.35);
+}
+
+.task-pausa-info-row:first-of-type {
+    border-top: none;
+    padding-top: 0;
+}
+
+.task-pausa-info-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #c2410c;
+}
+
+.task-pausa-info-value {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #431407;
+}
+
+.task-pausa-info-motivo .task-pausa-info-motivo-text {
+    margin: 0;
+    font-size: 0.9rem;
+    line-height: 1.45;
+    color: #1c1917;
+    word-break: break-word;
+}
+
+/* Tarjeta de proyecto (detalle de tarea) */
+.task-proyecto-panel {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.85rem;
+    margin-top: 1rem;
+    padding: 0.85rem 1rem;
+    border-radius: 12px;
+    border: 1px solid #bfdbfe;
+    background: linear-gradient(135deg, #eff6ff 0%, #f8fafc 100%);
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+}
+
+.task-proyecto-icon {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    background: #dbeafe;
+    color: #1d4ed8;
+    font-size: 1.15rem;
+}
+
+.task-proyecto-content {
+    min-width: 0;
+    flex: 1;
+}
+
+.task-proyecto-label {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #3b82f6;
+    margin-bottom: 0.2rem;
+}
+
+.task-proyecto-nombre {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 700;
+    line-height: 1.35;
+    color: #0f172a;
+    word-break: break-word;
+}
+
+/* Calendario de tareas (EmployeeInterface) */
+.employee-calendar-modal {
+    background: var(--card-color, #fff);
+    border-radius: 14px;
+    max-width: min(960px, calc(100vw - 2rem));
+    width: 100%;
+    max-height: calc(100vh - 2rem);
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 50px rgba(15, 23, 42, 0.18);
+    overflow: hidden;
+}
+
+.employee-calendar-header h2 {
+    display: flex;
+    align-items: center;
+    font-size: 1.2rem;
+    margin: 0;
+}
+
+.employee-calendar-body {
+    overflow: auto;
+    padding-bottom: 1rem;
+}
+
+.employee-calendar-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.employee-calendar-month-label {
+    font-weight: 700;
+    font-size: 1.05rem;
+    text-transform: capitalize;
+    min-width: 12rem;
+    text-align: center;
+    color: var(--text-primary, #1f2937);
+}
+
+.employee-calendar-nav-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    background: #f8fafc;
+    color: #334155;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.employee-calendar-nav-btn:hover {
+    background: #eff6ff;
+    border-color: #bfdbfe;
+    color: #1d4ed8;
+}
+
+.employee-calendar-hint {
+    margin: 0 0 0.85rem 0;
+    font-size: 0.82rem;
+    color: var(--text-secondary, #64748b);
+    text-align: center;
+}
+
+.employee-calendar-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 6px;
+    margin-bottom: 6px;
+}
+
+.employee-calendar-weekday {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #64748b;
+    text-align: center;
+    padding: 4px 0;
+}
+
+.employee-calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 6px;
+}
+
+.employee-calendar-cell {
+    min-height: 110px;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    background: #fafafa;
+    padding: 6px 6px 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+}
+
+.employee-calendar-cell--empty {
+    min-height: 0;
+    border: none;
+    background: transparent;
+    padding: 0;
+}
+
+.employee-calendar-cell--today {
+    border-color: #3b82f6;
+    background: linear-gradient(180deg, #eff6ff 0%, #fafafa 42%);
+    box-shadow: inset 0 0 0 1px rgba(59, 130, 246, 0.25);
+}
+
+.employee-calendar-daynum {
+    font-size: 0.78rem;
+    font-weight: 800;
+    color: #0f172a;
+    align-self: flex-end;
+    line-height: 1;
+}
+
+.employee-calendar-cell--today .employee-calendar-daynum {
+    color: #1d4ed8;
+}
+
+.employee-calendar-tasks {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+}
+
+.employee-calendar-task {
+    display: block;
+    width: 100%;
+    text-align: left;
+    font-size: 0.72rem;
+    line-height: 1.25;
+    padding: 4px 6px;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    font-family: inherit;
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.employee-calendar-task:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+}
+
+.employee-calendar-task.pending {
+    background: #fff7ed;
+    border-color: #fdba74;
+    color: #9a3412;
+}
+
+.employee-calendar-task.progress {
+    background: #eff6ff;
+    border-color: #93c5fd;
+    color: #1e40af;
+}
+
+.employee-calendar-task.done {
+    background: #ecfdf5;
+    border-color: #6ee7b7;
+    color: #166534;
+}
+
+@media (max-width: 900px) {
+    .employee-calendar-cell {
+        min-height: 88px;
+    }
+
+    .employee-calendar-task {
+        font-size: 0.65rem;
+        padding: 3px 4px;
+    }
+}
+
+/* ===== DASHBOARD STATS PANEL ===== */
+.dashboard-stats-panel {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.stat-kpi {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 1.25rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    transition: box-shadow 0.2s;
+}
+
+.stat-kpi:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.stat-kpi--alert {
+    border-color: #f87171;
+    background: #fff5f5;
+}
+
+.stat-kpi--alert .stat-kpi-number {
+    color: #dc2626;
+}
+
+.stat-kpi-number {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1e40af;
+    line-height: 1;
+}
+
+.stat-kpi-label {
+    font-size: 0.8rem;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    text-align: center;
+}
+
+@media (max-width: 768px) {
+    .dashboard-stats-panel {
+        grid-template-columns: repeat(2, 1fr);
     }
 }
