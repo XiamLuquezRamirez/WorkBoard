@@ -626,6 +626,184 @@ const Reportes = () => {
         printWindow.print();
     };
 
+    const imprimirEficienciaGeneral = (empleados, deptos) => {
+        const hoy = new Date().toLocaleDateString();
+        let html = `<html><head><style>
+            body{font-family:Arial,sans-serif;margin:20px;font-size:13px}
+            h1{color:#1d4ed8;text-align:center}
+            h2{color:#374151;margin-top:24px;font-size:15px}
+            table{width:100%;border-collapse:collapse;margin-top:8px}
+            th,td{border:1px solid #d1d5db;padding:6px 8px;text-align:left}
+            th{background:#f3f4f6;font-weight:600}
+            .kpis{display:flex;gap:12px;margin:12px 0;flex-wrap:wrap}
+            .kpi{border:1px solid #e5e7eb;border-radius:6px;padding:8px 14px;min-width:100px}
+            .kpi strong{display:block;font-size:20px}
+            .alert{background:#fef2f2;border:1px solid #fecaca;padding:6px 10px;border-radius:4px;margin:4px 0}
+            .ok{background:#f0fdf4;border:1px solid #bbf7d0;padding:6px 10px;border-radius:4px;margin:4px 0}
+            .info{background:#eff6ff;border:1px solid #bfdbfe;padding:6px 10px;border-radius:4px;margin:4px 0}
+        </style></head><body>
+        <h1>Informe de Eficiencia Operativa</h1>
+        <p style="text-align:center;color:#6b7280">Período: ${startDate} — ${endDate} | Generado: ${hoy}</p>`;
+
+        const alto = empleados.filter(e => e.score >= 0.75).length;
+        const medio = empleados.filter(e => e.score >= 0.50 && e.score < 0.75).length;
+        const critico = empleados.filter(e => e.score < 0.50).length;
+        const promedio = empleados.length > 0
+            ? Math.round(empleados.reduce((s, e) => s + e.score, 0) / empleados.length * 100) : 0;
+
+        html += `<h2>KPIs Globales</h2>
+        <div class="kpis">
+            <div class="kpi"><strong>${alto}</strong>🟢 Alto</div>
+            <div class="kpi"><strong>${medio}</strong>🟡 Medio</div>
+            <div class="kpi"><strong>${critico}</strong>🔴 Crítico</div>
+            <div class="kpi"><strong>${promedio}%</strong>Promedio global</div>
+        </div>
+        <h2>Ranking por Empleado</h2>
+        <table><thead><tr><th>#</th><th>Nombre</th><th>Cargo</th><th>Área</th><th>Nivel</th><th>Score</th><th>Completadas</th><th>A tiempo</th><th>Reprocesos</th></tr></thead><tbody>`;
+        empleados.forEach((emp, i) => {
+            html += `<tr><td>${i+1}</td><td>${emp.nombre}</td><td>${emp.cargo}</td><td>${emp.departamento}</td>
+                <td>${emp.nivel}</td><td>${emp.score.toFixed(2)}</td>
+                <td>${emp.completadas}/${emp.total}</td><td>${emp.aTiempo}</td><td>${emp.reprocesos}</td></tr>`;
+        });
+        html += `</tbody></table>
+        <h2>Resumen por Área</h2>
+        <table><thead><tr><th>Área</th><th>Empleados</th><th>Score Promedio</th><th>Nivel</th></tr></thead><tbody>`;
+        deptos.forEach(d => {
+            html += `<tr><td>${d.departamento}</td><td>${d.count}</td><td>${d.scorePromedio.toFixed(2)}</td><td>${d.nivel}</td></tr>`;
+        });
+        html += `</tbody></table><h2>Alertas</h2>`;
+        if (critico > 0) html += `<p class="alert">⚠ ${critico} empleado(s) en zona crítica: ${empleados.filter(e=>e.score<0.50).map(e=>e.nombre).join(', ')}</p>`;
+        deptos.filter(d=>d.scorePromedio<0.60).forEach(d => {
+            html += `<p class="alert">⚠ Área ${d.departamento} con score ${d.scorePromedio.toFixed(2)}</p>`;
+        });
+        if (deptos.length > 0) html += `<p class="ok">✅ Mejor área: ${deptos[0].departamento} (${deptos[0].scorePromedio.toFixed(2)})</p>`;
+        html += `</body></html>`;
+
+        const win = window.open('', '_blank');
+        win.document.write(html);
+        win.document.close();
+        win.print();
+    };
+
+    const imprimirEficienciaPorEmpleado = (empleados) => {
+        const hoy = new Date().toLocaleDateString();
+        let html = `<html><head><style>
+            body{font-family:Arial,sans-serif;margin:20px;font-size:13px}
+            h1{color:#1d4ed8;text-align:center}
+            .emp-block{border:1px solid #e5e7eb;border-radius:6px;padding:14px;margin-bottom:16px;page-break-inside:avoid}
+            .emp-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+            .emp-name{font-size:15px;font-weight:700;color:#111827}
+            .emp-meta{color:#6b7280;font-size:12px}
+            .badge{padding:3px 8px;border-radius:99px;font-size:12px;font-weight:600}
+            .badge-alto{background:#dcfce7;color:#15803d}
+            .badge-medio{background:#ffedd5;color:#c2410c}
+            .badge-critico{background:#fee2e2;color:#b91c1c}
+            table{width:100%;border-collapse:collapse;margin-top:8px;font-size:12px}
+            th,td{border:1px solid #e5e7eb;padding:4px 8px}
+            th{background:#f9fafb}
+        </style></head><body>
+        <h1>Eficiencia Operativa — Por Empleado</h1>
+        <p style="text-align:center;color:#6b7280">Período: ${startDate} — ${endDate} | Generado: ${hoy}</p>`;
+
+        empleados.forEach((emp, i) => {
+            const pctCompleto = emp.total > 0 ? Math.round(emp.completadas/emp.total*100) : 0;
+            const badgeClass = emp.score >= 0.75 ? 'badge-alto' : emp.score >= 0.50 ? 'badge-medio' : 'badge-critico';
+            html += `<div class="emp-block">
+                <div class="emp-header">
+                    <div>
+                        <div class="emp-name">${i+1}. ${emp.nombre}</div>
+                        <div class="emp-meta">${emp.cargo} · ${emp.departamento}</div>
+                    </div>
+                    <span class="badge ${badgeClass}">${emp.nivel} · Score ${emp.score.toFixed(2)}</span>
+                </div>
+                <table><thead><tr><th>Total tareas</th><th>Completadas</th><th>A tiempo</th><th>Reprocesos</th><th>% Completado</th></tr></thead>
+                <tbody><tr><td>${emp.total}</td><td>${emp.completadas}</td><td>${emp.aTiempo}</td><td>${emp.reprocesos}</td><td>${pctCompleto}%</td></tr></tbody>
+                </table>
+            </div>`;
+        });
+
+        html += `</body></html>`;
+        const win = window.open('', '_blank');
+        win.document.write(html);
+        win.document.close();
+        win.print();
+    };
+
+    const imprimirEficienciaPorArea = (deptos) => {
+        const hoy = new Date().toLocaleDateString();
+        let html = `<html><head><style>
+            body{font-family:Arial,sans-serif;margin:20px;font-size:13px}
+            h1{color:#1d4ed8;text-align:center}
+            .area-block{border:1px solid #e5e7eb;border-radius:6px;padding:14px;margin-bottom:20px;page-break-inside:avoid}
+            .area-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+            .area-name{font-size:16px;font-weight:700;color:#111827}
+            .badge{padding:3px 10px;border-radius:99px;font-size:12px;font-weight:600}
+            .badge-alto{background:#dcfce7;color:#15803d}
+            .badge-medio{background:#ffedd5;color:#c2410c}
+            .badge-critico{background:#fee2e2;color:#b91c1c}
+            table{width:100%;border-collapse:collapse;font-size:12px}
+            th,td{border:1px solid #e5e7eb;padding:4px 8px}
+            th{background:#f9fafb}
+        </style></head><body>
+        <h1>Eficiencia Operativa — Por Área</h1>
+        <p style="text-align:center;color:#6b7280">Período: ${startDate} — ${endDate} | Generado: ${hoy}</p>`;
+
+        deptos.forEach(dept => {
+            const badgeClass = dept.scorePromedio >= 0.75 ? 'badge-alto' : dept.scorePromedio >= 0.50 ? 'badge-medio' : 'badge-critico';
+            html += `<div class="area-block">
+                <div class="area-header">
+                    <div class="area-name">${dept.departamento} (${dept.count} empleados)</div>
+                    <span class="badge ${badgeClass}">${dept.nivel} · Score ${dept.scorePromedio.toFixed(2)}</span>
+                </div>
+                <table><thead><tr><th>#</th><th>Empleado</th><th>Cargo</th><th>Nivel</th><th>Score</th><th>Completadas</th><th>A tiempo</th><th>Reprocesos</th></tr></thead>
+                <tbody>`;
+            dept.empleadosList.forEach((emp, i) => {
+                const bc = emp.score >= 0.75 ? 'badge-alto' : emp.score >= 0.50 ? 'badge-medio' : 'badge-critico';
+                html += `<tr><td>${i+1}</td><td>${emp.nombre}</td><td>${emp.cargo}</td>
+                    <td><span class="badge ${bc}">${emp.nivel}</span></td>
+                    <td>${emp.score.toFixed(2)}</td>
+                    <td>${emp.completadas}/${emp.total}</td>
+                    <td>${emp.aTiempo}</td><td>${emp.reprocesos}</td></tr>`;
+            });
+            html += `</tbody></table></div>`;
+        });
+
+        html += `</body></html>`;
+        const win = window.open('', '_blank');
+        win.document.write(html);
+        win.document.close();
+        win.print();
+    };
+
+    const exportarEficienciaExcel = (empleados, deptos) => {
+        const wb = XLSX.utils.book_new();
+
+        const wsEmpleados = XLSX.utils.json_to_sheet(empleados.map((emp, i) => ({
+            '#': i + 1,
+            'Nombre': emp.nombre,
+            'Cargo': emp.cargo,
+            'Área': emp.departamento,
+            'Nivel': emp.nivel,
+            'Score': emp.score,
+            'Total tareas': emp.total,
+            'Completadas': emp.completadas,
+            'A tiempo': emp.aTiempo,
+            'Reprocesos': emp.reprocesos,
+            '% Completado': emp.total > 0 ? Math.round(emp.completadas/emp.total*100) + '%' : '0%'
+        })));
+        XLSX.utils.book_append_sheet(wb, wsEmpleados, 'Por Empleado');
+
+        const wsAreas = XLSX.utils.json_to_sheet(deptos.map(d => ({
+            'Área': d.departamento,
+            'Empleados': d.count,
+            'Score Promedio': d.scorePromedio,
+            'Nivel': d.nivel
+        })));
+        XLSX.utils.book_append_sheet(wb, wsAreas, 'Por Área');
+
+        XLSX.writeFile(wb, `eficiencia-operativa-${startDate}-${endDate}.xlsx`);
+    };
+
     const exportarExcel = () => {
         const tareasPorEmpleado = generarTareasPorEmpleado();
         const workbook = XLSX.utils.book_new();
