@@ -626,6 +626,7 @@ const Dashboard = () => {
         axiosInstance
             .get("/dashboard/cargarEmpleadosTareas")
             .then((response) => {
+                console.log(response.data);
                 setEmpleados(response.data);
                 setIsLoading2(false);
             })
@@ -638,22 +639,83 @@ const Dashboard = () => {
             });
     };
 
-    //calcular efcieincia de empleado
-    const calcularEficiencia = (empleado) => {
-        const tareas = empleado.tareas;
-        const tareasCompletadas = tareas.filter(tarea => tarea.estado === 'Completada');
-        const tareasPendientes = tareas.filter(tarea => tarea.estado === 'Pendiente' && tarea.pausada === 0 && tarea.aprobada === 1);
-        let eficiencia = 0;
+    const calcularIndiceDesempeno = (empleado) => {
+        const tareas = (empleado.tareas || []).filter(t => t.estado_reg === 'Activo' && t.pausada !== 1);
+        const hoy = new Date().toISOString().split('T')[0];
+        const asignadas = tareas.length;
+        if (asignadas === 0) return null;
 
-        eficiencia = (tareasCompletadas.length + tareasPendientes.length) > 0
-        ? (tareasCompletadas.length / (tareasCompletadas.length + tareasPendientes.length)) * 100
-        : 0;
-        
-        if (isNaN(eficiencia)) {
-            return 0;
+        const completadas   = tareas.filter(t => t.estado === 'Completada').length;
+        const atrasadas     = tareas.filter(t => t.fecha_pactada && t.fecha_pactada < hoy && t.estado !== 'Completada').length;
+        const aTiempo       = tareas.filter(t =>
+            t.estado === 'Completada' && t.fecha_entregada && t.fecha_entregada <= t.fecha_pactada
+        ).length;
+        const reprocesadas  = tareas.filter(t => t.rechazada == 1).length;
+
+        // 4 tasas (0–1), cada una protegida contra división por cero y datos corruptos
+        const tasaCompletitud = completadas / asignadas;
+        const tasaPuntualidad = aTiempo / Math.max(completadas, 1);
+        const tasaVigencia    = 1 - Math.min(atrasadas / asignadas, 1);
+        const tasaCalidad     = 1 - Math.min(reprocesadas / Math.max(completadas, 1), 1);
+
+        // Pesos: 40 + 25 + 20 + 15 = 100
+        const score =
+            tasaCompletitud * 40 +
+            tasaPuntualidad * 25 +
+            tasaVigencia    * 20 +
+            tasaCalidad     * 15;
+
+        return Math.max(0, Math.min(100, Math.round(score)));
+    };
+
+    const clasificarEmpleado = (id) => {
+        if (id === null)  return { nivel: 'sin-datos', label: 'Sin datos',  color: '#9ca3af' };
+        if (id >= 75)     return { nivel: 'alto',      label: '🟢 Alto',    color: '#16a34a' };
+        if (id >= 50)     return { nivel: 'medio',     label: '🟡 Medio',   color: '#f59e0b' };
+        return                  { nivel: 'bajo',       label: '🔴 Bajo',    color: '#dc2626' };
+    };
+
+    const generarMensaje = (emp, id) => {
+        if (id === null) return 'Sin tareas asignadas.';
+        const hoy = new Date().toISOString().split('T')[0];
+        const tareas = (emp.tareas || []).filter(t => t.estado_reg === 'Activo' && t.pausada !== 1);
+        const completadas   = tareas.filter(t => t.estado === 'Completada').length;
+        const atrasadas     = tareas.filter(t => t.fecha_pactada && t.fecha_pactada < hoy && t.estado !== 'Completada').length;
+        const reprocesadas  = tareas.filter(t => t.rechazada == 1).length;
+        const proximas      = tareas.filter(t => {
+            if (t.estado === 'Completada') return false;
+            const dias = Math.ceil((new Date(t.fecha_pactada) - new Date(hoy)) / 86400000);
+            return dias >= 0 && dias <= 3;
+        }).length;
+
+        const pluralT = (n) => `${n} tarea${n !== 1 ? 's' : ''}`;
+
+        if (id >= 75) {
+            if (reprocesadas > 0)
+                return `Buen rendimiento. ${pluralT(reprocesadas)} con reproceso afectan la calidad.`;
+            if (atrasadas === 0 && proximas === 0)
+                return '¡Excelente rendimiento! Al día con todas las tareas.';
+            if (proximas > 0)
+                return `Buen rendimiento. ${pluralT(proximas)} por vencer pronto.`;
+            return 'Buen rendimiento general.';
         }
-        return Math.round(eficiencia);
-    }
+        if (id >= 50) {
+            if (atrasadas > 0 && reprocesadas > 0)
+                return `Rendimiento medio. ${pluralT(atrasadas)} atrasada${atrasadas !== 1 ? 's' : ''} y ${pluralT(reprocesadas)} con reproceso.`;
+            if (atrasadas > 0)
+                return `Rendimiento medio. ${pluralT(atrasadas)} atrasada${atrasadas !== 1 ? 's' : ''}.`;
+            if (reprocesadas > 0)
+                return `Rendimiento medio. ${pluralT(reprocesadas)} con reproceso reducen la calidad.`;
+            return 'Rendimiento aceptable. Puede mejorar la puntualidad.';
+        }
+        if (atrasadas > 0 && reprocesadas > 0)
+            return `Rendimiento crítico: ${pluralT(atrasadas)} atrasada${atrasadas !== 1 ? 's' : ''} y ${pluralT(reprocesadas)} con reproceso.`;
+        if (atrasadas > 0)
+            return `Rendimiento crítico. ${pluralT(atrasadas)} atrasada${atrasadas !== 1 ? 's' : ''}.`;
+        if (reprocesadas > 0)
+            return `Rendimiento bajo. ${pluralT(reprocesadas)} requirieron rehacerse.`;
+        return 'Rendimiento bajo. Revisar carga de trabajo.';
+    };
 
     const calcularStatsGlobales = (listaEmpleados) => {
         let tareasActivas = 0;
@@ -668,7 +730,7 @@ const Dashboard = () => {
                 t.fecha_pactada && t.fecha_pactada < hoy &&
                 t.estado !== 'Completada' && t.pausada !== 1
             ).length;
-            sumaEficiencia += emp.rendimiento?.eficienciaOperativa || 0;
+            sumaEficiencia += calcularIndiceDesempeno(emp) ?? 0;
         });
 
         return {
@@ -734,6 +796,8 @@ const Dashboard = () => {
         );
     }
 
+    
+
     if (!user) {
         return (
             <div className="error-container">
@@ -749,8 +813,8 @@ const Dashboard = () => {
         );
     }
 
-    if (user.tipo_usuario !== "Administrador") {
-        
+    if (!["Administrador", "Supervisor"].includes(user.tipo_usuario)) {
+
         return (
             <div className="dashboard-container">
                 <Header
@@ -863,54 +927,73 @@ const Dashboard = () => {
                         ) : (
                             <div className="cards-container">
                                 <div className="dashboard-header">
-                                    <h1>Tablero de seguimiento de empleados</h1>
-                                    <div className="search-container">
+                                    <h1 className="dashboard-header__title">
+                                        Tablero de seguimiento de empleados
+                                    </h1>
+                                    <div
+                                        className="dashboard-header__toolbar"
+                                        role="search"
+                                        aria-label="Buscar y filtrar empleados"
+                                    >
                                         <div className="search-box">
-                                            <FaSearch />
+                                            <span className="search-icon" aria-hidden="true">
+                                                <FaSearch />
+                                            </span>
                                             <input
-                                                type="text"
-                                                placeholder="Buscar empleado por nombre, departamento o empresa..."
+                                                type="search"
+                                                id="dashboard-empleados-buscar"
+                                                placeholder="Nombre, departamento o empresa…"
                                                 value={searchTerm}
                                                 onChange={(e) =>
                                                     setSearchTerm(e.target.value)
                                                 }
-                                                style={{ width: '400px' }}
                                                 className="search-input"
+                                                autoComplete="off"
+                                                aria-label="Buscar empleado por nombre, departamento o empresa"
                                             />
                                         </div>
                                         <div className="dept-filter-container">
                                             <select
+                                                id="dashboard-filtro-depto"
                                                 value={filterDepartamento}
-                                                onChange={(e) => setFilterDepartamento(e.target.value)}
+                                                onChange={(e) =>
+                                                    setFilterDepartamento(e.target.value)
+                                                }
                                                 className="dept-filter-select"
+                                                aria-label="Filtrar por departamento"
                                             >
                                                 <option value="">Todos los departamentos</option>
-                                                {departamentosUnicos.map(dept => (
-                                                    <option key={dept} value={dept}>{dept}</option>
+                                                {departamentosUnicos.map((dept) => (
+                                                    <option key={dept} value={dept}>
+                                                        {dept}
+                                                    </option>
                                                 ))}
                                             </select>
                                         </div>
                                     </div>
                                 </div>
-                                <div className="dashboard-stats-panel">
-                                    <div className="stat-kpi">
-                                        <span className="stat-kpi-number">{stats.totalEmpleados}</span>
-                                        <span className="stat-kpi-label">Empleados activos</span>
+                                <div className="dashboard-content-column">
+                                    <div className="dashboard-stats-panel">
+                                        <div className="stat-kpi">
+                                            <span className="stat-kpi-number">{stats.totalEmpleados}</span>
+                                            <span className="stat-kpi-label">Empleados activos</span>
+                                        </div>
+                                        <div className="stat-kpi">
+                                            <span className="stat-kpi-number">{stats.tareasActivas}</span>
+                                            <span className="stat-kpi-label">Tareas en curso</span>
+                                        </div>
+                                        <div
+                                            className={`stat-kpi ${stats.tareasAtrasadas > 0 ? 'stat-kpi--alert' : ''}`}
+                                        >
+                                            <span className="stat-kpi-number">{stats.tareasAtrasadas}</span>
+                                            <span className="stat-kpi-label">Tareas atrasadas</span>
+                                        </div>
+                                        <div className="stat-kpi">
+                                            <span className="stat-kpi-number">{stats.eficienciaPromedio}%</span>
+                                            <span className="stat-kpi-label">Eficiencia promedio</span>
+                                        </div>
                                     </div>
-                                    <div className="stat-kpi">
-                                        <span className="stat-kpi-number">{stats.tareasActivas}</span>
-                                        <span className="stat-kpi-label">Tareas en curso</span>
-                                    </div>
-                                    <div className={`stat-kpi ${stats.tareasAtrasadas > 0 ? 'stat-kpi--alert' : ''}`}>
-                                        <span className="stat-kpi-number">{stats.tareasAtrasadas}</span>
-                                        <span className="stat-kpi-label">Tareas atrasadas</span>
-                                    </div>
-                                    <div className="stat-kpi">
-                                        <span className="stat-kpi-number">{stats.eficienciaPromedio}%</span>
-                                        <span className="stat-kpi-label">Eficiencia promedio</span>
-                                    </div>
-                                </div>
-                                <div className="cards-grid">
+                                    <div className="cards-grid">
                                     {filteredEmpleados.map((empleado) => {
                                         const atrasadas = contarTareasAtrasadas(empleado);
                                         return (
@@ -972,64 +1055,58 @@ const Dashboard = () => {
                                                 </button>
                                             </div>
                                             <div className="performance-section">
-                                                <h4>Rendimiento</h4>
-                                                <div className="task-stats-grid">
-                                                    <div className="stat-item">
-                                                        <span className="stat-number">
-                                                            {empleado.rendimiento
-                                                                ?.tareasAsignadas || 0}
-                                                        </span>
-                                                        <span className="stat-label">
-                                                            Asignadas
-                                                        </span>
-                                                    </div>
-                                                    <div className="stat-item">
-                                                        <span className="stat-number">
-                                                            {empleado.rendimiento
-                                                                ?.tareas.completadas ||
-                                                                0}
-                                                        </span>
-                                                        <span className="stat-label">
-                                                            Completadas
-                                                        </span>
-                                                    </div>
-                                                    <div className="stat-item">
-                                                        <span className="stat-number">
-                                                            {empleado.rendimiento
-                                                                ?.tareas.enProceso || 0}
-                                                        </span>
-                                                        <span className="stat-label">
-                                                            En Proceso
-                                                        </span>
-                                                    </div>
-                                                    <div className="stat-item urgent">
-                                                        <span className="stat-number">
-                                                            {empleado.rendimiento?.tareas.pendientes || 0}
-                                                        </span>
-                                                        <span className="stat-label">
-                                                            Pendientes
-                                                        </span>
-                                                    </div>
-                                                </div>
-
-                                                <div className="kpi-section" title="Porcentaje de tareas completadas dentro del plazo establecido.">
-                                                    <div className="kpi-item">
-                                                        <span className="kpi-label">
-                                                            Eficiencia Operativa
-                                                        </span>
-                                                        <div className="progress-bar">
-                                                            <div
-                                                                className="progress-fill"
-                                                                style={{
-                                                                    width: `${empleado.rendimiento.eficienciaOperativa}%`,
-                                                                }}
-                                                            />
-                                                            <span className="progress-value">
-                                                                {Math.round(empleado.rendimiento.eficienciaOperativa, 2)}%
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                </div>
+                                                {(() => {
+                                                    const id = calcularIndiceDesempeno(empleado);
+                                                    const cls = clasificarEmpleado(id);
+                                                    const msg = generarMensaje(empleado, id);
+                                                    const r = empleado.rendimiento;
+                                                    const tareas = (empleado.tareas || []).filter(t => t.estado_reg === 'Activo' && t.pausada !== 1);
+                                                    const completadas = r?.tareas?.completadas || 0;
+                                                    const aTiempo = tareas.filter(t => t.estado === 'Completada' && t.fecha_entregada && t.fecha_entregada <= t.fecha_pactada).length;
+                                                    const reprocesos = tareas.filter(t => t.rechazada == 1).length;
+                                                    const pctATiempo = completadas > 0 ? Math.round((aTiempo / completadas) * 100) : 0;
+                                                    return (
+                                                        <>
+                                                            <div className="desempeno-header">
+                                                                <span className="desempeno-title">Índice de Desempeño</span>
+                                                                <span className={`desempeno-badge desempeno-badge--${cls.nivel}`}>{cls.label}</span>
+                                                            </div>
+                                                            {id !== null ? (
+                                                                <>
+                                                                    <div className="desempeno-score">{id}%</div>
+                                                                    <div className="desempeno-bar-wrap">
+                                                                        <div className="desempeno-bar" style={{ width: `${id}%`, backgroundColor: cls.color }} />
+                                                                    </div>
+                                                                    <p className="desempeno-msg">{msg}</p>
+                                                                </>
+                                                            ) : (
+                                                                <p className="desempeno-msg desempeno-msg--empty">Sin tareas asignadas.</p>
+                                                            )}
+                                                            <div className="task-stats-grid">
+                                                                <div className="stat-item">
+                                                                    <span className="stat-number">{r?.tareasAsignadas || 0}</span>
+                                                                    <span className="stat-label">Asignadas</span>
+                                                                </div>
+                                                                <div className="stat-item">
+                                                                    <span className="stat-number">{completadas}</span>
+                                                                    <span className="stat-label">✅ Completadas</span>
+                                                                </div>
+                                                                <div className="stat-item">
+                                                                    <span className="stat-number">{r?.tareas?.enProceso || 0}</span>
+                                                                    <span className="stat-label">⏳ En Proceso</span>
+                                                                </div>
+                                                                <div className="stat-item urgent">
+                                                                    <span className="stat-number">{atrasadas}</span>
+                                                                    <span className="stat-label">⚠️ Atrasadas</span>
+                                                                </div>
+                                                            </div>
+                                                            <div className="desempeno-secundario">
+                                                                <span>A tiempo: {aTiempo}/{completadas} ({pctATiempo}%)</span>
+                                                                <span>Reprocesos: {reprocesos}</span>
+                                                            </div>
+                                                        </>
+                                                    );
+                                                })()}
 
                                                 <div className="urgent-tasks">
                                                     <h5>Tareas Recientes</h5>
@@ -1059,6 +1136,7 @@ const Dashboard = () => {
                                         </div>
                                     );
                                     })}
+                                </div>
                                 </div>
                             </div>
                         )}
