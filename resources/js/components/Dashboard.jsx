@@ -180,6 +180,7 @@ const TasksModal = ({
     setEmpleados,
     getStatusClass,
     getStatusIcon,
+    esSupervisor,
 }) => {
     const estados = [
         { id: 'Todas', title: 'Todas las Tareas', icon: FaTasks, color: '#6b7280', count: employee.tareas?.length || 0 },
@@ -222,7 +223,7 @@ const TasksModal = ({
                         {mostrarFormTarea ? 'NUEVA TAREA' : `TAREAS DE ${employee.nombre}`}
                     </h2>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        {!mostrarFormTarea && (
+                        {!mostrarFormTarea && !esSupervisor && (
                             <button className="add-button" onClick={() => setMostrarFormTarea(true)}>
                                 <FaPlus /> Nueva Tarea
                             </button>
@@ -1682,6 +1683,7 @@ const Dashboard = () => {
                     setEmpleados={setEmpleados}
                     getStatusClass={getStatusClass}
                     getStatusIcon={getStatusIcon}
+                    esSupervisor={user?.tipo_usuario === "Supervisor"}
                 />
             )}
         </div>
