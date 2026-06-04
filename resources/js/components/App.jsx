@@ -8,7 +8,7 @@ import Reportes from './Reportes';
 
 function App() {
     const { user } = useUser();
-
+  
     return (
         <HashRouter>
             <Routes>
@@ -33,7 +33,13 @@ function App() {
                 {/* Ruta protegida para parameters */}
                 <Route
                     path="/parameters"
-                    element={user ? <Parameters /> : <Navigate to="/login" />}
+                    element={
+                        !user
+                            ? <Navigate to="/login" />
+                            : user.tipo_usuario === "Supervisor"
+                                ? <Navigate to="/dashboard" />
+                                : <Parameters />
+                    }
                 />
 
                 {/* Ruta por defecto */}
