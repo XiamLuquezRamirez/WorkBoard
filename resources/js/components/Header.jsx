@@ -18,8 +18,10 @@ const Header = ({ currentUser, showUserMenu, setShowUserMenu, setIsSidebarOpen }
     useEffect(() => {
         if (!user) return;
 
+        const esAdmin = user.tipo_usuario === "Administrador" || user.tipo_usuario === "Supervisor";
+
         const intervalo = setInterval(() => {
-            if (user.tipo_usuario === "Administrador") {
+            if (esAdmin) {
                 cargarNotificaciones('admin');
             } else if (user.lider === "Si") {
                 cargarNotificaciones('lider');
@@ -29,7 +31,7 @@ const Header = ({ currentUser, showUserMenu, setShowUserMenu, setIsSidebarOpen }
         }, 10000); // 10000ms = 10 segundos
 
         // Cargar inmediatamente también
-        if (user.tipo_usuario === "Administrador") {
+        if (esAdmin) {
             cargarNotificaciones('admin');
         } else if (user.lider === "Si") {
             cargarNotificaciones('lider');
@@ -44,6 +46,7 @@ const Header = ({ currentUser, showUserMenu, setShowUserMenu, setIsSidebarOpen }
     const handleLogout = async () => {
         setIsLoggingOut(true);
         try {
+     
             await axiosInstance.post('/logout');
             // Limpiar el localStorage
             localStorage.removeItem('userWorkBoard');
@@ -70,7 +73,7 @@ const Header = ({ currentUser, showUserMenu, setShowUserMenu, setIsSidebarOpen }
 
     const handleUpdateUser = (updatedUser) => {
         setUser(updatedUser);
-        localStorage.setItem("user", JSON.stringify(updatedUser));
+        localStorage.setItem("userWorkBoard", JSON.stringify(updatedUser));
     };
 
     return (
