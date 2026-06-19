@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axiosInstance from '../axiosConfig';
 import Swal from 'sweetalert2';
 import { FaUser, FaLock, FaEye, FaEyeSlash, FaUnlock } from 'react-icons/fa';
 import { getImageUrl, getAssetUrl } from '../utils/assetHelper';
+import { useUser } from './UserContext';
 
 const LoginForm = () => {
+    const { setUser } = useUser();
+    const navigate = useNavigate();
     const [formData, setFormData] = useState({
         email: '',
         password: ''
@@ -37,9 +41,9 @@ const LoginForm = () => {
 
             // Intentar el login
             const response = await axiosInstance.post('/login', formData);
-          
+
             if (response.data.message === 'Login exitoso') {
-                
+
                 //mostrar un mensaje de exito
                 Swal.fire({
                     title: 'Exito',
@@ -54,7 +58,13 @@ const LoginForm = () => {
                 //guardar el token en el localStorage
                 localStorage.setItem('token', response.data.token);
                 localStorage.setItem('userWorkBoard', JSON.stringify(response.data.user));
-            }else{
+                setUser(response.data.user); // Actualizar el contexto del usuario
+                setTimeout(() => {
+                    const fullPath = getAssetUrl('dashboard');
+                    window.location.href = fullPath;
+                }, 100);
+
+            } else {
                 Swal.fire({
                     title: 'Error',
                     text: 'Credenciales incorrectas',
@@ -63,14 +73,26 @@ const LoginForm = () => {
             }
 
             // Redirigir al dashboard después del login exitoso
-      
-            setTimeout(() => {
-                const fullPath = getAssetUrl('dashboard');              
-                window.location.href = fullPath;
-            }, 1500);
+
+
         } catch (error) {
             console.error('Error en el login:', error.response?.data || error.message);
-            // Aquí puedes manejar el error
+            setError(error.response?.data?.message || 'Error en el inicio de sesión');
+
+            // Mostrar error específico de CSRF
+            if (error.response?.status === 419) {
+                Swal.fire({
+                    title: 'Error de Seguridad',
+                    text: 'Error de token CSRF. Por favor, recarga la página e intenta nuevamente.',
+                    icon: 'error'
+                });
+            } else {
+                Swal.fire({
+                    title: 'Error',
+                    text: error.response?.data?.message || 'Error en el inicio de sesión',
+                    icon: 'error'
+                });
+            }
         } finally {
             setLoading(false);
         }
@@ -78,7 +100,7 @@ const LoginForm = () => {
 
     return (
         <div className="login-container">
-            <div 
+            <div
                 style={{
                     position: 'absolute',
                     top: 0,
@@ -101,11 +123,11 @@ const LoginForm = () => {
                     <h2>Iniciar Sesión</h2>
                 </div>
                 {error && <div className="login-error">{error}</div>}
-            
-                    <form onSubmit={handleSubmit} className="login-form">
-                        <div className="form-group">
+
+                <form onSubmit={handleSubmit} className="login-form">
+                    <div className="form-group">
                         <div className="input-icon">
-                        <FaUser />
+                            <FaUser />
                             <input
                                 type="email"
                                 id="email"
@@ -136,22 +158,22 @@ const LoginForm = () => {
                             </button>
                         </div>
                     </div>
-                    
-                    <button 
-                        type="submit" 
+
+                    <button
+                        type="submit"
                         className={`login-button ${loading ? 'loading' : ''}`}
                         disabled={loading}
                         onMouseEnter={() => setHover(true)}
                         onMouseLeave={() => setHover(false)}
                     >
-                        {loading ? 
-                        <>
-                        Iniciando sesión...
-                        </>
-                        : 
-                        <>
-                        {hover ? <FaUnlock /> : <FaLock />} Iniciar Sesión
-                      </>
+                        {loading ?
+                            <>
+                                Iniciando sesión...
+                            </>
+                            :
+                            <>
+                                {hover ? <FaUnlock /> : <FaLock />} Iniciar Sesión
+                            </>
                         }
                     </button>
                 </form>

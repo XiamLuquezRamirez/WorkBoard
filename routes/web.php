@@ -51,6 +51,15 @@ Route::middleware(['auth:sanctum'])->group(function () {
         //cargar departamentos
         Route::get('/parametros/cargarDepartamentos', [EmpleadosController::class, 'cargarDepartamentos']);
 
+        // Gestión completa de departamentos
+        Route::get('/parametros/departamentos', [EmpleadosController::class, 'cargarDepartamentosDetalle']);
+        Route::post('/parametros/departamentos', [EmpleadosController::class, 'crearDepartamento']);
+        Route::put('/parametros/departamentos/{id}', [EmpleadosController::class, 'editarDepartamento']);
+        Route::delete('/parametros/departamentos/{id}', [EmpleadosController::class, 'eliminarDepartamento']);
+        Route::post('/parametros/departamentos/{id}/lider', [EmpleadosController::class, 'asignarLiderDepartamento']);
+        Route::get('/parametros/departamentos/{id}/empleados', [EmpleadosController::class, 'empleadosDepartamento']);
+        Route::post('/parametros/usuarios/{id}/independencia', [EmpleadosController::class, 'toggleIndependencia']);
+
         //cargar cargos
         Route::get('/parametros/cargarCargos', [EmpleadosController::class, 'cargarCargos']);
 
@@ -150,6 +159,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
         // informe de eficiencia operativa
         Route::get('/informes/eficiencia', [empleadosController::class, 'informeEficiencia']);
 
+        // informe de proyectos
+        Route::get('/informes/proyectos', [empleadosController::class, 'informeProyectos']);
+
         //verificar empleado lider
         Route::get('/verificarEmpleadoLider/{id}', [empleadosController::class, 'verificarEmpleadoLider']);
         //eliminar funcion
@@ -178,6 +190,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
         // solicitud formal de pausa (motivo + fecha reanudación + correo a líder o administrador)
         Route::post('/solicitarPausa', [EmpleadosController::class, 'solicitarPausa']);
+        Route::put('/pausas/{id}/resolver', [EmpleadosController::class, 'resolverSolicitudPausa']);
+        Route::get('/pausas/tarea/{tareaId}', [EmpleadosController::class, 'historialPausas']);
 
         //reprogramar tarea
         Route::put('/reprogramarTarea/{id}', [empleadosController::class, 'reprogramarTarea']);
@@ -204,13 +218,35 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::get('/cargarProyectos', [EmpleadosController::class, 'cargarProyectos']);
         Route::post('/guardarProyecto', [EmpleadosController::class, 'guardarProyecto']);
         Route::delete('/eliminarProyecto/{id}', [EmpleadosController::class, 'eliminarProyecto']);
-
+        Route::post('/proyectos/guardarProyecto', [EmpleadosController::class, 'guardarProyecto']);
         // subtareas
         Route::get('/subtareas/{tarea_id}', [EmpleadosController::class, 'cargarSubtareas']);
         Route::post('/subtareas', [EmpleadosController::class, 'guardarSubtarea']);
         Route::put('/subtareas/{id}', [EmpleadosController::class, 'actualizarSubtarea']);
         Route::delete('/subtareas/{id}', [EmpleadosController::class, 'eliminarSubtarea']);
         Route::get('/checklists-empleado/{empleado_id}', [EmpleadosController::class, 'checklistsEmpleado']);
+
+        // actividades y comentarios de tarea
+        Route::get('/tarea/{id}/actividades-comentarios', [EmpleadosController::class, 'actividadesComentariosTarea']);
+
+        // reprogramaciones
+        Route::post('/reprogramaciones/solicitar', [EmpleadosController::class, 'solicitarReprogramacion']);
+        Route::put('/reprogramaciones/{id}/resolver', [EmpleadosController::class, 'resolverReprogramacion']);
+        Route::get('/reprogramaciones/tarea/{tarea_id}', [EmpleadosController::class, 'historialReprogramaciones']);
+        Route::get('/reprogramaciones/pendientes', [EmpleadosController::class, 'reprogramacionesPendientes']);
+        Route::get('/informes/reprogramaciones', [EmpleadosController::class, 'informeReprogramaciones']);
+
+        // cargos
+        Route::get('/parametros/cargos', [EmpleadosController::class, 'cargarCargos']);
+        Route::post('/parametros/cargos', [EmpleadosController::class, 'crearCargo']);
+        Route::put('/parametros/cargos/{id}', [EmpleadosController::class, 'actualizarCargo']);
+        Route::delete('/parametros/cargos/{id}', [EmpleadosController::class, 'eliminarCargo']);
+
+        // migración one-time: convierte fotos base64 almacenadas en BD a archivos en disco
+        Route::post('/admin/migrar-fotos', [EmpleadosController::class, 'migrarFotos']);
+
+        // importación one-time de proyectos iniciales
+        Route::post('/admin/importar-proyectos', [EmpleadosController::class, 'importarProyectosIniciales']);
 
 
     });

@@ -1,15 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import {
     FaPlus, FaClock, FaSpinner, FaCheck,
     FaEye, FaSearch, FaFile, FaFileWord,
     FaFileImage, FaFilePdf, FaTimes,
-    FaSave, FaArrowLeft, FaLock, FaLink
+    FaSave, FaArrowLeft, FaLock, FaLink, FaArchive, FaFolder,
+    FaCalendar, FaChevronLeft, FaChevronRight, FaChevronDown, FaChartBar, FaEllipsisV, FaPause
 } from 'react-icons/fa';
 import TaskDetailsModal from './TaskDetailsModal';
+import ReportesDepartamentoModal from './ReportesDepartamentoModal';
 import axiosInstance from '../axiosConfig';
 import Swal from 'sweetalert2';
-import { FaCircleCheck, FaCircle, FaCircleXmark } from 'react-icons/fa6';
+import { FaCircleCheck, FaCircle, FaCircleXmark, FaListCheck } from 'react-icons/fa6';
 const EmployeeInterface = ({ user }) => {
 
     const [columns, setColumns] = useState({
@@ -44,9 +46,179 @@ const EmployeeInterface = ({ user }) => {
     const [mostrarTareasEstado, setMostrarTareasEstado] = useState(false);
     const [asignarTareasEmpleado, setAsignarTareasEmpleado] = useState(false);
     const [empleadoAsignado, setEmpleadoAsignado] = useState(null);
+    const [showArchiveModal, setShowArchiveModal] = useState(false);
+    const [tareasArchivadas, setTareasArchivadas] = useState([]);
+    const [selectedArchivedTask, setSelectedArchivedTask] = useState(null);
+    const [showArchivedTaskDetails, setShowArchivedTaskDetails] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+    const [proyectos, setProyectos] = useState([]);
+    const [subtareasForm, setSubtareasForm] = useState([]);
+    const [nuevaSubtareaTexto, setNuevaSubtareaTexto] = useState('');
+    const [nuevaSubtareaFecha, setNuevaSubtareaFecha] = useState('');
+    const [checklistTitulo, setChecklistTitulo] = useState('');
+    const [showChecklist, setShowChecklist] = useState(false);
+    const [checklistsExistentes, setChecklistsExistentes] = useState([]);
+    const [selectedChecklistId, setSelectedChecklistId] = useState('');
+    const [formProyectoId, setFormProyectoId] = useState('');
+    const [newTaskTitulo, setNewTaskTitulo] = useState('');
+    const [newTaskDescripcion, setNewTaskDescripcion] = useState('');
+    const [newTaskFecha, setNewTaskFecha] = useState('');
+    const [newTaskPrioridad, setNewTaskPrioridad] = useState('Media');
+    const [newTaskEstado, setNewTaskEstado] = useState('Pendiente');
+    const [selectedPlantillaId, setSelectedPlantillaId] = useState('');
+    const checklistBlockRef = useRef(null);
+    const optionsDropdownRef = useRef(null);
+    const [showOptionsDropdown, setShowOptionsDropdown] = useState(false);
+    const [showReportesModal, setShowReportesModal] = useState(false);
+    const [showCalendarModal, setShowCalendarModal] = useState(false);
+    const [calendarMonthAnchor, setCalendarMonthAnchor] = useState(() => {
+        const d = new Date();
+        return new Date(d.getFullYear(), d.getMonth(), 1);
+    });
+
+    const resetNewTaskModalState = () => {
+        setSubtareasForm([]);
+        setNuevaSubtareaTexto('');
+        setNuevaSubtareaFecha('');
+        setShowChecklist(false);
+        setChecklistTitulo('');
+        setSelectedChecklistId('');
+        setFormProyectoId('');
+        setSelectedPlantillaId('');
+        setNewTaskTitulo('');
+        setNewTaskDescripcion('');
+        setNewTaskFecha('');
+        setNewTaskPrioridad('Media');
+        setNewTaskEstado('Pendiente');
+        setChecklistsExistentes([]);
+    };
+
+    const normalizeYmd = (val) => {
+        if (!val) return null;
+        const s = String(val).split('T')[0].split(' ')[0];
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return null;
+        return s;
+    };
+
+    const getTaskEndDateKey = (task) => {
+        const estado = (task.estado || '').trim();
+        if (estado === 'Completada') {
+            const ent = normalizeYmd(task.fecha_entregada);
+            if (ent) return ent;
+        }
+        return normalizeYmd(task.fecha_pactada);
+    };
+
+    const allKanbanTasks = useMemo(
+        () => [
+            ...columns['Pendiente'].items,
+            ...columns['En Proceso'].items,
+            ...columns['Completada'].items,
+        ],
+        [columns]
+    );
+
+    const tareasPlantillaOpciones = useMemo(() => {
+        const seen = new Set();
+        const list = [];
+        for (const t of allKanbanTasks) {
+            if (!t?.id || seen.has(t.id)) continue;
+            seen.add(t.id);
+            list.push({ id: t.id, titulo: (t.titulo || `Tarea #${t.id}`).trim() || `Tarea #${t.id}` });
+        }
+        list.sort((a, b) => b.id - a.id);
+        return list;
+    }, [allKanbanTasks]);
+
+    const tasksByEndDate = useMemo(() => {
+        const map = {};
+        allKanbanTasks.forEach((task) => {
+            const key = getTaskEndDateKey(task);
+            if (!key) return;
+            if (!map[key]) map[key] = [];
+            map[key].push(task);
+        });
+        return map;
+    }, [allKanbanTasks]);
+
+    const { calendarCells, calYear, calMonth } = useMemo(() => {
+        const y = calendarMonthAnchor.getFullYear();
+        const m = calendarMonthAnchor.getMonth();
+        const first = new Date(y, m, 1);
+        const leading = (first.getDay() + 6) % 7;
+        const daysInMonth = new Date(y, m + 1, 0).getDate();
+        const cells = [];
+        for (let i = 0; i < leading; i++) {
+            cells.push({ type: 'empty', key: `pad-${y}-${m}-${i}` });
+        }
+        for (let d = 1; d <= daysInMonth; d++) {
+            const dateKey = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+            cells.push({ type: 'day', day: d, dateKey, key: `day-${y}-${m}-${d}` });
+        }
+        return { calendarCells: cells, calYear: y, calMonth: m };
+    }, [calendarMonthAnchor]);
+
+    const calendarMonthTitle = calendarMonthAnchor.toLocaleDateString('es', {
+        month: 'long',
+        year: 'numeric',
+    });
+
+    const goCalendarPrevMonth = () => {
+        setCalendarMonthAnchor((prev) => {
+            const y = prev.getFullYear();
+            const m = prev.getMonth();
+            return new Date(y, m - 1, 1);
+        });
+    };
+
+    const goCalendarNextMonth = () => {
+        setCalendarMonthAnchor((prev) => {
+            const y = prev.getFullYear();
+            const m = prev.getMonth();
+            return new Date(y, m + 1, 1);
+        });
+    };
+
+    const isCalendarToday = (day) => {
+        const now = new Date();
+        return (
+            now.getDate() === day &&
+            now.getMonth() === calMonth &&
+            now.getFullYear() === calYear
+        );
+    };
+
     useEffect(() => {
         loadTasks();
+        loadProyectos();
     }, []);
+
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            if (optionsDropdownRef.current && !optionsDropdownRef.current.contains(e.target)) {
+                setShowOptionsDropdown(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    useEffect(() => {
+        if (!showChecklist || !showNewTaskModal) return;
+        const t = window.setTimeout(() => {
+            checklistBlockRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }, 80);
+        return () => window.clearTimeout(t);
+    }, [showChecklist, showNewTaskModal]);
+
+    const loadProyectos = async () => {
+        try {
+            const response = await axiosInstance.get('/cargarProyectos');
+            setProyectos(response.data);
+        } catch (error) {
+            console.error('Error al cargar proyectos:', error);
+        }
+    };
 
     const getFileIcon = (tipo) => {
         switch (tipo) {
@@ -66,7 +238,7 @@ const EmployeeInterface = ({ user }) => {
 
     const loadTasks = async () => {
         try {
-            console.log(user);
+           
             const response = await axiosInstance.get(`/cargarTareas/${user.empleado}`);
             organizeTasks(response.data.tareas);
         } catch (error) {
@@ -91,11 +263,17 @@ const EmployeeInterface = ({ user }) => {
             }
         };
 
+        setTareasArchivadas([]);
+
         // Distribuir las tareas en las columnas correspondientes
         tareas.forEach(task => {
             const estado = task.estado.trim();
             if (newColumns[estado]) {
-                newColumns[estado].items.push(task);
+                if (!task.archivar) {
+                    newColumns[estado].items.push(task);
+                }else{
+                    setTareasArchivadas(prev => [... prev, task]);
+                }
             }
         });
 
@@ -133,6 +311,17 @@ const EmployeeInterface = ({ user }) => {
             const destItems = Array.from(destColumn.items);
             const [moved] = sourceItems.splice(source.index, 1);
 
+            // Validar checklist antes de mover a Completada
+            if (destinationId === 'Completada' && (moved.subtareas_total || 0) > 0 && (moved.subtareas_completadas || 0) < moved.subtareas_total) {
+                Swal.fire({
+                    title: 'Checklist incompleto',
+                    text: `Debes completar todas las subtareas antes de mover la tarea a Completada. (${moved.subtareas_completadas || 0}/${moved.subtareas_total} completadas)`,
+                    icon: 'warning',
+                    confirmButtonText: 'Entendido'
+                });
+                return;
+            }
+
             // Actualizar el estado de la tarea
             moved.estado = destinationId;
 
@@ -166,7 +355,13 @@ const EmployeeInterface = ({ user }) => {
         setColumns(newColumns);
     };
 
+    const abrirReportesDepartamento = () => {
+        setShowOptionsDropdown(false);
+        setShowReportesModal(true);
+    };
+
     const asignarTareas = () => {
+        resetNewTaskModalState();
         setShowNewTaskModal(true);
         setShowTareasEmpleado(false);
         setAsignarTareasEmpleado(true);
@@ -241,9 +436,81 @@ const EmployeeInterface = ({ user }) => {
         setEstadoSeleccionado(null);
     };
 
+    const loadChecklistsExistentes = async (empleadoId) => {
+        try {
+            const r = await axiosInstance.get(`/checklists-empleado/${empleadoId}`);
+            setChecklistsExistentes(r.data);
+        } catch {}
+    };
+
+    const handleCopyChecklist = (tareaId) => {
+        setSelectedChecklistId(tareaId);
+        if (!tareaId) return;
+        const found = checklistsExistentes.find(c => c.tarea_id == tareaId);
+        if (found) {
+            setSubtareasForm(found.items.map((item, i) => ({
+                tempId: Date.now() + i,
+                titulo: item.titulo,
+                fecha_vencimiento: item.fecha_vencimiento || ''
+            })));
+            if (found.checklist_titulo) setChecklistTitulo(found.checklist_titulo);
+        }
+    };
+
+    const aplicarPlantillaDesdeTarea = async (tareaId) => {
+        if (!tareaId) return;
+        try {
+            const [tRes, sRes] = await Promise.all([
+                axiosInstance.get(`/cargarTareaSeleccionada/${tareaId}`),
+                axiosInstance.get(`/subtareas/${tareaId}`),
+            ]);
+            const t = tRes.data;
+            setNewTaskTitulo(t.titulo || '');
+            setNewTaskDescripcion(t.descripcion || '');
+            setNewTaskFecha(normalizeYmd(t.fecha_pactada) || '');
+            const pr = String(t.prioridad || 'Media').trim();
+            setNewTaskPrioridad(['Alta', 'Media', 'Baja'].includes(pr) ? pr : 'Media');
+            const est = String(t.estado || 'Pendiente').trim();
+            setNewTaskEstado(est === 'En Proceso' ? 'En Proceso' : 'Pendiente');
+            setFormProyectoId(t.proyecto_id ? String(t.proyecto_id) : '');
+            const subs = Array.isArray(sRes.data) ? sRes.data : [];
+            if (subs.length > 0) {
+                setShowChecklist(true);
+                setChecklistTitulo(subs[0]?.checklist_titulo || '');
+                setSubtareasForm(
+                    subs.map((s, i) => ({
+                        tempId: Date.now() + i,
+                        titulo: s.titulo || '',
+                        fecha_vencimiento: normalizeYmd(s.fecha_vencimiento) || '',
+                    }))
+                );
+            } else {
+                setShowChecklist(false);
+                setChecklistTitulo('');
+                setSubtareasForm([]);
+            }
+            setSelectedPlantillaId(String(tareaId));
+            setSelectedChecklistId('');
+            window.requestAnimationFrame(() => {
+                checklistBlockRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            });
+        } catch (err) {
+            console.error('Error al cargar plantilla:', err);
+            Swal.fire('Error', 'No se pudo cargar la plantilla de la tarea', 'error');
+        }
+    };
+
+    const onPlantillaSelectChange = (value) => {
+        if (!value) {
+            resetNewTaskModalState();
+            return;
+        }
+        aplicarPlantillaDesdeTarea(value);
+    };
+
     const handleSubmitNewTask = async (e) => {
         e.preventDefault();
-        const formData = new FormData(e.target);
+        setIsSaving(true);
 
         try {
 
@@ -254,7 +521,17 @@ const EmployeeInterface = ({ user }) => {
                 empleado = user.empleado;
             }
 
-            if (formData.get('fecha_pactada') < new Date().toISOString().split('T')[0]) {
+            if (!String(newTaskTitulo || '').trim() || !String(newTaskDescripcion || '').trim() || !newTaskFecha) {
+                Swal.fire({
+                    title: 'Error',
+                    text: 'Completa título, descripción y fecha límite',
+                    icon: 'error',
+                    confirmButtonText: 'OK',
+                });
+                return;
+            }
+
+            if (newTaskFecha < new Date().toISOString().split('T')[0]) {
                 Swal.fire({
                     title: 'Error',
                     text: 'La fecha pactada no puede ser menor a la fecha actual',
@@ -265,14 +542,32 @@ const EmployeeInterface = ({ user }) => {
             }
 
             const response = await axiosInstance.post('/guardarTarea', {
-                titulo: formData.get('titulo'),
-                descripcion: formData.get('descripcion'),
-                fecha_pactada: formData.get('fecha_pactada'),
-                prioridad: formData.get('prioridad'),
+                titulo: newTaskTitulo,
+                descripcion: newTaskDescripcion,
+                fecha_pactada: newTaskFecha,
+                prioridad: newTaskPrioridad,
                 empleado: empleado,
-                estado: formData.get('estado'),
+                estado: newTaskEstado,
+                proyecto_id: formProyectoId || null,
                 accion: 'guardar'
             });
+
+            // Guardar subtareas si las hay
+            const tareaId = response.data.tarea_id;
+            if (tareaId && subtareasForm.length > 0) {
+                const items = subtareasForm
+                    .map(s => ({ ...s, titulo: String(s.titulo || '').trim() }))
+                    .filter(s => s.titulo.length > 0);
+                await Promise.all(items.map(s =>
+                    axiosInstance.post('/subtareas', {
+                        tarea_id: tareaId,
+                        titulo: s.titulo,
+                        fecha_vencimiento: s.fecha_vencimiento || null,
+                        checklist_titulo: checklistTitulo || null
+                    })
+                ));
+            }
+            resetNewTaskModalState();
 
             // Cerrar el modal primero
             setShowNewTaskModal(false);
@@ -282,6 +577,7 @@ const EmployeeInterface = ({ user }) => {
             const tasks = tasksResponse.data.tareas;
 
             // Organizar las tareas en las columnas
+      
             const newColumns = {
                 'Pendiente': {
                     title: 'Pendiente',
@@ -297,7 +593,7 @@ const EmployeeInterface = ({ user }) => {
                 },
                 'Completada': {
                     title: 'Completada',
-                    items: tasks.filter(task => task.estado === 'Completada'),
+                    items: tasks.filter(task => task.estado === 'Completada' && !task.archivar),
                     iconComponent: 'FaCheck',
                     color: '#16a34a'
                 }
@@ -308,6 +604,8 @@ const EmployeeInterface = ({ user }) => {
         } catch (error) {
             console.error('Error al crear la tarea:', error);
             Swal.fire('Error', 'Error al crear la tarea', 'error');
+        } finally {
+            setIsSaving(false);
         }
     };
 
@@ -324,54 +622,146 @@ const EmployeeInterface = ({ user }) => {
         }
     };
 
+    const handleArchivedTaskClick = (task) => {
+        setSelectedArchivedTask(task);
+        setShowArchivedTaskDetails(true);
+    };
+
+    const handleUnarchiveTask = async (taskId) => {
+        try {
+            await axiosInstance.put(`/desarchivarTarea/${taskId}`);
+            await loadTasks(); // Recargar tareas para actualizar la lista
+            setShowArchivedTaskDetails(false);
+            setSelectedArchivedTask(null);
+            Swal.fire('¡Éxito!', 'Tarea desarchivada correctamente', 'success');
+        } catch (error) {
+            console.error('Error al desarchivar tarea:', error);
+            Swal.fire('Error', 'Error al desarchivar la tarea', 'error');
+        }J
+    };
+
     return (
         <div className="kanban-container">
             <div className="kanban-header">
                 <h2>Mis Tareas</h2>
 
                 <div className="header-right">
-                    {user.lider == 'Si' && (
+                    <div className="task-options-dropdown" ref={optionsDropdownRef}>
                         <button
-                            className="search-task-button"
-                            onClick={() => abrirListaEmpleadosAsignados()}
+                            className="task-options-btn"
+                            onClick={() => setShowOptionsDropdown(prev => !prev)}
                         >
-                            <FaSearch /> Seguimiento de Tareas
+                            <FaEllipsisV /> <span>Opciones</span> <FaChevronDown className={showOptionsDropdown ? 'rotated' : ''} />
                         </button>
-                    )}
-                    <button
-                        className="new-task-button"
-                        onClick={() => {
-                            setShowNewTaskModal(true);
-                            setAsignarTareasEmpleado(false);
-                        }}
-                    >
-                        <FaPlus /> Nueva Tarea
-                    </button>
+                        {showOptionsDropdown && (
+                            <div className="task-options-menu">
+                                <button
+                                    className="task-options-item item-new"
+                                    onClick={() => {
+                                        resetNewTaskModalState();
+                                        setShowNewTaskModal(true);
+                                        setAsignarTareasEmpleado(false);
+                                        setShowOptionsDropdown(false);
+                                    }}
+                                >
+                                    <FaPlus /> Nueva Tarea
+                                </button>
+                                <button
+                                    className="task-options-item item-calendar"
+                                    onClick={() => {
+                                        const d = new Date();
+                                        setCalendarMonthAnchor(new Date(d.getFullYear(), d.getMonth(), 1));
+                                        setShowCalendarModal(true);
+                                        setShowOptionsDropdown(false);
+                                    }}
+                                >
+                                    <FaCalendar /> Calendario
+                                </button>
+                                <button
+                                    className="task-options-item item-archive"
+                                    onClick={() => {
+                                        setShowArchiveModal(true);
+                                        setShowOptionsDropdown(false);
+                                    }}
+                                >
+                                    <FaArchive /> Tareas Archivadas
+                                </button>
+                                {user.lider == 'Si' && (
+                                    <>
+                                        <div className="task-options-divider" />
+                                        <button
+                                            className="task-options-item item-seguimiento"
+                                            onClick={() => {
+                                                abrirListaEmpleadosAsignados();
+                                                setShowOptionsDropdown(false);
+                                            }}
+                                        >
+                                            <FaSearch /> Seguimiento de Tareas
+                                        </button>
+                                        <button
+                                            className="task-options-item item-reportes"
+                                            onClick={abrirReportesDepartamento}
+                                        >
+                                            <FaChartBar /> Reportes del Departamento
+                                        </button>
+                                    </>
+                                )}
+                            </div>
+                        )}
+                    </div>
                 </div>
 
             </div>
 
             {/* Modal de nueva tarea */}
             {showNewTaskModal && (
+                <>  
+                {isSaving && (
+                    <div className="loader">
+                        <div className="justify-content-center jimu-primary-loading"></div>
+                    </div>
+                )}
                 <div className="modal-overlay">
                     <div className="new-task-modal">
                         <div className="modal-header">
                             <h2>Nueva Tarea</h2>
                             <button
+                                type="button"
                                 className="close-button"
-                                onClick={() => setShowNewTaskModal(false)}
+                                onClick={() => { setShowNewTaskModal(false); resetNewTaskModalState(); }}
                             >
                                 &times;
                             </button>
                         </div>
-                        <div className="modal-content">
-                            <form onSubmit={handleSubmitNewTask}>
+                        <form className="new-task-modal-form" onSubmit={handleSubmitNewTask}>
+                            <div className="new-task-modal-body">
+                                <div className="form-group">
+                                    <label htmlFor="plantilla_tarea">Plantilla (tarea ya creada)</label>
+                                    <select
+                                        id="plantilla_tarea"
+                                        className="plantilla-tarea-select"
+                                        value={selectedPlantillaId}
+                                        onChange={e => onPlantillaSelectChange(e.target.value)}
+                                    >
+                                        <option value="">Empezar en blanco</option>
+                                        {tareasPlantillaOpciones.map(opt => (
+                                            <option key={opt.id} value={String(opt.id)}>
+                                                {opt.titulo}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <p className="plantilla-tarea-hint">
+                                        Carga título, descripción, fechas, prioridad, proyecto y checklist de una tarea tuya del tablero para editar solo lo necesario.
+                                    </p>
+                                </div>
                                 <div className="form-group">
                                     <label htmlFor="titulo">Título</label>
                                     <input
                                         type="text"
                                         id="titulo"
                                         name="titulo"
+                                        value={newTaskTitulo}
+                                        onChange={e => setNewTaskTitulo(e.target.value)}
                                         required
                                     />
                                 </div>
@@ -380,6 +770,8 @@ const EmployeeInterface = ({ user }) => {
                                     <textarea
                                         id="descripcion"
                                         name="descripcion"
+                                        value={newTaskDescripcion}
+                                        onChange={e => setNewTaskDescripcion(e.target.value)}
                                         required
                                     />
                                 </div>
@@ -389,12 +781,20 @@ const EmployeeInterface = ({ user }) => {
                                         type="date"
                                         id="fecha_pactada"
                                         name="fecha_pactada"
+                                        value={newTaskFecha}
+                                        onChange={e => setNewTaskFecha(e.target.value)}
                                         required
                                     />
                                 </div>
                                 <div className="form-group">
                                     <label htmlFor="prioridad">Prioridad</label>
-                                    <select id="prioridad" name="prioridad" required>
+                                    <select
+                                        id="prioridad"
+                                        name="prioridad"
+                                        value={newTaskPrioridad}
+                                        onChange={e => setNewTaskPrioridad(e.target.value)}
+                                        required
+                                    >
                                         <option value="Alta">Alta</option>
                                         <option value="Media">Media</option>
                                         <option value="Baja">Baja</option>
@@ -402,30 +802,190 @@ const EmployeeInterface = ({ user }) => {
                                 </div>
                                 <div className="form-group">
                                     <label htmlFor="estado">Estado</label>
-                                    <select id="estado" name="estado" required>
+                                    <select
+                                        id="estado"
+                                        name="estado"
+                                        value={newTaskEstado}
+                                        onChange={e => setNewTaskEstado(e.target.value)}
+                                        required
+                                    >
                                         <option value="Pendiente">Pendiente</option>
                                         <option value="En Proceso">En Proceso</option>
                                     </select>
                                 </div>
-                                <div className="modal-actions">
-                                    <button
-                                        type="button"
-                                        className="cancel-button-new-task"
-                                        onClick={() => setShowNewTaskModal(false)}
+                                <div className="form-group">
+                                    <label htmlFor="proyecto_id">Proyecto (opcional)</label>
+                                    <select
+                                        id="proyecto_id"
+                                        name="proyecto_id"
+                                        value={formProyectoId}
+                                        onChange={e => setFormProyectoId(e.target.value)}
                                     >
-                                        <FaTimes /> Cancelar
-                                    </button>
-                                    <button
-                                        type="submit"
-                                        className="submit-button-new-task"
-                                    >
-                                        <FaSave /> Crear Tarea
-                                    </button>
+                                        <option value="">Sin proyecto</option>
+                                        {proyectos.map(p => (
+                                            <option key={p.id} value={p.id}>{p.nombre}</option>
+                                        ))}
+                                    </select>
                                 </div>
-                            </form>
-                        </div>
+
+                                <div className="form-group" ref={checklistBlockRef}>
+                                    <div className="checklist-toggle-row">
+                                        <button
+                                            type="button"
+                                            className={`checklist-toggle-btn${showChecklist ? ' active' : ''}`}
+                                            onClick={() => {
+                                                const empId = asignarTareasEmpleado ? empleadoAsignado : user?.empleado;
+                                                if (!showChecklist && empId) {
+                                                    loadChecklistsExistentes(empId);
+                                                }
+                                                setShowChecklist(prev => !prev);
+                                            }}
+                                        >
+                                            ☑ Checklist
+                                        </button>
+                                        <span className="checklist-hint">Aquí abajo agregas los ítems</span>
+                                    </div>
+                                    {showChecklist && (
+                                        <div className="checklist-form-section">
+                                            <div className="checklist-header-row">
+                                                <input
+                                                    type="text"
+                                                    className="checklist-titulo-input"
+                                                    placeholder="Título del checklist (opcional)..."
+                                                    value={checklistTitulo}
+                                                    onChange={e => setChecklistTitulo(e.target.value)}
+                                                />
+                                                {checklistsExistentes.length > 0 && (
+                                                    <select
+                                                        className="checklist-copy-select"
+                                                        value={selectedChecklistId}
+                                                        onChange={e => handleCopyChecklist(e.target.value)}
+                                                    >
+                                                        <option value="">Copiar checklist de otra tarea…</option>
+                                                        {checklistsExistentes.map(c => (
+                                                            <option key={c.tarea_id} value={c.tarea_id}>
+                                                                {c.tarea_titulo}{c.checklist_titulo ? ` — ${c.checklist_titulo}` : ''}
+                                                            </option>
+                                                        ))}
+                                                    </select>
+                                                )}
+                                            </div>
+                                            {subtareasForm.length > 0 && (
+                                                <ul className="subtareas-list checklist-items-preview new-task-subtareas-editable">
+                                                    {subtareasForm.map(s => (
+                                                        <li key={s.tempId} className="subtarea-item">
+                                                            <input
+                                                                type="text"
+                                                                className="subtarea-edit-input"
+                                                                value={s.titulo}
+                                                                placeholder="Descripción del ítem..."
+                                                                onChange={e =>
+                                                                    setSubtareasForm(prev =>
+                                                                        prev.map(x =>
+                                                                            x.tempId === s.tempId
+                                                                                ? { ...x, titulo: e.target.value }
+                                                                                : x
+                                                                        )
+                                                                    )
+                                                                }
+                                                            />
+                                                            <input
+                                                                type="date"
+                                                                className="subtarea-edit-date"
+                                                                value={s.fecha_vencimiento || ''}
+                                                                onChange={e =>
+                                                                    setSubtareasForm(prev =>
+                                                                        prev.map(x =>
+                                                                            x.tempId === s.tempId
+                                                                                ? { ...x, fecha_vencimiento: e.target.value }
+                                                                                : x
+                                                                        )
+                                                                    )
+                                                                }
+                                                                title="Fecha de vencimiento del ítem"
+                                                            />
+                                                            <button
+                                                                type="button"
+                                                                className="subtarea-delete"
+                                                                style={{ opacity: 1 }}
+                                                                title="Quitar ítem"
+                                                                onClick={() =>
+                                                                    setSubtareasForm(prev =>
+                                                                        prev.filter(x => x.tempId !== s.tempId)
+                                                                    )
+                                                                }
+                                                            >
+                                                                <FaTimes />
+                                                            </button>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            )}
+                                            <div className="checklist-add-zone">
+                                                <div className="checklist-add-zone-label">Nuevo ítem del checklist</div>
+                                                <div className="subtarea-add-row">
+                                                    <input
+                                                        type="text"
+                                                        className="subtarea-add-input"
+                                                        placeholder="Escribe el ítem y pulsa + o Enter"
+                                                        value={nuevaSubtareaTexto}
+                                                        onChange={e => setNuevaSubtareaTexto(e.target.value)}
+                                                        onKeyDown={e => {
+                                                            if (e.key === 'Enter') {
+                                                                e.preventDefault();
+                                                                if (!nuevaSubtareaTexto.trim()) return;
+                                                                setSubtareasForm(prev => [...prev, { tempId: Date.now(), titulo: nuevaSubtareaTexto.trim(), fecha_vencimiento: nuevaSubtareaFecha }]);
+                                                                setNuevaSubtareaTexto('');
+                                                                setNuevaSubtareaFecha('');
+                                                            }
+                                                        }}
+                                                    />
+                                                    <input
+                                                        type="date"
+                                                        className="subtarea-add-date"
+                                                        value={nuevaSubtareaFecha}
+                                                        onChange={e => setNuevaSubtareaFecha(e.target.value)}
+                                                        title="Fecha de vencimiento del ítem"
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        className="subtarea-add-btn"
+                                                        disabled={!nuevaSubtareaTexto.trim()}
+                                                        onClick={() => {
+                                                            if (!nuevaSubtareaTexto.trim()) return;
+                                                            setSubtareasForm(prev => [...prev, { tempId: Date.now(), titulo: nuevaSubtareaTexto.trim(), fecha_vencimiento: nuevaSubtareaFecha }]);
+                                                            setNuevaSubtareaTexto('');
+                                                            setNuevaSubtareaFecha('');
+                                                        }}
+                                                    >
+                                                        <FaPlus />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div className="modal-actions new-task-modal-actions">
+                                <button
+                                    type="button"
+                                    className="cancel-button-new-task"
+                                    onClick={() => { setShowNewTaskModal(false); resetNewTaskModalState(); }}
+                                >
+                                    <FaTimes /> Cancelar
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="submit-button-new-task"
+                                >
+                                    <FaSave /> Crear Tarea
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
+                </>
             )}
 
             {showListaEmpleadosAsignados && (
@@ -441,7 +1001,7 @@ const EmployeeInterface = ({ user }) => {
                             {user.empleados_asignados.map((empleado) => (
                                 <div className="empleado-card" key={empleado.id}>
                                     <div className="empleado-info">
-                                        <span className="empleado-nombre">{empleado.nombre}</span>
+                                        <span className="empleado-nombre">{empleado.nombre.toLowerCase()}</span>
                                     </div>
                                     <button className="btn-ver" onClick={() => verTareas(empleado.id)}>
                                         <FaEye /> Ver Tareas
@@ -458,7 +1018,7 @@ const EmployeeInterface = ({ user }) => {
                 <div className="modal-overlay">
                     <div className="tareas-empleado-modal">
                         <div className="modal-header">
-                            <h2>Tareas de {empleadoSeleccionado?.nombre}</h2>
+                            <h2>TAREAS DE {empleadoSeleccionado?.nombre}</h2>
                             <button
                                 className="close-button"
                                 onClick={cerrarTareasEmpleado}
@@ -526,6 +1086,12 @@ const EmployeeInterface = ({ user }) => {
                                                     >
                                                         <div className="task-card-header">
                                                             <h4 style={{ textTransform: 'capitalize', marginBottom: '0.5rem' }}>{task.titulo}</h4>
+                                                            {task.proyecto_nombre && (
+                                                                <span className="proyecto-badge">
+                                                                    <FaFolder style={{ marginRight: '4px', fontSize: '0.7rem' }} />
+                                                                    {task.proyecto_nombre}
+                                                                </span>
+                                                            )}
                                                             <div className="task-card-header-right">
                                                                 {task.prioridad && (
                                                                     <span className={`prioridad-badge ${task.prioridad.toLowerCase()}`}>
@@ -541,7 +1107,7 @@ const EmployeeInterface = ({ user }) => {
                                                                     )}
 
                                                                     {/* Mostrar Visto Bueno */}
-                                                                    {(task.estado === 'Completada' || (task.estado === 'En Proceso' && task.visto_bueno)) && !task.rechazada ? (
+                                                                    {(task.estado === 'Completada' && task.visto_bueno && !task.rechazada) ? (
                                                                         <FaEye color='green' title='Visto bueno' style={{ marginRight: '0.5rem' }} />
                                                                     ) : (
                                                                         <FaEye color='grey' title='Pendiente de visto bueno' style={{ marginRight: '0.5rem', opacity: 0.5 }} />
@@ -550,6 +1116,11 @@ const EmployeeInterface = ({ user }) => {
                                                                     {/* Mostrar Rechazada */}
                                                                     {(task.estado === 'Completada' || task.estado === 'En Proceso') && task.rechazada ? (
                                                                         <FaCircleXmark color='red' title='Rechazada' style={{ marginRight: '0.5rem' }} />
+                                                                    ) : null}
+
+                                                                    {/* Mostrar Pausada */}
+                                                                    {(task.pausada == 1 || task.pausada === true) ? (
+                                                                        <FaPause color='#f97316' title='Tarea pausada' style={{ marginRight: '0.5rem' }} />
                                                                     ) : null}
 
                                                                 </div>
@@ -581,6 +1152,12 @@ const EmployeeInterface = ({ user }) => {
                                                                         {getFileIcon(evidencia.tipo)}
                                                                     </span>
                                                                 ))}
+                                                            </div>
+                                                        )}
+                                                        {task.subtareas_total > 0 && (
+                                                            <div className={`checklist-badge${task.subtareas_completadas === task.subtareas_total ? ' completo' : ''}`}>
+                                                                <FaListCheck />
+                                                                <span>{task.subtareas_completadas}/{task.subtareas_total}</span>
                                                             </div>
                                                         )}
                                                     </div>
@@ -642,7 +1219,7 @@ const EmployeeInterface = ({ user }) => {
                                                                     )}
 
                                                                     {/* Mostrar Visto Bueno */}
-                                                                    {(task.estado === 'Completada' || (task.estado === 'En Proceso' && task.visto_bueno)) && !task.rechazada ? (
+                                                                    {task.estado === 'Completada' && task.visto_bueno && !task.rechazada ? (
                                                                         <FaEye color='green' title='Visto bueno' style={{ marginRight: '0.5rem' }} />
                                                                     ) : (
                                                                         <FaEye color='grey' title='Pendiente de visto bueno' style={{ marginRight: '0.5rem', opacity: 0.5 }} />
@@ -653,10 +1230,16 @@ const EmployeeInterface = ({ user }) => {
                                                                         <FaCircleXmark color='red' title='Rechazada' style={{ marginRight: '0.5rem' }} />
                                                                     ) : null}
 
+                                                                    {/* Mostrar Pausada */}
+                                                                    {(task.pausada == 1 || task.pausada === true) ? (
+                                                                        <FaPause color='#f97316' title='Tarea pausada' style={{ marginRight: '0.5rem' }} />
+                                                                    ) : null}
+
 
                                                         </div>
                                                         <div className="task-card-header">
                                                             <h4>{task.titulo}</h4>
+                                                          
                                                             {task.prioridad && (
                                                                 <span className={`prioridad-badge ${task.prioridad.toLowerCase()}`}>
                                                                     {task.prioridad}
@@ -665,6 +1248,12 @@ const EmployeeInterface = ({ user }) => {
                                                         </div>
                                                         {/* cortar descripcion a 100 caracteres */}
                                                         <p className="task-description">{task.descripcion.substring(0, 100)}...</p>
+                                                        {task.proyecto_nombre && (
+                                                                <span className="proyecto-badge">
+                                                                    <FaFolder style={{ marginRight: '4px', fontSize: '0.7rem' }} />
+                                                                    {task.proyecto_nombre}
+                                                                </span>
+                                                            )}
                                                         <div className="task-dates">
                                                             {(task.estado === 'Pendiente' || task.estado === 'En Proceso') && task.fecha_pactada && (
                                                                 <span className="date-badge due-date">
@@ -692,6 +1281,12 @@ const EmployeeInterface = ({ user }) => {
                                                                 ))}
                                                             </div>
                                                         )}
+                                                        {task.subtareas_total > 0 && (
+                                                            <div className={`checklist-badge${task.subtareas_completadas === task.subtareas_total ? ' completo' : ''}`}>
+                                                                <FaListCheck />
+                                                                <span>{task.subtareas_completadas}/{task.subtareas_total}</span>
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 )}
                                             </Draggable>
@@ -712,6 +1307,215 @@ const EmployeeInterface = ({ user }) => {
                     onUpdate={handleTaskUpdate}
                 />
             )}
+
+            {showCalendarModal && (
+                <div
+                    className="modal-overlay"
+                    role="presentation"
+                    onClick={(e) => {
+                        if (e.target === e.currentTarget) setShowCalendarModal(false);
+                    }}
+                >
+                    <div className="employee-calendar-modal" role="dialog" aria-labelledby="employee-calendar-title">
+                        <div className="modal-header employee-calendar-header">
+                            <h2 id="employee-calendar-title">
+                                <FaCalendar style={{ marginRight: '0.45rem', verticalAlign: 'middle' }} />
+                                Calendario de tareas
+                            </h2>
+                            <button
+                                type="button"
+                                className="close-button"
+                                onClick={() => setShowCalendarModal(false)}
+                                aria-label="Cerrar calendario"
+                            >
+                                &times;
+                            </button>
+                        </div>
+                        <div className="modal-content employee-calendar-body">
+                            <div className="employee-calendar-toolbar">
+                                <button
+                                    type="button"
+                                    className="employee-calendar-nav-btn"
+                                    onClick={goCalendarPrevMonth}
+                                    aria-label="Mes anterior"
+                                >
+                                    <FaChevronLeft />
+                                </button>
+                                <span className="employee-calendar-month-label">{calendarMonthTitle}</span>
+                                <button
+                                    type="button"
+                                    className="employee-calendar-nav-btn"
+                                    onClick={goCalendarNextMonth}
+                                    aria-label="Mes siguiente"
+                                >
+                                    <FaChevronRight />
+                                </button>
+                            </div>
+                            <p className="employee-calendar-hint">
+                                Pendientes y en proceso por fecha límite; completadas por fecha de entrega.
+                            </p>
+                            <div className="employee-calendar-weekdays" aria-hidden="true">
+                                {['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map((label) => (
+                                    <div key={label} className="employee-calendar-weekday">
+                                        {label}
+                                    </div>
+                                ))}
+                            </div>
+                            <div className="employee-calendar-grid">
+                                {calendarCells.map((cell) =>
+                                    cell.type === 'empty' ? (
+                                        <div key={cell.key} className="employee-calendar-cell employee-calendar-cell--empty" />
+                                    ) : (
+                                        <div
+                                            key={cell.key}
+                                            className={`employee-calendar-cell${isCalendarToday(cell.day) ? ' employee-calendar-cell--today' : ''}`}
+                                        >
+                                            <div className="employee-calendar-daynum">{cell.day}</div>
+                                            <div className="employee-calendar-tasks">
+                                                {(tasksByEndDate[cell.dateKey] || []).map((task) => {
+                                                    const estado = (task.estado || '').trim();
+                                                    const estadoClass =
+                                                        estado === 'Completada'
+                                                            ? 'done'
+                                                            : estado === 'En Proceso'
+                                                              ? 'progress'
+                                                              : 'pending';
+                                                    return (
+                                                        <button
+                                                            key={task.id}
+                                                            type="button"
+                                                            className={`employee-calendar-task ${estadoClass}`}
+                                                            title={task.titulo}
+                                                            onClick={() => {
+                                                                handleTaskClick(task);
+                                                                setShowCalendarModal(false);
+                                                            }}
+                                                        >
+                                                            {task.titulo.length > 42
+                                                                ? `${task.titulo.slice(0, 42)}…`
+                                                                : task.titulo}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    )
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {showArchiveModal && (
+                <div className="modal-overlay">
+                    <div className="tareas-archivadas-modal">
+                        <div className="modal-header">
+                            <h2>📁 Tareas Archivadas</h2>
+                            <button className="close-button" onClick={() => setShowArchiveModal(false)}>
+                                &times;
+                            </button>
+                        </div>
+                        <div className="modal-content">
+                            <div className="tareas-archivadas-container">
+                                {tareasArchivadas.length === 0 ? (
+                                    <div className="no-archived-tasks">
+                                        <div className="no-archived-icon">📁</div>
+                                        <h3>No hay tareas archivadas</h3>
+                                        <p>Las tareas archivadas aparecerán aquí cuando las archives</p>
+                                    </div>
+                                ) : (
+                                    tareasArchivadas.map(task => (
+                                        <div 
+                                            className="tarea-archivada-card" 
+                                            key={task.id}
+                                            onClick={() => handleArchivedTaskClick(task)}
+                                        >
+                                            <div className="archived-task-header">
+                                                <div className="archived-task-info">
+                                                    <h4>{task.titulo}</h4>
+                                                    <p className="archived-task-description">
+                                                        {task.descripcion.length > 100 
+                                                            ? `${task.descripcion.substring(0, 100)}...` 
+                                                            : task.descripcion
+                                                        }
+                                                    </p>
+                                                </div>
+                                                <div className="archived-task-meta">
+                                                    <span className={`prioridad-badge ${task.prioridad?.toLowerCase()}`}>
+                                                        {task.prioridad}
+                                                    </span>
+                                                    <span className="archived-date">
+                                                        Archivada: {new Date(task.fecha_archivada + 'T00:00:00').toLocaleDateString()}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div className="archived-task-footer">
+                                                <div className="archived-task-dates">
+                                                    {task.fecha_pactada && (
+                                                        <span className="date-badge due-date">
+                                                            <FaClock />
+                                                            Fecha límite: {new Date(task.fecha_pactada + 'T00:00:00').toLocaleDateString()}
+                                                        </span>
+                                                    )}
+                                                    {task.fecha_entregada && (
+                                                        <span className="date-badge completed-date">
+                                                            <FaCheck />
+                                                            Entregado: {new Date(task.fecha_entregada + 'T00:00:00').toLocaleDateString()}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                {task.evidencias && task.evidencias.length > 0 && (
+                                                    <div className="evidences-container">
+                                                        <span className="evidence-count">
+                                                            {task.evidencias.length} evidencia{task.evidencias.length !== 1 ? 's' : ''}
+                                                        </span>
+                                                        {task.evidencias.slice(0, 3).map(evidencia => (
+                                                            <span
+                                                                key={evidencia.id}
+                                                                className="evidence-icon"
+                                                                title={evidencia.nombre}
+                                                            >
+                                                                {getFileIcon(evidencia.tipo)}
+                                                            </span>
+                                                        ))}
+                                                        {task.evidencias.length > 3 && (
+                                                            <span className="evidence-more">
+                                                                +{task.evidencias.length - 3}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {showReportesModal && (
+                <ReportesDepartamentoModal
+                    user={user}
+                    onClose={() => setShowReportesModal(false)}
+                />
+            )}
+
+            {showArchivedTaskDetails && selectedArchivedTask && (
+                <TaskDetailsModal
+                    task={selectedArchivedTask}
+                    onClose={() => {
+                        setShowArchivedTaskDetails(false);
+                        setSelectedArchivedTask(null);
+                    }}
+                    onUpdate={handleTaskUpdate}
+                    isArchived={true}
+                    onUnarchive={() => handleUnarchiveTask(selectedArchivedTask.id)}
+                />
+            )}
+
         </div>
     );
 };

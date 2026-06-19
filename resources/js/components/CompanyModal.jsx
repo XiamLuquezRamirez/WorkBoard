@@ -9,8 +9,8 @@ import {
     FaUserShield,
     FaCamera,
     FaSave,
-    FaTimes
-
+    FaTimes,
+    FaArrowLeft
 } from "react-icons/fa";
 import axiosInstance from '../axiosConfig';
 import Swal from "sweetalert2";
@@ -107,9 +107,6 @@ const CompanyModal = ({ isOpen, onClose }) => {
     };
 
     const handleGuardarEmpresa = () => {
-        
-
-
         //validar campos 
         if (!newCompany.nit) {
             Swal.fire({
@@ -140,7 +137,6 @@ const CompanyModal = ({ isOpen, onClose }) => {
         // Crear nueva empresa
         axiosInstance.post('/guardarEmpresa', newCompany)
             .then(response => {
-              
                 Swal.fire({
                     icon: 'success',
                     title: 'Empresa creada',
@@ -204,26 +200,24 @@ const CompanyModal = ({ isOpen, onClose }) => {
         <div className="modal-overlay">
             <div className="modal-Company">
                 <div className="modal-header">
-                    <h2>Gestión de Empresas</h2>
-                    <button className="close-button" onClick={onClose}>
-                        <FaTimes />
-                    </button>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        <h2 style={{ margin: 0 }}>
+                            <FaBuilding style={{ marginRight: '0.5rem', verticalAlign: 'middle' }} />Gestión de Empresas
+                        </h2>
+                    </div>
+                    <button className="close-button" onClick={onClose}><FaTimes /></button>
                 </div>
 
-                <div className="modal-toolbar" >
-                    <div className={`search-box ${loading ? "loading" : ""}`}>
-                        <FaSearch />
-                        <input
-                            type="text"
-                            placeholder="Buscar por nombre, dirección o representante..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                        />
-                        {loading && <div className="search-spinner"></div>}
-                    </div>
-
+                <div className="dm-toolbar">
+                    <input
+                        type="text"
+                        className="dm-search"
+                        placeholder="Buscar por nombre, dirección o representante..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                    />
                     <button
-                        className="add-button"
+                        className="dm-btn dm-btn--primary"
                         onClick={() => {
                             setNewCompany(initialCompanyState);
                             setShowAddForm(true);
@@ -255,27 +249,11 @@ const CompanyModal = ({ isOpen, onClose }) => {
                                             <td>{empresa.nombre}</td>
                                             <td>{empresa.representante}</td>
                                             <td>
-                                                <div className="action-buttons">
-                                                    <button
-                                                        title="Editar empresa"
-                                                        onClick={() =>
-                                                            handleEditarEmpresa(
-                                                                empresa
-                                                            )
-                                                        }
-                                                        className="edit-button"
-                                                    >
+                                                <div className="dm-actions">
+                                                    <button title="Editar empresa" onClick={() => handleEditarEmpresa(empresa)} className="dm-action-btn dm-action-btn--edit">
                                                         <FaEdit />
                                                     </button>
-                                                    <button
-                                                        title="Eliminar empresa"
-                                                        onClick={() =>
-                                                            handleEliminarEmpresa(
-                                                                empresa.id
-                                                            )
-                                                        }
-                                                        className="delete-button"
-                                                    >
+                                                    <button title="Eliminar empresa" onClick={() => handleEliminarEmpresa(empresa.id)} className="dm-action-btn dm-action-btn--delete">
                                                         <FaTrash />
                                                     </button>
                                                 </div>
@@ -298,13 +276,17 @@ const CompanyModal = ({ isOpen, onClose }) => {
                 <div className="modal-overlay">
                     <div className="form-modal-large">
                         <div className="modal-header">
-                            <h2>{newCompany.accion === 'editar' ? 'Editar Empresa' : 'Nueva Empresa'}</h2>
-                            <button
-                                className="close-button"
-                                onClick={() => setShowAddForm(false)}
-                            >
-                                &times;
-                            </button>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                <button className="rdm-back-btn" onClick={() => setShowAddForm(false)}>
+                                    <FaArrowLeft /> Empresas
+                                </button>
+                                <h2 style={{ margin: 0 }}>
+                                    {newCompany.accion === 'editar'
+                                        ? `Editar: ${newCompany.nombre}`
+                                        : 'Nueva Empresa'}
+                                </h2>
+                            </div>
+                            <button className="close-button" onClick={onClose}><FaTimes /></button>
                         </div>
                         <form className="employee-form">
                             <div className="form-row">

@@ -125,14 +125,16 @@ const LeaderModal = ({ isOpen, onClose }) => {
         <div className="modal-overlay">
             <div className="modal-leader" >
                 <div className="modal-header">
-                    <h2>Gestión de Líderes</h2>
-                    <button className="close-button" onClick={onClose}>
-                        <FaTimes />
-                    </button>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        <h2 style={{ margin: 0 }}>
+                            <FaUsers style={{ marginRight: '0.5rem', verticalAlign: 'middle' }} />Gestión de Líderes
+                        </h2>
+                    </div>
+                    <button className="close-button" onClick={onClose}><FaTimes /></button>
                 </div>
 
                 {/* Contenido */}
-                <div className="modal-content">
+                <div className="modal-content" style={{ maxHeight: '500px', overflowY: 'auto' }}>
                     {loading ? (
                         <div className="loader"><div className="jimu-primary-loading" /></div>
                     ) : lideres.length === 0 ? (
@@ -170,11 +172,11 @@ const LeaderModal = ({ isOpen, onClose }) => {
                                         <td>{lider.nombre_empresa}</td>
                                         <td style={{ textAlign: 'center', fontWeight: 'bold' }}>{lider.empleados_asignados || 0}</td>
                                         <td>
-                                            <div className="action-buttons">
+                                            <div className="dm-actions">
                                                 <button
                                                     title="Asignar empleados"
                                                     onClick={() => handleAsignarEmpleados(lider)}
-                                                    className="edit-button"
+                                                    className="dm-action-btn dm-action-btn--view"
                                                 >
                                                     <FaUsers />
                                                 </button>
@@ -207,8 +209,8 @@ const LeaderModal = ({ isOpen, onClose }) => {
                                     {/* Buscador de empleados */}
                                     <input
                                         type="text"
-                                        placeholder="Buscar empleado"
-                                        className="search-input-empleados"
+                                        placeholder="Buscar empleado..."
+                                        className="dm-search"
                                         onChange={handleBusqueda}
                                         onKeyDown={handleBusqueda}
                                     />

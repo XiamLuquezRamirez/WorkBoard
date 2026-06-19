@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Informe de Actividades – Departamento de Sistemas | Abril–Mayo 2026</title>
+    <style>
+        :root {
+            --azul: #1a3a5c;
+            --azul2: #2563eb;
+            --azul-bg: #dbeafe;
+            --verde: #16a34a;
+            --verde-bg: #dcfce7;
+            --naranja: #d97706;
+            --naranja-bg: #fef3c7;
+            --rojo: #dc2626;
+            --rojo-bg: #fee2e2;
+            --morado: #7c3aed;
+            --morado-bg: #ede9fe;
+            --gris: #6b7280;
+            --gris-bg: #f3f4f6;
+            --borde: #e5e7eb;
+            --sombra: 0 1px 3px rgba(0,0,0,.12),0 1px 2px rgba(0,0,0,.08);
+        }
+        *{box-sizing:border-box;margin:0;padding:0}
+        body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:#eef2f7;color:#1e293b;font-size:13px;line-height:1.5}
+
+        /* HEADER */
+        .hdr{background:linear-gradient(135deg,#1a3a5c 0%,#0f2744 100%);color:#fff;padding:36px 48px;print-color-adjust:exact}
+        .hdr-row{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px}
+        .hdr h1{font-size:26px;font-weight:700;letter-spacing:-.5px}
+        .hdr h2{font-size:15px;font-weight:400;opacity:.85;margin-top:6px}
+        .hdr-meta{text-align:right;font-size:12px;opacity:.75;line-height:1.9}
+        .hdr-meta strong{display:block;font-size:14px;opacity:1;color:#93c5fd;margin-bottom:4px}
+        .chip{display:inline-block;margin-top:14px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);border-radius:20px;padding:4px 14px;font-size:11px;letter-spacing:1px;text-transform:uppercase}
+
+        /* LAYOUT */
+        .wrap{max-width:1140px;margin:28px auto;padding:0 24px 48px}
+
+        /* KPI */
+        .kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-bottom:28px}
+        .kpi{background:#fff;border-radius:12px;padding:18px 16px 14px;box-shadow:var(--sombra);border-top:4px solid;text-align:center}
+        .kpi.total{border-color:var(--azul2)}
+        .kpi.proceso{border-color:var(--naranja)}
+        .kpi.completada{border-color:var(--verde)}
+        .kpi.tasa{border-color:#0891b2}
+        .kpi.empleados{border-color:var(--morado)}
+        .kpi-n{font-size:40px;font-weight:800;line-height:1;margin-bottom:5px}
+        .kpi.total .kpi-n{color:var(--azul2)}
+        .kpi.proceso .kpi-n{color:var(--naranja)}
+        .kpi.completada .kpi-n{color:var(--verde)}
+        .kpi.tasa .kpi-n{color:#0891b2}
+        .kpi.empleados .kpi-n{color:var(--morado)}
+        .kpi-lbl{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--gris)}
+        .kpi-sub{font-size:10px;color:#9ca3af;margin-top:3px}
+
+        /* SECCIÓN */
+        .sec{margin-bottom:34px}
+        .sec-hdr{display:flex;align-items:center;gap:12px;margin-bottom:14px;padding-bottom:10px;border-bottom:2px solid var(--borde)}
+        .sec-ico{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+        .ico-naranja{background:var(--naranja-bg)}
+        .ico-verde{background:var(--verde-bg)}
+        .ico-azul{background:var(--azul-bg)}
+        .ico-morado{background:var(--morado-bg)}
+        .sec-title{font-size:18px;font-weight:700;color:var(--azul)}
+        .sec-sub{font-size:12px;color:var(--gris);margin-top:2px}
+
+        /* TABLA */
+        .tbl-wrap{overflow-x:auto;border-radius:10px;box-shadow:var(--sombra)}
+        table{width:100%;border-collapse:collapse;background:#fff;font-size:12px}
+        thead th{background:var(--azul);color:#fff;padding:10px 12px;text-align:left;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.4px;white-space:nowrap}
+        tbody tr{border-bottom:1px solid var(--borde)}
+        tbody tr:last-child{border-bottom:none}
+        tbody tr:nth-child(even){background:#f9fafb}
+        tbody tr:hover{background:#eff6ff}
+        tbody td{padding:9px 12px;vertical-align:top}
+        .td-t{max-width:280px;font-weight:500}
+        .td-t small{display:block;font-weight:400;color:#64748b;margin-top:3px;font-size:11px;line-height:1.4}
+        .td-e small{display:block;color:#64748b;font-size:10px}
+
+        /* BADGES */
+        .badge{display:inline-flex;align-items:center;gap:4px;padding:2px 9px;border-radius:20px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;white-space:nowrap}
+        .b-alta{background:var(--rojo-bg);color:#b91c1c}
+        .b-media{background:var(--naranja-bg);color:#92400e}
+        .b-baja{background:var(--verde-bg);color:#166534}
+        .b-proceso{background:var(--naranja-bg);color:#92400e}
+        .b-completada{background:var(--verde-bg);color:#166534}
+        .dot{width:7px;height:7px;border-radius:50%;display:inline-block;flex-shrink:0}
+        .dot-a{background:#dc2626}.dot-m{background:#d97706}.dot-b{background:#16a34a}
+
+        /* ALERTA */
+        .alerta{border-radius:8px;padding:12px 16px;margin-top:14px;font-size:12px;border-left:4px solid}
+        .alerta-naranja{background:#fffbeb;border-color:#f59e0b;color:#78350f}
+        .alerta-verde{background:#f0fdf4;border-color:#16a34a;color:#14532d}
+        .alerta-azul{background:var(--azul-bg);border-color:var(--azul2);color:#1e3a5f}
+        .alerta-rojo{background:var(--rojo-bg);border-color:var(--rojo);color:#7f1d1d}
+
+        /* CUMPLIMIENTO */
+        .c-time{color:#16a34a;font-weight:700;font-size:11px}
+        .c-tarde{color:#d97706;font-weight:700;font-size:11px}
+        .c-muy-tarde{color:#dc2626;font-weight:700;font-size:11px}
+        .c-antes{color:#2563eb;font-weight:700;font-size:11px}
+
+        /* TIMELINE */
+        .tl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px;margin-top:12px}
+        .tl-item{background:#fff;border-radius:8px;padding:12px;box-shadow:var(--sombra);text-align:center;border-top:3px solid}
+        .tl-item.activo{border-color:var(--verde)}
+        .tl-item.resaltado{border-color:#f59e0b;background:#fffbeb}
+        .tl-item.vacio{border-color:#e5e7eb;opacity:.5}
+        .tl-mes{font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--gris);font-weight:600}
+        .tl-n{font-size:28px;font-weight:800;line-height:1.1}
+        .tl-item.activo .tl-n{color:var(--verde)}
+        .tl-item.resaltado .tl-n{color:var(--naranja)}
+        .tl-item.vacio .tl-n{color:#9ca3af}
+        .tl-lbl{font-size:10px;color:var(--gris)}
+
+        /* EMPLEADO CARDS */
+        .emp-card{background:#fff;border-radius:10px;padding:18px 20px;box-shadow:var(--sombra);margin-bottom:14px}
+        .emp-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+        .emp-nombre{font-size:14px;font-weight:700;color:var(--azul)}
+        .emp-cargo{font-size:11px;color:var(--gris);margin-top:2px}
+        .emp-total{font-size:24px;font-weight:800;color:var(--azul2)}
+        .barra-row{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+        .barra-lbl{width:90px;font-size:11px;font-weight:500;flex-shrink:0}
+        .barra-track{flex:1;height:10px;background:#f3f4f6;border-radius:5px;overflow:hidden}
+        .barra-fill{height:100%;border-radius:5px}
+        .bf-verde{background:linear-gradient(90deg,#16a34a,#22c55e)}
+        .bf-naranja{background:linear-gradient(90deg,#d97706,#f59e0b)}
+        .bf-morado{background:linear-gradient(90deg,#7c3aed,#a78bfa)}
+        .barra-cnt{font-size:11px;font-weight:700;width:20px;text-align:right}
+        .emp-desc{margin-top:10px;font-size:11px;color:#6b7280}
+
+        /* ANÁLISIS */
+        .an-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+        @media(max-width:700px){.an-grid{grid-template-columns:1fr}}
+        .an-card{background:#fff;border-radius:10px;padding:18px;box-shadow:var(--sombra)}
+        .an-card h4{font-size:13px;font-weight:700;color:var(--azul);margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--borde)}
+        .an-card p{font-size:12px;color:#374151;line-height:1.7;margin-bottom:8px}
+        .an-card ul{padding-left:18px}
+        .an-card ul li{font-size:12px;color:#374151;margin-bottom:5px;line-height:1.5}
+
+        /* SQL */
+        .sql-block{background:#0f172a;border-radius:10px;padding:20px;box-shadow:var(--sombra);overflow-x:auto}
+        .sql-pre{color:#e2e8f0;font-family:'Consolas','Courier New',monospace;font-size:11px;line-height:1.7;white-space:pre-wrap;margin:0}
+        .sql-c{color:#93c5fd}.sql-k{color:#f472b6}.sql-f{color:#86efac}.sql-s{color:#fcd34d}
+
+        /* FOOTER */
+        .footer{margin-top:40px;padding:18px 24px;background:#fff;border-radius:10px;box-shadow:var(--sombra);display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--gris);flex-wrap:wrap;gap:8px}
+
+        @media print{
+            body{background:#fff}
+            .wrap{margin:0;padding:0 16px}
+            .hdr{padding:24px 32px}
+            .kpi-n{font-size:32px}
+            thead th{background:#1a3a5c!important;color:#fff!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+            tbody tr:nth-child(even){background:#f9fafb!important}
+        }
+    </style>
+</head>
+<body>
+
+<!-- ENCABEZADO -->
+<div class="hdr">
+    <div class="hdr-row">
+        <div>
+            <h1>Informe de Actividades</h1>
+            <h2>Departamento de Sistemas — Período Abril – Mayo 2026</h2>
+            <span class="chip">Uso interno</span>
+        </div>
+        <div class="hdr-meta">
+            <strong>Generado el 16 de mayo de 2026</strong>
+            Departamento: Sistemas (ID 1)<br>
+            Empleados activos: 4<br>
+            Base de datos: workboard2
+        </div>
+    </div>
+</div>
+
+<div class="wrap">
+
+    <!-- KPI -->
+    <div class="kpi-row">
+        <div class="kpi total"><div class="kpi-n">63</div><div class="kpi-lbl">Total tareas</div><div class="kpi-sub">Histórico del departamento</div></div>
+        <div class="kpi proceso"><div class="kpi-n">4</div><div class="kpi-lbl">En Proceso</div><div class="kpi-sub">Activas actualmente</div></div>
+        <div class="kpi completada"><div class="kpi-n">59</div><div class="kpi-lbl">Completadas</div><div class="kpi-sub">Jun 2025 – May 2026</div></div>
+        <div class="kpi tasa"><div class="kpi-n">94%</div><div class="kpi-lbl">Tasa completitud</div><div class="kpi-sub">59 de 63 tareas</div></div>
+        <div class="kpi empleados"><div class="kpi-n">5</div><div class="kpi-lbl">Abr + May 2026</div><div class="kpi-sub">Completadas en el período</div></div>
+    </div>
+
+    <!-- ─── EN PROCESO ─────────────────────────────────────── -->
+    <div class="sec">
+        <div class="sec-hdr">
+            <div class="sec-ico ico-naranja">⚙️</div>
+            <div>
+                <div class="sec-title">Tareas En Proceso</div>
+                <div class="sec-sub">4 tareas activas al 16 de mayo de 2026</div>
+            </div>
+        </div>
+
+        <div class="tbl-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Empleado / Cargo</th>
+                        <th>Tarea</th>
+                        <th>Prioridad</th>
+                        <th>Creación</th>
+                        <th>Fecha Pactada</th>
+                        <th>Días restantes / retraso</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>824</td>
+                        <td class="td-e">FABIAN A. ARAQUE Z.<small>Soporte Técnico</small></td>
+                        <td class="td-t">
+                            Desarrollar la malla curricular del módulo de Robótica
+                            <small>Diseñar y estructurar contenidos, competencias y actividades pedagógicas por etapa educativa.</small>
+                        </td>
+                        <td><span class="badge b-alta"><span class="dot dot-a"></span>Alta</span></td>
+                        <td>2026-05-11</td>
+                        <td>2026-05-16</td>
+                        <td><span style="color:#dc2626;font-weight:700;font-size:11px;">⚠ Vence HOY</span></td>
+                    </tr>
+                    <tr>
+                        <td>736</td>
+                        <td class="td-e">XIAMIR A. LUQUEZ R.<small>Ingeniero de Sistemas</small></td>
+                        <td class="td-t">
+                            Estudio de MBlock para programación de robot
+                            <small>Investigar interfaz, bloques de programación, conexión con robot y pruebas básicas de funcionamiento.</small>
+                        </td>
+                        <td><span class="badge b-alta"><span class="dot dot-a"></span>Alta</span></td>
+                        <td>2026-04-20</td>
+                        <td>2026-05-20</td>
+                        <td><span class="c-time">4 días restantes</span></td>
+                    </tr>
+                    <tr>
+                        <td>828</td>
+                        <td class="td-e">FABIAN A. QUINTERO M.<small>Desarrollador de Software</small></td>
+                        <td class="td-t">
+                            Buscar Modelos 3D gratuitos y adaptarlos al módulo 3D de BiblioPED
+                            <small>Buscar y adaptar modelos 3D libres para integrarlos en el módulo educativo de BiblioPED.</small>
+                        </td>
+                        <td><span class="badge b-alta"><span class="dot dot-a"></span>Alta</span></td>
+                        <td>2026-05-13</td>
+                        <td>2026-05-20</td>
+                        <td><span class="c-time">4 días restantes</span></td>
+                    </tr>
+                    <tr>
+                        <td>701</td>
+                        <td class="td-e">Pedro Arnedo<small>Desarrollador de Software</small></td>
+                        <td class="td-t">
+                            Gestión y creación de vistas del usuario estudiante
+                            <small>Crear las vistas completas para el rol de estudiante en la plataforma educativa.</small>
+                        </td>
+                        <td><span class="badge b-alta"><span class="dot dot-a"></span>Alta</span></td>
+                        <td>2026-03-24</td>
+                        <td>2026-05-29</td>
+                        <td><span class="c-time">13 días restantes</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="alerta alerta-rojo">
+            <strong>⚠ Urgente:</strong> La tarea <strong>#824</strong> (Malla curricular de Robótica – Fabian Araque) tiene su fecha pactada el día de <strong>hoy, 16 de mayo de 2026</strong> y aún está en proceso. Se debe verificar si se puede entregar hoy o si requiere reprogramación inmediata.
+        </div>
+    </div>
+
+
+    <!-- ─── COMPLETADAS ABRIL 2026 ─────────────────────────── -->
+    <div class="sec">
+        <div class="sec-hdr">
+            <div class="sec-ico ico-verde">✅</div>
+            <div>
+                <div class="sec-title">Tareas Completadas — Abril 2026</div>
+                <div class="sec-sub">2 tareas entregadas durante el mes de abril</div>
+            </div>
+        </div>
+
+        <div class="tbl-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Empleado / Cargo</th>
+                        <th>Tarea</th>
+                        <th>Prioridad</th>
+                        <th>Fecha Pactada</th>
+                        <th>Fecha Entregada</th>
+                        <th>Cumplimiento</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>719</td>
+                        <td class="td-e">XIAMIR A. LUQUEZ R.<small>Ingeniero de Sistemas</small></td>
+                        <td class="td-t">
+                            Rediseño de interfaz y mejora de proceso de pruebas en el módulo E de PEDIGITAL KID
+                            <small>Restructuración y mejora de la interfaz del módulo E de PEDIGITAL KID.</small>
+                        </td>
+                        <td><span class="badge b-alta"><span class="dot dot-a"></span>Alta</span></td>
+                        <td>2026-04-11</td>
+                        <td>2026-04-20</td>
+                        <td><span class="c-tarde">⚡ 9 días tarde</span></td>
+                    </tr>
+                    <tr>
+                        <td>686</td>
+                        <td class="td-e">FABIAN A. QUINTERO M.<small>Desarrollador de Software</small></td>
+                        <td class="td-t">
+                            Agregar módulo de evaluación y entrenamiento al entrenador de Programación
+                            <small>Sistema de práctica con evaluaciones automatizadas, retroalimentación por niveles y control de progreso.</small>
+                        </td>
+                        <td><span class="badge b-alta"><span class="dot dot-a"></span>Alta</span></td>
+                        <td>2026-03-31</td>
+                        <td>2026-04-27</td>
+                        <td><span class="c-muy-tarde">✗ 27 días tarde</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="alerta alerta-naranja">
+            <strong>Nota de cumplimiento:</strong> Las 2 tareas de abril se entregaron con retraso. La tarea <strong>#686</strong> acumuló 27 días de demora respecto a la fecha pactada del 31 de marzo, lo que sugiere que fue una tarea de alta complejidad (módulo completo de evaluación con múltiples funcionalidades).
+        </div>
+    </div>
+
+
+    <!-- ─── COMPLETADAS MAYO 2026 ──────────────────────────── -->
+    <div class="sec">
+        <div class="sec-hdr">
+            <div class="sec-ico ico-verde">✅</div>
+            <div>
+                <div class="sec-title">Tareas Completadas — Mayo 2026</div>
+                <div class="sec-sub">3 tareas entregadas en lo que va del mes (hasta el 16 de mayo)</div>
+            </div>
+        </div>
+
+        <div class="tbl-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Empleado / Cargo</th>
+                        <th>Tarea</th>
+                        <th>Prioridad</th>
+                        <th>Fecha Pactada</th>
+                        <th>Fecha Entregada</th>
+                        <th>Cumplimiento</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>819</td>
+                        <td class="td-e">FABIAN A. ARAQUE Z.<small>Soporte Técnico</small></td>
+                        <td class="td-t">
+                            Capacitación plataformas educativas instaladas en las tablet
+                            <small>Capacitar a los docentes de la institución educativa de Conejo en Fonseca sobre PED-Lite (Primaria y Secundaria) y EtnoPed.</small>
+                        </td>
+                        <td><span class="badge b-alta"><span class="dot dot-a"></span>Alta</span></td>
+                        <td>2026-05-12</td>
+                        <td>2026-05-13</td>
+                        <td><span class="c-tarde">⚡ 1 día tarde</span></td>
+                    </tr>
+                    <tr>
+                        <td>795</td>
+                        <td class="td-e">FABIAN A. QUINTERO M.<small>Desarrollador de Software</small></td>
+                        <td class="td-t">
+                            Crear módulo de modelos 3D en BiblioPED
+                            <small>Desarrollo completo del módulo de visualización de modelos 3D para la plataforma BiblioPED.</small>
+                        </td>
+                        <td><span class="badge b-alta"><span class="dot dot-a"></span>Alta</span></td>
+                        <td>2026-06-12</td>
+                        <td>2026-05-13</td>
+                        <td><span class="c-antes">✓ 30 días antes</span></td>
+                    </tr>
+                    <tr>
+                        <td>685</td>
+                        <td class="td-e">FABIAN A. QUINTERO M.<small>Desarrollador de Software</small></td>
+                        <td class="td-t">
+                            Agregar ejercicios al entrenador de programación (Bloques I)
+                            <small>Mínimo 100 ejercicios para el primer nivel del módulo de programación por bloques.</small>
+                        </td>
+                        <td><span class="badge b-alta"><span class="dot dot-a"></span>Alta</span></td>
+                        <td>2026-03-18</td>
+                        <td>2026-05-13</td>
+                        <td><span class="c-muy-tarde">✗ 56 días tarde</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="alerta alerta-verde">
+            <strong>✓ Destaque positivo:</strong> La tarea <strong>#795</strong> (Módulo 3D en BiblioPED – Fabian Quintero) fue entregada <strong>30 días antes</strong> de la fecha pactada, lo que demuestra una ejecución muy eficiente. La tarea <strong>#819</strong> de capacitación docente se completó con solo 1 día de diferencia.
+        </div>
+    </div>
+
+
+    <!-- ─── COMPLETADAS RECIENTES (contexto 2026) ──────────── -->
+    <div class="sec">
+        <div class="sec-hdr">
+            <div class="sec-ico ico-verde">📂</div>
+            <div>
+                <div class="sec-title">Contexto — Completadas Enero–Marzo 2026</div>
+                <div class="sec-sub">9 tareas finalizadas en el primer trimestre del año</div>
+            </div>
+        </div>
+
+        <div class="tbl-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Empleado / Cargo</th>
+                        <th>Tarea</th>
+                        <th>Prioridad</th>
+                        <th>Pactada</th>
+                        <th>Entregada</th>
+                        <th>Cumplimiento</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>611</td>
+                        <td class="td-e">Pedro Arnedo<small>Desarrollador de Software</small></td>
+                        <td class="td-t">Gestión integral de temas por nivel<small>Sistema de admin de temas con paginación, drag & drop y validaciones.</small></td>
+                        <td><span class="badge b-alta"><span class="dot dot-a"></span>Alta</span></td>
+                        <td>2026-01-17</td><td>2026-01-19</td>
+                        <td><span class="c-tarde">⚡ 2 días tarde</span></td>
+                    </tr>
+                    <tr>
+                        <td>614</td>
+                        <td class="td-e">FABIAN A. QUINTERO M.<small>Desarrollador de Software</small></td>
+                        <td class="td-t">Módulo de tabla de vencimientos y notificaciones<small>Gestión de vencimientos con alertas automáticas por correo.</small></td>
+                        <td><span class="badge b-alta"><span class="dot dot-a"></span>Alta</span></td>
+                        <td>2026-01-26</td><td>2026-02-05</td>
+                        <td><span class="c-tarde">⚡ 10 días tarde</span></td>
+                    </tr>
+                    <tr>
+                        <td>658</td>
+                        <td class="td-e">FABIAN A. QUINTERO M.<small>Desarrollador de Software</small></td>
+                        <td class="td-t">Implementar IA en proyectos<small>Buscador inteligente en BiblioPED y chat en plataforma Explora.</small></td>
+                        <td><span class="badge b-alta"><span class="dot dot-a"></span>Alta</span></td>
+                        <td>2026-02-11</td><td>2026-02-25</td>
+                        <td><span class="c-tarde">⚡ 14 días tarde</span></td>
+                    </tr>
+                    <tr>
+                        <td>615</td>
+                        <td class="td-e">Pedro Arnedo<small>Desarrollador de Software</small></td>
+                        <td class="td-t">Gestión avanzada de contenidos por tema<small>Módulo multimodal con modales anidados, drag & drop y procesamiento de videos.</small></td>
+                        <td><span class="badge b-alta"><span class="dot dot-a"></span>Alta</span></td>
+                        <td>2026-03-02</td><td>2026-03-24</td>
+                        <td><span class="c-muy-tarde">✗ 22 días tarde</span></td>
+                    </tr>
+                    <tr>
+                        <td>684</td>
+                        <td class="td-e">FABIAN A. QUINTERO M.<small>Desarrollador de Software</small></td>
+                        <td class="td-t">Agregar ejercicios de 3 niveles a entrenador de programación (Bloques)<small>Niveles para estudiantes que superaron el primer módulo.</small></td>
+                        <td><span class="badge b-alta"><span class="dot dot-a"></span>Alta</span></td>
+                        <td>2026-03-11</td><td>2026-03-24</td>
+                        <td><span class="c-tarde">⚡ 13 días tarde</span></td>
+                    </tr>
+                    <tr>
+                        <td>687</td>
+                        <td class="td-e">XIAMIR A. LUQUEZ R.<small>Ingeniero de Sistemas</small></td>
+                        <td class="td-t">Diseño de la Arquitectura de la Plataforma REGIO<small>Definición de componentes, módulos, tecnologías, seguridad y escalabilidad.</small></td>
+                        <td><span class="badge b-alta"><span class="dot dot-a"></span>Alta</span></td>
+                        <td>2026-03-14</td><td>2026-03-24</td>
+                        <td><span class="c-tarde">⚡ 10 días tarde</span></td>
+                    </tr>
+                    <tr>
+                        <td>700</td>
+                        <td class="td-e">XIAMIR A. LUQUEZ R.<small>Ingeniero de Sistemas</small></td>
+                        <td class="td-t">Actualización de Políticas empresariales página web<small>Actualización de documentos publicados en la página web corporativa.</small></td>
+                        <td><span class="badge b-alta"><span class="dot dot-a"></span>Alta</span></td>
+                        <td>2026-03-24</td><td>2026-03-24</td>
+                        <td><span class="c-time">✓ A tiempo</span></td>
+                    </tr>
+                    <tr>
+                        <td>434</td>
+                        <td class="td-e">XIAMIR A. LUQUEZ R.<small>Ingeniero de Sistemas</small></td>
+                        <td class="td-t">Rediseño de la Interfaz de PEDIGITAL KID por Grados<small>Cambio de interfaz para mejorar experiencia por grado académico.</small></td>
+                        <td><span class="badge b-media"><span class="dot dot-m"></span>Media</span></td>
+                        <td>2026-02-28</td><td>2026-03-06</td>
+                        <td><span class="c-tarde">⚡ 6 días tarde</span></td>
+                    </tr>
+                    <tr>
+                        <td>422</td>
+                        <td class="td-e">FABIAN A. QUINTERO M.<small>Desarrollador de Software</small></td>
+                        <td class="td-t">Agregar más niveles al módulo entrenador<small>Extensión del módulo entrenador de programación.</small></td>
+                        <td><span class="badge b-alta"><span class="dot dot-a"></span>Alta</span></td>
+                        <td>2025-10-03</td><td>2026-01-15</td>
+                        <td><span class="c-muy-tarde">✗ 104 días tarde</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+
+    <!-- ─── PRODUCCIÓN HISTÓRICA ───────────────────────────── -->
+    <div class="sec">
+        <div class="sec-hdr">
+            <div class="sec-ico ico-azul">📊</div>
+            <div>
+                <div class="sec-title">Producción Histórica — Entregas por Mes</div>
+                <div class="sec-sub">Cantidad de tareas completadas (por fecha de entrega) desde junio 2025</div>
+            </div>
+        </div>
+
+        <div class="tl-grid">
+            <div class="tl-item activo"><div class="tl-mes">Jun 2025</div><div class="tl-n">4</div><div class="tl-lbl">entregas</div></div>
+            <div class="tl-item activo"><div class="tl-mes">Jul 2025</div><div class="tl-n">20</div><div class="tl-lbl">entregas</div></div>
+            <div class="tl-item activo"><div class="tl-mes">Ago 2025</div><div class="tl-n">9</div><div class="tl-lbl">entregas</div></div>
+            <div class="tl-item activo"><div class="tl-mes">Sep 2025</div><div class="tl-n">11</div><div class="tl-lbl">entregas</div></div>
+            <div class="tl-item activo"><div class="tl-mes">Oct 2025</div><div class="tl-n">1</div><div class="tl-lbl">entregas</div></div>
+            <div class="tl-item vacio"><div class="tl-mes">Nov–Dic 2025</div><div class="tl-n">0</div><div class="tl-lbl">entregas</div></div>
+            <div class="tl-item activo"><div class="tl-mes">Ene 2026</div><div class="tl-n">2</div><div class="tl-lbl">entregas</div></div>
+            <div class="tl-item activo"><div class="tl-mes">Feb 2026</div><div class="tl-n">2</div><div class="tl-lbl">entregas</div></div>
+            <div class="tl-item activo"><div class="tl-mes">Mar 2026</div><div class="tl-n">5</div><div class="tl-lbl">entregas</div></div>
+            <div class="tl-item resaltado"><div class="tl-mes">Abr 2026 ★</div><div class="tl-n">2</div><div class="tl-lbl">entregas</div></div>
+            <div class="tl-item resaltado"><div class="tl-mes">May 2026 ★</div><div class="tl-n">3</div><div class="tl-lbl">entregas (hasta día 16)</div></div>
+        </div>
+
+        <div class="alerta alerta-azul" style="margin-top:14px">
+            <strong>Tendencia:</strong> El pico de productividad fue julio 2025 (20 entregas). El ritmo en 2026 se redujo a 2–5 entregas por mes, lo que indica que el equipo está trabajando en tareas de mayor complejidad y duración. El mes de mayo 2026 ya registra 3 entregas al día 16, con posibilidad de alcanzar 6–7 si se completan las tareas en proceso.
+        </div>
+    </div>
+
+
+    <!-- ─── DESEMPEÑO POR EMPLEADO ─────────────────────────── -->
+    <div class="sec">
+        <div class="sec-hdr">
+            <div class="sec-ico ico-morado">👥</div>
+            <div>
+                <div class="sec-title">Desempeño por Empleado</div>
+                <div class="sec-sub">Distribución y análisis individual del equipo</div>
+            </div>
+        </div>
+
+        <div class="emp-card">
+            <div class="emp-hdr">
+                <div><div class="emp-nombre">FABIAN ANDRÉS QUINTERO MÉNDEZ</div><div class="emp-cargo">Desarrollador de Software</div></div>
+                <div class="emp-total">24</div>
+            </div>
+            <div>
+                <div class="barra-row"><span class="barra-lbl">Completadas</span><div class="barra-track"><div class="barra-fill bf-verde" style="width:95.8%"></div></div><span class="barra-cnt">23</span></div>
+                <div class="barra-row"><span class="barra-lbl">En Proceso</span><div class="barra-track"><div class="barra-fill bf-naranja" style="width:4.2%"></div></div><span class="barra-cnt">1</span></div>
+            </div>
+            <p class="emp-desc">Mayor carga del equipo. Actividades destacadas en 2026: módulo 3D en BiblioPED (entregado 30 días antes), entrenador de programación Bloques I y II, módulo de evaluación con IA. Actualmente trabajando en adaptación de modelos 3D gratuitos.</p>
+        </div>
+
+        <div class="emp-card">
+            <div class="emp-hdr">
+                <div><div class="emp-nombre">XIAMIR ALEXANDER LUQUEZ RAMÍREZ</div><div class="emp-cargo">Ingeniero de Sistemas</div></div>
+                <div class="emp-total">21</div>
+            </div>
+            <div>
+                <div class="barra-row"><span class="barra-lbl">Completadas</span><div class="barra-track"><div class="barra-fill bf-verde" style="width:95.2%"></div></div><span class="barra-cnt">20</span></div>
+                <div class="barra-row"><span class="barra-lbl">En Proceso</span><div class="barra-track"><div class="barra-fill bf-naranja" style="width:4.8%"></div></div><span class="barra-cnt">1</span></div>
+            </div>
+            <p class="emp-desc">Desarrollos de alto impacto: arquitectura REGIO, rediseño PEDIGITAL KID (2 iteraciones), módulo de permisos, licencias para colegios. Actualmente en estudio de MBlock para robótica (vence 20 mayo).</p>
+        </div>
+
+        <div class="emp-card">
+            <div class="emp-hdr">
+                <div><div class="emp-nombre">FABIAN ALBERTO ARAQUE ZUTA</div><div class="emp-cargo">Soporte Técnico</div></div>
+                <div class="emp-total">15</div>
+            </div>
+            <div>
+                <div class="barra-row"><span class="barra-lbl">Completadas</span><div class="barra-track"><div class="barra-fill bf-verde" style="width:93.3%"></div></div><span class="barra-cnt">14</span></div>
+                <div class="barra-row"><span class="barra-lbl">En Proceso</span><div class="barra-track"><div class="barra-fill bf-naranja" style="width:6.7%"></div></div><span class="barra-cnt">1</span></div>
+            </div>
+            <p class="emp-desc">Enfoque en soporte, capacitaciones y contenido. Reciente: capacitación a docentes de Fonseca (entregada mayo). Actualmente desarrollando la malla curricular de robótica (vence HOY 16 mayo).</p>
+        </div>
+
+        <div class="emp-card">
+            <div class="emp-hdr">
+                <div><div class="emp-nombre">Pedro Arnedo</div><div class="emp-cargo">Desarrollador de Software</div></div>
+                <div class="emp-total">3</div>
+            </div>
+            <div>
+                <div class="barra-row"><span class="barra-lbl">Completadas</span><div class="barra-track"><div class="barra-fill bf-verde" style="width:66.7%"></div></div><span class="barra-cnt">2</span></div>
+                <div class="barra-row"><span class="barra-lbl">En Proceso</span><div class="barra-track"><div class="barra-fill bf-naranja" style="width:33.3%"></div></div><span class="barra-cnt">1</span></div>
+            </div>
+            <p class="emp-desc">Incorporación más reciente al departamento (inicio ene 2026). Tareas completadas de alto impacto: gestión integral de temas/niveles y contenidos para plataforma LMS. En proceso: vistas del rol estudiante (vence 29 mayo).</p>
+        </div>
+    </div>
+
+
+    <!-- ─── ANÁLISIS Y RECOMENDACIONES ────────────────────── -->
+    <div class="sec">
+        <div class="sec-hdr">
+            <div class="sec-ico ico-azul">🔍</div>
+            <div>
+                <div class="sec-title">Análisis y Recomendaciones</div>
+                <div class="sec-sub">Evaluación del estado del departamento al 16 de mayo de 2026</div>
+            </div>
+        </div>
+
+        <div class="an-grid">
+            <div class="an-card">
+                <h4>📈 Rendimiento General</h4>
+                <p>El departamento mantiene una <strong>tasa de completitud del 94%</strong> (59 de 63 tareas), lo cual refleja un equipo altamente productivo.</p>
+                <p>El período <strong>abril–mayo 2026 registra 5 entregas</strong> (2 en abril, 3 en mayo al día 16), con 4 tareas adicionales en proceso. Si se completan en mayo, el mes cerraría con 7 entregas, el mejor del año 2026.</p>
+                <p>El foco actual del departamento es <strong>Robótica y programación</strong> (MBlock, malla curricular, entrenador de bloques) y <strong>plataformas 3D</strong> (módulo BiblioPED).</p>
+            </div>
+
+            <div class="an-card">
+                <h4>⚠️ Alertas</h4>
+                <ul>
+                    <li><strong>Tarea #824 vence hoy (16/05):</strong> Malla curricular de robótica – Fabian Araque. Requiere atención inmediata.</li>
+                    <li><strong>Tarea #685 tardó 56 días:</strong> Los ejercicios de Bloques I fueron pactados para el 18 de marzo y se entregaron el 13 de mayo. Indica subestimación de la carga de trabajo.</li>
+                    <li><strong>Sin tareas pendientes actualmente</strong> – todas las tareas asignadas están en proceso o completadas. Esto es positivo pero puede significar que se requieren nuevas asignaciones pronto.</li>
+                </ul>
+            </div>
+
+            <div class="an-card">
+                <h4>🎯 Proyectos Activos en 2026</h4>
+                <ul>
+                    <li><strong>Entrenador de Programación (Bloques):</strong> 3 tareas completadas (niveles 1, 2 y 3) + módulo de evaluación. Proyecto prácticamente terminado.</li>
+                    <li><strong>Plataforma REGIO:</strong> Arquitectura diseñada (mar 2026), fase de desarrollo por iniciar.</li>
+                    <li><strong>Robótica / MBlock:</strong> Malla curricular y estudio de herramientas en curso (nuevo frente abierto en abr–may 2026).</li>
+                    <li><strong>BiblioPED 3D:</strong> Módulo base completado (may 2026), ahora en búsqueda de nuevos modelos.</li>
+                    <li><strong>Plataforma LMS:</strong> Vistas de estudiante en proceso (Pedro Arnedo).</li>
+                </ul>
+            </div>
+
+            <div class="an-card">
+                <h4>💡 Recomendaciones</h4>
+                <ul>
+                    <li>Hacer seguimiento a la tarea <strong>#824 hoy mismo</strong> para confirmar entrega o reprogramar.</li>
+                    <li>Revisar las estimaciones de tiempo para tareas del entrenador de programación: la brecha entre lo pactado y lo entregado fue consistentemente de 2–8 semanas.</li>
+                    <li>Dado que no hay pendientes, <strong>planificar nuevas asignaciones</strong> para los empleados que puedan terminar sus tareas en proceso antes del 20 de mayo.</li>
+                    <li>Documentar el proceso de desarrollo del módulo 3D (BiblioPED) dado que fue completado con 30 días de anticipación — puede usarse como referencia de buena práctica.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ─── SQL DE REFERENCIA ──────────────────────────────── -->
+    <div class="sec" style="display: none;">
+        <div class="sec-hdr">
+            <div class="sec-ico ico-azul">🗄️</div>
+            <div>
+                <div class="sec-title">Consulta SQL de Referencia</div>
+                <div class="sec-sub">Queries utilizadas para generar este informe desde workboard2</div>
+            </div>
+        </div>
+
+        <div class="sql-block">
+            <pre class="sql-pre"><span class="sql-c">-- ================================================================
+-- INFORME DEPARTAMENTO DE SISTEMAS | workboard2 | 2026-05-16
+-- ================================================================</span>
+
+<span class="sql-c">-- 1. Todas las tareas del departamento</span>
+<span class="sql-k">SELECT</span>
+    te.id,
+    <span class="sql-f">CONCAT</span>(e.nombres, <span class="sql-s">' '</span>, e.apellidos) <span class="sql-k">AS</span> empleado,
+    c.nombre <span class="sql-k">AS</span> cargo,
+    te.titulo, te.estado, te.prioridad,
+    te.fecha_creacion, te.fecha_pactada, te.fecha_entregada,
+    te.aprobada, te.rechazada, te.pausada, te.reprogramada,
+    te.observacion_entrega
+<span class="sql-k">FROM</span> tareas_empleados te
+<span class="sql-k">JOIN</span> empleados e <span class="sql-k">ON</span> te.empleado = e.id
+<span class="sql-k">LEFT JOIN</span> cargos c <span class="sql-k">ON</span> e.cargo = c.id
+<span class="sql-k">WHERE</span> e.departamento = <span class="sql-s">1</span>
+<span class="sql-k">ORDER BY</span> te.estado <span class="sql-k">DESC</span>, te.fecha_creacion <span class="sql-k">DESC</span>;
+
+<span class="sql-c">-- 2. Completadas en abril y mayo 2026</span>
+<span class="sql-k">SELECT</span> te.id, <span class="sql-f">CONCAT</span>(e.nombres,<span class="sql-s">' '</span>,e.apellidos) <span class="sql-k">AS</span> empleado,
+    te.titulo, te.fecha_pactada, te.fecha_entregada,
+    <span class="sql-f">DATEDIFF</span>(te.fecha_entregada, te.fecha_pactada) <span class="sql-k">AS</span> dias_diferencia
+<span class="sql-k">FROM</span> tareas_empleados te
+<span class="sql-k">JOIN</span> empleados e <span class="sql-k">ON</span> te.empleado = e.id
+<span class="sql-k">WHERE</span> e.departamento = <span class="sql-s">1</span>
+  <span class="sql-k">AND</span> te.estado = <span class="sql-s">'Completada'</span>
+  <span class="sql-k">AND</span> <span class="sql-f">YEAR</span>(te.fecha_entregada) = <span class="sql-s">2026</span>
+  <span class="sql-k">AND</span> <span class="sql-f">MONTH</span>(te.fecha_entregada) <span class="sql-k">IN</span> (<span class="sql-s">4</span>, <span class="sql-s">5</span>)
+<span class="sql-k">ORDER BY</span> te.fecha_entregada;
+
+<span class="sql-c">-- 3. Tareas en proceso con días restantes</span>
+<span class="sql-k">SELECT</span> te.id, <span class="sql-f">CONCAT</span>(e.nombres,<span class="sql-s">' '</span>,e.apellidos) <span class="sql-k">AS</span> empleado,
+    te.titulo, te.fecha_pactada,
+    <span class="sql-f">DATEDIFF</span>(te.fecha_pactada, <span class="sql-f">CURDATE</span>()) <span class="sql-k">AS</span> dias_restantes
+<span class="sql-k">FROM</span> tareas_empleados te
+<span class="sql-k">JOIN</span> empleados e <span class="sql-k">ON</span> te.empleado = e.id
+<span class="sql-k">WHERE</span> e.departamento = <span class="sql-s">1</span>
+  <span class="sql-k">AND</span> te.estado = <span class="sql-s">'En Proceso'</span>
+<span class="sql-k">ORDER BY</span> dias_restantes;
+
+<span class="sql-c">-- 4. Producción mensual por fecha de entrega</span>
+<span class="sql-k">SELECT</span>
+    <span class="sql-f">YEAR</span>(te.fecha_entregada) <span class="sql-k">AS</span> anio,
+    <span class="sql-f">MONTH</span>(te.fecha_entregada) <span class="sql-k">AS</span> mes,
+    <span class="sql-f">COUNT</span>(*) <span class="sql-k">AS</span> total_entregas
+<span class="sql-k">FROM</span> tareas_empleados te
+<span class="sql-k">JOIN</span> empleados e <span class="sql-k">ON</span> te.empleado = e.id
+<span class="sql-k">WHERE</span> e.departamento = <span class="sql-s">1</span>
+  <span class="sql-k">AND</span> te.estado = <span class="sql-s">'Completada'</span>
+  <span class="sql-k">AND</span> te.fecha_entregada <span class="sql-k">IS NOT NULL</span>
+<span class="sql-k">GROUP BY</span> <span class="sql-f">YEAR</span>(te.fecha_entregada), <span class="sql-f">MONTH</span>(te.fecha_entregada)
+<span class="sql-k">ORDER BY</span> anio, mes;</pre>
+        </div>
+    </div>
+
+
+    <div class="footer">
+        <div><strong>Departamento de Sistemas</strong> — Work Board &nbsp;|&nbsp; Base de datos: <code>workboard2</code></div>
+        <div>Generado el <strong>16 de mayo de 2026</strong> &nbsp;|&nbsp; Período: Jun 2025 – May 2026</div>
+    </div>
+
+</div>
+</body>
+</html>

@@ -36,14 +36,16 @@ class LoginController extends Controller
             $user = DB::connection('mysql2')->table('users')
                 ->where('email', $credentials['email'])
                 ->first();
-
+            
             // Obtener empleados asignados
             $empleadosAsignados = DB::connection('mysql2')->table('lideres_empleados')
                 ->join('empleados', 'lideres_empleados.empleado', 'empleados.id')
-                ->select('empleados.id', 
+                ->select('empleados.id',
                 DB::raw('CONCAT(empleados.nombres, " ", empleados.apellidos) as nombre'))
                 ->where('lideres_empleados.lider', $user->empleado)
+                ->where('empleados.estado_registro', 'Activo')
                 ->get();
+
 
             return response()->json([
                 'message' => 'Login exitoso',
@@ -54,6 +56,7 @@ class LoginController extends Controller
                     'tipo_usuario' => $user->tipo_usuario,
                     'empleado' => $user->empleado,
                     'lider' => $user->lider,
+                    'independencia' => $user->independencia ?? 'No',
                     'foto' => $user->foto,
                     'empleados_asignados' => $empleadosAsignados,
                     'user_id_chat' => $userActualChat->id
@@ -79,4 +82,4 @@ class LoginController extends Controller
 
         return response()->json(['message' => 'Logout exitoso']);
     }
-}
+} 

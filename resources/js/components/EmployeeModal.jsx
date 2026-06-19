@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { FaPlus, FaEdit, FaTrash, FaSearch, FaThList, FaThListCheck, FaCamera, FaCheck, FaTimes, FaFile, FaEye, FaFilePdf, FaFileWord, FaSpinner, FaSave } from 'react-icons/fa';
+import { FaPlus, FaEdit, FaTrash, FaSearch, FaThList, FaThListCheck, FaCamera, FaCheck, FaTimes, FaFile, FaEye, FaFilePdf, FaFileWord, FaSpinner, FaSave, FaUserTie, FaArrowLeft } from 'react-icons/fa';
 import { FaListCheck } from 'react-icons/fa6';
 import Swal from 'sweetalert2';
 import FileViewerModal from './FileViewerModal';
+import TaskDetailsModal from './TaskDetailsModal';
 import axiosInstance from '../axiosConfig';
 import Paginador from './Paginador';
 import { getImageUrl, getAssetUrl } from '../utils/assetHelper';
@@ -16,41 +17,7 @@ const EmployeeModal = ({ isOpen, onClose }) => {
     const [empresas, setEmpresas] = useState([]);
     const [departamentos, setDepartamentos] = useState([]);
     const [cargos, setCargos] = useState([]);
-    const [foto, setFoto] = useState(null);
-
-
-    //TOMAR FOTO DE UNA RUTA Y CONBERTIRLA EN BASE64
-
-    useEffect(() => {
-        tomarFoto(getImageUrl('images/default.png'));
-    }, []);
-
-    const tomarFoto = (ruta) => {
-        const img = new Image();
-
-        // Necesario si la imagen está en otro dominio o ruta
-        img.crossOrigin = 'anonymous';
-
-        img.onload = () => {
-            const canvas = document.createElement('canvas');
-            canvas.width = img.width;
-            canvas.height = img.height;
-
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0);
-
-            const base64 = canvas.toDataURL('image/png');
-
-            setFoto(base64);
-        };
-
-        img.onerror = () => {
-            console.error('Error al cargar la imagen.');
-        };
-
-        img.src = ruta;
-    };
-
+    const defaultFotoPreview = getImageUrl('images/default.png');
 
     const initialEmpleadoState = {
         id: '',
@@ -61,8 +28,8 @@ const EmployeeModal = ({ isOpen, onClose }) => {
         departamento: '',
         empresa: '',
         cargo: '',
-        foto: foto,
-        fotoPreview: foto,
+        foto: null,
+        fotoPreview: defaultFotoPreview,
         fecha_nacimiento: '',
         fecha_ingreso: '',
         tipo_contrato: '',
@@ -70,7 +37,7 @@ const EmployeeModal = ({ isOpen, onClose }) => {
         direccion: '',
         telefono: '',
         accion: 'guardar',
-        lider: ''
+        lider: 'No'
     };
 
     const [newEmpleado, setNewEmpleado] = useState(initialEmpleadoState);
@@ -96,12 +63,22 @@ const EmployeeModal = ({ isOpen, onClose }) => {
     const [tareasEmpleado, setTareasEmpleado] = useState([]);
     const [isSaving, setIsSaving] = useState(false);
     const [mostrarFormularioTarea, setMostrarFormularioTarea] = useState(false);
+    const [proyectos, setProyectos] = useState([]);
+    const [subtareasForm, setSubtareasForm] = useState([]); // keep name for API compat
+    const [nuevaSubtareaTexto, setNuevaSubtareaTexto] = useState('');
+    const [nuevaSubtareaFecha, setNuevaSubtareaFecha] = useState('');
+    const [checklistTitulo, setChecklistTitulo] = useState('');
+    const [showChecklist, setShowChecklist] = useState(false);
+    const [checklistsExistentes, setChecklistsExistentes] = useState([]);
+    const [selectedChecklistId, setSelectedChecklistId] = useState('');
+    const [deletedSubtareaIds, setDeletedSubtareaIds] = useState([]);
     const [nuevaTarea, setNuevaTarea] = useState({
         titulo: '',
         descripcion: '',
         fecha_pactada: '',
         estado: 'Pendiente',
         prioridad: 'Media',
+        proyecto_id: '',
         evidencias: [],
         accion: 'guardar'
     });
@@ -112,6 +89,8 @@ const EmployeeModal = ({ isOpen, onClose }) => {
     const [showEvidenciasModal, setShowEvidenciasModal] = useState(false);
     const [tareaActual, setTareaActual] = useState(null);
     const [selectedFile, setSelectedFile] = useState(null);
+    const [selectedTask, setSelectedTask] = useState(null);
+    const [showTaskDetails, setShowTaskDetails] = useState(false);
 
     const [activeTab, setActiveTab] = useState('funciones');
     const [nuevaActividad, setNuevaActividad] = useState('');
@@ -131,6 +110,7 @@ const EmployeeModal = ({ isOpen, onClose }) => {
         return () => clearTimeout(delaySearch);
     }, [searchTerm]);
 
+
     //cargar tareas
     useEffect(() => {
         const delaySearch = setTimeout(() => {
@@ -142,12 +122,13 @@ const EmployeeModal = ({ isOpen, onClose }) => {
         return () => clearTimeout(delaySearch);
     }, [searchTarea]);
 
-
+    
 
     useEffect(() => {
         cargarEmpresas();
         cargarDepartamentos();
         cargarCargos();
+        axiosInstance.get('/cargarProyectos').then(r => setProyectos(r.data)).catch(() => {});
     }, []);
 
     const buscarEmpleados = () => {
@@ -428,12 +409,29 @@ const EmployeeModal = ({ isOpen, onClose }) => {
     };
 
     const handleEditarTarea = (tarea) => {
-
-        setMostrarFormularioTarea(true)
-        setNuevaTarea({
-            ...tarea,
-            accion: 'editar'
-        })
+        setMostrarFormularioTarea(true);
+        setNuevaTarea({ ...tarea, accion: 'editar' });
+        setDeletedSubtareaIds([]);
+        setSubtareasForm([]);
+        setChecklistTitulo('');
+        setShowChecklist(false);
+        axiosInstance.get(`/subtareas/${tarea.id}`)
+            .then(r => {
+                if (r.data.length > 0) {
+                    setSubtareasForm(r.data.map(s => ({
+                        id: s.id,
+                        tempId: `e-${s.id}`,
+                        titulo: s.titulo,
+                        fecha_vencimiento: s.fecha_vencimiento || '',
+                        completada: s.completada
+                    })));
+                    if (r.data[0].checklist_titulo) {
+                        setChecklistTitulo(r.data[0].checklist_titulo);
+                    }
+                    setShowChecklist(true);
+                }
+            })
+            .catch(() => {});
     };
 
     const handleEliminarFuncion = (id) => {
@@ -476,7 +474,7 @@ const EmployeeModal = ({ isOpen, onClose }) => {
         axiosInstance.post('/guardarActividad', data)
             .then((response) => {
                 if (response.data.actividad) {
-                    console.log(response.data.actividad);
+           
                     setActividadesEmpleado(prevActividades => [...prevActividades, response.data.actividad]);
                     setNuevaActividad('');
 
@@ -627,6 +625,27 @@ const EmployeeModal = ({ isOpen, onClose }) => {
         }
     };
 
+    const loadChecklistsExistentes = async (empleadoId) => {
+        try {
+            const r = await axiosInstance.get(`/checklists-empleado/${empleadoId}`);
+            setChecklistsExistentes(r.data);
+        } catch {}
+    };
+
+    const handleCopyChecklist = (tareaId) => {
+        setSelectedChecklistId(tareaId);
+        if (!tareaId) return;
+        const found = checklistsExistentes.find(c => c.tarea_id == tareaId);
+        if (found) {
+            setSubtareasForm(found.items.map((item, i) => ({
+                tempId: Date.now() + i,
+                titulo: item.titulo,
+                fecha_vencimiento: item.fecha_vencimiento || ''
+            })));
+            if (found.checklist_titulo) setChecklistTitulo(found.checklist_titulo);
+        }
+    };
+
     const handleGuardarTarea = () => {
         if (!nuevaTarea.titulo.trim() || !nuevaTarea.fecha_pactada) {
             Swal.fire({
@@ -648,6 +667,17 @@ const EmployeeModal = ({ isOpen, onClose }) => {
             return;
         }
 
+        //validar la descripcion de la tarea
+        if (nuevaTarea.descripcion.length < 10) {
+            Swal.fire({
+                title: 'Error',
+                text: 'La descripción de la tarea debe tener al menos 10 caracteres',
+                icon: 'error',
+                confirmButtonText: 'OK',
+            });
+            return;
+        }
+
         setIsSaving(true);
         const tareaData = {
             ...nuevaTarea,
@@ -656,7 +686,48 @@ const EmployeeModal = ({ isOpen, onClose }) => {
         };
 
         axiosInstance.post('/guardarTarea', tareaData)
-            .then((response) => {
+            .then(async (response) => {
+                // Guardar subtareas si es tarea nueva
+                if (tareaData.accion === 'guardar' && response.data.tarea_id && subtareasForm.length > 0) {
+                    await Promise.all(subtareasForm.map(s =>
+                        axiosInstance.post('/subtareas', {
+                            tarea_id: response.data.tarea_id,
+                            titulo: s.titulo,
+                            fecha_vencimiento: s.fecha_vencimiento || null,
+                            checklist_titulo: checklistTitulo || null
+                        })
+                    ));
+                }
+                // Sincronizar checklist al editar
+                if (tareaData.accion === 'editar' && response.data.tarea_id) {
+                    const ops = [
+                        ...subtareasForm.filter(s => s.id).map(s =>
+                            axiosInstance.put(`/subtareas/${s.id}`, {
+                                titulo: s.titulo,
+                                fecha_vencimiento: s.fecha_vencimiento || null,
+                                checklist_titulo: checklistTitulo || null
+                            })
+                        ),
+                        ...subtareasForm.filter(s => !s.id).map(s =>
+                            axiosInstance.post('/subtareas', {
+                                tarea_id: response.data.tarea_id,
+                                titulo: s.titulo,
+                                fecha_vencimiento: s.fecha_vencimiento || null,
+                                checklist_titulo: checklistTitulo || null
+                            })
+                        ),
+                        ...deletedSubtareaIds.map(id => axiosInstance.delete(`/subtareas/${id}`))
+                    ];
+                    if (ops.length > 0) await Promise.all(ops);
+                    setDeletedSubtareaIds([]);
+                }
+                setSubtareasForm([]);
+                setNuevaSubtareaTexto('');
+                setNuevaSubtareaFecha('');
+                setShowChecklist(false);
+                setChecklistTitulo('');
+                setSelectedChecklistId('');
+                setChecklistsExistentes([]);
                 setTareasEmpleado(response.data.tareas);
                 setNuevaTarea({
                     titulo: '',
@@ -664,6 +735,7 @@ const EmployeeModal = ({ isOpen, onClose }) => {
                     fecha_pactada: '',
                     estado: 'Pendiente',
                     prioridad: 'Media',
+                    proyecto_id: '',
                     evidencias: [],
                     accion: 'guardar'
                 });
@@ -708,7 +780,7 @@ const EmployeeModal = ({ isOpen, onClose }) => {
         };
         //preguntar si exixte contro fecha de entrega
         if (nuevoEstado === 'Completada') {
-            console.log(tareaActual.fecha_entregada);
+       
             if (tareaActual.fecha_entregada === null ) {
                 Swal.fire({
                     title: 'Error',
@@ -778,22 +850,22 @@ const EmployeeModal = ({ isOpen, onClose }) => {
             <div className="modal-overlay">
                 <div className="modal-employee">
                     <div className="modal-header">
-                        <h2>Gestión de Empleados</h2>
-                        <button className="close-button" onClick={onClose}>
-                            <FaTimes />
-                        </button>
-                    </div>
-                    <div className="modal-toolbar">
-                        <div className="search-box">
-                            <FaSearch />
-                            <input
-                                type="text"
-                                placeholder="Buscar empleado..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                            />
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                            <h2 style={{ margin: 0 }}>
+                                <FaUserTie style={{ marginRight: '0.5rem', verticalAlign: 'middle' }} />Gestión de Empleados
+                            </h2>
                         </div>
-                        <button className="add-button" style={{ width: '200px' }}
+                        <button className="close-button" onClick={onClose}><FaTimes /></button>
+                    </div>
+                    <div className="dm-toolbar">
+                        <input
+                            type="text"
+                            className="dm-search"
+                            placeholder="Buscar empleado..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                        <button className="dm-btn dm-btn--primary"
                             onClick={() => {
                                 setNewEmpleado(initialEmpleadoState);
                                 setShowAddForm(true);
@@ -848,17 +920,17 @@ const EmployeeModal = ({ isOpen, onClose }) => {
                                                 <td>{empleado.nombre_empresa}</td>
                                                 <td>{empleado.email}</td>
                                                 <td>
-                                                    <div className="action-buttons">
-                                                        <button title="Ver tareas" onClick={() => cargarTareas(empleado)} className="tareas-button">
+                                                    <div className="dm-actions">
+                                                        <button title="Ver tareas" onClick={() => cargarTareas(empleado)} className="dm-action-btn dm-action-btn--view">
                                                             <FaListCheck />
                                                         </button>
-                                                        <button title="Ver funciones y Actividades" onClick={() => handleVerFunciones(empleado)} className="funciones-button">
+                                                        <button title="Ver funciones y Actividades" onClick={() => handleVerFunciones(empleado)} className="dm-action-btn dm-action-btn--view">
                                                             <FaThList />
                                                         </button>
-                                                        <button title="Editar empleado" onClick={() => handleEditarEmpleado(empleado)} className="edit-button">
+                                                        <button title="Editar empleado" onClick={() => handleEditarEmpleado(empleado)} className="dm-action-btn dm-action-btn--edit">
                                                             <FaEdit />
                                                         </button>
-                                                        <button title="Eliminar empleado" onClick={() => handleEliminarEmpleado(empleado.id)} className="delete-button">
+                                                        <button title="Eliminar empleado" onClick={() => handleEliminarEmpleado(empleado.id)} className="dm-action-btn dm-action-btn--delete">
                                                             <FaTrash />
                                                         </button>
                                                     </div>
@@ -881,13 +953,17 @@ const EmployeeModal = ({ isOpen, onClose }) => {
                 <div className="modal-overlay">
                     <div className="form-modal-large">
                         <div className="modal-header">
-                            <h2>Nuevo Empleado</h2>
-                            <button
-                                className="close-button"
-                                onClick={() => setShowAddForm(false)}
-                            >
-                                &times;
-                            </button>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                <button className="rdm-back-btn" onClick={() => setShowAddForm(false)}>
+                                    <FaArrowLeft /> Empleados
+                                </button>
+                                <h2 style={{ margin: 0 }}>
+                                    {newEmpleado.accion === 'editar'
+                                        ? `Editar: ${newEmpleado.nombres} ${newEmpleado.apellidos}`
+                                        : 'Nuevo Empleado'}
+                                </h2>
+                            </div>
+                            <button className="close-button" onClick={onClose}><FaTimes /></button>
                         </div>
                         <form className="employee-form">
                             <div className="form-group col-12">
@@ -1057,18 +1133,6 @@ const EmployeeModal = ({ isOpen, onClose }) => {
                             </div>
 
                             <div className="form-row">
-                                <div className="form-group col-4">
-                                    <label>Lider de Departamento</label>
-                                    <select onChange={(e) => setNewEmpleado({ ...newEmpleado, lider: e.target.value })}
-                                        value={newEmpleado.lider}
-                                        className="form-control"
-                                        name="lider"
-                                        id='lider'
-                                    >
-                                        <option value="Si">Si</option>
-                                        <option value="No">No</option>
-                                    </select>
-                                </div>
                                 <div className="form-group col-3">
                                     <label>Fecha de Ingreso</label>
                                     <input type="date"
@@ -1321,7 +1385,7 @@ const EmployeeModal = ({ isOpen, onClose }) => {
                         <div className="modal-header">
                             <h2>
                                 {mostrarFormularioTarea ? 'Nueva Tarea' :
-                                    `Tareas de ${empleadoSeleccionado.nombres} ${empleadoSeleccionado.apellidos}`}
+                                    `TAREAS DE ${empleadoSeleccionado.nombres} ${empleadoSeleccionado.apellidos}`}
                             </h2>
                             <div className="modal-header-actions">
 
@@ -1336,38 +1400,25 @@ const EmployeeModal = ({ isOpen, onClose }) => {
                                 </button>
                             </div>
                         </div>
-                        <div className="modal-toolbar" >
-                            {!mostrarFormularioTarea && (
-                                <>
-                                    <div className={`search-box ${loading ? "loading" : ""}`}>
-                                        <FaSearch />
-                                        <input
-                                            type="text"
-                                            placeholder="Buscar por título, descripción, estado o prioridad"
-                                            value={searchTarea}
-                                            onChange={(e) => setSearchTarea(e.target.value)}
-                                            onKeyDown={(e) => {
-                                                if (e.key === 'Enter') {
-                                                    buscarTareas();
-                                                }
-                                            }}
-                                            onBlur={() => {
-                                                buscarTareas();
-                                            }}
-                                        />
-                                        {loading && <div className="search-spinner"></div>}
-
-                                    </div>
-                                    <button
-                                        className="add-button"
-                                        onClick={() => setMostrarFormularioTarea(true)}
-                                    >
-                                        <FaPlus /> Nueva Tarea
-                                    </button>
-                                </>
-
-                            )}
-                        </div>
+                        {!mostrarFormularioTarea && (
+                            <div className="dm-toolbar">
+                                <input
+                                    type="text"
+                                    className="dm-search"
+                                    placeholder="Buscar por título, descripción, estado o prioridad"
+                                    value={searchTarea}
+                                    onChange={(e) => setSearchTarea(e.target.value)}
+                                    onKeyDown={(e) => { if (e.key === 'Enter') buscarTareas(); }}
+                                    onBlur={buscarTareas}
+                                />
+                                <button
+                                    className="dm-btn dm-btn--primary"
+                                    onClick={() => setMostrarFormularioTarea(true)}
+                                >
+                                    <FaPlus /> Nueva Tarea
+                                </button>
+                            </div>
+                        )}
                         <div className="tareas-content">
                             {mostrarFormularioTarea ? (
                                 <div className="tarea-form">
@@ -1424,6 +1475,148 @@ const EmployeeModal = ({ isOpen, onClose }) => {
                                             placeholder="Descripción detallada de la tarea"
                                             rows="3"
                                         />
+                                    </div>
+
+                                    <div className="form-group col-12">
+                                        <label>Proyecto (opcional)</label>
+                                        <select
+                                            value={nuevaTarea.proyecto_id}
+                                            onChange={(e) => setNuevaTarea({ ...nuevaTarea, proyecto_id: e.target.value })}
+                                        >
+                                            <option value="">Sin proyecto</option>
+                                            {proyectos.map(p => (
+                                                <option key={p.id} value={p.id}>{p.nombre}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    {/* Checklist */}
+                                    <div className="form-group col-12">
+                                        {nuevaTarea.accion === 'guardar' && (
+                                            <div className="checklist-toggle-row">
+                                                <button
+                                                    type="button"
+                                                    className={`checklist-toggle-btn${showChecklist ? ' active' : ''}`}
+                                                    onClick={() => {
+                                                        if (!showChecklist && empleadoSeleccionado?.id) {
+                                                            loadChecklistsExistentes(empleadoSeleccionado.id);
+                                                        }
+                                                        setShowChecklist(prev => !prev);
+                                                    }}
+                                                >
+                                                    ☑ Checklist
+                                                </button>
+                                                {!nuevaTarea.proyecto_id && (
+                                                    <span className="checklist-hint">Proyecto opcional: puedes usar checklist sin seleccionarlo</span>
+                                                )}
+                                            </div>
+                                        )}
+                                        {nuevaTarea.accion === 'editar' && (
+                                            <div className="checklist-toggle-row">
+                                                <button
+                                                    type="button"
+                                                    className={`checklist-toggle-btn${showChecklist ? ' active' : ''}`}
+                                                    onClick={() => setShowChecklist(prev => !prev)}
+                                                >
+                                                    ☑ Checklist {subtareasForm.length > 0 && `(${subtareasForm.length})`}
+                                                </button>
+                                            </div>
+                                        )}
+                                        {showChecklist && (
+                                            <div className="checklist-form-section">
+                                                <div className="checklist-header-row">
+                                                    <input
+                                                        type="text"
+                                                        className="checklist-titulo-input"
+                                                        placeholder="Título del checklist (opcional)..."
+                                                        value={checklistTitulo}
+                                                        onChange={e => setChecklistTitulo(e.target.value)}
+                                                    />
+                                                    {nuevaTarea.accion === 'guardar' && checklistsExistentes.length > 0 && (
+                                                        <select
+                                                            className="checklist-copy-select"
+                                                            value={selectedChecklistId}
+                                                            onChange={e => handleCopyChecklist(e.target.value)}
+                                                        >
+                                                            <option value="">Copiar de existente...</option>
+                                                            {checklistsExistentes.map(c => (
+                                                                <option key={c.tarea_id} value={c.tarea_id}>
+                                                                    {c.tarea_titulo}{c.checklist_titulo ? ` — ${c.checklist_titulo}` : ''}
+                                                                </option>
+                                                            ))}
+                                                        </select>
+                                                    )}
+                                                </div>
+                                                {subtareasForm.length > 0 && (
+                                                    <ul className="subtareas-list" style={{ marginBottom: '0.5rem' }}>
+                                                        {subtareasForm.map(s => (
+                                                            <li key={s.tempId} className="subtarea-item">
+                                                                <input
+                                                                    type="text"
+                                                                    className="subtarea-edit-input"
+                                                                    value={s.titulo}
+                                                                    onChange={e => setSubtareasForm(prev =>
+                                                                        prev.map(x => x.tempId === s.tempId ? { ...x, titulo: e.target.value } : x)
+                                                                    )}
+                                                                    placeholder="Descripción del ítem..."
+                                                                />
+                                                                <input
+                                                                    type="date"
+                                                                    className="subtarea-edit-date"
+                                                                    value={s.fecha_vencimiento || ''}
+                                                                    onChange={e => setSubtareasForm(prev =>
+                                                                        prev.map(x => x.tempId === s.tempId ? { ...x, fecha_vencimiento: e.target.value } : x)
+                                                                    )}
+                                                                    title="Fecha de vencimiento"
+                                                                />
+                                                                <button type="button" className="subtarea-delete" style={{ opacity: 1 }}
+                                                                    onClick={() => {
+                                                                        if (s.id) setDeletedSubtareaIds(prev => [...prev, s.id]);
+                                                                        setSubtareasForm(prev => prev.filter(x => x.tempId !== s.tempId));
+                                                                    }}>
+                                                                    <FaTimes />
+                                                                </button>
+                                                            </li>
+                                                        ))}
+                                                    </ul>
+                                                )}
+                                                <div className="subtarea-add-row">
+                                                    <input
+                                                        type="text"
+                                                        className="subtarea-add-input"
+                                                        placeholder="Ítem del checklist..."
+                                                        value={nuevaSubtareaTexto}
+                                                        onChange={e => setNuevaSubtareaTexto(e.target.value)}
+                                                        onKeyDown={e => {
+                                                            if (e.key === 'Enter') {
+                                                                e.preventDefault();
+                                                                if (!nuevaSubtareaTexto.trim()) return;
+                                                                setSubtareasForm(prev => [...prev, { tempId: Date.now(), titulo: nuevaSubtareaTexto.trim(), fecha_vencimiento: nuevaSubtareaFecha }]);
+                                                                setNuevaSubtareaTexto('');
+                                                                setNuevaSubtareaFecha('');
+                                                            }
+                                                        }}
+                                                    />
+                                                    <input
+                                                        type="date"
+                                                        className="subtarea-add-date"
+                                                        value={nuevaSubtareaFecha}
+                                                        onChange={e => setNuevaSubtareaFecha(e.target.value)}
+                                                        title="Fecha de vencimiento"
+                                                    />
+                                                    <button type="button" className="subtarea-add-btn"
+                                                        disabled={!nuevaSubtareaTexto.trim()}
+                                                        onClick={() => {
+                                                            if (!nuevaSubtareaTexto.trim()) return;
+                                                            setSubtareasForm(prev => [...prev, { tempId: Date.now(), titulo: nuevaSubtareaTexto.trim(), fecha_vencimiento: nuevaSubtareaFecha }]);
+                                                            setNuevaSubtareaTexto('');
+                                                            setNuevaSubtareaFecha('');
+                                                        }}>
+                                                        <FaPlus />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
 
                                     <div className="form-row">
@@ -1488,9 +1681,16 @@ const EmployeeModal = ({ isOpen, onClose }) => {
                                                     fecha_pactada: '',
                                                     estado: 'Pendiente',
                                                     prioridad: 'Media',
-                                                    evidencias: []
+                                                    proyecto_id: '',
+                                                    evidencias: [],
+                                                    accion: 'guardar'
                                                 });
                                                 setEvidencias([]);
+                                                setSubtareasForm([]);
+                                                setDeletedSubtareaIds([]);
+                                                setShowChecklist(false);
+                                                setChecklistTitulo('');
+                                                setSelectedChecklistId('');
                                             }}
                                         >
                                             <FaTimes /> {' '} Cancelar
@@ -1505,16 +1705,27 @@ const EmployeeModal = ({ isOpen, onClose }) => {
                                     {tareasEmpleado.length > 0 ? (
                                         tareasEmpleado.map((tarea) => (
 
-                                            <div key={tarea.id} className={`tarea-item ${tarea.estado.toLowerCase()}`}>
-                                                <div className="tarea-header">
-                                                    <h4>{tarea.titulo || 'Sin título'}</h4>
-                                                    <span className={`prioridad-badge ${(tarea.prioridad || 'media').toLowerCase()}`}>
-                                                        {tarea.prioridad || 'Media'}
-                                                    </span>
+                                            <div key={tarea.id} className={`tarea-item tarea-item-empleado ${tarea.estado.toLowerCase()}`}>
+                                                <div className="tarea-item-empleado-top">
+                                                    <div className="tarea-item-empleado-title">
+                                                        <h4>{tarea.titulo || 'Sin título'}</h4>
+                                                    </div>
+                                                    <div className="tarea-item-empleado-meta">
+                                                        {tarea.proyecto_nombre && (
+                                                            <span className="proyecto-badge">
+                                                                {tarea.proyecto_nombre}
+                                                            </span>
+                                                        )}
+                                                        <span className={`prioridad-badge ${(tarea.prioridad || 'media').toLowerCase()}`}>
+                                                            {tarea.prioridad || 'Media'}
+                                                        </span>
+                                                    </div>
                                                 </div>
-                                                <p className="tarea-descripcion">{tarea.descripcion}</p>
-                                                <div className="tarea-footer">
-                                                    <div className="tarea-fechas">
+
+                                                <p className="tarea-descripcion tarea-item-empleado-descripcion">{tarea.descripcion}</p>
+
+                                                <div className="tarea-item-empleado-panel">
+                                                    <div className="tarea-item-empleado-fechas tarea-fechas">
                                                         {tarea.fecha_pactada && (
                                                             <span>Pactada: {new Date(tarea.fecha_pactada + 'T00:00:00').toLocaleDateString()}</span>
                                                         )}
@@ -1522,8 +1733,9 @@ const EmployeeModal = ({ isOpen, onClose }) => {
                                                             <span>Entregada: {new Date(tarea.fecha_entregada + 'T00:00:00').toLocaleDateString()}</span>
                                                         )}
                                                     </div>
-                                                    <div className='container-editar-tarea'>
-                                                        <div className="tarea-estado">
+
+                                                    <div className="tarea-item-empleado-acciones">
+                                                        <div className="tarea-estado tarea-item-empleado-estado">
                                                             <select
                                                                 value={tarea.estado}
                                                                 onChange={(e) => handleActualizarEstadoTarea(tarea, e.target.value)}
@@ -1535,56 +1747,69 @@ const EmployeeModal = ({ isOpen, onClose }) => {
                                                                 <option value="Cancelada">Cancelada</option>
                                                             </select>
                                                         </div>
-                                                        <div className='btn-editar-tarea'>
-                                                            <button className='btn-editar-tarea-button' onClick={() => handleEditarTarea(tarea)}>
+
+                                                        <div className="btn-editar-tarea tarea-item-empleado-botones">
+                                                            <button className="btn-editar-tarea-button" onClick={() => handleEditarTarea(tarea)}>
                                                                 <FaEdit /> Editar
+                                                            </button>
+                                                            <button
+                                                                className="btn-editar-tarea-button btn-editar-tarea-button--secondary"
+                                                                onClick={(e) => { e.stopPropagation(); setSelectedTask(tarea); setShowTaskDetails(true); }}
+                                                            >
+                                                                <FaEye /> Detalles
                                                             </button>
                                                         </div>
                                                     </div>
                                                 </div>
+
                                                 {tarea.evidencias && tarea.evidencias.length > 0 && (
-                                                    <div className="tarea-evidencias">
+                                                    <div className="tarea-evidencias tarea-item-empleado-evidencias">
                                                         <h5>Evidencias:</h5>
                                                         {tarea.evidencias.some(e => !e || !e.evidencia || !e.tipo) && (
                                                             <p className="evidencias-warning">
                                                                 Algunas evidencias no están disponibles o están dañadas
                                                             </p>
                                                         )}
-                                                        <div className="evidencias-list">
+                                                        <div className="evidencias-list evidencias-list-empleado">
                                                             {tarea.evidencias
                                                                 .filter(evidencia => evidencia && evidencia.evidencia && evidencia.tipo)
                                                                 .map((evidencia) => (
-                                                                    <div key={evidencia.id} className="evidencia-item">
-                                                                        {evidencia.tipo?.startsWith('image/') ? (
-                                                                            <img
-                                                                                src={getImageUrl(`storage/${evidencia.evidencia}`)}
-                                                                                alt={evidencia.nombre || 'Sin nombre'}
-                                                                                className="evidencia-thumbnail"
-                                                                            />
-                                                                        ) : (
-                                                                            <div className="file-icon">
-                                                                                {evidencia.tipo?.includes('pdf') ? (
-                                                                                    <FaFilePdf className="evidencia-icon pdf" />
-                                                                                ) : evidencia.tipo?.includes('word') ? (
-                                                                                    <FaFileWord className="evidencia-icon word" />
-                                                                                ) : (
-                                                                                    <FaFile className="evidencia-icon" />
-                                                                                )}
-                                                                            </div>
-                                                                        )}
-                                                                        <span className="evidencia-nombre">
-                                                                            {evidencia.nombre || 'Archivo sin nombre'}
-                                                                        </span>
-                                                                        {evidencia.evidencia && (
-                                                                            <button
-                                                                                type="button"
-                                                                                onClick={() => handleFileClick(evidencia)}
-                                                                                className="view-evidencia"
-                                                                                title='Ver evidencias'
-                                                                            >
-                                                                                <FaEye />
-                                                                            </button>
-                                                                        )}
+                                                                    <div key={evidencia.id} className="evidencia-item evidencia-item-empleado">
+                                                                        <div className="evidencia-item-empleado-preview">
+                                                                            {evidencia.tipo?.startsWith('image/') ? (
+                                                                                <img
+                                                                                    src={getImageUrl(`storage/${evidencia.evidencia}`)}
+                                                                                    alt={evidencia.nombre || 'Sin nombre'}
+                                                                                    className="evidencia-thumbnail evidencia-thumbnail-empleado"
+                                                                                />
+                                                                            ) : (
+                                                                                <div className="file-icon file-icon-empleado">
+                                                                                    {evidencia.tipo?.includes('pdf') ? (
+                                                                                        <FaFilePdf className="evidencia-icon pdf" />
+                                                                                    ) : evidencia.tipo?.includes('word') ? (
+                                                                                        <FaFileWord className="evidencia-icon word" />
+                                                                                    ) : (
+                                                                                        <FaFile className="evidencia-icon" />
+                                                                                    )}
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
+
+                                                                        <div className="evidencia-item-empleado-body">
+                                                                            <span className="evidencia-nombre evidencia-nombre-empleado">
+                                                                                {evidencia.nombre || 'Archivo sin nombre'}
+                                                                            </span>
+                                                                            {evidencia.evidencia && (
+                                                                                <button
+                                                                                    type="button"
+                                                                                    onClick={() => handleFileClick(evidencia)}
+                                                                                    className="view-evidencia view-evidencia-empleado"
+                                                                                    title="Ver evidencias"
+                                                                                >
+                                                                                    <FaEye />
+                                                                                </button>
+                                                                            )}
+                                                                        </div>
                                                                     </div>
                                                                 ))}
                                                         </div>
@@ -1723,6 +1948,19 @@ const EmployeeModal = ({ isOpen, onClose }) => {
                         </div>
                     </div>
                 </div>
+            )}
+
+            {/* Modal de detalles de tarea */}
+            {showTaskDetails && selectedTask && (
+                <TaskDetailsModal
+                    task={selectedTask}
+                    onClose={() => { setShowTaskDetails(false); setSelectedTask(null); }}
+                    onUpdate={() => {
+                        axiosInstance.get(`/cargarTareas/${empleadoSeleccionado.id}`)
+                            .then(r => setTareasEmpleado(r.data.tareas))
+                            .catch(() => {});
+                    }}
+                />
             )}
 
             {/* Modal de visualización de archivos (independiente) */}

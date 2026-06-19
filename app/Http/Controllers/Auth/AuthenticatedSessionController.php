@@ -26,9 +26,10 @@ class AuthenticatedSessionController extends Controller
             // Obtener empleados asignados
             $empleadosAsignados = DB::table('lideres_empleados')
                 ->join('empleados', 'lideres_empleados.empleado', 'empleados.id')
-                ->select('empleados.id', 
+                ->select('empleados.id',
                 DB::raw('CONCAT(empleados.nombres, " ", empleados.apellidos) as nombre'))
                 ->where('lideres_empleados.lider', $user->empleado)
+                ->where('empleados.estado_registro', 'Activo')
                 ->get();
 
             // Revocar tokens anteriores
@@ -47,7 +48,8 @@ class AuthenticatedSessionController extends Controller
                     'empleado' => $user->empleado,
                     'lider' => $user->lider,
                     'foto' => $user->foto,
-                    'empleados_asignados' => $empleadosAsignados
+                    'empleados_asignados' => $empleadosAsignados,
+                    'independencia' => $user->independencia ?? 'No'
                 ],
                 'token' => $token
             ]);

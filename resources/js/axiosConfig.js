@@ -38,11 +38,11 @@ axiosInstance.interceptors.response.use(
         if (error.response?.status === 401) {
             // Limpiar el token y redirigir al login
             localStorage.removeItem('token');
-            localStorage.removeItem('user');
-            
+            localStorage.removeItem('userWorkBoard');
+
             // Evitar redirecciones múltiples
             if (!window.location.pathname.includes('/login')) {
-                window.location.href = '/login';
+                window.location.href = '/WorkBoard/public/login';
             }
         }
         return Promise.reject(error);

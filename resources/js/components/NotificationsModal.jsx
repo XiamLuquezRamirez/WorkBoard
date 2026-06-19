@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FaBell, FaClipboardList, FaComment, FaCalendar, FaCheckCircle, FaTimesCircle, FaExclamationTriangle } from 'react-icons/fa';
+import { FaBell, FaClipboardList, FaComment, FaCalendar, FaCheckCircle, FaTimesCircle, FaExclamationTriangle, FaTimes } from 'react-icons/fa';
 import axiosInstance from '../axiosConfig';
 import TaskDetailsModal from './TaskDetailsModal';
 import Swal from 'sweetalert2';
@@ -72,7 +72,6 @@ const NotificationModal = ({ isOpen, onClose, notifications, setNotifications, c
         if (!notification.leida) {
             handleMarkAsRead(notification.id);
         }
-        console.log(notification);
         // Cambiar estado de la notificacion en la base de datos
         await axiosInstance.get(`/cambioEstadoNotificaciones/${notification.id}`, {
             leida: true
@@ -107,7 +106,7 @@ const NotificationModal = ({ isOpen, onClose, notifications, setNotifications, c
             <div className="notification-modal">
                 <div className="modal-header">
                     <h2>Notificaciones</h2>
-                    <button className="close-button" onClick={onClose}>&times;</button>
+                    <button className="close-button" onClick={onClose}>  <FaTimes /></button>
                 </div>
                 <div className="modal-body">
                     <div className="tabs">

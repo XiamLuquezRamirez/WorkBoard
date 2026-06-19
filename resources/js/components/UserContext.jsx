@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
+import axiosInstance from '../axiosConfig';
 
 const UserContext = createContext();
 
@@ -11,22 +12,49 @@ export const useUser = () => {
 };
 
 export const UserProvider = ({ children }) => {
-    const [user, setUser] = useState(null);
+    const [user, setUser] = useState(() => {
+        const storedUser = localStorage.getItem('userWorkBoard');
+        return storedUser ? JSON.parse(storedUser) : null;
+    });
     const [loading, setLoading] = useState(true);
-    
+
     useEffect(() => {
         const fetchUser = async () => {
-            //primero verificamos si hay un token
             const token = localStorage.getItem('token');
             if (!token) {
                 setLoading(false);
                 return;
             }
 
-            const usuario = JSON.parse(localStorage.getItem('userWorkBoard'));
-        
-            setUser(usuario);
-           
+            const storedUser = localStorage.getItem('userWorkBoard');
+            if (!storedUser) {
+                setLoading(false);
+                return;
+            }
+
+            try {
+                const usuario = JSON.parse(storedUser);
+                setUser(usuario);
+
+                // Refrescar campos que pueden cambiar server-side sin re-login
+                const response = await axiosInstance.get('/user');
+                const fresh = response.data.user;
+                if (fresh) {
+                    const merged = {
+                        ...usuario,
+                        independencia: fresh.independencia ?? usuario.independencia,
+                        lider: fresh.lider ?? usuario.lider,
+                        tipo_usuario: fresh.tipo_usuario ?? usuario.tipo_usuario,
+                        estado: fresh.estado ?? usuario.estado,
+                    };
+                    setUser(merged);
+                    localStorage.setItem('userWorkBoard', JSON.stringify(merged));
+                }
+            } catch (error) {
+                // Si falla el refresh, el usuario del localStorage sigue siendo válido
+                console.error('Error al refrescar usuario:', error);
+            }
+
             setLoading(false);
         };
 
@@ -47,4 +75,3 @@ export const UserProvider = ({ children }) => {
 }
 
 export default UserContext;
-

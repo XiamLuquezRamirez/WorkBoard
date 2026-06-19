@@ -2,12 +2,17 @@ import React, { useState, useEffect } from 'react';
 import Header from './Header';
 import Sidebar from './Sidebar';
 import { useUser } from './UserContext';
-import { FaArrowLeft, FaUsers, FaUserTie, FaBuilding } from 'react-icons/fa';
+import { FaArrowLeft, FaUsers, FaUserTie, FaBuilding, FaFileAlt, FaBriefcase } from 'react-icons/fa';
 import EmployeeModal from './EmployeeModal';
 import UserModal from './UserModal';
 import CompanyModal from './CompanyModal';
+import ProjectModal from './ProjectModal';
 import LeaderModal from './LeaderModal';
+import DepartmentModal from './DepartmentModal';
+import CargosModal from './CargosModal';
 import { getImageUrl, getAssetUrl } from '../utils/assetHelper';
+
+
 
 const Parameters = () => {
     const { user } = useUser();
@@ -16,6 +21,9 @@ const Parameters = () => {
     const [showUserModal, setShowUserModal] = useState(false);
     const [showCompanyModal, setShowCompanyModal] = useState(false);
     const [showLeaderModal, setShowLeaderModal] = useState(false);
+    const [showProjectModal, setShowProjectModal] = useState(false);
+    const [showDepartmentModal, setShowDepartmentModal] = useState(false);
+    const [showCargosModal, setShowCargosModal] = useState(false);
     const parameterCards = [
 
         {
@@ -43,14 +51,32 @@ const Parameters = () => {
             onClick: () => setShowCompanyModal(true)
         },
         {
-            id: 5,
-            title: 'Lideres de área',
-            icon: <FaUserTie size={25} />,
-            description: 'Gestión de lideres de area',
+            id: 6,
+            title: 'Proyectos',
+            icon: <FaFileAlt size={25} />,
+            description: 'Gestión de proyectos',
             color: '#059669',
-            onClick: () => setShowLeaderModal(true)
+            onClick: () => setShowProjectModal(true)
+        },
+        {
+            id: 7,
+            title: 'Departamentos',
+            icon: <FaBuilding size={25} />,
+            description: 'Gestión de departamentos',
+            color: '#059669',
+            onClick: () => setShowDepartmentModal(true)
+        },
+        {
+            id: 8,
+            title: 'Cargos',
+            icon: <FaBriefcase size={25} />,
+            description: 'Gestión de cargos y posiciones de empleados',
+            color: '#7c3aed',
+            onClick: () => setShowCargosModal(true)
         }
     ];
+
+    //
 
     useEffect(() => {
         document.title = "Parámetros del Sistema - WorkBoard";
@@ -60,6 +86,7 @@ const Parameters = () => {
         const fullPath = getAssetUrl('dashboard');              
         window.location.href = fullPath;
     };
+
 
 
     return (
@@ -123,9 +150,27 @@ const Parameters = () => {
                         onClose={() => setShowLeaderModal(false)}
                     />
                 )}
-
+                {showProjectModal && (
+                    <ProjectModal
+                        isOpen={showProjectModal}
+                        onClose={() => setShowProjectModal(false)}
+                    />
+                )}
+                {showDepartmentModal && (
+                    <DepartmentModal
+                        isOpen={showDepartmentModal}
+                        onClose={() => setShowDepartmentModal(false)}
+                    />
+                )}
+                {showCargosModal && (
+                    <CargosModal
+                        isOpen={showCargosModal}
+                        onClose={() => setShowCargosModal(false)}
+                    />
+                )}
             </div>
         </div>
+
     );
 };
 

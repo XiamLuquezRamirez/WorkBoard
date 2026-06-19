@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FaUser, FaEnvelope, FaLock, FaCamera, FaTimes, FaSave  } from 'react-icons/fa';
+import { FaUser, FaEnvelope, FaLock, FaCamera, FaTimes, FaSave, FaR  } from 'react-icons/fa';
 import Swal from 'sweetalert2';
 import axiosInstance from '../axiosConfig';
 
@@ -121,7 +121,7 @@ const ProfileModal = ({ isOpen, onClose, currentUser, updateUser }) => {
             <div className="profile-modal">
                 <div className="modal-header">
                     <h2>Mi Perfil</h2>
-                    <button className="close-button" onClick={onClose}>&times;</button>
+                    <button className="close-button" onClick={onClose}>  <FaTimes /></button>
                 </div>
 
                 <form onSubmit={handleSubmit} className="profile-form">
