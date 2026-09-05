@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import TableroCard from './TableroCard';
+import useFlipTarjetas from './useFlipTarjetas';
 
 const COLUMNAS = [
     { clave: 'pendiente', titulo: 'POR HACER', color: 'col-pendiente' },
@@ -43,6 +44,10 @@ export default function TableroKanban({ datos, previo, modoTv }) {
     const cambios = useMemo(() => calcularCambios(datos, previo), [datos, previo]);
     const modoCompletadas = datos.columnas.completadas?.modo;
 
+    // El desplazamiento entre columnas se anima midiendo posiciones reales, de
+    // modo que la tarjeta viaje en lugar de desaparecer y reaparecer.
+    const registrarTarjeta = useFlipTarjetas(datos.servidor_ts);
+
     // En modo TV se recorta cada columna a lo que cabe sin scroll.
     const tope = modoTv ? 8 : 40;
 
@@ -66,7 +71,12 @@ export default function TableroKanban({ datos, previo, modoTv }) {
 
                         <div className="tb-col-body">
                             {visibles.map((t) => (
-                                <TableroCard key={t.id} tarea={t} estadoVisual={cambios[t.id]} />
+                                <TableroCard
+                                    key={t.id}
+                                    tarea={t}
+                                    estadoVisual={cambios[t.id]}
+                                    innerRef={registrarTarjeta(t.id)}
+                                />
                             ))}
                             {lista.length === 0 && <p className="tb-col-vacia">Sin tareas</p>}
                             {ocultas > 0 && <p className="tb-col-mas">+{ocultas} más</p>}

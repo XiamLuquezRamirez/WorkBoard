@@ -198,6 +198,7 @@ a.tb-btn-sec, a.tb-btn-sec:visited { color: var(--tb-txt); }
 }
 
 .tb-kanban {
+    position: relative;   /* contexto de apilado para la tarjeta en tránsito */
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 12px;
@@ -266,6 +267,7 @@ a.tb-btn-sec, a.tb-btn-sec:visited { color: var(--tb-txt); }
 
 /* ---------- Tarjetas ---------- */
 .tb-card {
+    position: relative;          /* ancla el sello y el barrido de luz */
     background: var(--tb-panel-2);
     border: 1px solid var(--tb-borde);
     border-radius: 8px;
@@ -274,6 +276,9 @@ a.tb-btn-sec, a.tb-btn-sec:visited { color: var(--tb-txt); }
     flex-direction: column;
     gap: 6px;
     transition: border-color .3s ease, box-shadow .3s ease;
+    /* Aviso al navegador de que transform va a animarse: evita el parpadeo
+       del primer frame del FLIP en pantallas grandes. */
+    will-change: transform;
 }
 .tb-card-pausada { opacity: .82; border-style: dashed; }
 
@@ -408,10 +413,96 @@ a.tb-btn-sec, a.tb-btn-sec:visited { color: var(--tb-txt); }
     0% { box-shadow: 0 0 0 0 rgba(240, 138, 0, .7); }
     100% { box-shadow: 0 0 0 9px rgba(240, 138, 0, 0); }
 }
+/* Una tarjeta que aparece por primera vez sí entra con fade; las que sólo
+   cambian de columna viajan con FLIP y no deben re-animar su entrada. */
 .tb-anim-nueva { animation: tb-entra .5s ease-out, tb-destaca-azul .7s ease-out; }
-.tb-anim-movida { animation: tb-entra .45s ease-out, tb-destaca-azul .7s ease-out; }
-.tb-anim-completada { animation: tb-entra .45s ease-out, tb-destaca-verde .7s ease-out; border-color: var(--tb-verde); }
-.tb-anim-pausada { animation: tb-entra .45s ease-out, tb-destaca-naranja .7s ease-out; border-color: var(--tb-naranja); }
+
+/* Tarjeta en tránsito entre columnas: se despega del tablero mientras viaja */
+.tb-card-viajando {
+    box-shadow: 0 14px 34px rgba(0, 0, 0, .55);
+    border-color: var(--tb-azul);
+}
+
+/* Mientras una tarjeta viaja, la columna deja de recortar su contenido: con el
+   overflow activo el trayecto se cortaría en el borde de la columna. Se aplica
+   sólo durante el trayecto para no perder el recorte del resto del tiempo. */
+.tb-col-body:has(.tb-card-viajando) { overflow: visible; }
+.tb-col:has(.tb-card-viajando) { overflow: visible; z-index: 4; }
+
+/* Barrido de luz que recorre la tarjeta al confirmarse el cambio */
+.tb-anim-movida::after,
+.tb-anim-completada::after,
+.tb-anim-pausada::after,
+.tb-anim-nueva::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background: linear-gradient(
+        105deg,
+        transparent 35%,
+        rgba(255, 255, 255, .16) 50%,
+        transparent 65%);
+    background-size: 260% 100%;
+    animation: tb-barrido .85s ease-out forwards;
+}
+@keyframes tb-barrido {
+    from { background-position: 190% 0; }
+    to { background-position: -60% 0; }
+}
+
+/* Sello de confirmación: aparece, se sostiene y se retira solo */
+.tb-sello {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    z-index: 3;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: .06em;
+    color: #06121F;
+    white-space: nowrap;
+    transform-origin: 90% 50%;
+    animation: tb-sello-vida 2.6s cubic-bezier(.2, .9, .3, 1.1) forwards;
+}
+.tb-sello-icono { font-size: 11px; line-height: 1; }
+.tb-sello-completada { background: var(--tb-verde); }
+.tb-sello-pausada { background: var(--tb-naranja); }
+.tb-sello-movida { background: var(--tb-azul); }
+.tb-sello-nueva { background: var(--tb-amarillo); }
+
+@keyframes tb-sello-vida {
+    0% { opacity: 0; transform: scale(.5) translateY(-6px); }
+    14% { opacity: 1; transform: scale(1.08) translateY(0); }
+    22% { transform: scale(1); }
+    76% { opacity: 1; transform: scale(1); }
+    100% { opacity: 0; transform: scale(.9) translateY(-4px); }
+}
+
+/* El latido se hace sobre el borde y no con transform: FLIP anima el transform
+   de la tarjeta para desplazarla, y una animación simultánea sobre la misma
+   propiedad anularía el viaje entre columnas. */
+@keyframes tb-realce-verde {
+    0%, 100% { border-color: var(--tb-borde); }
+    40% { border-color: var(--tb-verde); }
+}
+@keyframes tb-realce-azul {
+    0%, 100% { border-color: var(--tb-borde); }
+    40% { border-color: var(--tb-azul); }
+}
+@keyframes tb-realce-naranja {
+    0%, 100% { border-color: var(--tb-borde); }
+    40% { border-color: var(--tb-naranja); }
+}
+.tb-anim-completada { animation: tb-destaca-verde .7s ease-out, tb-realce-verde 1.1s ease-out; }
+.tb-anim-movida { animation: tb-destaca-azul .7s ease-out, tb-realce-azul 1.1s ease-out; }
+.tb-anim-pausada { animation: tb-destaca-naranja .7s ease-out, tb-realce-naranja 1.1s ease-out; }
 
 /* ---------- Lateral ---------- */
 .tb-lateral {

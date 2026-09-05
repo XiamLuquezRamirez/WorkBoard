@@ -23,7 +23,14 @@ function fechaCorta(iso) {
 const iniciales = (nombre) => String(nombre || '?')
     .trim().split(/\s+/).slice(0, 2).map((p) => p[0]).join('').toUpperCase();
 
-export default function TableroCard({ tarea, estadoVisual }) {
+const SELLO = {
+    completada: { icono: '✓', texto: 'COMPLETADA' },
+    pausada: { icono: '⏸', texto: 'EN PAUSA' },
+    movida: { icono: '→', texto: 'EN PROCESO' },
+    nueva: { icono: '+', texto: 'NUEVA' },
+};
+
+export default function TableroCard({ tarea, estadoVisual, innerRef }) {
     const fotoOriginal = useAvatar(tarea.empleado_id);
     const [fotoFallida, setFotoFallida] = useState(false);
     const foto = fotoFallida ? null : fotoOriginal;
@@ -38,11 +45,22 @@ export default function TableroCard({ tarea, estadoVisual }) {
     const mostrarAvance = Boolean(tarea.checklist)
         && (tarea.estado === 'En Proceso' || tarea.pausada);
 
+    const sello = estadoVisual ? SELLO[estadoVisual] : null;
+
     return (
         <article
+            ref={innerRef}
             className={`tb-card ${estadoVisual ? `tb-anim-${estadoVisual}` : ''} ${tarea.pausada ? 'tb-card-pausada' : ''}`}
             aria-label={`Tarea ${tarea.titulo}`}
         >
+            {/* Sello efímero que confirma el cambio recién ocurrido */}
+            {sello && (
+                <span className={`tb-sello tb-sello-${estadoVisual}`} aria-hidden="true">
+                    <span className="tb-sello-icono">{sello.icono}</span>
+                    {sello.texto}
+                </span>
+            )}
+
             <header className="tb-card-top">
                 <span className={`tb-prio ${prio.clase}`}>{prio.etiqueta}</span>
                 {tarea.pausada && <span className="tb-badge-pausa">⏸ EN PAUSA</span>}
