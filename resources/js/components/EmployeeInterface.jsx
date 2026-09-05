@@ -5,10 +5,12 @@ import {
     FaEye, FaSearch, FaFile, FaFileWord,
     FaFileImage, FaFilePdf, FaTimes,
     FaSave, FaArrowLeft, FaLock, FaLink, FaArchive, FaFolder,
-    FaCalendar, FaChevronLeft, FaChevronRight, FaChevronDown, FaChartBar, FaEllipsisV, FaPause
+    FaCalendar, FaChevronLeft, FaChevronRight, FaChevronDown, FaChartBar, FaEllipsisV, FaPause,
+    FaDesktop
 } from 'react-icons/fa';
 import TaskDetailsModal from './TaskDetailsModal';
 import ReportesDepartamentoModal from './ReportesDepartamentoModal';
+import TableroSeguimiento from './tablero/TableroSeguimiento';
 import axiosInstance from '../axiosConfig';
 import Swal from 'sweetalert2';
 import { FaCircleCheck, FaCircle, FaCircleXmark, FaListCheck } from 'react-icons/fa6';
@@ -70,6 +72,7 @@ const EmployeeInterface = ({ user }) => {
     const optionsDropdownRef = useRef(null);
     const [showOptionsDropdown, setShowOptionsDropdown] = useState(false);
     const [showReportesModal, setShowReportesModal] = useState(false);
+    const [showTableroSeguimiento, setShowTableroSeguimiento] = useState(false);
     const [showCalendarModal, setShowCalendarModal] = useState(false);
     const [calendarMonthAnchor, setCalendarMonthAnchor] = useState(() => {
         const d = new Date();
@@ -703,6 +706,15 @@ const EmployeeInterface = ({ user }) => {
                                             onClick={abrirReportesDepartamento}
                                         >
                                             <FaChartBar /> Reportes del Departamento
+                                        </button>
+                                        <button
+                                            className="task-options-item item-tablero"
+                                            onClick={() => {
+                                                setShowOptionsDropdown(false);
+                                                setShowTableroSeguimiento(true);
+                                            }}
+                                        >
+                                            <FaDesktop /> Tablero de Seguimiento
                                         </button>
                                     </>
                                 )}
@@ -1501,6 +1513,10 @@ const EmployeeInterface = ({ user }) => {
                     user={user}
                     onClose={() => setShowReportesModal(false)}
                 />
+            )}
+
+            {showTableroSeguimiento && (
+                <TableroSeguimiento onCerrar={() => setShowTableroSeguimiento(false)} />
             )}
 
             {showArchivedTaskDetails && selectedArchivedTask && (

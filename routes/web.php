@@ -162,6 +162,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
         // informe de proyectos
         Route::get('/informes/proyectos', [empleadosController::class, 'informeProyectos']);
 
+        // estado del tablero de seguimiento (kanban en vivo)
+        Route::get('/tablero/estado', [EmpleadosController::class, 'tableroEstado']);
+        Route::get('/tablero/avatares', [EmpleadosController::class, 'tableroAvatares']);
+
         //verificar empleado lider
         Route::get('/verificarEmpleadoLider/{id}', [empleadosController::class, 'verificarEmpleadoLider']);
         //eliminar funcion

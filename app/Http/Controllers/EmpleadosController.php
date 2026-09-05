@@ -1841,6 +1841,223 @@ class EmpleadosController extends Controller
     }
 
     /**
+     * Estado completo del Tablero de Seguimiento.
+     *
+     * Devuelve en una sola respuesta las columnas del kanban, los KPIs, la carga
+     * del equipo, las alertas de vencimiento y las próximas entregas, todo
+     * restringido al alcance del usuario autenticado (ver alcanceEmpleadosInformes).
+     *
+     * El frontend consulta este endpoint periódicamente y deriva las animaciones
+     * comparando la respuesta con la anterior, por lo que aquí no se emite ningún
+     * evento: la respuesta describe el estado actual completo, no un delta.
+     */
+    function tableroEstado(Request $request)
+    {
+        $conn = DB::connection('mysql2');
+        $alcance = $this->alcanceEmpleadosInformes();
+        $dias = max(1, min(365, (int) $request->query('dias', 7)));
+        $hoy = Carbon::today();
+
+        // Base común: tareas vivas y no archivadas dentro del alcance.
+        // archivar admite NULL en la mayoría de filas históricas, por lo que la
+        // comparación debe contemplarlo explícitamente: 'archivar <> 1' por sí
+        // solo descarta los NULL y vaciaría el tablero.
+        $base = function () use ($conn, $alcance) {
+            $q = $conn->table('tareas_empleados as t')
+                ->join('empleados as e', 't.empleado', '=', 'e.id')
+                ->leftJoin('proyectos as p', 't.proyecto_id', '=', 'p.id')
+                ->where('t.estado_reg', 'Activo')
+                ->where('e.estado_registro', 'Activo')
+                ->where('e.estado', 'Activo')
+                ->where(function ($w) {
+                    $w->whereNull('t.archivar')->orWhere('t.archivar', '<>', 1);
+                });
+            if ($alcance !== null) {
+                $q->whereIn('t.empleado', $alcance);
+            }
+            return $q->select(
+                't.id',
+                't.titulo',
+                't.estado',
+                't.prioridad',
+                't.fecha_pactada',
+                't.fecha_entregada',
+                't.pausada',
+                't.rechazada',
+                't.visto_bueno',
+                't.motivo_reprogramacion',
+                't.empleado as empleado_id',
+                'p.nombre as proyecto_nombre',
+                DB::connection('mysql2')->raw('CONCAT(e.nombres, " ", e.apellidos) as empleado')
+            );
+        };
+
+        $noPausada = function ($q) {
+            return $q->where(function ($w) {
+                $w->whereNull('t.pausada')->orWhere('t.pausada', '<>', 1);
+            });
+        };
+
+        $mapear = function ($rows) use ($hoy) {
+            return collect($rows)->map(function ($t) use ($hoy) {
+                $dias = null;
+                if ($t->fecha_pactada) {
+                    $dias = $hoy->diffInDays(Carbon::parse($t->fecha_pactada)->startOfDay(), false);
+                }
+                return [
+                    'id'              => (int) $t->id,
+                    'titulo'          => $t->titulo,
+                    'estado'          => $t->estado,
+                    'prioridad'       => $t->prioridad,
+                    'fecha_pactada'   => $t->fecha_pactada,
+                    'fecha_entregada' => $t->fecha_entregada,
+                    'empleado_id'     => (int) $t->empleado_id,
+                    'empleado'        => $t->empleado,
+                    'proyecto'        => $t->proyecto_nombre,
+                    'pausada'         => (int) ($t->pausada ?? 0) === 1,
+                    'motivo'          => $t->motivo_reprogramacion,
+                    'dias_restantes'  => $dias,
+                ];
+            })->values();
+        };
+
+        $pendiente = $mapear($noPausada($base())->where('t.estado', 'Pendiente')->orderBy('t.fecha_pactada')->get());
+        $proceso   = $mapear($noPausada($base())->where('t.estado', 'En Proceso')->orderBy('t.fecha_pactada')->get());
+        $pausa     = $mapear($base()->where('t.pausada', 1)->orderBy('t.fecha_pactada')->get());
+
+        // Completadas dentro de la ventana; si no hay ninguna (histórico inactivo)
+        // se degrada a las últimas completadas para no dejar la columna vacía.
+        $desde = $hoy->copy()->subDays($dias)->toDateString();
+        $completadas = $mapear(
+            $base()->where('t.estado', 'Completada')
+                ->whereNotNull('t.fecha_entregada')
+                ->whereDate('t.fecha_entregada', '>=', $desde)
+                ->orderByDesc('t.fecha_entregada')->get()
+        );
+        $modoCompletadas = 'ventana';
+        if ($completadas->isEmpty()) {
+            $completadas = $mapear(
+                $base()->where('t.estado', 'Completada')
+                    ->whereNotNull('t.fecha_entregada')
+                    ->orderByDesc('t.fecha_entregada')->limit(8)->get()
+            );
+            $modoCompletadas = $completadas->isEmpty() ? 'vacio' : 'fallback';
+        }
+
+        $activas = $pendiente->count() + $proceso->count() + $pausa->count();
+        $totalCiclo = $activas + $completadas->count();
+
+        // Carga por integrante: tareas activas (no completadas) de cada empleado.
+        $porEmpleado = $pendiente->concat($proceso)->concat($pausa)->groupBy('empleado_id');
+        $maxCarga = $porEmpleado->map->count()->max() ?: 1;
+
+        // Las fotos NO se incluyen aquí: en esta instalación se almacenan como
+        // base64 dentro de la columna (hasta ~55 KB cada una) y esta respuesta se
+        // consulta cada pocos segundos durante toda la jornada. El frontend las
+        // pide una sola vez a /tablero/avatares y las cachea.
+        $equipoQuery = $conn->table('empleados as e')
+            ->leftJoin('cargos as c', 'e.cargo', '=', 'c.id')
+            ->where('e.estado_registro', 'Activo')
+            ->where('e.estado', 'Activo')
+            ->select('e.id', 'c.nombre as cargo',
+                DB::connection('mysql2')->raw('CONCAT(e.nombres, " ", e.apellidos) as nombre'));
+        if ($alcance !== null) {
+            $equipoQuery->whereIn('e.id', $alcance);
+        }
+        $equipo = collect($equipoQuery->orderBy('e.nombres')->get())
+            ->map(function ($e) use ($porEmpleado, $maxCarga) {
+                $n = isset($porEmpleado[$e->id]) ? $porEmpleado[$e->id]->count() : 0;
+                return [
+                    'id'        => (int) $e->id,
+                    'nombre'    => $e->nombre,
+                    'cargo'     => $e->cargo,
+                    'activas'   => $n,
+                    'carga_pct' => (int) round($n / $maxCarga * 100),
+                ];
+            })
+            ->sortByDesc('activas')->values();
+
+        // Alertas y próximas entregas sobre tareas aún no completadas.
+        $sinCompletar = $pendiente->concat($proceso)->concat($pausa);
+        $alertas = [
+            'vencidas'   => $sinCompletar->filter(fn ($t) => $t['dias_restantes'] !== null && $t['dias_restantes'] < 0)->count(),
+            'vencen_hoy' => $sinCompletar->filter(fn ($t) => $t['dias_restantes'] === 0)->count(),
+            'proximas'   => $sinCompletar->filter(fn ($t) => $t['dias_restantes'] !== null && $t['dias_restantes'] > 0 && $t['dias_restantes'] <= 7)->count(),
+            'pausadas'   => $pausa->count(),
+        ];
+
+        $entregas = $sinCompletar
+            ->filter(fn ($t) => $t['fecha_pactada'] !== null)
+            ->sortBy('fecha_pactada')
+            ->take(6)
+            ->map(fn ($t) => [
+                'id'            => $t['id'],
+                'titulo'        => $t['titulo'],
+                'fecha_pactada' => $t['fecha_pactada'],
+                'empleado'      => $t['empleado'],
+                'dias_restantes' => $t['dias_restantes'],
+            ])->values();
+
+        $usuario = $conn->table('users')->where('email', Auth::user()->email ?? '')->first();
+        $departamento = null;
+        if ($usuario && $usuario->empleado) {
+            $departamento = $conn->table('empleados as e')
+                ->leftJoin('departamentos as d', 'e.departamento', '=', 'd.id')
+                ->where('e.id', $usuario->empleado)->value('d.nombre');
+        }
+
+        return response()->json([
+            'servidor_ts' => now()->toIso8601String(),
+            'alcance' => [
+                'tipo'         => $alcance === null ? 'global' : 'equipo',
+                'departamento' => $departamento,
+                'empleados'    => $alcance === null ? null : count($alcance),
+                'dias_ventana' => $dias,
+            ],
+            'kpis' => [
+                'total'      => $totalCiclo,
+                'pendiente'  => $pendiente->count(),
+                'proceso'    => $proceso->count(),
+                'pausa'      => $pausa->count(),
+                'completadas' => $completadas->count(),
+                'avance_pct' => $totalCiclo > 0 ? (int) round($completadas->count() / $totalCiclo * 100) : 0,
+            ],
+            'columnas' => [
+                'pendiente'   => $pendiente,
+                'proceso'     => $proceso,
+                'pausa'       => $pausa,
+                'completadas' => ['modo' => $modoCompletadas, 'items' => $completadas],
+            ],
+            'equipo'   => $equipo,
+            'alertas'  => $alertas,
+            'entregas' => $entregas,
+        ]);
+    }
+
+    /**
+     * Avatares de los empleados dentro del alcance del usuario, indexados por id.
+     *
+     * Se sirve aparte de tableroEstado porque las fotos se guardan como base64 en
+     * la propia columna y cambian muy rara vez: el tablero las pide una vez al
+     * montar y las reutiliza, en lugar de arrastrarlas en cada sondeo.
+     */
+    function tableroAvatares()
+    {
+        $alcance = $this->alcanceEmpleadosInformes();
+
+        $q = DB::connection('mysql2')->table('empleados')
+            ->where('estado_registro', 'Activo')
+            ->where('estado', 'Activo')
+            ->whereNotNull('foto')
+            ->select('id', 'foto');
+        if ($alcance !== null) {
+            $q->whereIn('id', $alcance);
+        }
+
+        return response()->json($q->get()->pluck('foto', 'id'));
+    }
+
+    /**
      * Devuelve los ids de empleados que el usuario autenticado puede ver en los informes.
      *
      * - Administrador y Supervisor: null (sin restricción, ven toda la organización).
