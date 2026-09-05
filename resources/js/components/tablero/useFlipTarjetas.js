@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef } from 'react';
+import { useCallback, useLayoutEffect, useRef } from 'react';
 
 /**
  * Transición FLIP para las tarjetas del kanban.
@@ -13,22 +13,38 @@ import { useLayoutEffect, useRef } from 'react';
  * Todo ocurre con transform/opacity, que el navegador compone en GPU y no
  * provocan reflow, algo necesario en una pantalla encendida todo el día.
  *
+ * `firma` debe describir el CONTENIDO del tablero (qué tarjeta está en qué
+ * columna), no la respuesta del servidor: el sondeo devuelve una marca de
+ * tiempo distinta cada pocos segundos y usarla remediría todas las tarjetas
+ * continuamente sin que nada hubiera cambiado.
+ *
  * Devuelve `registrar(id)`, una ref callback para cada tarjeta.
  */
-export default function useFlipTarjetas(dependencia, { activo = true } = {}) {
+export default function useFlipTarjetas(firma, { activo = true } = {}) {
     const nodosRef = useRef(new Map());
     const posicionesRef = useRef(new Map());
+    const callbacksRef = useRef(new Map());
 
-    const registrar = (id) => (nodo) => {
-        if (nodo) nodosRef.current.set(id, nodo);
-        else nodosRef.current.delete(id);
-    };
+    // Cada id conserva SIEMPRE la misma ref callback. Si se devolviera una
+    // función nueva en cada render, React trataría la ref como cambiada:
+    // invocaría la anterior con null —borrando el nodo del mapa— antes de
+    // registrar la nueva, y al medir ya no quedaría posición previa que
+    // comparar, de modo que ninguna tarjeta llegaría a animarse.
+    const registrar = useCallback((id) => {
+        const cache = callbacksRef.current;
+        if (!cache.has(id)) {
+            cache.set(id, (nodo) => {
+                if (nodo) nodosRef.current.set(id, nodo);
+                else nodosRef.current.delete(id);
+            });
+        }
+        return cache.get(id);
+    }, []);
 
     useLayoutEffect(() => {
         const nodos = nodosRef.current;
         const previas = posicionesRef.current;
 
-        // Respeta la preferencia del sistema de reducir movimiento.
         const reduceMovimiento = typeof window !== 'undefined'
             && window.matchMedia
             && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -39,6 +55,9 @@ export default function useFlipTarjetas(dependencia, { activo = true } = {}) {
                 if (!previa) return;
 
                 const actual = nodo.getBoundingClientRect();
+                // Una tarjeta oculta (columna fuera de pantalla) mide 0: no se anima.
+                if (actual.width === 0 && actual.height === 0) return;
+
                 const dx = previa.left - actual.left;
                 const dy = previa.top - actual.top;
 
@@ -64,13 +83,19 @@ export default function useFlipTarjetas(dependencia, { activo = true } = {}) {
                             'transform 620ms cubic-bezier(.22,.68,.32,1.02)';
                         nodo.style.transform = '';
 
-                        const alTerminar = () => {
+                        const limpiar = () => {
                             nodo.style.transition = '';
+                            nodo.style.transform = '';
                             nodo.style.zIndex = '';
                             nodo.classList.remove('tb-card-viajando');
-                            nodo.removeEventListener('transitionend', alTerminar);
+                            nodo.removeEventListener('transitionend', limpiar);
+                            clearTimeout(seguro);
                         };
-                        nodo.addEventListener('transitionend', alTerminar);
+                        // Si la transición no llega a emitirse (tarjeta oculta,
+                        // pestaña en segundo plano), el respaldo evita que la
+                        // tarjeta quede con estilos en línea pegados.
+                        const seguro = setTimeout(limpiar, 900);
+                        nodo.addEventListener('transitionend', limpiar);
                     });
                 });
             });
@@ -83,7 +108,17 @@ export default function useFlipTarjetas(dependencia, { activo = true } = {}) {
             nuevas.set(id, { top: r.top, left: r.left });
         });
         posicionesRef.current = nuevas;
-    }, [dependencia, activo]);
+
+        // Descartar del caché de callbacks los ids que ya no están en pantalla,
+        // para que el mapa no crezca indefinidamente durante toda la jornada.
+        if (callbacksRef.current.size > nodos.size * 3 + 60) {
+            const vivos = new Map();
+            nodos.forEach((_, id) => {
+                if (callbacksRef.current.has(id)) vivos.set(id, callbacksRef.current.get(id));
+            });
+            callbacksRef.current = vivos;
+        }
+    }, [firma, activo]);
 
     return registrar;
 }

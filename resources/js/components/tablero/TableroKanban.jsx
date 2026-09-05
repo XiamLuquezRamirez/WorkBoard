@@ -44,9 +44,17 @@ export default function TableroKanban({ datos, previo, modoTv }) {
     const cambios = useMemo(() => calcularCambios(datos, previo), [datos, previo]);
     const modoCompletadas = datos.columnas.completadas?.modo;
 
+    // Firma del contenido: qué tarjetas hay y en qué columna está cada una. El
+    // FLIP sólo debe recalcularse cuando esto cambia. Usar servidor_ts haría que
+    // el efecto se disparase en cada sondeo, remidiendo todas las tarjetas cada
+    // pocos segundos aunque el tablero estuviera idéntico.
+    const firma = useMemo(() => COLUMNAS
+        .map(({ clave }) => `${clave}:${items(datos.columnas, clave).map((t) => t.id).join(',')}`)
+        .join('|'), [datos]);
+
     // El desplazamiento entre columnas se anima midiendo posiciones reales, de
     // modo que la tarjeta viaje en lugar de desaparecer y reaparecer.
-    const registrarTarjeta = useFlipTarjetas(datos.servidor_ts);
+    const registrarTarjeta = useFlipTarjetas(firma);
 
     // En modo TV se recorta cada columna a lo que cabe sin scroll.
     const tope = modoTv ? 8 : 40;

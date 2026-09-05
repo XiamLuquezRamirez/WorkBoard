@@ -21,6 +21,7 @@ export default function useTableroEstado({ dias = 7, activo = true } = {}) {
     const timerRef = useRef(null);
     const abortRef = useRef(null);
     const datosRef = useRef(null);
+    const firmaRef = useRef(null);
     const montadoRef = useRef(true);
 
     const consultar = useCallback(async () => {
@@ -32,9 +33,21 @@ export default function useTableroEstado({ dias = 7, activo = true } = {}) {
         try {
             const r = await axiosInstance.get(`/tablero/estado?dias=${dias}`, { signal: ctrl.signal });
             if (!montadoRef.current) return;
-            setPrevio(datosRef.current);
-            datosRef.current = r.data;
-            setDatos(r.data);
+
+            // servidor_ts cambia en cada respuesta, así que se excluye de la
+            // comparación: sin esto el estado se reemplazaría en cada sondeo y
+            // el tablero entero se volvería a renderizar cada pocos segundos
+            // aunque no hubiera cambiado nada.
+            const { servidor_ts: _ts, ...contenido } = r.data;
+            const firma = JSON.stringify(contenido);
+
+            if (firma !== firmaRef.current) {
+                setPrevio(datosRef.current);
+                datosRef.current = r.data;
+                firmaRef.current = firma;
+                setDatos(r.data);
+            }
+
             setConectado(true);
             return true;
         } catch (err) {
