@@ -271,7 +271,8 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton, is
     const isTaskApproved = aprobada === true || esTareaAprobadaValor(task?.aprobada);
     const canEditChecklistStructure =
         canEditChecklist &&
-        (!isTaskApproved ||
+        (isEditingTask ||
+         !isTaskApproved ||
             (isTaskApproved && isOwnTask && isAdmin) ||
             (isTaskApproved && !isOwnTask && (isAdmin || isLider)));
 
