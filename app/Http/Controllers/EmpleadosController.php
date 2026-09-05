@@ -1892,9 +1892,22 @@ class EmpleadosController extends Controller
             );
         };
 
+        // Una tarea sólo cuenta como pausada si además sigue sin resolverse. El
+        // sistema no limpia la bandera 'pausada' al cambiar de estado
+        // (actualizarEstadoTarea escribe únicamente 'estado'), así que una tarea
+        // reanudada o cerrada puede arrastrarla indefinidamente. Sin esta
+        // condición la tarjeta se quedaría atrapada en "En Pausa" pese a haber
+        // vuelto a "En Proceso": el estado explícito manda sobre la bandera.
+        $estaPausada = function ($q) {
+            return $q->where('t.pausada', 1)
+                ->whereNotIn('t.estado', ['Completada', 'En Proceso']);
+        };
+
         $noPausada = function ($q) {
             return $q->where(function ($w) {
-                $w->whereNull('t.pausada')->orWhere('t.pausada', '<>', 1);
+                $w->whereNull('t.pausada')
+                  ->orWhere('t.pausada', '<>', 1)
+                  ->orWhereIn('t.estado', ['Completada', 'En Proceso']);
             });
         };
 
@@ -1939,7 +1952,11 @@ class EmpleadosController extends Controller
                     'empleado_id'     => (int) $t->empleado_id,
                     'empleado'        => $t->empleado,
                     'proyecto'        => $t->proyecto_nombre,
-                    'pausada'         => (int) ($t->pausada ?? 0) === 1,
+                    // Coherente con el criterio de la columna "En Pausa": una tarea
+                    // reanudada o cerrada no se pinta como pausada aunque conserve
+                    // la bandera de una pausa anterior.
+                    'pausada'         => (int) ($t->pausada ?? 0) === 1
+                                          && !in_array($t->estado, ['Completada', 'En Proceso'], true),
                     'motivo'          => $t->motivo_reprogramacion,
                     'dias_restantes'  => $dias,
                     'checklist'       => $checklist,
@@ -1949,15 +1966,7 @@ class EmpleadosController extends Controller
 
         $pendiente = $mapear($noPausada($base())->where('t.estado', 'Pendiente')->orderBy('t.fecha_pactada')->get());
         $proceso   = $mapear($noPausada($base())->where('t.estado', 'En Proceso')->orderBy('t.fecha_pactada')->get());
-        // Se excluyen las completadas: al cerrar una tarea el sistema no limpia la
-        // bandera 'pausada', de modo que sin este filtro una tarea terminada
-        // aparecería a la vez en "En Pausa" y en "Completadas", duplicando la
-        // tarjeta y el conteo de los indicadores.
-        $pausa = $mapear(
-            $base()->where('t.pausada', 1)
-                ->where('t.estado', '<>', 'Completada')
-                ->orderBy('t.fecha_pactada')->get()
-        );
+        $pausa = $mapear($estaPausada($base())->orderBy('t.fecha_pactada')->get());
 
         // Completadas dentro de la ventana; si no hay ninguna (histórico inactivo)
         // se degrada a las últimas completadas para no dejar la columna vacía.
