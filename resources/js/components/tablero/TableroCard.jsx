@@ -1,5 +1,4 @@
-import React from 'react';
-import { getImageUrl } from '../../utils/assetHelper';
+import React, { useState } from 'react';
 import { useAvatar } from './AvataresContext';
 
 const PRIORIDAD = {
@@ -25,7 +24,9 @@ const iniciales = (nombre) => String(nombre || '?')
     .trim().split(/\s+/).slice(0, 2).map((p) => p[0]).join('').toUpperCase();
 
 export default function TableroCard({ tarea, estadoVisual }) {
-    const foto = useAvatar(tarea.empleado_id);
+    const fotoOriginal = useAvatar(tarea.empleado_id);
+    const [fotoFallida, setFotoFallida] = useState(false);
+    const foto = fotoFallida ? null : fotoOriginal;
     const prio = PRIORIDAD[tarea.prioridad] || { clase: 'prio-media', etiqueta: (tarea.prioridad || '—').toUpperCase() };
     const dias = tarea.dias_restantes;
     const vencida = dias !== null && dias < 0 && !tarea.fecha_entregada;
@@ -80,7 +81,7 @@ export default function TableroCard({ tarea, estadoVisual }) {
             <footer className="tb-card-pie">
                 <span className="tb-card-persona">
                     {foto
-                        ? <img src={getImageUrl(foto)} alt="" className="tb-avatar-mini" />
+                        ? <img src={foto} alt="" className="tb-avatar-mini" onError={() => setFotoFallida(true)} />
                         : <span className="tb-avatar-mini tb-avatar-vacio" aria-hidden="true">{iniciales(tarea.empleado)}</span>}
                     <span className="tb-card-nombre">{tarea.empleado}</span>
                 </span>

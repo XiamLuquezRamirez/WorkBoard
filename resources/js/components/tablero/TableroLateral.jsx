@@ -1,5 +1,4 @@
-import React from 'react';
-import { getImageUrl } from '../../utils/assetHelper';
+import React, { useState } from 'react';
 import { useAvatar } from './AvataresContext';
 
 const MESES = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC'];
@@ -15,11 +14,13 @@ const iniciales = (nombre) => String(nombre || '?')
     .trim().split(/\s+/).slice(0, 2).map((p) => p[0]).join('').toUpperCase();
 
 function Persona({ p }) {
-    const foto = useAvatar(p.id);
+    const fotoOriginal = useAvatar(p.id);
+    const [fotoFallida, setFotoFallida] = useState(false);
+    const foto = fotoFallida ? null : fotoOriginal;
     return (
         <li className="tb-persona">
             {foto
-                ? <img src={getImageUrl(foto)} alt="" className="tb-avatar" />
+                ? <img src={foto} alt="" className="tb-avatar" onError={() => setFotoFallida(true)} />
                 : <span className="tb-avatar tb-avatar-vacio" aria-hidden="true">{iniciales(p.nombre)}</span>}
             <div className="tb-persona-info">
                 <span className="tb-persona-nombre">{p.nombre}</span>

@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import axiosInstance from '../../axiosConfig';
+import { getImageUrl } from '../../utils/assetHelper';
 
 const AvataresContext = createContext({});
 
@@ -27,7 +28,25 @@ export function AvataresProvider({ children }) {
     );
 }
 
+/**
+ * Resuelve el valor de 'foto' tal y como está guardado.
+ *
+ * En esta instalación las fotos se almacenan como base64 (data:image/...), que
+ * ya es una URL completa: anteponerle la base la invalidaría. Se contemplan
+ * también los formatos que podrían aparecer si el almacenamiento cambiara a
+ * archivos en disco.
+ */
+export function resolverFoto(foto) {
+    if (!foto) return null;
+    const v = String(foto).trim();
+    if (!v) return null;
+    if (v.startsWith('data:') || v.startsWith('http://') || v.startsWith('https://') || v.startsWith('//')) {
+        return v;
+    }
+    return getImageUrl(v.replace(/^\/+/, ''));
+}
+
 export function useAvatar(empleadoId) {
     const avatares = useContext(AvataresContext);
-    return avatares[empleadoId] || avatares[String(empleadoId)] || null;
+    return resolverFoto(avatares[empleadoId] ?? avatares[String(empleadoId)]);
 }
