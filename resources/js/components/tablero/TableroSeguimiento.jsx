@@ -85,6 +85,9 @@ export default function TableroSeguimiento(props) {
 
 function TableroContenido({ onCerrar, tvInicial = false }) {
     const [modoTv, setModoTv] = useState(tvInicial);
+    // Sin onCerrar el tablero vive en su propia pestaña: no hay a dónde "volver",
+    // así que se ofrece cerrarla en lugar de regresar a la vista anterior.
+    const enPestanaPropia = !onCerrar;
     const [dias] = useState(7);
     const { datos, previo, conectado, cargando } = useTableroEstado({ dias });
     const [hora, setHora] = useState(() => new Date());
@@ -97,10 +100,11 @@ function TableroContenido({ onCerrar, tvInicial = false }) {
     // Salir del modo TV con Escape, ya que en TV no hay barra de navegación.
     useEffect(() => {
         const onKey = (ev) => {
-            if (ev.key === 'Escape') {
-                if (modoTv) setModoTv(false);
-                else if (onCerrar) onCerrar();
-            }
+            if (ev.key !== 'Escape') return;
+            // En pestaña propia Escape sólo sale del modo TV: cerrar la pestaña
+            // desde el script no es fiable y sería un salto brusco para el usuario.
+            if (modoTv) setModoTv(false);
+            else if (onCerrar) onCerrar();
         };
         window.addEventListener('keydown', onKey);
         return () => window.removeEventListener('keydown', onKey);
@@ -121,7 +125,9 @@ function TableroContenido({ onCerrar, tvInicial = false }) {
         return (
             <div className="tb-root tb-cargando">
                 <p className="tb-error">No fue posible cargar el tablero.</p>
-                {onCerrar && <button className="tb-btn" onClick={onCerrar}>Volver</button>}
+                {onCerrar
+                    ? <button className="tb-btn" onClick={onCerrar}>Volver</button>
+                    : <a className="tb-btn" href="#/dashboard">Ir al tablero de trabajo</a>}
             </div>
         );
     }
@@ -156,6 +162,9 @@ function TableroContenido({ onCerrar, tvInicial = false }) {
                         <>
                             <button className="tb-btn" onClick={() => setModoTv(true)}>Modo TV</button>
                             {onCerrar && <button className="tb-btn tb-btn-sec" onClick={onCerrar}>Salir</button>}
+                            {enPestanaPropia && (
+                                <a className="tb-btn tb-btn-sec" href="#/dashboard">Ir al tablero de trabajo</a>
+                            )}
                         </>
                     )}
                 </div>

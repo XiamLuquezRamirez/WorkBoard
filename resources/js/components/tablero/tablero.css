@@ -142,6 +142,10 @@
 }
 .tb-btn:hover { filter: brightness(1.12); }
 .tb-btn-sec { background: var(--tb-panel-2); color: var(--tb-txt); }
+/* El botón de vuelta es un enlace <a>: hay que neutralizar su estilo por defecto */
+a.tb-btn { text-decoration: none; display: inline-block; line-height: normal; }
+a.tb-btn:visited { color: #fff; }
+a.tb-btn-sec, a.tb-btn-sec:visited { color: var(--tb-txt); }
 
 /* ---------- KPIs ---------- */
 .tb-kpis {

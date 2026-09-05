@@ -5,6 +5,7 @@ import LoginForm from './LoginForm';
 import { useUser } from './UserContext';
 import Parameters from './Parameters';
 import Reportes from './Reportes';
+import TableroSeguimiento from './tablero/TableroSeguimiento';
 
 function App() {
     const { user } = useUser();
@@ -40,6 +41,13 @@ function App() {
                                 ? <Navigate to="/dashboard" />
                                 : <Parameters />
                     }
+                />
+
+                {/* Tablero de seguimiento: se abre en su propia pestaña, por lo que
+                    necesita una ruta propia además del acceso desde el menú del líder */}
+                <Route
+                    path="/tablero"
+                    element={user ? <TableroSeguimiento /> : <Navigate to="/login" />}
                 />
 
                 {/* Ruta por defecto */}

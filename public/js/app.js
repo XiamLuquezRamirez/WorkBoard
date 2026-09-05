@@ -14742,7 +14742,7 @@ __webpack_require__.r(__webpack_exports__);
 
 var ___CSS_LOADER_EXPORT___ = _node_modules_css_loader_dist_runtime_api_js__WEBPACK_IMPORTED_MODULE_1___default()((_node_modules_css_loader_dist_runtime_cssWithMappingToString_js__WEBPACK_IMPORTED_MODULE_0___default()));
 // Module
-___CSS_LOADER_EXPORT___.push([module.id, "/* Tablero de Seguimiento — dark mode operativo, optimizado para 1920x1080 */\n\n.tb-root {\n    --tb-bg: #0F172A;\n    --tb-panel: #1E293B;\n    --tb-panel-2: #273449;\n    --tb-borde: #334155;\n    --tb-txt: #E2E8F0;\n    --tb-txt-tenue: #94A3B8;\n\n    /* Colores institucionales Ingeer, tomados del logo:\n       azul (agua/infraestructura), verde (vías/agro) y ámbar (innovación).\n       Se aclaran ligeramente para el fondo oscuro sin perder la identidad. */\n    --tb-marca-azul: #018EB2;\n    --tb-marca-verde: #3EAB2B;\n    --tb-marca-ambar: #ECA200;\n\n    --tb-azul: #22A8CC;      /* azul institucional legible sobre #0F172A */\n    --tb-verde: #4FC23A;     /* verde institucional aclarado */\n    --tb-amarillo: #ECA200;  /* ámbar institucional */\n    --tb-naranja: #F08A00;   /* ámbar oscurecido: pausa */\n    --tb-rojo: #E5484D;      /* alerta: fuera de marca por significado */\n    --tb-morado: #7CC4D8;    /* completadas: azul claro derivado de la marca */\n\n    position: fixed;\n    inset: 0;\n    z-index: 9000;\n    display: flex;\n    flex-direction: column;\n    gap: 14px;\n    padding: 18px 22px;\n    background: var(--tb-bg);\n    color: var(--tb-txt);\n    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;\n    overflow: hidden;\n}\n\n.tb-cargando {\n    align-items: center;\n    justify-content: center;\n    gap: 18px;\n}\n.tb-spinner {\n    width: 44px; height: 44px;\n    border: 3px solid var(--tb-borde);\n    border-top-color: var(--tb-azul);\n    border-radius: 50%;\n    animation: tb-giro .8s linear infinite;\n}\n@keyframes tb-giro { to { transform: rotate(360deg); } }\n.tb-error { color: var(--tb-rojo); }\n\n/* ---------- Encabezado ---------- */\n.tb-header {\n    display: flex;\n    align-items: center;\n    justify-content: space-between;\n    gap: 16px;\n    flex-shrink: 0;\n}\n.tb-header-izq {\n    display: flex;\n    align-items: center;\n    gap: 16px;\n    min-width: 0;\n}\n\n/* El logotipo lleva el texto \"es más que INGENIERÍA\" en negro, ilegible sobre el\n   fondo oscuro: se apoya en una placa clara con las esquinas redondeadas, que\n   además reproduce el uso habitual de la marca sobre fondo blanco. */\n.tb-logo {\n    height: clamp(38px, 3.4vw, 62px);\n    width: auto;\n    background: #FFFFFF;\n    padding: 6px 12px;\n    border-radius: 9px;\n    flex-shrink: 0;\n}\n\n.tb-header h1 {\n    margin: 0;\n    font-size: clamp(20px, 1.7vw, 32px);\n    font-weight: 700;\n    letter-spacing: .06em;\n}\n\n/* Franja con los tres colores de la marca bajo el título */\n.tb-header-txt { position: relative; padding-bottom: 6px; }\n.tb-header-txt::after {\n    content: '';\n    position: absolute;\n    left: 0; bottom: 0;\n    width: 108px; height: 3px;\n    border-radius: 2px;\n    background: linear-gradient(90deg,\n        var(--tb-marca-azul) 0 33.33%,\n        var(--tb-marca-verde) 33.33% 66.66%,\n        var(--tb-marca-ambar) 66.66% 100%);\n}\n\n.tb-ambito {\n    margin: 3px 0 0;\n    font-size: clamp(12px, .95vw, 18px);\n    color: var(--tb-azul);\n    font-weight: 600;\n    letter-spacing: .08em;\n}\n.tb-header-der { display: flex; align-items: center; gap: 12px; }\n\n.tb-conexion {\n    font-size: clamp(10px, .7vw, 13px);\n    font-weight: 700;\n    padding: 5px 11px;\n    border-radius: 999px;\n    letter-spacing: .05em;\n}\n.tb-conexion.ok { color: var(--tb-verde); background: rgba(62, 171, 43, .12); }\n.tb-conexion.ko {\n    color: var(--tb-rojo);\n    background: rgba(239, 68, 68, .14);\n    animation: tb-latido 1.8s ease-in-out infinite;\n}\n@keyframes tb-latido { 50% { opacity: .55; } }\n\n.tb-hora {\n    font-size: clamp(15px, 1.3vw, 24px);\n    font-weight: 600;\n    color: var(--tb-txt-tenue);\n    font-variant-numeric: tabular-nums;\n}\n\n.tb-btn {\n    background: var(--tb-azul);\n    color: #fff;\n    border: none;\n    border-radius: 7px;\n    padding: 7px 15px;\n    font-size: 13px;\n    font-weight: 600;\n    cursor: pointer;\n    transition: filter .2s ease;\n}\n.tb-btn:hover { filter: brightness(1.12); }\n.tb-btn-sec { background: var(--tb-panel-2); color: var(--tb-txt); }\n\n/* ---------- KPIs ---------- */\n.tb-kpis {\n    display: grid;\n    grid-template-columns: repeat(6, 1fr);\n    gap: 12px;\n    flex-shrink: 0;\n}\n.tb-kpi {\n    background: var(--tb-panel);\n    border: 1px solid var(--tb-borde);\n    border-left: 4px solid var(--tb-azul);\n    border-radius: 10px;\n    padding: 10px 14px;\n    display: flex;\n    flex-direction: column;\n    gap: 2px;\n    transition: box-shadow .4s ease, transform .4s ease;\n}\n.tb-kpi-cambio {\n    box-shadow: 0 0 0 2px rgba(1, 142, 178, .5);\n    transform: translateY(-2px);\n}\n.tb-kpi-num {\n    font-size: clamp(22px, 2vw, 40px);\n    font-weight: 700;\n    line-height: 1.05;\n    font-variant-numeric: tabular-nums;\n}\n.tb-kpi-label {\n    font-size: clamp(9px, .62vw, 12px);\n    color: var(--tb-txt-tenue);\n    letter-spacing: .09em;\n    font-weight: 600;\n}\n.kpi-total { border-left-color: var(--tb-azul); }\n.kpi-proceso { border-left-color: var(--tb-azul); }\n.kpi-pendiente { border-left-color: var(--tb-amarillo); }\n.kpi-pausa { border-left-color: var(--tb-naranja); }\n.kpi-completadas { border-left-color: var(--tb-morado); }\n.kpi-avance { border-left-color: var(--tb-verde); }\n\n/* ---------- Cuerpo ---------- */\n.tb-cuerpo {\n    display: grid;\n    grid-template-columns: 1fr 300px;\n    gap: 14px;\n    flex: 1;\n    min-height: 0;\n}\n\n.tb-kanban {\n    display: grid;\n    grid-template-columns: repeat(4, 1fr);\n    gap: 12px;\n    min-height: 0;\n}\n.tb-col {\n    background: var(--tb-panel);\n    border: 1px solid var(--tb-borde);\n    border-top: 3px solid var(--tb-txt-tenue);\n    border-radius: 10px;\n    display: flex;\n    flex-direction: column;\n    min-height: 0;\n    overflow: hidden;\n}\n.col-pendiente { border-top-color: var(--tb-amarillo); }\n.col-proceso { border-top-color: var(--tb-azul); }\n.col-pausa { border-top-color: var(--tb-naranja); }\n.col-completadas { border-top-color: var(--tb-morado); }\n\n.tb-col-head {\n    display: flex;\n    align-items: center;\n    justify-content: space-between;\n    padding: 9px 12px;\n    border-bottom: 1px solid var(--tb-borde);\n    flex-shrink: 0;\n}\n.tb-col-head h3 {\n    margin: 0;\n    font-size: clamp(11px, .78vw, 15px);\n    letter-spacing: .09em;\n    font-weight: 700;\n}\n.tb-col-count {\n    background: var(--tb-panel-2);\n    border-radius: 999px;\n    padding: 1px 10px;\n    font-size: clamp(12px, .85vw, 17px);\n    font-weight: 700;\n    font-variant-numeric: tabular-nums;\n}\n.tb-col-nota {\n    margin: 0;\n    padding: 5px 12px;\n    font-size: 10px;\n    color: var(--tb-txt-tenue);\n    font-style: italic;\n    border-bottom: 1px solid var(--tb-borde);\n}\n.tb-col-body {\n    display: flex;\n    flex-direction: column;\n    gap: 8px;\n    padding: 10px;\n    overflow-y: auto;\n    min-height: 0;\n}\n.tb-col-vacia, .tb-col-mas {\n    text-align: center;\n    color: var(--tb-txt-tenue);\n    font-size: 11px;\n    padding: 8px 0;\n    margin: 0;\n}\n\n/* ---------- Tarjetas ---------- */\n.tb-card {\n    background: var(--tb-panel-2);\n    border: 1px solid var(--tb-borde);\n    border-radius: 8px;\n    padding: 9px 11px;\n    display: flex;\n    flex-direction: column;\n    gap: 6px;\n    transition: border-color .3s ease, box-shadow .3s ease;\n}\n.tb-card-pausada { opacity: .82; border-style: dashed; }\n\n.tb-card-top { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }\n.tb-prio {\n    font-size: 9px;\n    font-weight: 800;\n    letter-spacing: .07em;\n    padding: 2px 7px;\n    border-radius: 4px;\n}\n.prio-alta { background: rgba(239, 68, 68, .18); color: #FCA5A5; }\n.prio-media { background: rgba(236, 162, 0, .18); color: #F5C556; }\n.prio-baja { background: rgba(148, 163, 184, .18); color: var(--tb-txt-tenue); }\n\n.tb-badge-pausa, .tb-badge-vencida, .tb-badge-hoy {\n    font-size: 9px;\n    font-weight: 700;\n    padding: 2px 7px;\n    border-radius: 4px;\n    letter-spacing: .05em;\n}\n.tb-badge-pausa { background: rgba(240, 138, 0, .2); color: #F5B759; }\n.tb-badge-vencida { background: rgba(239, 68, 68, .2); color: #FCA5A5; }\n.tb-badge-hoy { background: rgba(1, 142, 178, .2); color: #7CC4D8; }\n\n.tb-card-titulo {\n    margin: 0;\n    font-size: clamp(11px, .8vw, 15px);\n    font-weight: 600;\n    line-height: 1.3;\n    display: -webkit-box;\n    -webkit-line-clamp: 2;\n    -webkit-box-orient: vertical;\n    overflow: hidden;\n}\n.tb-card-proyecto {\n    margin: 0;\n    font-size: 10px;\n    color: var(--tb-azul);\n    font-weight: 600;\n}\n.tb-card-pie {\n    display: flex;\n    align-items: center;\n    justify-content: space-between;\n    gap: 8px;\n    margin-top: 1px;\n}\n.tb-card-persona { display: flex; align-items: center; gap: 5px; min-width: 0; }\n.tb-avatar-mini {\n    width: 18px; height: 18px;\n    border-radius: 50%;\n    -o-object-fit: cover;\n       object-fit: cover;\n    flex-shrink: 0;\n}\n.tb-avatar-vacio {\n    background: var(--tb-borde);\n    display: inline-flex;\n    align-items: center;\n    justify-content: center;\n    font-size: 8px;\n    font-weight: 700;\n    color: var(--tb-txt-tenue);\n    letter-spacing: .02em;\n}\n.tb-avatar.tb-avatar-vacio { font-size: 11px; }\n.tb-card-nombre {\n    font-size: 10px;\n    color: var(--tb-txt-tenue);\n    white-space: nowrap;\n    overflow: hidden;\n    text-overflow: ellipsis;\n}\n.tb-card-fecha {\n    font-size: 10px;\n    font-weight: 700;\n    color: var(--tb-txt-tenue);\n    white-space: nowrap;\n}\n.tb-card-fecha.es-vencida { color: #FCA5A5; }\n\n/* ---------- Animaciones de cambio (300-700 ms) ---------- */\n@keyframes tb-entra {\n    from { opacity: 0; transform: translateY(-10px) scale(.97); }\n    to { opacity: 1; transform: none; }\n}\n@keyframes tb-destaca-azul {\n    0% { box-shadow: 0 0 0 0 rgba(1, 142, 178, .65); }\n    100% { box-shadow: 0 0 0 9px rgba(1, 142, 178, 0); }\n}\n@keyframes tb-destaca-verde {\n    0% { box-shadow: 0 0 0 0 rgba(62, 171, 43, .65); }\n    100% { box-shadow: 0 0 0 9px rgba(62, 171, 43, 0); }\n}\n@keyframes tb-destaca-naranja {\n    0% { box-shadow: 0 0 0 0 rgba(240, 138, 0, .7); }\n    100% { box-shadow: 0 0 0 9px rgba(240, 138, 0, 0); }\n}\n.tb-anim-nueva { animation: tb-entra .5s ease-out, tb-destaca-azul .7s ease-out; }\n.tb-anim-movida { animation: tb-entra .45s ease-out, tb-destaca-azul .7s ease-out; }\n.tb-anim-completada { animation: tb-entra .45s ease-out, tb-destaca-verde .7s ease-out; border-color: var(--tb-verde); }\n.tb-anim-pausada { animation: tb-entra .45s ease-out, tb-destaca-naranja .7s ease-out; border-color: var(--tb-naranja); }\n\n/* ---------- Lateral ---------- */\n.tb-lateral {\n    display: flex;\n    flex-direction: column;\n    gap: 12px;\n    min-height: 0;\n    overflow-y: auto;\n}\n.tb-panel {\n    background: var(--tb-panel);\n    border: 1px solid var(--tb-borde);\n    border-radius: 10px;\n    padding: 11px 13px;\n}\n.tb-panel-titulo {\n    margin: 0 0 9px;\n    font-size: clamp(10px, .7vw, 13px);\n    letter-spacing: .1em;\n    color: var(--tb-txt-tenue);\n    font-weight: 700;\n}\n\n.tb-alertas, .tb-equipo, .tb-entregas { list-style: none; margin: 0; padding: 0; }\n.tb-alertas { display: flex; flex-direction: column; gap: 6px; }\n.tb-alerta {\n    font-size: clamp(11px, .75vw, 14px);\n    padding: 6px 9px;\n    border-radius: 6px;\n    border-left: 3px solid;\n}\n.tb-alerta strong { font-size: 1.15em; margin-right: 3px; }\n.al-roja { background: rgba(239, 68, 68, .12); border-color: var(--tb-rojo); color: #FCA5A5; }\n.al-naranja { background: rgba(240, 138, 0, .12); border-color: var(--tb-naranja); color: #F5B759; }\n.al-amarilla { background: rgba(236, 162, 0, .12); border-color: var(--tb-amarillo); color: #F5C556; }\n.al-azul { background: rgba(1, 142, 178, .12); border-color: var(--tb-azul); color: #7CC4D8; }\n.tb-sin-alertas { margin: 0; color: var(--tb-verde); font-size: 13px; font-weight: 600; }\n\n.tb-equipo { display: flex; flex-direction: column; gap: 9px; }\n.tb-persona { display: flex; align-items: center; gap: 9px; }\n.tb-avatar { width: 30px; height: 30px; border-radius: 50%; -o-object-fit: cover; object-fit: cover; flex-shrink: 0; }\n.tb-persona-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }\n.tb-persona-nombre {\n    font-size: clamp(10px, .68vw, 13px);\n    font-weight: 600;\n    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;\n}\n.tb-persona-cargo {\n    font-size: 9px;\n    color: var(--tb-txt-tenue);\n    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;\n}\n.tb-carga { height: 5px; background: var(--tb-borde); border-radius: 999px; overflow: hidden; }\n.tb-carga-fill {\n    height: 100%;\n    background: linear-gradient(90deg, var(--tb-azul), var(--tb-verde));\n    border-radius: 999px;\n    transition: width .6s ease;\n}\n.tb-persona-n {\n    font-size: clamp(13px, .95vw, 18px);\n    font-weight: 700;\n    font-variant-numeric: tabular-nums;\n    flex-shrink: 0;\n}\n\n.tb-entregas { display: flex; flex-direction: column; gap: 8px; }\n.tb-entrega { display: flex; gap: 9px; align-items: flex-start; }\n.tb-entrega-fecha {\n    font-size: 10px;\n    font-weight: 700;\n    color: var(--tb-azul);\n    background: rgba(1, 142, 178, .12);\n    padding: 3px 7px;\n    border-radius: 5px;\n    white-space: nowrap;\n    flex-shrink: 0;\n}\n.tb-entrega-fecha.es-vencida { color: #FCA5A5; background: rgba(239, 68, 68, .12); }\n.tb-entrega-info { display: flex; flex-direction: column; min-width: 0; }\n.tb-entrega-titulo {\n    font-size: clamp(10px, .68vw, 13px);\n    font-weight: 600;\n    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;\n}\n.tb-entrega-persona { font-size: 9px; color: var(--tb-txt-tenue); }\n\n/* ---------- Avisos temporales ---------- */\n.tb-avisos {\n    position: absolute;\n    right: 22px;\n    bottom: 20px;\n    display: flex;\n    flex-direction: column;\n    gap: 9px;\n    z-index: 20;\n}\n.tb-aviso {\n    display: flex;\n    align-items: center;\n    gap: 11px;\n    background: var(--tb-panel);\n    border: 1px solid var(--tb-borde);\n    border-left: 4px solid var(--tb-azul);\n    border-radius: 9px;\n    padding: 10px 15px;\n    min-width: 260px;\n    box-shadow: 0 8px 26px rgba(0, 0, 0, .45);\n    animation: tb-aviso-in .4s ease-out;\n}\n@keyframes tb-aviso-in {\n    from { opacity: 0; transform: translateX(28px); }\n    to { opacity: 1; transform: none; }\n}\n.tb-aviso-icono { font-size: 20px; font-weight: 700; }\n.tb-aviso strong { font-size: 10px; letter-spacing: .09em; color: var(--tb-txt-tenue); }\n.tb-aviso p {\n    margin: 2px 0 0;\n    font-size: 13px;\n    font-weight: 600;\n    max-width: 260px;\n    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;\n}\n.tb-aviso small { font-size: 10px; color: var(--tb-txt-tenue); }\n.tb-aviso-completada { border-left-color: var(--tb-verde); }\n.tb-aviso-completada .tb-aviso-icono { color: var(--tb-verde); }\n.tb-aviso-pausada { border-left-color: var(--tb-naranja); }\n.tb-aviso-pausada .tb-aviso-icono { color: var(--tb-naranja); }\n.tb-aviso-nueva .tb-aviso-icono, .tb-aviso-movida .tb-aviso-icono { color: var(--tb-azul); }\n\n/* ---------- Modo TV ---------- */\n.tb-tv { padding: 26px 32px; gap: 18px; }\n.tb-tv .tb-logo { height: clamp(50px, 4vw, 76px); padding: 8px 15px; }\n.tb-tv .tb-col-body { overflow: hidden; }\n.tb-tv .tb-lateral { overflow: hidden; }\n.tb-tv .tb-card-titulo { -webkit-line-clamp: 2; }\n\n.tb-salir-tv {\n    position: absolute;\n    top: 14px; right: 14px;\n    width: 30px; height: 30px;\n    border-radius: 50%;\n    border: 1px solid var(--tb-borde);\n    background: var(--tb-panel);\n    color: var(--tb-txt-tenue);\n    cursor: pointer;\n    opacity: .12;\n    transition: opacity .25s ease;\n    z-index: 30;\n}\n.tb-salir-tv:hover { opacity: 1; }\n\n/* ---------- Responsive ---------- */\n@media (max-width: 1400px) {\n    .tb-cuerpo { grid-template-columns: 1fr 260px; }\n}\n@media (max-width: 1100px) {\n    .tb-cuerpo { grid-template-columns: 1fr; overflow-y: auto; }\n    .tb-lateral { flex-direction: row; flex-wrap: wrap; }\n    .tb-lateral .tb-panel { flex: 1 1 240px; }\n    .tb-kpis { grid-template-columns: repeat(3, 1fr); }\n    .tb-kanban { grid-template-columns: repeat(2, 1fr); min-height: 560px; }\n}\n@media (max-width: 700px) {\n    .tb-root { padding: 12px; }\n    .tb-kpis { grid-template-columns: repeat(2, 1fr); }\n    .tb-kanban { grid-template-columns: 1fr; }\n    .tb-header { flex-direction: column; align-items: flex-start; gap: 8px; }\n    .tb-header-izq { gap: 10px; }\n    .tb-logo { height: 34px; padding: 5px 9px; }\n}\n\n/* Respeta la preferencia del sistema de reducir movimiento */\n@media (prefers-reduced-motion: reduce) {\n    .tb-root *, .tb-root *::before, .tb-root *::after {\n        animation-duration: .01ms !important;\n        animation-iteration-count: 1 !important;\n        transition-duration: .01ms !important;\n    }\n}\n", "",{"version":3,"sources":["webpack://./resources/js/components/tablero/tablero.css"],"names":[],"mappings":"AAAA,4EAA4E;;AAE5E;IACI,gBAAgB;IAChB,mBAAmB;IACnB,qBAAqB;IACrB,mBAAmB;IACnB,iBAAiB;IACjB,uBAAuB;;IAEvB;;6EAEyE;IACzE,wBAAwB;IACxB,yBAAyB;IACzB,yBAAyB;;IAEzB,kBAAkB,OAAO,6CAA6C;IACtE,mBAAmB,MAAM,iCAAiC;IAC1D,sBAAsB,GAAG,wBAAwB;IACjD,qBAAqB,IAAI,4BAA4B;IACrD,kBAAkB,OAAO,2CAA2C;IACpE,oBAAoB,KAAK,iDAAiD;;IAE1E,eAAe;IACf,QAAQ;IACR,aAAa;IACb,aAAa;IACb,sBAAsB;IACtB,SAAS;IACT,kBAAkB;IAClB,wBAAwB;IACxB,oBAAoB;IACpB,6DAA6D;IAC7D,gBAAgB;AACpB;;AAEA;IACI,mBAAmB;IACnB,uBAAuB;IACvB,SAAS;AACb;AACA;IACI,WAAW,EAAE,YAAY;IACzB,iCAAiC;IACjC,gCAAgC;IAChC,kBAAkB;IAClB,sCAAsC;AAC1C;AACA,qBAAqB,KAAK,yBAAyB,EAAE,EAAE;AACvD,YAAY,qBAAqB,EAAE;;AAEnC,qCAAqC;AACrC;IACI,aAAa;IACb,mBAAmB;IACnB,8BAA8B;IAC9B,SAAS;IACT,cAAc;AAClB;AACA;IACI,aAAa;IACb,mBAAmB;IACnB,SAAS;IACT,YAAY;AAChB;;AAEA;;qEAEqE;AACrE;IACI,gCAAgC;IAChC,WAAW;IACX,mBAAmB;IACnB,iBAAiB;IACjB,kBAAkB;IAClB,cAAc;AAClB;;AAEA;IACI,SAAS;IACT,mCAAmC;IACnC,gBAAgB;IAChB,qBAAqB;AACzB;;AAEA,2DAA2D;AAC3D,iBAAiB,kBAAkB,EAAE,mBAAmB,EAAE;AAC1D;IACI,WAAW;IACX,kBAAkB;IAClB,OAAO,EAAE,SAAS;IAClB,YAAY,EAAE,WAAW;IACzB,kBAAkB;IAClB;;;0CAGsC;AAC1C;;AAEA;IACI,eAAe;IACf,mCAAmC;IACnC,qBAAqB;IACrB,gBAAgB;IAChB,qBAAqB;AACzB;AACA,iBAAiB,aAAa,EAAE,mBAAmB,EAAE,SAAS,EAAE;;AAEhE;IACI,kCAAkC;IAClC,gBAAgB;IAChB,iBAAiB;IACjB,oBAAoB;IACpB,qBAAqB;AACzB;AACA,kBAAkB,sBAAsB,EAAE,kCAAkC,EAAE;AAC9E;IACI,qBAAqB;IACrB,kCAAkC;IAClC,8CAA8C;AAClD;AACA,uBAAuB,MAAM,YAAY,EAAE,EAAE;;AAE7C;IACI,mCAAmC;IACnC,gBAAgB;IAChB,0BAA0B;IAC1B,kCAAkC;AACtC;;AAEA;IACI,0BAA0B;IAC1B,WAAW;IACX,YAAY;IACZ,kBAAkB;IAClB,iBAAiB;IACjB,eAAe;IACf,gBAAgB;IAChB,eAAe;IACf,2BAA2B;AAC/B;AACA,gBAAgB,wBAAwB,EAAE;AAC1C,cAAc,6BAA6B,EAAE,oBAAoB,EAAE;;AAEnE,+BAA+B;AAC/B;IACI,aAAa;IACb,qCAAqC;IACrC,SAAS;IACT,cAAc;AAClB;AACA;IACI,2BAA2B;IAC3B,iCAAiC;IACjC,qCAAqC;IACrC,mBAAmB;IACnB,kBAAkB;IAClB,aAAa;IACb,sBAAsB;IACtB,QAAQ;IACR,mDAAmD;AACvD;AACA;IACI,2CAA2C;IAC3C,2BAA2B;AAC/B;AACA;IACI,iCAAiC;IACjC,gBAAgB;IAChB,iBAAiB;IACjB,kCAAkC;AACtC;AACA;IACI,kCAAkC;IAClC,0BAA0B;IAC1B,qBAAqB;IACrB,gBAAgB;AACpB;AACA,aAAa,iCAAiC,EAAE;AAChD,eAAe,iCAAiC,EAAE;AAClD,iBAAiB,qCAAqC,EAAE;AACxD,aAAa,oCAAoC,EAAE;AACnD,mBAAmB,mCAAmC,EAAE;AACxD,cAAc,kCAAkC,EAAE;;AAElD,iCAAiC;AACjC;IACI,aAAa;IACb,gCAAgC;IAChC,SAAS;IACT,OAAO;IACP,aAAa;AACjB;;AAEA;IACI,aAAa;IACb,qCAAqC;IACrC,SAAS;IACT,aAAa;AACjB;AACA;IACI,2BAA2B;IAC3B,iCAAiC;IACjC,yCAAyC;IACzC,mBAAmB;IACnB,aAAa;IACb,sBAAsB;IACtB,aAAa;IACb,gBAAgB;AACpB;AACA,iBAAiB,oCAAoC,EAAE;AACvD,eAAe,gCAAgC,EAAE;AACjD,aAAa,mCAAmC,EAAE;AAClD,mBAAmB,kCAAkC,EAAE;;AAEvD;IACI,aAAa;IACb,mBAAmB;IACnB,8BAA8B;IAC9B,iBAAiB;IACjB,wCAAwC;IACxC,cAAc;AAClB;AACA;IACI,SAAS;IACT,mCAAmC;IACnC,qBAAqB;IACrB,gBAAgB;AACpB;AACA;IACI,6BAA6B;IAC7B,oBAAoB;IACpB,iBAAiB;IACjB,mCAAmC;IACnC,gBAAgB;IAChB,kCAAkC;AACtC;AACA;IACI,SAAS;IACT,iBAAiB;IACjB,eAAe;IACf,0BAA0B;IAC1B,kBAAkB;IAClB,wCAAwC;AAC5C;AACA;IACI,aAAa;IACb,sBAAsB;IACtB,QAAQ;IACR,aAAa;IACb,gBAAgB;IAChB,aAAa;AACjB;AACA;IACI,kBAAkB;IAClB,0BAA0B;IAC1B,eAAe;IACf,cAAc;IACd,SAAS;AACb;;AAEA,mCAAmC;AACnC;IACI,6BAA6B;IAC7B,iCAAiC;IACjC,kBAAkB;IAClB,iBAAiB;IACjB,aAAa;IACb,sBAAsB;IACtB,QAAQ;IACR,sDAAsD;AAC1D;AACA,mBAAmB,YAAY,EAAE,oBAAoB,EAAE;;AAEvD,eAAe,aAAa,EAAE,mBAAmB,EAAE,QAAQ,EAAE,eAAe,EAAE;AAC9E;IACI,cAAc;IACd,gBAAgB;IAChB,qBAAqB;IACrB,gBAAgB;IAChB,kBAAkB;AACtB;AACA,aAAa,kCAAkC,EAAE,cAAc,EAAE;AACjE,cAAc,kCAAkC,EAAE,cAAc,EAAE;AAClE,aAAa,oCAAoC,EAAE,0BAA0B,EAAE;;AAE/E;IACI,cAAc;IACd,gBAAgB;IAChB,gBAAgB;IAChB,kBAAkB;IAClB,qBAAqB;AACzB;AACA,kBAAkB,iCAAiC,EAAE,cAAc,EAAE;AACrE,oBAAoB,iCAAiC,EAAE,cAAc,EAAE;AACvE,gBAAgB,iCAAiC,EAAE,cAAc,EAAE;;AAEnE;IACI,SAAS;IACT,kCAAkC;IAClC,gBAAgB;IAChB,gBAAgB;IAChB,oBAAoB;IACpB,qBAAqB;IACrB,4BAA4B;IAC5B,gBAAgB;AACpB;AACA;IACI,SAAS;IACT,eAAe;IACf,qBAAqB;IACrB,gBAAgB;AACpB;AACA;IACI,aAAa;IACb,mBAAmB;IACnB,8BAA8B;IAC9B,QAAQ;IACR,eAAe;AACnB;AACA,mBAAmB,aAAa,EAAE,mBAAmB,EAAE,QAAQ,EAAE,YAAY,EAAE;AAC/E;IACI,WAAW,EAAE,YAAY;IACzB,kBAAkB;IAClB,oBAAiB;OAAjB,iBAAiB;IACjB,cAAc;AAClB;AACA;IACI,2BAA2B;IAC3B,oBAAoB;IACpB,mBAAmB;IACnB,uBAAuB;IACvB,cAAc;IACd,gBAAgB;IAChB,0BAA0B;IAC1B,qBAAqB;AACzB;AACA,6BAA6B,eAAe,EAAE;AAC9C;IACI,eAAe;IACf,0BAA0B;IAC1B,mBAAmB;IACnB,gBAAgB;IAChB,uBAAuB;AAC3B;AACA;IACI,eAAe;IACf,gBAAgB;IAChB,0BAA0B;IAC1B,mBAAmB;AACvB;AACA,4BAA4B,cAAc,EAAE;;AAE5C,6DAA6D;AAC7D;IACI,OAAO,UAAU,EAAE,uCAAuC,EAAE;IAC5D,KAAK,UAAU,EAAE,eAAe,EAAE;AACtC;AACA;IACI,KAAK,0CAA0C,EAAE;IACjD,OAAO,0CAA0C,EAAE;AACvD;AACA;IACI,KAAK,0CAA0C,EAAE;IACjD,OAAO,0CAA0C,EAAE;AACvD;AACA;IACI,KAAK,yCAAyC,EAAE;IAChD,OAAO,0CAA0C,EAAE;AACvD;AACA,iBAAiB,8DAA8D,EAAE;AACjF,kBAAkB,+DAA+D,EAAE;AACnF,sBAAsB,gEAAgE,EAAE,6BAA6B,EAAE;AACvH,mBAAmB,kEAAkE,EAAE,+BAA+B,EAAE;;AAExH,kCAAkC;AAClC;IACI,aAAa;IACb,sBAAsB;IACtB,SAAS;IACT,aAAa;IACb,gBAAgB;AACpB;AACA;IACI,2BAA2B;IAC3B,iCAAiC;IACjC,mBAAmB;IACnB,kBAAkB;AACtB;AACA;IACI,eAAe;IACf,kCAAkC;IAClC,oBAAoB;IACpB,0BAA0B;IAC1B,gBAAgB;AACpB;;AAEA,wCAAwC,gBAAgB,EAAE,SAAS,EAAE,UAAU,EAAE;AACjF,cAAc,aAAa,EAAE,sBAAsB,EAAE,QAAQ,EAAE;AAC/D;IACI,mCAAmC;IACnC,gBAAgB;IAChB,kBAAkB;IAClB,sBAAsB;AAC1B;AACA,oBAAoB,iBAAiB,EAAE,iBAAiB,EAAE;AAC1D,WAAW,kCAAkC,EAAE,4BAA4B,EAAE,cAAc,EAAE;AAC7F,cAAc,kCAAkC,EAAE,+BAA+B,EAAE,cAAc,EAAE;AACnG,eAAe,kCAAkC,EAAE,gCAAgC,EAAE,cAAc,EAAE;AACrG,WAAW,kCAAkC,EAAE,4BAA4B,EAAE,cAAc,EAAE;AAC7F,kBAAkB,SAAS,EAAE,sBAAsB,EAAE,eAAe,EAAE,gBAAgB,EAAE;;AAExF,aAAa,aAAa,EAAE,sBAAsB,EAAE,QAAQ,EAAE;AAC9D,cAAc,aAAa,EAAE,mBAAmB,EAAE,QAAQ,EAAE;AAC5D,aAAa,WAAW,EAAE,YAAY,EAAE,kBAAkB,EAAE,oBAAiB,EAAjB,iBAAiB,EAAE,cAAc,EAAE;AAC/F,mBAAmB,OAAO,EAAE,YAAY,EAAE,aAAa,EAAE,sBAAsB,EAAE,QAAQ,EAAE;AAC3F;IACI,mCAAmC;IACnC,gBAAgB;IAChB,mBAAmB,EAAE,gBAAgB,EAAE,uBAAuB;AAClE;AACA;IACI,cAAc;IACd,0BAA0B;IAC1B,mBAAmB,EAAE,gBAAgB,EAAE,uBAAuB;AAClE;AACA,YAAY,WAAW,EAAE,2BAA2B,EAAE,oBAAoB,EAAE,gBAAgB,EAAE;AAC9F;IACI,YAAY;IACZ,mEAAmE;IACnE,oBAAoB;IACpB,0BAA0B;AAC9B;AACA;IACI,mCAAmC;IACnC,gBAAgB;IAChB,kCAAkC;IAClC,cAAc;AAClB;;AAEA,eAAe,aAAa,EAAE,sBAAsB,EAAE,QAAQ,EAAE;AAChE,cAAc,aAAa,EAAE,QAAQ,EAAE,uBAAuB,EAAE;AAChE;IACI,eAAe;IACf,gBAAgB;IAChB,qBAAqB;IACrB,kCAAkC;IAClC,gBAAgB;IAChB,kBAAkB;IAClB,mBAAmB;IACnB,cAAc;AAClB;AACA,+BAA+B,cAAc,EAAE,kCAAkC,EAAE;AACnF,mBAAmB,aAAa,EAAE,sBAAsB,EAAE,YAAY,EAAE;AACxE;IACI,mCAAmC;IACnC,gBAAgB;IAChB,mBAAmB,EAAE,gBAAgB,EAAE,uBAAuB;AAClE;AACA,sBAAsB,cAAc,EAAE,0BAA0B,EAAE;;AAElE,4CAA4C;AAC5C;IACI,kBAAkB;IAClB,WAAW;IACX,YAAY;IACZ,aAAa;IACb,sBAAsB;IACtB,QAAQ;IACR,WAAW;AACf;AACA;IACI,aAAa;IACb,mBAAmB;IACnB,SAAS;IACT,2BAA2B;IAC3B,iCAAiC;IACjC,qCAAqC;IACrC,kBAAkB;IAClB,kBAAkB;IAClB,gBAAgB;IAChB,yCAAyC;IACzC,mCAAmC;AACvC;AACA;IACI,OAAO,UAAU,EAAE,2BAA2B,EAAE;IAChD,KAAK,UAAU,EAAE,eAAe,EAAE;AACtC;AACA,kBAAkB,eAAe,EAAE,gBAAgB,EAAE;AACrD,mBAAmB,eAAe,EAAE,qBAAqB,EAAE,0BAA0B,EAAE;AACvF;IACI,eAAe;IACf,eAAe;IACf,gBAAgB;IAChB,gBAAgB;IAChB,mBAAmB,EAAE,gBAAgB,EAAE,uBAAuB;AAClE;AACA,kBAAkB,eAAe,EAAE,0BAA0B,EAAE;AAC/D,uBAAuB,kCAAkC,EAAE;AAC3D,uCAAuC,sBAAsB,EAAE;AAC/D,oBAAoB,oCAAoC,EAAE;AAC1D,oCAAoC,wBAAwB,EAAE;AAC9D,oEAAoE,qBAAqB,EAAE;;AAE3F,kCAAkC;AAClC,SAAS,kBAAkB,EAAE,SAAS,EAAE;AACxC,kBAAkB,8BAA8B,EAAE,iBAAiB,EAAE;AACrE,sBAAsB,gBAAgB,EAAE;AACxC,qBAAqB,gBAAgB,EAAE;AACvC,yBAAyB,qBAAqB,EAAE;;AAEhD;IACI,kBAAkB;IAClB,SAAS,EAAE,WAAW;IACtB,WAAW,EAAE,YAAY;IACzB,kBAAkB;IAClB,iCAAiC;IACjC,2BAA2B;IAC3B,0BAA0B;IAC1B,eAAe;IACf,YAAY;IACZ,6BAA6B;IAC7B,WAAW;AACf;AACA,qBAAqB,UAAU,EAAE;;AAEjC,qCAAqC;AACrC;IACI,aAAa,gCAAgC,EAAE;AACnD;AACA;IACI,aAAa,0BAA0B,EAAE,gBAAgB,EAAE;IAC3D,cAAc,mBAAmB,EAAE,eAAe,EAAE;IACpD,wBAAwB,eAAe,EAAE;IACzC,WAAW,qCAAqC,EAAE;IAClD,aAAa,qCAAqC,EAAE,iBAAiB,EAAE;AAC3E;AACA;IACI,WAAW,aAAa,EAAE;IAC1B,WAAW,qCAAqC,EAAE;IAClD,aAAa,0BAA0B,EAAE;IACzC,aAAa,sBAAsB,EAAE,uBAAuB,EAAE,QAAQ,EAAE;IACxE,iBAAiB,SAAS,EAAE;IAC5B,WAAW,YAAY,EAAE,gBAAgB,EAAE;AAC/C;;AAEA,6DAA6D;AAC7D;IACI;QACI,oCAAoC;QACpC,uCAAuC;QACvC,qCAAqC;IACzC;AACJ","sourcesContent":["/* Tablero de Seguimiento — dark mode operativo, optimizado para 1920x1080 */\n\n.tb-root {\n    --tb-bg: #0F172A;\n    --tb-panel: #1E293B;\n    --tb-panel-2: #273449;\n    --tb-borde: #334155;\n    --tb-txt: #E2E8F0;\n    --tb-txt-tenue: #94A3B8;\n\n    /* Colores institucionales Ingeer, tomados del logo:\n       azul (agua/infraestructura), verde (vías/agro) y ámbar (innovación).\n       Se aclaran ligeramente para el fondo oscuro sin perder la identidad. */\n    --tb-marca-azul: #018EB2;\n    --tb-marca-verde: #3EAB2B;\n    --tb-marca-ambar: #ECA200;\n\n    --tb-azul: #22A8CC;      /* azul institucional legible sobre #0F172A */\n    --tb-verde: #4FC23A;     /* verde institucional aclarado */\n    --tb-amarillo: #ECA200;  /* ámbar institucional */\n    --tb-naranja: #F08A00;   /* ámbar oscurecido: pausa */\n    --tb-rojo: #E5484D;      /* alerta: fuera de marca por significado */\n    --tb-morado: #7CC4D8;    /* completadas: azul claro derivado de la marca */\n\n    position: fixed;\n    inset: 0;\n    z-index: 9000;\n    display: flex;\n    flex-direction: column;\n    gap: 14px;\n    padding: 18px 22px;\n    background: var(--tb-bg);\n    color: var(--tb-txt);\n    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;\n    overflow: hidden;\n}\n\n.tb-cargando {\n    align-items: center;\n    justify-content: center;\n    gap: 18px;\n}\n.tb-spinner {\n    width: 44px; height: 44px;\n    border: 3px solid var(--tb-borde);\n    border-top-color: var(--tb-azul);\n    border-radius: 50%;\n    animation: tb-giro .8s linear infinite;\n}\n@keyframes tb-giro { to { transform: rotate(360deg); } }\n.tb-error { color: var(--tb-rojo); }\n\n/* ---------- Encabezado ---------- */\n.tb-header {\n    display: flex;\n    align-items: center;\n    justify-content: space-between;\n    gap: 16px;\n    flex-shrink: 0;\n}\n.tb-header-izq {\n    display: flex;\n    align-items: center;\n    gap: 16px;\n    min-width: 0;\n}\n\n/* El logotipo lleva el texto \"es más que INGENIERÍA\" en negro, ilegible sobre el\n   fondo oscuro: se apoya en una placa clara con las esquinas redondeadas, que\n   además reproduce el uso habitual de la marca sobre fondo blanco. */\n.tb-logo {\n    height: clamp(38px, 3.4vw, 62px);\n    width: auto;\n    background: #FFFFFF;\n    padding: 6px 12px;\n    border-radius: 9px;\n    flex-shrink: 0;\n}\n\n.tb-header h1 {\n    margin: 0;\n    font-size: clamp(20px, 1.7vw, 32px);\n    font-weight: 700;\n    letter-spacing: .06em;\n}\n\n/* Franja con los tres colores de la marca bajo el título */\n.tb-header-txt { position: relative; padding-bottom: 6px; }\n.tb-header-txt::after {\n    content: '';\n    position: absolute;\n    left: 0; bottom: 0;\n    width: 108px; height: 3px;\n    border-radius: 2px;\n    background: linear-gradient(90deg,\n        var(--tb-marca-azul) 0 33.33%,\n        var(--tb-marca-verde) 33.33% 66.66%,\n        var(--tb-marca-ambar) 66.66% 100%);\n}\n\n.tb-ambito {\n    margin: 3px 0 0;\n    font-size: clamp(12px, .95vw, 18px);\n    color: var(--tb-azul);\n    font-weight: 600;\n    letter-spacing: .08em;\n}\n.tb-header-der { display: flex; align-items: center; gap: 12px; }\n\n.tb-conexion {\n    font-size: clamp(10px, .7vw, 13px);\n    font-weight: 700;\n    padding: 5px 11px;\n    border-radius: 999px;\n    letter-spacing: .05em;\n}\n.tb-conexion.ok { color: var(--tb-verde); background: rgba(62, 171, 43, .12); }\n.tb-conexion.ko {\n    color: var(--tb-rojo);\n    background: rgba(239, 68, 68, .14);\n    animation: tb-latido 1.8s ease-in-out infinite;\n}\n@keyframes tb-latido { 50% { opacity: .55; } }\n\n.tb-hora {\n    font-size: clamp(15px, 1.3vw, 24px);\n    font-weight: 600;\n    color: var(--tb-txt-tenue);\n    font-variant-numeric: tabular-nums;\n}\n\n.tb-btn {\n    background: var(--tb-azul);\n    color: #fff;\n    border: none;\n    border-radius: 7px;\n    padding: 7px 15px;\n    font-size: 13px;\n    font-weight: 600;\n    cursor: pointer;\n    transition: filter .2s ease;\n}\n.tb-btn:hover { filter: brightness(1.12); }\n.tb-btn-sec { background: var(--tb-panel-2); color: var(--tb-txt); }\n\n/* ---------- KPIs ---------- */\n.tb-kpis {\n    display: grid;\n    grid-template-columns: repeat(6, 1fr);\n    gap: 12px;\n    flex-shrink: 0;\n}\n.tb-kpi {\n    background: var(--tb-panel);\n    border: 1px solid var(--tb-borde);\n    border-left: 4px solid var(--tb-azul);\n    border-radius: 10px;\n    padding: 10px 14px;\n    display: flex;\n    flex-direction: column;\n    gap: 2px;\n    transition: box-shadow .4s ease, transform .4s ease;\n}\n.tb-kpi-cambio {\n    box-shadow: 0 0 0 2px rgba(1, 142, 178, .5);\n    transform: translateY(-2px);\n}\n.tb-kpi-num {\n    font-size: clamp(22px, 2vw, 40px);\n    font-weight: 700;\n    line-height: 1.05;\n    font-variant-numeric: tabular-nums;\n}\n.tb-kpi-label {\n    font-size: clamp(9px, .62vw, 12px);\n    color: var(--tb-txt-tenue);\n    letter-spacing: .09em;\n    font-weight: 600;\n}\n.kpi-total { border-left-color: var(--tb-azul); }\n.kpi-proceso { border-left-color: var(--tb-azul); }\n.kpi-pendiente { border-left-color: var(--tb-amarillo); }\n.kpi-pausa { border-left-color: var(--tb-naranja); }\n.kpi-completadas { border-left-color: var(--tb-morado); }\n.kpi-avance { border-left-color: var(--tb-verde); }\n\n/* ---------- Cuerpo ---------- */\n.tb-cuerpo {\n    display: grid;\n    grid-template-columns: 1fr 300px;\n    gap: 14px;\n    flex: 1;\n    min-height: 0;\n}\n\n.tb-kanban {\n    display: grid;\n    grid-template-columns: repeat(4, 1fr);\n    gap: 12px;\n    min-height: 0;\n}\n.tb-col {\n    background: var(--tb-panel);\n    border: 1px solid var(--tb-borde);\n    border-top: 3px solid var(--tb-txt-tenue);\n    border-radius: 10px;\n    display: flex;\n    flex-direction: column;\n    min-height: 0;\n    overflow: hidden;\n}\n.col-pendiente { border-top-color: var(--tb-amarillo); }\n.col-proceso { border-top-color: var(--tb-azul); }\n.col-pausa { border-top-color: var(--tb-naranja); }\n.col-completadas { border-top-color: var(--tb-morado); }\n\n.tb-col-head {\n    display: flex;\n    align-items: center;\n    justify-content: space-between;\n    padding: 9px 12px;\n    border-bottom: 1px solid var(--tb-borde);\n    flex-shrink: 0;\n}\n.tb-col-head h3 {\n    margin: 0;\n    font-size: clamp(11px, .78vw, 15px);\n    letter-spacing: .09em;\n    font-weight: 700;\n}\n.tb-col-count {\n    background: var(--tb-panel-2);\n    border-radius: 999px;\n    padding: 1px 10px;\n    font-size: clamp(12px, .85vw, 17px);\n    font-weight: 700;\n    font-variant-numeric: tabular-nums;\n}\n.tb-col-nota {\n    margin: 0;\n    padding: 5px 12px;\n    font-size: 10px;\n    color: var(--tb-txt-tenue);\n    font-style: italic;\n    border-bottom: 1px solid var(--tb-borde);\n}\n.tb-col-body {\n    display: flex;\n    flex-direction: column;\n    gap: 8px;\n    padding: 10px;\n    overflow-y: auto;\n    min-height: 0;\n}\n.tb-col-vacia, .tb-col-mas {\n    text-align: center;\n    color: var(--tb-txt-tenue);\n    font-size: 11px;\n    padding: 8px 0;\n    margin: 0;\n}\n\n/* ---------- Tarjetas ---------- */\n.tb-card {\n    background: var(--tb-panel-2);\n    border: 1px solid var(--tb-borde);\n    border-radius: 8px;\n    padding: 9px 11px;\n    display: flex;\n    flex-direction: column;\n    gap: 6px;\n    transition: border-color .3s ease, box-shadow .3s ease;\n}\n.tb-card-pausada { opacity: .82; border-style: dashed; }\n\n.tb-card-top { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }\n.tb-prio {\n    font-size: 9px;\n    font-weight: 800;\n    letter-spacing: .07em;\n    padding: 2px 7px;\n    border-radius: 4px;\n}\n.prio-alta { background: rgba(239, 68, 68, .18); color: #FCA5A5; }\n.prio-media { background: rgba(236, 162, 0, .18); color: #F5C556; }\n.prio-baja { background: rgba(148, 163, 184, .18); color: var(--tb-txt-tenue); }\n\n.tb-badge-pausa, .tb-badge-vencida, .tb-badge-hoy {\n    font-size: 9px;\n    font-weight: 700;\n    padding: 2px 7px;\n    border-radius: 4px;\n    letter-spacing: .05em;\n}\n.tb-badge-pausa { background: rgba(240, 138, 0, .2); color: #F5B759; }\n.tb-badge-vencida { background: rgba(239, 68, 68, .2); color: #FCA5A5; }\n.tb-badge-hoy { background: rgba(1, 142, 178, .2); color: #7CC4D8; }\n\n.tb-card-titulo {\n    margin: 0;\n    font-size: clamp(11px, .8vw, 15px);\n    font-weight: 600;\n    line-height: 1.3;\n    display: -webkit-box;\n    -webkit-line-clamp: 2;\n    -webkit-box-orient: vertical;\n    overflow: hidden;\n}\n.tb-card-proyecto {\n    margin: 0;\n    font-size: 10px;\n    color: var(--tb-azul);\n    font-weight: 600;\n}\n.tb-card-pie {\n    display: flex;\n    align-items: center;\n    justify-content: space-between;\n    gap: 8px;\n    margin-top: 1px;\n}\n.tb-card-persona { display: flex; align-items: center; gap: 5px; min-width: 0; }\n.tb-avatar-mini {\n    width: 18px; height: 18px;\n    border-radius: 50%;\n    object-fit: cover;\n    flex-shrink: 0;\n}\n.tb-avatar-vacio {\n    background: var(--tb-borde);\n    display: inline-flex;\n    align-items: center;\n    justify-content: center;\n    font-size: 8px;\n    font-weight: 700;\n    color: var(--tb-txt-tenue);\n    letter-spacing: .02em;\n}\n.tb-avatar.tb-avatar-vacio { font-size: 11px; }\n.tb-card-nombre {\n    font-size: 10px;\n    color: var(--tb-txt-tenue);\n    white-space: nowrap;\n    overflow: hidden;\n    text-overflow: ellipsis;\n}\n.tb-card-fecha {\n    font-size: 10px;\n    font-weight: 700;\n    color: var(--tb-txt-tenue);\n    white-space: nowrap;\n}\n.tb-card-fecha.es-vencida { color: #FCA5A5; }\n\n/* ---------- Animaciones de cambio (300-700 ms) ---------- */\n@keyframes tb-entra {\n    from { opacity: 0; transform: translateY(-10px) scale(.97); }\n    to { opacity: 1; transform: none; }\n}\n@keyframes tb-destaca-azul {\n    0% { box-shadow: 0 0 0 0 rgba(1, 142, 178, .65); }\n    100% { box-shadow: 0 0 0 9px rgba(1, 142, 178, 0); }\n}\n@keyframes tb-destaca-verde {\n    0% { box-shadow: 0 0 0 0 rgba(62, 171, 43, .65); }\n    100% { box-shadow: 0 0 0 9px rgba(62, 171, 43, 0); }\n}\n@keyframes tb-destaca-naranja {\n    0% { box-shadow: 0 0 0 0 rgba(240, 138, 0, .7); }\n    100% { box-shadow: 0 0 0 9px rgba(240, 138, 0, 0); }\n}\n.tb-anim-nueva { animation: tb-entra .5s ease-out, tb-destaca-azul .7s ease-out; }\n.tb-anim-movida { animation: tb-entra .45s ease-out, tb-destaca-azul .7s ease-out; }\n.tb-anim-completada { animation: tb-entra .45s ease-out, tb-destaca-verde .7s ease-out; border-color: var(--tb-verde); }\n.tb-anim-pausada { animation: tb-entra .45s ease-out, tb-destaca-naranja .7s ease-out; border-color: var(--tb-naranja); }\n\n/* ---------- Lateral ---------- */\n.tb-lateral {\n    display: flex;\n    flex-direction: column;\n    gap: 12px;\n    min-height: 0;\n    overflow-y: auto;\n}\n.tb-panel {\n    background: var(--tb-panel);\n    border: 1px solid var(--tb-borde);\n    border-radius: 10px;\n    padding: 11px 13px;\n}\n.tb-panel-titulo {\n    margin: 0 0 9px;\n    font-size: clamp(10px, .7vw, 13px);\n    letter-spacing: .1em;\n    color: var(--tb-txt-tenue);\n    font-weight: 700;\n}\n\n.tb-alertas, .tb-equipo, .tb-entregas { list-style: none; margin: 0; padding: 0; }\n.tb-alertas { display: flex; flex-direction: column; gap: 6px; }\n.tb-alerta {\n    font-size: clamp(11px, .75vw, 14px);\n    padding: 6px 9px;\n    border-radius: 6px;\n    border-left: 3px solid;\n}\n.tb-alerta strong { font-size: 1.15em; margin-right: 3px; }\n.al-roja { background: rgba(239, 68, 68, .12); border-color: var(--tb-rojo); color: #FCA5A5; }\n.al-naranja { background: rgba(240, 138, 0, .12); border-color: var(--tb-naranja); color: #F5B759; }\n.al-amarilla { background: rgba(236, 162, 0, .12); border-color: var(--tb-amarillo); color: #F5C556; }\n.al-azul { background: rgba(1, 142, 178, .12); border-color: var(--tb-azul); color: #7CC4D8; }\n.tb-sin-alertas { margin: 0; color: var(--tb-verde); font-size: 13px; font-weight: 600; }\n\n.tb-equipo { display: flex; flex-direction: column; gap: 9px; }\n.tb-persona { display: flex; align-items: center; gap: 9px; }\n.tb-avatar { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }\n.tb-persona-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }\n.tb-persona-nombre {\n    font-size: clamp(10px, .68vw, 13px);\n    font-weight: 600;\n    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;\n}\n.tb-persona-cargo {\n    font-size: 9px;\n    color: var(--tb-txt-tenue);\n    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;\n}\n.tb-carga { height: 5px; background: var(--tb-borde); border-radius: 999px; overflow: hidden; }\n.tb-carga-fill {\n    height: 100%;\n    background: linear-gradient(90deg, var(--tb-azul), var(--tb-verde));\n    border-radius: 999px;\n    transition: width .6s ease;\n}\n.tb-persona-n {\n    font-size: clamp(13px, .95vw, 18px);\n    font-weight: 700;\n    font-variant-numeric: tabular-nums;\n    flex-shrink: 0;\n}\n\n.tb-entregas { display: flex; flex-direction: column; gap: 8px; }\n.tb-entrega { display: flex; gap: 9px; align-items: flex-start; }\n.tb-entrega-fecha {\n    font-size: 10px;\n    font-weight: 700;\n    color: var(--tb-azul);\n    background: rgba(1, 142, 178, .12);\n    padding: 3px 7px;\n    border-radius: 5px;\n    white-space: nowrap;\n    flex-shrink: 0;\n}\n.tb-entrega-fecha.es-vencida { color: #FCA5A5; background: rgba(239, 68, 68, .12); }\n.tb-entrega-info { display: flex; flex-direction: column; min-width: 0; }\n.tb-entrega-titulo {\n    font-size: clamp(10px, .68vw, 13px);\n    font-weight: 600;\n    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;\n}\n.tb-entrega-persona { font-size: 9px; color: var(--tb-txt-tenue); }\n\n/* ---------- Avisos temporales ---------- */\n.tb-avisos {\n    position: absolute;\n    right: 22px;\n    bottom: 20px;\n    display: flex;\n    flex-direction: column;\n    gap: 9px;\n    z-index: 20;\n}\n.tb-aviso {\n    display: flex;\n    align-items: center;\n    gap: 11px;\n    background: var(--tb-panel);\n    border: 1px solid var(--tb-borde);\n    border-left: 4px solid var(--tb-azul);\n    border-radius: 9px;\n    padding: 10px 15px;\n    min-width: 260px;\n    box-shadow: 0 8px 26px rgba(0, 0, 0, .45);\n    animation: tb-aviso-in .4s ease-out;\n}\n@keyframes tb-aviso-in {\n    from { opacity: 0; transform: translateX(28px); }\n    to { opacity: 1; transform: none; }\n}\n.tb-aviso-icono { font-size: 20px; font-weight: 700; }\n.tb-aviso strong { font-size: 10px; letter-spacing: .09em; color: var(--tb-txt-tenue); }\n.tb-aviso p {\n    margin: 2px 0 0;\n    font-size: 13px;\n    font-weight: 600;\n    max-width: 260px;\n    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;\n}\n.tb-aviso small { font-size: 10px; color: var(--tb-txt-tenue); }\n.tb-aviso-completada { border-left-color: var(--tb-verde); }\n.tb-aviso-completada .tb-aviso-icono { color: var(--tb-verde); }\n.tb-aviso-pausada { border-left-color: var(--tb-naranja); }\n.tb-aviso-pausada .tb-aviso-icono { color: var(--tb-naranja); }\n.tb-aviso-nueva .tb-aviso-icono, .tb-aviso-movida .tb-aviso-icono { color: var(--tb-azul); }\n\n/* ---------- Modo TV ---------- */\n.tb-tv { padding: 26px 32px; gap: 18px; }\n.tb-tv .tb-logo { height: clamp(50px, 4vw, 76px); padding: 8px 15px; }\n.tb-tv .tb-col-body { overflow: hidden; }\n.tb-tv .tb-lateral { overflow: hidden; }\n.tb-tv .tb-card-titulo { -webkit-line-clamp: 2; }\n\n.tb-salir-tv {\n    position: absolute;\n    top: 14px; right: 14px;\n    width: 30px; height: 30px;\n    border-radius: 50%;\n    border: 1px solid var(--tb-borde);\n    background: var(--tb-panel);\n    color: var(--tb-txt-tenue);\n    cursor: pointer;\n    opacity: .12;\n    transition: opacity .25s ease;\n    z-index: 30;\n}\n.tb-salir-tv:hover { opacity: 1; }\n\n/* ---------- Responsive ---------- */\n@media (max-width: 1400px) {\n    .tb-cuerpo { grid-template-columns: 1fr 260px; }\n}\n@media (max-width: 1100px) {\n    .tb-cuerpo { grid-template-columns: 1fr; overflow-y: auto; }\n    .tb-lateral { flex-direction: row; flex-wrap: wrap; }\n    .tb-lateral .tb-panel { flex: 1 1 240px; }\n    .tb-kpis { grid-template-columns: repeat(3, 1fr); }\n    .tb-kanban { grid-template-columns: repeat(2, 1fr); min-height: 560px; }\n}\n@media (max-width: 700px) {\n    .tb-root { padding: 12px; }\n    .tb-kpis { grid-template-columns: repeat(2, 1fr); }\n    .tb-kanban { grid-template-columns: 1fr; }\n    .tb-header { flex-direction: column; align-items: flex-start; gap: 8px; }\n    .tb-header-izq { gap: 10px; }\n    .tb-logo { height: 34px; padding: 5px 9px; }\n}\n\n/* Respeta la preferencia del sistema de reducir movimiento */\n@media (prefers-reduced-motion: reduce) {\n    .tb-root *, .tb-root *::before, .tb-root *::after {\n        animation-duration: .01ms !important;\n        animation-iteration-count: 1 !important;\n        transition-duration: .01ms !important;\n    }\n}\n"],"sourceRoot":""}]);
+___CSS_LOADER_EXPORT___.push([module.id, "/* Tablero de Seguimiento — dark mode operativo, optimizado para 1920x1080 */\n\n.tb-root {\n    --tb-bg: #0F172A;\n    --tb-panel: #1E293B;\n    --tb-panel-2: #273449;\n    --tb-borde: #334155;\n    --tb-txt: #E2E8F0;\n    --tb-txt-tenue: #94A3B8;\n\n    /* Colores institucionales Ingeer, tomados del logo:\n       azul (agua/infraestructura), verde (vías/agro) y ámbar (innovación).\n       Se aclaran ligeramente para el fondo oscuro sin perder la identidad. */\n    --tb-marca-azul: #018EB2;\n    --tb-marca-verde: #3EAB2B;\n    --tb-marca-ambar: #ECA200;\n\n    --tb-azul: #22A8CC;      /* azul institucional legible sobre #0F172A */\n    --tb-verde: #4FC23A;     /* verde institucional aclarado */\n    --tb-amarillo: #ECA200;  /* ámbar institucional */\n    --tb-naranja: #F08A00;   /* ámbar oscurecido: pausa */\n    --tb-rojo: #E5484D;      /* alerta: fuera de marca por significado */\n    --tb-morado: #7CC4D8;    /* completadas: azul claro derivado de la marca */\n\n    position: fixed;\n    inset: 0;\n    z-index: 9000;\n    display: flex;\n    flex-direction: column;\n    gap: 14px;\n    padding: 18px 22px;\n    background: var(--tb-bg);\n    color: var(--tb-txt);\n    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;\n    overflow: hidden;\n}\n\n.tb-cargando {\n    align-items: center;\n    justify-content: center;\n    gap: 18px;\n}\n.tb-spinner {\n    width: 44px; height: 44px;\n    border: 3px solid var(--tb-borde);\n    border-top-color: var(--tb-azul);\n    border-radius: 50%;\n    animation: tb-giro .8s linear infinite;\n}\n@keyframes tb-giro { to { transform: rotate(360deg); } }\n.tb-error { color: var(--tb-rojo); }\n\n/* ---------- Encabezado ---------- */\n.tb-header {\n    display: flex;\n    align-items: center;\n    justify-content: space-between;\n    gap: 16px;\n    flex-shrink: 0;\n}\n.tb-header-izq {\n    display: flex;\n    align-items: center;\n    gap: 16px;\n    min-width: 0;\n}\n\n/* El logotipo lleva el texto \"es más que INGENIERÍA\" en negro, ilegible sobre el\n   fondo oscuro: se apoya en una placa clara con las esquinas redondeadas, que\n   además reproduce el uso habitual de la marca sobre fondo blanco. */\n.tb-logo {\n    height: clamp(38px, 3.4vw, 62px);\n    width: auto;\n    background: #FFFFFF;\n    padding: 6px 12px;\n    border-radius: 9px;\n    flex-shrink: 0;\n}\n\n.tb-header h1 {\n    margin: 0;\n    font-size: clamp(20px, 1.7vw, 32px);\n    font-weight: 700;\n    letter-spacing: .06em;\n}\n\n/* Franja con los tres colores de la marca bajo el título */\n.tb-header-txt { position: relative; padding-bottom: 6px; }\n.tb-header-txt::after {\n    content: '';\n    position: absolute;\n    left: 0; bottom: 0;\n    width: 108px; height: 3px;\n    border-radius: 2px;\n    background: linear-gradient(90deg,\n        var(--tb-marca-azul) 0 33.33%,\n        var(--tb-marca-verde) 33.33% 66.66%,\n        var(--tb-marca-ambar) 66.66% 100%);\n}\n\n.tb-ambito {\n    margin: 3px 0 0;\n    font-size: clamp(12px, .95vw, 18px);\n    color: var(--tb-azul);\n    font-weight: 600;\n    letter-spacing: .08em;\n}\n.tb-header-der { display: flex; align-items: center; gap: 12px; }\n\n.tb-conexion {\n    font-size: clamp(10px, .7vw, 13px);\n    font-weight: 700;\n    padding: 5px 11px;\n    border-radius: 999px;\n    letter-spacing: .05em;\n}\n.tb-conexion.ok { color: var(--tb-verde); background: rgba(62, 171, 43, .12); }\n.tb-conexion.ko {\n    color: var(--tb-rojo);\n    background: rgba(239, 68, 68, .14);\n    animation: tb-latido 1.8s ease-in-out infinite;\n}\n@keyframes tb-latido { 50% { opacity: .55; } }\n\n.tb-hora {\n    font-size: clamp(15px, 1.3vw, 24px);\n    font-weight: 600;\n    color: var(--tb-txt-tenue);\n    font-variant-numeric: tabular-nums;\n}\n\n.tb-btn {\n    background: var(--tb-azul);\n    color: #fff;\n    border: none;\n    border-radius: 7px;\n    padding: 7px 15px;\n    font-size: 13px;\n    font-weight: 600;\n    cursor: pointer;\n    transition: filter .2s ease;\n}\n.tb-btn:hover { filter: brightness(1.12); }\n.tb-btn-sec { background: var(--tb-panel-2); color: var(--tb-txt); }\n/* El botón de vuelta es un enlace <a>: hay que neutralizar su estilo por defecto */\na.tb-btn { text-decoration: none; display: inline-block; line-height: normal; }\na.tb-btn:visited { color: #fff; }\na.tb-btn-sec, a.tb-btn-sec:visited { color: var(--tb-txt); }\n\n/* ---------- KPIs ---------- */\n.tb-kpis {\n    display: grid;\n    grid-template-columns: repeat(6, 1fr);\n    gap: 12px;\n    flex-shrink: 0;\n}\n.tb-kpi {\n    background: var(--tb-panel);\n    border: 1px solid var(--tb-borde);\n    border-left: 4px solid var(--tb-azul);\n    border-radius: 10px;\n    padding: 10px 14px;\n    display: flex;\n    flex-direction: column;\n    gap: 2px;\n    transition: box-shadow .4s ease, transform .4s ease;\n}\n.tb-kpi-cambio {\n    box-shadow: 0 0 0 2px rgba(1, 142, 178, .5);\n    transform: translateY(-2px);\n}\n.tb-kpi-num {\n    font-size: clamp(22px, 2vw, 40px);\n    font-weight: 700;\n    line-height: 1.05;\n    font-variant-numeric: tabular-nums;\n}\n.tb-kpi-label {\n    font-size: clamp(9px, .62vw, 12px);\n    color: var(--tb-txt-tenue);\n    letter-spacing: .09em;\n    font-weight: 600;\n}\n.kpi-total { border-left-color: var(--tb-azul); }\n.kpi-proceso { border-left-color: var(--tb-azul); }\n.kpi-pendiente { border-left-color: var(--tb-amarillo); }\n.kpi-pausa { border-left-color: var(--tb-naranja); }\n.kpi-completadas { border-left-color: var(--tb-morado); }\n.kpi-avance { border-left-color: var(--tb-verde); }\n\n/* ---------- Cuerpo ---------- */\n.tb-cuerpo {\n    display: grid;\n    grid-template-columns: 1fr 300px;\n    gap: 14px;\n    flex: 1;\n    min-height: 0;\n}\n\n.tb-kanban {\n    display: grid;\n    grid-template-columns: repeat(4, 1fr);\n    gap: 12px;\n    min-height: 0;\n}\n.tb-col {\n    background: var(--tb-panel);\n    border: 1px solid var(--tb-borde);\n    border-top: 3px solid var(--tb-txt-tenue);\n    border-radius: 10px;\n    display: flex;\n    flex-direction: column;\n    min-height: 0;\n    overflow: hidden;\n}\n.col-pendiente { border-top-color: var(--tb-amarillo); }\n.col-proceso { border-top-color: var(--tb-azul); }\n.col-pausa { border-top-color: var(--tb-naranja); }\n.col-completadas { border-top-color: var(--tb-morado); }\n\n.tb-col-head {\n    display: flex;\n    align-items: center;\n    justify-content: space-between;\n    padding: 9px 12px;\n    border-bottom: 1px solid var(--tb-borde);\n    flex-shrink: 0;\n}\n.tb-col-head h3 {\n    margin: 0;\n    font-size: clamp(11px, .78vw, 15px);\n    letter-spacing: .09em;\n    font-weight: 700;\n}\n.tb-col-count {\n    background: var(--tb-panel-2);\n    border-radius: 999px;\n    padding: 1px 10px;\n    font-size: clamp(12px, .85vw, 17px);\n    font-weight: 700;\n    font-variant-numeric: tabular-nums;\n}\n.tb-col-nota {\n    margin: 0;\n    padding: 5px 12px;\n    font-size: 10px;\n    color: var(--tb-txt-tenue);\n    font-style: italic;\n    border-bottom: 1px solid var(--tb-borde);\n}\n.tb-col-body {\n    display: flex;\n    flex-direction: column;\n    gap: 8px;\n    padding: 10px;\n    overflow-y: auto;\n    min-height: 0;\n}\n.tb-col-vacia, .tb-col-mas {\n    text-align: center;\n    color: var(--tb-txt-tenue);\n    font-size: 11px;\n    padding: 8px 0;\n    margin: 0;\n}\n\n/* ---------- Tarjetas ---------- */\n.tb-card {\n    background: var(--tb-panel-2);\n    border: 1px solid var(--tb-borde);\n    border-radius: 8px;\n    padding: 9px 11px;\n    display: flex;\n    flex-direction: column;\n    gap: 6px;\n    transition: border-color .3s ease, box-shadow .3s ease;\n}\n.tb-card-pausada { opacity: .82; border-style: dashed; }\n\n.tb-card-top { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }\n.tb-prio {\n    font-size: 9px;\n    font-weight: 800;\n    letter-spacing: .07em;\n    padding: 2px 7px;\n    border-radius: 4px;\n}\n.prio-alta { background: rgba(239, 68, 68, .18); color: #FCA5A5; }\n.prio-media { background: rgba(236, 162, 0, .18); color: #F5C556; }\n.prio-baja { background: rgba(148, 163, 184, .18); color: var(--tb-txt-tenue); }\n\n.tb-badge-pausa, .tb-badge-vencida, .tb-badge-hoy {\n    font-size: 9px;\n    font-weight: 700;\n    padding: 2px 7px;\n    border-radius: 4px;\n    letter-spacing: .05em;\n}\n.tb-badge-pausa { background: rgba(240, 138, 0, .2); color: #F5B759; }\n.tb-badge-vencida { background: rgba(239, 68, 68, .2); color: #FCA5A5; }\n.tb-badge-hoy { background: rgba(1, 142, 178, .2); color: #7CC4D8; }\n\n.tb-card-titulo {\n    margin: 0;\n    font-size: clamp(11px, .8vw, 15px);\n    font-weight: 600;\n    line-height: 1.3;\n    display: -webkit-box;\n    -webkit-line-clamp: 2;\n    -webkit-box-orient: vertical;\n    overflow: hidden;\n}\n.tb-card-proyecto {\n    margin: 0;\n    font-size: 10px;\n    color: var(--tb-azul);\n    font-weight: 600;\n}\n.tb-card-pie {\n    display: flex;\n    align-items: center;\n    justify-content: space-between;\n    gap: 8px;\n    margin-top: 1px;\n}\n.tb-card-persona { display: flex; align-items: center; gap: 5px; min-width: 0; }\n.tb-avatar-mini {\n    width: 18px; height: 18px;\n    border-radius: 50%;\n    -o-object-fit: cover;\n       object-fit: cover;\n    flex-shrink: 0;\n}\n.tb-avatar-vacio {\n    background: var(--tb-borde);\n    display: inline-flex;\n    align-items: center;\n    justify-content: center;\n    font-size: 8px;\n    font-weight: 700;\n    color: var(--tb-txt-tenue);\n    letter-spacing: .02em;\n}\n.tb-avatar.tb-avatar-vacio { font-size: 11px; }\n.tb-card-nombre {\n    font-size: 10px;\n    color: var(--tb-txt-tenue);\n    white-space: nowrap;\n    overflow: hidden;\n    text-overflow: ellipsis;\n}\n.tb-card-fecha {\n    font-size: 10px;\n    font-weight: 700;\n    color: var(--tb-txt-tenue);\n    white-space: nowrap;\n}\n.tb-card-fecha.es-vencida { color: #FCA5A5; }\n\n/* ---------- Animaciones de cambio (300-700 ms) ---------- */\n@keyframes tb-entra {\n    from { opacity: 0; transform: translateY(-10px) scale(.97); }\n    to { opacity: 1; transform: none; }\n}\n@keyframes tb-destaca-azul {\n    0% { box-shadow: 0 0 0 0 rgba(1, 142, 178, .65); }\n    100% { box-shadow: 0 0 0 9px rgba(1, 142, 178, 0); }\n}\n@keyframes tb-destaca-verde {\n    0% { box-shadow: 0 0 0 0 rgba(62, 171, 43, .65); }\n    100% { box-shadow: 0 0 0 9px rgba(62, 171, 43, 0); }\n}\n@keyframes tb-destaca-naranja {\n    0% { box-shadow: 0 0 0 0 rgba(240, 138, 0, .7); }\n    100% { box-shadow: 0 0 0 9px rgba(240, 138, 0, 0); }\n}\n.tb-anim-nueva { animation: tb-entra .5s ease-out, tb-destaca-azul .7s ease-out; }\n.tb-anim-movida { animation: tb-entra .45s ease-out, tb-destaca-azul .7s ease-out; }\n.tb-anim-completada { animation: tb-entra .45s ease-out, tb-destaca-verde .7s ease-out; border-color: var(--tb-verde); }\n.tb-anim-pausada { animation: tb-entra .45s ease-out, tb-destaca-naranja .7s ease-out; border-color: var(--tb-naranja); }\n\n/* ---------- Lateral ---------- */\n.tb-lateral {\n    display: flex;\n    flex-direction: column;\n    gap: 12px;\n    min-height: 0;\n    overflow-y: auto;\n}\n.tb-panel {\n    background: var(--tb-panel);\n    border: 1px solid var(--tb-borde);\n    border-radius: 10px;\n    padding: 11px 13px;\n}\n.tb-panel-titulo {\n    margin: 0 0 9px;\n    font-size: clamp(10px, .7vw, 13px);\n    letter-spacing: .1em;\n    color: var(--tb-txt-tenue);\n    font-weight: 700;\n}\n\n.tb-alertas, .tb-equipo, .tb-entregas { list-style: none; margin: 0; padding: 0; }\n.tb-alertas { display: flex; flex-direction: column; gap: 6px; }\n.tb-alerta {\n    font-size: clamp(11px, .75vw, 14px);\n    padding: 6px 9px;\n    border-radius: 6px;\n    border-left: 3px solid;\n}\n.tb-alerta strong { font-size: 1.15em; margin-right: 3px; }\n.al-roja { background: rgba(239, 68, 68, .12); border-color: var(--tb-rojo); color: #FCA5A5; }\n.al-naranja { background: rgba(240, 138, 0, .12); border-color: var(--tb-naranja); color: #F5B759; }\n.al-amarilla { background: rgba(236, 162, 0, .12); border-color: var(--tb-amarillo); color: #F5C556; }\n.al-azul { background: rgba(1, 142, 178, .12); border-color: var(--tb-azul); color: #7CC4D8; }\n.tb-sin-alertas { margin: 0; color: var(--tb-verde); font-size: 13px; font-weight: 600; }\n\n.tb-equipo { display: flex; flex-direction: column; gap: 9px; }\n.tb-persona { display: flex; align-items: center; gap: 9px; }\n.tb-avatar { width: 30px; height: 30px; border-radius: 50%; -o-object-fit: cover; object-fit: cover; flex-shrink: 0; }\n.tb-persona-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }\n.tb-persona-nombre {\n    font-size: clamp(10px, .68vw, 13px);\n    font-weight: 600;\n    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;\n}\n.tb-persona-cargo {\n    font-size: 9px;\n    color: var(--tb-txt-tenue);\n    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;\n}\n.tb-carga { height: 5px; background: var(--tb-borde); border-radius: 999px; overflow: hidden; }\n.tb-carga-fill {\n    height: 100%;\n    background: linear-gradient(90deg, var(--tb-azul), var(--tb-verde));\n    border-radius: 999px;\n    transition: width .6s ease;\n}\n.tb-persona-n {\n    font-size: clamp(13px, .95vw, 18px);\n    font-weight: 700;\n    font-variant-numeric: tabular-nums;\n    flex-shrink: 0;\n}\n\n.tb-entregas { display: flex; flex-direction: column; gap: 8px; }\n.tb-entrega { display: flex; gap: 9px; align-items: flex-start; }\n.tb-entrega-fecha {\n    font-size: 10px;\n    font-weight: 700;\n    color: var(--tb-azul);\n    background: rgba(1, 142, 178, .12);\n    padding: 3px 7px;\n    border-radius: 5px;\n    white-space: nowrap;\n    flex-shrink: 0;\n}\n.tb-entrega-fecha.es-vencida { color: #FCA5A5; background: rgba(239, 68, 68, .12); }\n.tb-entrega-info { display: flex; flex-direction: column; min-width: 0; }\n.tb-entrega-titulo {\n    font-size: clamp(10px, .68vw, 13px);\n    font-weight: 600;\n    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;\n}\n.tb-entrega-persona { font-size: 9px; color: var(--tb-txt-tenue); }\n\n/* ---------- Avisos temporales ---------- */\n.tb-avisos {\n    position: absolute;\n    right: 22px;\n    bottom: 20px;\n    display: flex;\n    flex-direction: column;\n    gap: 9px;\n    z-index: 20;\n}\n.tb-aviso {\n    display: flex;\n    align-items: center;\n    gap: 11px;\n    background: var(--tb-panel);\n    border: 1px solid var(--tb-borde);\n    border-left: 4px solid var(--tb-azul);\n    border-radius: 9px;\n    padding: 10px 15px;\n    min-width: 260px;\n    box-shadow: 0 8px 26px rgba(0, 0, 0, .45);\n    animation: tb-aviso-in .4s ease-out;\n}\n@keyframes tb-aviso-in {\n    from { opacity: 0; transform: translateX(28px); }\n    to { opacity: 1; transform: none; }\n}\n.tb-aviso-icono { font-size: 20px; font-weight: 700; }\n.tb-aviso strong { font-size: 10px; letter-spacing: .09em; color: var(--tb-txt-tenue); }\n.tb-aviso p {\n    margin: 2px 0 0;\n    font-size: 13px;\n    font-weight: 600;\n    max-width: 260px;\n    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;\n}\n.tb-aviso small { font-size: 10px; color: var(--tb-txt-tenue); }\n.tb-aviso-completada { border-left-color: var(--tb-verde); }\n.tb-aviso-completada .tb-aviso-icono { color: var(--tb-verde); }\n.tb-aviso-pausada { border-left-color: var(--tb-naranja); }\n.tb-aviso-pausada .tb-aviso-icono { color: var(--tb-naranja); }\n.tb-aviso-nueva .tb-aviso-icono, .tb-aviso-movida .tb-aviso-icono { color: var(--tb-azul); }\n\n/* ---------- Modo TV ---------- */\n.tb-tv { padding: 26px 32px; gap: 18px; }\n.tb-tv .tb-logo { height: clamp(50px, 4vw, 76px); padding: 8px 15px; }\n.tb-tv .tb-col-body { overflow: hidden; }\n.tb-tv .tb-lateral { overflow: hidden; }\n.tb-tv .tb-card-titulo { -webkit-line-clamp: 2; }\n\n.tb-salir-tv {\n    position: absolute;\n    top: 14px; right: 14px;\n    width: 30px; height: 30px;\n    border-radius: 50%;\n    border: 1px solid var(--tb-borde);\n    background: var(--tb-panel);\n    color: var(--tb-txt-tenue);\n    cursor: pointer;\n    opacity: .12;\n    transition: opacity .25s ease;\n    z-index: 30;\n}\n.tb-salir-tv:hover { opacity: 1; }\n\n/* ---------- Responsive ---------- */\n@media (max-width: 1400px) {\n    .tb-cuerpo { grid-template-columns: 1fr 260px; }\n}\n@media (max-width: 1100px) {\n    .tb-cuerpo { grid-template-columns: 1fr; overflow-y: auto; }\n    .tb-lateral { flex-direction: row; flex-wrap: wrap; }\n    .tb-lateral .tb-panel { flex: 1 1 240px; }\n    .tb-kpis { grid-template-columns: repeat(3, 1fr); }\n    .tb-kanban { grid-template-columns: repeat(2, 1fr); min-height: 560px; }\n}\n@media (max-width: 700px) {\n    .tb-root { padding: 12px; }\n    .tb-kpis { grid-template-columns: repeat(2, 1fr); }\n    .tb-kanban { grid-template-columns: 1fr; }\n    .tb-header { flex-direction: column; align-items: flex-start; gap: 8px; }\n    .tb-header-izq { gap: 10px; }\n    .tb-logo { height: 34px; padding: 5px 9px; }\n}\n\n/* Respeta la preferencia del sistema de reducir movimiento */\n@media (prefers-reduced-motion: reduce) {\n    .tb-root *, .tb-root *::before, .tb-root *::after {\n        animation-duration: .01ms !important;\n        animation-iteration-count: 1 !important;\n        transition-duration: .01ms !important;\n    }\n}\n", "",{"version":3,"sources":["webpack://./resources/js/components/tablero/tablero.css"],"names":[],"mappings":"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","sourcesContent":["/* Tablero de Seguimiento — dark mode operativo, optimizado para 1920x1080 */\n\n.tb-root {\n    --tb-bg: #0F172A;\n    --tb-panel: #1E293B;\n    --tb-panel-2: #273449;\n    --tb-borde: #334155;\n    --tb-txt: #E2E8F0;\n    --tb-txt-tenue: #94A3B8;\n\n    /* Colores institucionales Ingeer, tomados del logo:\n       azul (agua/infraestructura), verde (vías/agro) y ámbar (innovación).\n       Se aclaran ligeramente para el fondo oscuro sin perder la identidad. */\n    --tb-marca-azul: #018EB2;\n    --tb-marca-verde: #3EAB2B;\n    --tb-marca-ambar: #ECA200;\n\n    --tb-azul: #22A8CC;      /* azul institucional legible sobre #0F172A */\n    --tb-verde: #4FC23A;     /* verde institucional aclarado */\n    --tb-amarillo: #ECA200;  /* ámbar institucional */\n    --tb-naranja: #F08A00;   /* ámbar oscurecido: pausa */\n    --tb-rojo: #E5484D;      /* alerta: fuera de marca por significado */\n    --tb-morado: #7CC4D8;    /* completadas: azul claro derivado de la marca */\n\n    position: fixed;\n    inset: 0;\n    z-index: 9000;\n    display: flex;\n    flex-direction: column;\n    gap: 14px;\n    padding: 18px 22px;\n    background: var(--tb-bg);\n    color: var(--tb-txt);\n    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;\n    overflow: hidden;\n}\n\n.tb-cargando {\n    align-items: center;\n    justify-content: center;\n    gap: 18px;\n}\n.tb-spinner {\n    width: 44px; height: 44px;\n    border: 3px solid var(--tb-borde);\n    border-top-color: var(--tb-azul);\n    border-radius: 50%;\n    animation: tb-giro .8s linear infinite;\n}\n@keyframes tb-giro { to { transform: rotate(360deg); } }\n.tb-error { color: var(--tb-rojo); }\n\n/* ---------- Encabezado ---------- */\n.tb-header {\n    display: flex;\n    align-items: center;\n    justify-content: space-between;\n    gap: 16px;\n    flex-shrink: 0;\n}\n.tb-header-izq {\n    display: flex;\n    align-items: center;\n    gap: 16px;\n    min-width: 0;\n}\n\n/* El logotipo lleva el texto \"es más que INGENIERÍA\" en negro, ilegible sobre el\n   fondo oscuro: se apoya en una placa clara con las esquinas redondeadas, que\n   además reproduce el uso habitual de la marca sobre fondo blanco. */\n.tb-logo {\n    height: clamp(38px, 3.4vw, 62px);\n    width: auto;\n    background: #FFFFFF;\n    padding: 6px 12px;\n    border-radius: 9px;\n    flex-shrink: 0;\n}\n\n.tb-header h1 {\n    margin: 0;\n    font-size: clamp(20px, 1.7vw, 32px);\n    font-weight: 700;\n    letter-spacing: .06em;\n}\n\n/* Franja con los tres colores de la marca bajo el título */\n.tb-header-txt { position: relative; padding-bottom: 6px; }\n.tb-header-txt::after {\n    content: '';\n    position: absolute;\n    left: 0; bottom: 0;\n    width: 108px; height: 3px;\n    border-radius: 2px;\n    background: linear-gradient(90deg,\n        var(--tb-marca-azul) 0 33.33%,\n        var(--tb-marca-verde) 33.33% 66.66%,\n        var(--tb-marca-ambar) 66.66% 100%);\n}\n\n.tb-ambito {\n    margin: 3px 0 0;\n    font-size: clamp(12px, .95vw, 18px);\n    color: var(--tb-azul);\n    font-weight: 600;\n    letter-spacing: .08em;\n}\n.tb-header-der { display: flex; align-items: center; gap: 12px; }\n\n.tb-conexion {\n    font-size: clamp(10px, .7vw, 13px);\n    font-weight: 700;\n    padding: 5px 11px;\n    border-radius: 999px;\n    letter-spacing: .05em;\n}\n.tb-conexion.ok { color: var(--tb-verde); background: rgba(62, 171, 43, .12); }\n.tb-conexion.ko {\n    color: var(--tb-rojo);\n    background: rgba(239, 68, 68, .14);\n    animation: tb-latido 1.8s ease-in-out infinite;\n}\n@keyframes tb-latido { 50% { opacity: .55; } }\n\n.tb-hora {\n    font-size: clamp(15px, 1.3vw, 24px);\n    font-weight: 600;\n    color: var(--tb-txt-tenue);\n    font-variant-numeric: tabular-nums;\n}\n\n.tb-btn {\n    background: var(--tb-azul);\n    color: #fff;\n    border: none;\n    border-radius: 7px;\n    padding: 7px 15px;\n    font-size: 13px;\n    font-weight: 600;\n    cursor: pointer;\n    transition: filter .2s ease;\n}\n.tb-btn:hover { filter: brightness(1.12); }\n.tb-btn-sec { background: var(--tb-panel-2); color: var(--tb-txt); }\n/* El botón de vuelta es un enlace <a>: hay que neutralizar su estilo por defecto */\na.tb-btn { text-decoration: none; display: inline-block; line-height: normal; }\na.tb-btn:visited { color: #fff; }\na.tb-btn-sec, a.tb-btn-sec:visited { color: var(--tb-txt); }\n\n/* ---------- KPIs ---------- */\n.tb-kpis {\n    display: grid;\n    grid-template-columns: repeat(6, 1fr);\n    gap: 12px;\n    flex-shrink: 0;\n}\n.tb-kpi {\n    background: var(--tb-panel);\n    border: 1px solid var(--tb-borde);\n    border-left: 4px solid var(--tb-azul);\n    border-radius: 10px;\n    padding: 10px 14px;\n    display: flex;\n    flex-direction: column;\n    gap: 2px;\n    transition: box-shadow .4s ease, transform .4s ease;\n}\n.tb-kpi-cambio {\n    box-shadow: 0 0 0 2px rgba(1, 142, 178, .5);\n    transform: translateY(-2px);\n}\n.tb-kpi-num {\n    font-size: clamp(22px, 2vw, 40px);\n    font-weight: 700;\n    line-height: 1.05;\n    font-variant-numeric: tabular-nums;\n}\n.tb-kpi-label {\n    font-size: clamp(9px, .62vw, 12px);\n    color: var(--tb-txt-tenue);\n    letter-spacing: .09em;\n    font-weight: 600;\n}\n.kpi-total { border-left-color: var(--tb-azul); }\n.kpi-proceso { border-left-color: var(--tb-azul); }\n.kpi-pendiente { border-left-color: var(--tb-amarillo); }\n.kpi-pausa { border-left-color: var(--tb-naranja); }\n.kpi-completadas { border-left-color: var(--tb-morado); }\n.kpi-avance { border-left-color: var(--tb-verde); }\n\n/* ---------- Cuerpo ---------- */\n.tb-cuerpo {\n    display: grid;\n    grid-template-columns: 1fr 300px;\n    gap: 14px;\n    flex: 1;\n    min-height: 0;\n}\n\n.tb-kanban {\n    display: grid;\n    grid-template-columns: repeat(4, 1fr);\n    gap: 12px;\n    min-height: 0;\n}\n.tb-col {\n    background: var(--tb-panel);\n    border: 1px solid var(--tb-borde);\n    border-top: 3px solid var(--tb-txt-tenue);\n    border-radius: 10px;\n    display: flex;\n    flex-direction: column;\n    min-height: 0;\n    overflow: hidden;\n}\n.col-pendiente { border-top-color: var(--tb-amarillo); }\n.col-proceso { border-top-color: var(--tb-azul); }\n.col-pausa { border-top-color: var(--tb-naranja); }\n.col-completadas { border-top-color: var(--tb-morado); }\n\n.tb-col-head {\n    display: flex;\n    align-items: center;\n    justify-content: space-between;\n    padding: 9px 12px;\n    border-bottom: 1px solid var(--tb-borde);\n    flex-shrink: 0;\n}\n.tb-col-head h3 {\n    margin: 0;\n    font-size: clamp(11px, .78vw, 15px);\n    letter-spacing: .09em;\n    font-weight: 700;\n}\n.tb-col-count {\n    background: var(--tb-panel-2);\n    border-radius: 999px;\n    padding: 1px 10px;\n    font-size: clamp(12px, .85vw, 17px);\n    font-weight: 700;\n    font-variant-numeric: tabular-nums;\n}\n.tb-col-nota {\n    margin: 0;\n    padding: 5px 12px;\n    font-size: 10px;\n    color: var(--tb-txt-tenue);\n    font-style: italic;\n    border-bottom: 1px solid var(--tb-borde);\n}\n.tb-col-body {\n    display: flex;\n    flex-direction: column;\n    gap: 8px;\n    padding: 10px;\n    overflow-y: auto;\n    min-height: 0;\n}\n.tb-col-vacia, .tb-col-mas {\n    text-align: center;\n    color: var(--tb-txt-tenue);\n    font-size: 11px;\n    padding: 8px 0;\n    margin: 0;\n}\n\n/* ---------- Tarjetas ---------- */\n.tb-card {\n    background: var(--tb-panel-2);\n    border: 1px solid var(--tb-borde);\n    border-radius: 8px;\n    padding: 9px 11px;\n    display: flex;\n    flex-direction: column;\n    gap: 6px;\n    transition: border-color .3s ease, box-shadow .3s ease;\n}\n.tb-card-pausada { opacity: .82; border-style: dashed; }\n\n.tb-card-top { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }\n.tb-prio {\n    font-size: 9px;\n    font-weight: 800;\n    letter-spacing: .07em;\n    padding: 2px 7px;\n    border-radius: 4px;\n}\n.prio-alta { background: rgba(239, 68, 68, .18); color: #FCA5A5; }\n.prio-media { background: rgba(236, 162, 0, .18); color: #F5C556; }\n.prio-baja { background: rgba(148, 163, 184, .18); color: var(--tb-txt-tenue); }\n\n.tb-badge-pausa, .tb-badge-vencida, .tb-badge-hoy {\n    font-size: 9px;\n    font-weight: 700;\n    padding: 2px 7px;\n    border-radius: 4px;\n    letter-spacing: .05em;\n}\n.tb-badge-pausa { background: rgba(240, 138, 0, .2); color: #F5B759; }\n.tb-badge-vencida { background: rgba(239, 68, 68, .2); color: #FCA5A5; }\n.tb-badge-hoy { background: rgba(1, 142, 178, .2); color: #7CC4D8; }\n\n.tb-card-titulo {\n    margin: 0;\n    font-size: clamp(11px, .8vw, 15px);\n    font-weight: 600;\n    line-height: 1.3;\n    display: -webkit-box;\n    -webkit-line-clamp: 2;\n    -webkit-box-orient: vertical;\n    overflow: hidden;\n}\n.tb-card-proyecto {\n    margin: 0;\n    font-size: 10px;\n    color: var(--tb-azul);\n    font-weight: 600;\n}\n.tb-card-pie {\n    display: flex;\n    align-items: center;\n    justify-content: space-between;\n    gap: 8px;\n    margin-top: 1px;\n}\n.tb-card-persona { display: flex; align-items: center; gap: 5px; min-width: 0; }\n.tb-avatar-mini {\n    width: 18px; height: 18px;\n    border-radius: 50%;\n    object-fit: cover;\n    flex-shrink: 0;\n}\n.tb-avatar-vacio {\n    background: var(--tb-borde);\n    display: inline-flex;\n    align-items: center;\n    justify-content: center;\n    font-size: 8px;\n    font-weight: 700;\n    color: var(--tb-txt-tenue);\n    letter-spacing: .02em;\n}\n.tb-avatar.tb-avatar-vacio { font-size: 11px; }\n.tb-card-nombre {\n    font-size: 10px;\n    color: var(--tb-txt-tenue);\n    white-space: nowrap;\n    overflow: hidden;\n    text-overflow: ellipsis;\n}\n.tb-card-fecha {\n    font-size: 10px;\n    font-weight: 700;\n    color: var(--tb-txt-tenue);\n    white-space: nowrap;\n}\n.tb-card-fecha.es-vencida { color: #FCA5A5; }\n\n/* ---------- Animaciones de cambio (300-700 ms) ---------- */\n@keyframes tb-entra {\n    from { opacity: 0; transform: translateY(-10px) scale(.97); }\n    to { opacity: 1; transform: none; }\n}\n@keyframes tb-destaca-azul {\n    0% { box-shadow: 0 0 0 0 rgba(1, 142, 178, .65); }\n    100% { box-shadow: 0 0 0 9px rgba(1, 142, 178, 0); }\n}\n@keyframes tb-destaca-verde {\n    0% { box-shadow: 0 0 0 0 rgba(62, 171, 43, .65); }\n    100% { box-shadow: 0 0 0 9px rgba(62, 171, 43, 0); }\n}\n@keyframes tb-destaca-naranja {\n    0% { box-shadow: 0 0 0 0 rgba(240, 138, 0, .7); }\n    100% { box-shadow: 0 0 0 9px rgba(240, 138, 0, 0); }\n}\n.tb-anim-nueva { animation: tb-entra .5s ease-out, tb-destaca-azul .7s ease-out; }\n.tb-anim-movida { animation: tb-entra .45s ease-out, tb-destaca-azul .7s ease-out; }\n.tb-anim-completada { animation: tb-entra .45s ease-out, tb-destaca-verde .7s ease-out; border-color: var(--tb-verde); }\n.tb-anim-pausada { animation: tb-entra .45s ease-out, tb-destaca-naranja .7s ease-out; border-color: var(--tb-naranja); }\n\n/* ---------- Lateral ---------- */\n.tb-lateral {\n    display: flex;\n    flex-direction: column;\n    gap: 12px;\n    min-height: 0;\n    overflow-y: auto;\n}\n.tb-panel {\n    background: var(--tb-panel);\n    border: 1px solid var(--tb-borde);\n    border-radius: 10px;\n    padding: 11px 13px;\n}\n.tb-panel-titulo {\n    margin: 0 0 9px;\n    font-size: clamp(10px, .7vw, 13px);\n    letter-spacing: .1em;\n    color: var(--tb-txt-tenue);\n    font-weight: 700;\n}\n\n.tb-alertas, .tb-equipo, .tb-entregas { list-style: none; margin: 0; padding: 0; }\n.tb-alertas { display: flex; flex-direction: column; gap: 6px; }\n.tb-alerta {\n    font-size: clamp(11px, .75vw, 14px);\n    padding: 6px 9px;\n    border-radius: 6px;\n    border-left: 3px solid;\n}\n.tb-alerta strong { font-size: 1.15em; margin-right: 3px; }\n.al-roja { background: rgba(239, 68, 68, .12); border-color: var(--tb-rojo); color: #FCA5A5; }\n.al-naranja { background: rgba(240, 138, 0, .12); border-color: var(--tb-naranja); color: #F5B759; }\n.al-amarilla { background: rgba(236, 162, 0, .12); border-color: var(--tb-amarillo); color: #F5C556; }\n.al-azul { background: rgba(1, 142, 178, .12); border-color: var(--tb-azul); color: #7CC4D8; }\n.tb-sin-alertas { margin: 0; color: var(--tb-verde); font-size: 13px; font-weight: 600; }\n\n.tb-equipo { display: flex; flex-direction: column; gap: 9px; }\n.tb-persona { display: flex; align-items: center; gap: 9px; }\n.tb-avatar { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }\n.tb-persona-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }\n.tb-persona-nombre {\n    font-size: clamp(10px, .68vw, 13px);\n    font-weight: 600;\n    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;\n}\n.tb-persona-cargo {\n    font-size: 9px;\n    color: var(--tb-txt-tenue);\n    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;\n}\n.tb-carga { height: 5px; background: var(--tb-borde); border-radius: 999px; overflow: hidden; }\n.tb-carga-fill {\n    height: 100%;\n    background: linear-gradient(90deg, var(--tb-azul), var(--tb-verde));\n    border-radius: 999px;\n    transition: width .6s ease;\n}\n.tb-persona-n {\n    font-size: clamp(13px, .95vw, 18px);\n    font-weight: 700;\n    font-variant-numeric: tabular-nums;\n    flex-shrink: 0;\n}\n\n.tb-entregas { display: flex; flex-direction: column; gap: 8px; }\n.tb-entrega { display: flex; gap: 9px; align-items: flex-start; }\n.tb-entrega-fecha {\n    font-size: 10px;\n    font-weight: 700;\n    color: var(--tb-azul);\n    background: rgba(1, 142, 178, .12);\n    padding: 3px 7px;\n    border-radius: 5px;\n    white-space: nowrap;\n    flex-shrink: 0;\n}\n.tb-entrega-fecha.es-vencida { color: #FCA5A5; background: rgba(239, 68, 68, .12); }\n.tb-entrega-info { display: flex; flex-direction: column; min-width: 0; }\n.tb-entrega-titulo {\n    font-size: clamp(10px, .68vw, 13px);\n    font-weight: 600;\n    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;\n}\n.tb-entrega-persona { font-size: 9px; color: var(--tb-txt-tenue); }\n\n/* ---------- Avisos temporales ---------- */\n.tb-avisos {\n    position: absolute;\n    right: 22px;\n    bottom: 20px;\n    display: flex;\n    flex-direction: column;\n    gap: 9px;\n    z-index: 20;\n}\n.tb-aviso {\n    display: flex;\n    align-items: center;\n    gap: 11px;\n    background: var(--tb-panel);\n    border: 1px solid var(--tb-borde);\n    border-left: 4px solid var(--tb-azul);\n    border-radius: 9px;\n    padding: 10px 15px;\n    min-width: 260px;\n    box-shadow: 0 8px 26px rgba(0, 0, 0, .45);\n    animation: tb-aviso-in .4s ease-out;\n}\n@keyframes tb-aviso-in {\n    from { opacity: 0; transform: translateX(28px); }\n    to { opacity: 1; transform: none; }\n}\n.tb-aviso-icono { font-size: 20px; font-weight: 700; }\n.tb-aviso strong { font-size: 10px; letter-spacing: .09em; color: var(--tb-txt-tenue); }\n.tb-aviso p {\n    margin: 2px 0 0;\n    font-size: 13px;\n    font-weight: 600;\n    max-width: 260px;\n    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;\n}\n.tb-aviso small { font-size: 10px; color: var(--tb-txt-tenue); }\n.tb-aviso-completada { border-left-color: var(--tb-verde); }\n.tb-aviso-completada .tb-aviso-icono { color: var(--tb-verde); }\n.tb-aviso-pausada { border-left-color: var(--tb-naranja); }\n.tb-aviso-pausada .tb-aviso-icono { color: var(--tb-naranja); }\n.tb-aviso-nueva .tb-aviso-icono, .tb-aviso-movida .tb-aviso-icono { color: var(--tb-azul); }\n\n/* ---------- Modo TV ---------- */\n.tb-tv { padding: 26px 32px; gap: 18px; }\n.tb-tv .tb-logo { height: clamp(50px, 4vw, 76px); padding: 8px 15px; }\n.tb-tv .tb-col-body { overflow: hidden; }\n.tb-tv .tb-lateral { overflow: hidden; }\n.tb-tv .tb-card-titulo { -webkit-line-clamp: 2; }\n\n.tb-salir-tv {\n    position: absolute;\n    top: 14px; right: 14px;\n    width: 30px; height: 30px;\n    border-radius: 50%;\n    border: 1px solid var(--tb-borde);\n    background: var(--tb-panel);\n    color: var(--tb-txt-tenue);\n    cursor: pointer;\n    opacity: .12;\n    transition: opacity .25s ease;\n    z-index: 30;\n}\n.tb-salir-tv:hover { opacity: 1; }\n\n/* ---------- Responsive ---------- */\n@media (max-width: 1400px) {\n    .tb-cuerpo { grid-template-columns: 1fr 260px; }\n}\n@media (max-width: 1100px) {\n    .tb-cuerpo { grid-template-columns: 1fr; overflow-y: auto; }\n    .tb-lateral { flex-direction: row; flex-wrap: wrap; }\n    .tb-lateral .tb-panel { flex: 1 1 240px; }\n    .tb-kpis { grid-template-columns: repeat(3, 1fr); }\n    .tb-kanban { grid-template-columns: repeat(2, 1fr); min-height: 560px; }\n}\n@media (max-width: 700px) {\n    .tb-root { padding: 12px; }\n    .tb-kpis { grid-template-columns: repeat(2, 1fr); }\n    .tb-kanban { grid-template-columns: 1fr; }\n    .tb-header { flex-direction: column; align-items: flex-start; gap: 8px; }\n    .tb-header-izq { gap: 10px; }\n    .tb-logo { height: 34px; padding: 5px 9px; }\n}\n\n/* Respeta la preferencia del sistema de reducir movimiento */\n@media (prefers-reduced-motion: reduce) {\n    .tb-root *, .tb-root *::before, .tb-root *::after {\n        animation-duration: .01ms !important;\n        animation-iteration-count: 1 !important;\n        transition-duration: .01ms !important;\n    }\n}\n"],"sourceRoot":""}]);
 // Exports
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (___CSS_LOADER_EXPORT___);
 
@@ -165122,14 +165122,16 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
 /* harmony export */ });
-/* harmony import */ var react_router_dom__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! react-router-dom */ "./node_modules/react-router/dist/development/chunk-D4RADZKF.mjs");
+/* harmony import */ var react_router_dom__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! react-router-dom */ "./node_modules/react-router/dist/development/chunk-D4RADZKF.mjs");
 /* harmony import */ var _Dashboard__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./Dashboard */ "./resources/js/components/Dashboard.jsx");
 /* harmony import */ var _LoginForm__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./LoginForm */ "./resources/js/components/LoginForm.jsx");
 /* harmony import */ var _UserContext__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./UserContext */ "./resources/js/components/UserContext.jsx");
 /* harmony import */ var _Parameters__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./Parameters */ "./resources/js/components/Parameters.jsx");
 /* harmony import */ var _Reportes__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./Reportes */ "./resources/js/components/Reportes.jsx");
-/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! react/jsx-runtime */ "./node_modules/react/jsx-runtime.js");
+/* harmony import */ var _tablero_TableroSeguimiento__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./tablero/TableroSeguimiento */ "./resources/js/components/tablero/TableroSeguimiento.jsx");
+/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! react/jsx-runtime */ "./node_modules/react/jsx-runtime.js");
 // App.jsx
+
 
 
 
@@ -165140,33 +165142,38 @@ __webpack_require__.r(__webpack_exports__);
 function App() {
   var _useUser = (0,_UserContext__WEBPACK_IMPORTED_MODULE_2__.useUser)(),
     user = _useUser.user;
-  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_router_dom__WEBPACK_IMPORTED_MODULE_6__.HashRouter, {
-    children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)(react_router_dom__WEBPACK_IMPORTED_MODULE_6__.Routes, {
-      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_router_dom__WEBPACK_IMPORTED_MODULE_6__.Route, {
+  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_router_dom__WEBPACK_IMPORTED_MODULE_7__.HashRouter, {
+    children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)(react_router_dom__WEBPACK_IMPORTED_MODULE_7__.Routes, {
+      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_router_dom__WEBPACK_IMPORTED_MODULE_7__.Route, {
         path: "/login",
-        element: user ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_router_dom__WEBPACK_IMPORTED_MODULE_6__.Navigate, {
+        element: user ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_router_dom__WEBPACK_IMPORTED_MODULE_7__.Navigate, {
           to: "/dashboard"
-        }) : /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(_LoginForm__WEBPACK_IMPORTED_MODULE_1__["default"], {})
-      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_router_dom__WEBPACK_IMPORTED_MODULE_6__.Route, {
+        }) : /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(_LoginForm__WEBPACK_IMPORTED_MODULE_1__["default"], {})
+      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_router_dom__WEBPACK_IMPORTED_MODULE_7__.Route, {
         path: "/dashboard",
-        element: user ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(_Dashboard__WEBPACK_IMPORTED_MODULE_0__["default"], {}) : /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_router_dom__WEBPACK_IMPORTED_MODULE_6__.Navigate, {
+        element: user ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(_Dashboard__WEBPACK_IMPORTED_MODULE_0__["default"], {}) : /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_router_dom__WEBPACK_IMPORTED_MODULE_7__.Navigate, {
           to: "/login"
         })
-      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_router_dom__WEBPACK_IMPORTED_MODULE_6__.Route, {
+      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_router_dom__WEBPACK_IMPORTED_MODULE_7__.Route, {
         path: "/reports",
-        element: user ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(_Reportes__WEBPACK_IMPORTED_MODULE_4__["default"], {}) : /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_router_dom__WEBPACK_IMPORTED_MODULE_6__.Navigate, {
+        element: user ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(_Reportes__WEBPACK_IMPORTED_MODULE_4__["default"], {}) : /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_router_dom__WEBPACK_IMPORTED_MODULE_7__.Navigate, {
           to: "/login"
         })
-      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_router_dom__WEBPACK_IMPORTED_MODULE_6__.Route, {
+      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_router_dom__WEBPACK_IMPORTED_MODULE_7__.Route, {
         path: "/parameters",
-        element: !user ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_router_dom__WEBPACK_IMPORTED_MODULE_6__.Navigate, {
+        element: !user ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_router_dom__WEBPACK_IMPORTED_MODULE_7__.Navigate, {
           to: "/login"
-        }) : user.tipo_usuario === "Supervisor" ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_router_dom__WEBPACK_IMPORTED_MODULE_6__.Navigate, {
+        }) : user.tipo_usuario === "Supervisor" ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_router_dom__WEBPACK_IMPORTED_MODULE_7__.Navigate, {
           to: "/dashboard"
-        }) : /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(_Parameters__WEBPACK_IMPORTED_MODULE_3__["default"], {})
-      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_router_dom__WEBPACK_IMPORTED_MODULE_6__.Route, {
+        }) : /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(_Parameters__WEBPACK_IMPORTED_MODULE_3__["default"], {})
+      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_router_dom__WEBPACK_IMPORTED_MODULE_7__.Route, {
+        path: "/tablero",
+        element: user ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(_tablero_TableroSeguimiento__WEBPACK_IMPORTED_MODULE_5__["default"], {}) : /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_router_dom__WEBPACK_IMPORTED_MODULE_7__.Navigate, {
+          to: "/login"
+        })
+      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_router_dom__WEBPACK_IMPORTED_MODULE_7__.Route, {
         path: "*",
-        element: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_router_dom__WEBPACK_IMPORTED_MODULE_6__.Navigate, {
+        element: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_router_dom__WEBPACK_IMPORTED_MODULE_7__.Navigate, {
           to: user ? "/dashboard" : "/login"
         })
       })]
@@ -169136,16 +169143,15 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 /* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! react */ "./node_modules/react/index.js");
 /* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
-/* harmony import */ var _hello_pangea_dnd__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! @hello-pangea/dnd */ "./node_modules/@hello-pangea/dnd/dist/dnd.esm.js");
-/* harmony import */ var react_icons_fa__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! react-icons/fa */ "./node_modules/react-icons/fa/index.mjs");
+/* harmony import */ var _hello_pangea_dnd__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! @hello-pangea/dnd */ "./node_modules/@hello-pangea/dnd/dist/dnd.esm.js");
+/* harmony import */ var react_icons_fa__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! react-icons/fa */ "./node_modules/react-icons/fa/index.mjs");
 /* harmony import */ var _TaskDetailsModal__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./TaskDetailsModal */ "./resources/js/components/TaskDetailsModal.jsx");
 /* harmony import */ var _ReportesDepartamentoModal__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./ReportesDepartamentoModal */ "./resources/js/components/ReportesDepartamentoModal.jsx");
-/* harmony import */ var _tablero_TableroSeguimiento__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./tablero/TableroSeguimiento */ "./resources/js/components/tablero/TableroSeguimiento.jsx");
-/* harmony import */ var _axiosConfig__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../axiosConfig */ "./resources/js/axiosConfig.js");
-/* harmony import */ var sweetalert2__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! sweetalert2 */ "./node_modules/sweetalert2/dist/sweetalert2.all.js");
-/* harmony import */ var sweetalert2__WEBPACK_IMPORTED_MODULE_5___default = /*#__PURE__*/__webpack_require__.n(sweetalert2__WEBPACK_IMPORTED_MODULE_5__);
-/* harmony import */ var react_icons_fa6__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! react-icons/fa6 */ "./node_modules/react-icons/fa6/index.mjs");
-/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! react/jsx-runtime */ "./node_modules/react/jsx-runtime.js");
+/* harmony import */ var _axiosConfig__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../axiosConfig */ "./resources/js/axiosConfig.js");
+/* harmony import */ var sweetalert2__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! sweetalert2 */ "./node_modules/sweetalert2/dist/sweetalert2.all.js");
+/* harmony import */ var sweetalert2__WEBPACK_IMPORTED_MODULE_4___default = /*#__PURE__*/__webpack_require__.n(sweetalert2__WEBPACK_IMPORTED_MODULE_4__);
+/* harmony import */ var react_icons_fa6__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! react-icons/fa6 */ "./node_modules/react-icons/fa6/index.mjs");
+/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! react/jsx-runtime */ "./node_modules/react/jsx-runtime.js");
 function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, _typeof(o); }
 function ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
 function _objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? ownKeys(Object(t), !0).forEach(function (r) { _defineProperty(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
@@ -169175,26 +169181,25 @@ function _arrayWithHoles(r) { if (Array.isArray(r)) return r; }
 
 
 
-
 var EmployeeInterface = function EmployeeInterface(_ref) {
   var user = _ref.user;
   var _useState = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)({
       'Pendiente': {
         title: 'Pendiente',
         items: [],
-        icon: react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaClock,
+        icon: react_icons_fa__WEBPACK_IMPORTED_MODULE_6__.FaClock,
         color: '#f97316'
       },
       'En Proceso': {
         title: 'En Proceso',
         items: [],
-        icon: react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaSpinner,
+        icon: react_icons_fa__WEBPACK_IMPORTED_MODULE_6__.FaSpinner,
         color: '#2563eb'
       },
       'Completada': {
         title: 'Completada',
         items: [],
-        icon: react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaCheck,
+        icon: react_icons_fa__WEBPACK_IMPORTED_MODULE_6__.FaCheck,
         color: '#16a34a'
       }
     }),
@@ -169341,19 +169346,15 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
     setShowReportesModal = _useState68[1];
   var _useState69 = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(false),
     _useState70 = _slicedToArray(_useState69, 2),
-    showTableroSeguimiento = _useState70[0],
-    setShowTableroSeguimiento = _useState70[1];
-  var _useState71 = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(false),
-    _useState72 = _slicedToArray(_useState71, 2),
-    showCalendarModal = _useState72[0],
-    setShowCalendarModal = _useState72[1];
-  var _useState73 = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(function () {
+    showCalendarModal = _useState70[0],
+    setShowCalendarModal = _useState70[1];
+  var _useState71 = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(function () {
       var d = new Date();
       return new Date(d.getFullYear(), d.getMonth(), 1);
     }),
-    _useState74 = _slicedToArray(_useState73, 2),
-    calendarMonthAnchor = _useState74[0],
-    setCalendarMonthAnchor = _useState74[1];
+    _useState72 = _slicedToArray(_useState71, 2),
+    calendarMonthAnchor = _useState72[0],
+    setCalendarMonthAnchor = _useState72[1];
   var resetNewTaskModalState = function resetNewTaskModalState() {
     setSubtareasForm([]);
     setNuevaSubtareaTexto('');
@@ -169511,7 +169512,7 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
           case 0:
             _context.prev = 0;
             _context.next = 3;
-            return _axiosConfig__WEBPACK_IMPORTED_MODULE_4__["default"].get('/cargarProyectos');
+            return _axiosConfig__WEBPACK_IMPORTED_MODULE_3__["default"].get('/cargarProyectos');
           case 3:
             response = _context.sent;
             setProyectos(response.data);
@@ -169534,16 +169535,16 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
   var getFileIcon = function getFileIcon(tipo) {
     switch (tipo) {
       case 'application/pdf':
-        return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaFilePdf, {});
+        return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_6__.FaFilePdf, {});
       case 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
-        return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaFileWord, {});
+        return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_6__.FaFileWord, {});
       case 'image/jpeg':
       case 'image/png':
-        return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaFileImage, {});
+        return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_6__.FaFileImage, {});
       case 'application/link':
-        return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaLink, {});
+        return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_6__.FaLink, {});
       default:
-        return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaFile, {});
+        return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_6__.FaFile, {});
     }
   };
   var loadTasks = /*#__PURE__*/function () {
@@ -169554,7 +169555,7 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
           case 0:
             _context2.prev = 0;
             _context2.next = 3;
-            return _axiosConfig__WEBPACK_IMPORTED_MODULE_4__["default"].get("/cargarTareas/".concat(user.empleado));
+            return _axiosConfig__WEBPACK_IMPORTED_MODULE_3__["default"].get("/cargarTareas/".concat(user.empleado));
           case 3:
             response = _context2.sent;
             organizeTasks(response.data.tareas);
@@ -169636,7 +169637,7 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
 
       // Validar checklist antes de mover a Completada
       if (destinationId === 'Completada' && (moved.subtareas_total || 0) > 0 && (moved.subtareas_completadas || 0) < moved.subtareas_total) {
-        sweetalert2__WEBPACK_IMPORTED_MODULE_5___default().fire({
+        sweetalert2__WEBPACK_IMPORTED_MODULE_4___default().fire({
           title: 'Checklist incompleto',
           text: "Debes completar todas las subtareas antes de mover la tarea a Completada. (".concat(moved.subtareas_completadas || 0, "/").concat(moved.subtareas_total, " completadas)"),
           icon: 'warning',
@@ -169667,7 +169668,7 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
       }
 
       // Actualizar en el servidor
-      _axiosConfig__WEBPACK_IMPORTED_MODULE_4__["default"].put("/actualizarEstadoTarea/".concat(draggableId), updateData)["catch"](function (error) {
+      _axiosConfig__WEBPACK_IMPORTED_MODULE_3__["default"].put("/actualizarEstadoTarea/".concat(draggableId), updateData)["catch"](function (error) {
         console.error('Error al actualizar estado:', error);
       });
     }
@@ -169676,6 +169677,15 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
   var abrirReportesDepartamento = function abrirReportesDepartamento() {
     setShowOptionsDropdown(false);
     setShowReportesModal(true);
+  };
+
+  // El tablero está pensado para proyectarse en un TV o segundo monitor, así que
+  // se abre en su propia pestaña en lugar de superponerse al área de trabajo.
+  // noopener/noreferrer evita que la pestaña nueva conserve acceso a window.opener.
+  var abrirTableroSeguimiento = function abrirTableroSeguimiento() {
+    setShowOptionsDropdown(false);
+    var url = "".concat(window.location.origin).concat(window.location.pathname, "#/tablero");
+    window.open(url, '_blank', 'noopener,noreferrer');
   };
   var asignarTareas = function asignarTareas() {
     resetNewTaskModalState();
@@ -169699,7 +169709,7 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
             }
             _context3.prev = 1;
             _context3.next = 4;
-            return _axiosConfig__WEBPACK_IMPORTED_MODULE_4__["default"].get("/cargarTareas/".concat(empleadoSeleccionado.id));
+            return _axiosConfig__WEBPACK_IMPORTED_MODULE_3__["default"].get("/cargarTareas/".concat(empleadoSeleccionado.id));
           case 4:
             response = _context3.sent;
             setTareasEmpleado(response.data.tareas);
@@ -169750,7 +169760,7 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
             _context5.prev = 0;
             setEmpleadoAsignado(empleadoId);
             _context5.next = 4;
-            return _axiosConfig__WEBPACK_IMPORTED_MODULE_4__["default"].get("/cargarTareas/".concat(empleadoId));
+            return _axiosConfig__WEBPACK_IMPORTED_MODULE_3__["default"].get("/cargarTareas/".concat(empleadoId));
           case 4:
             response = _context5.sent;
             setTareasEmpleado(response.data.tareas);
@@ -169772,7 +169782,7 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
             _context5.prev = 14;
             _context5.t0 = _context5["catch"](0);
             console.error('Error al cargar tareas del empleado:', _context5.t0);
-            sweetalert2__WEBPACK_IMPORTED_MODULE_5___default().fire('Error', 'No se pudieron cargar las tareas del empleado', 'error');
+            sweetalert2__WEBPACK_IMPORTED_MODULE_4___default().fire('Error', 'No se pudieron cargar las tareas del empleado', 'error');
           case 18:
           case "end":
             return _context5.stop();
@@ -169810,7 +169820,7 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
           case 0:
             _context6.prev = 0;
             _context6.next = 3;
-            return _axiosConfig__WEBPACK_IMPORTED_MODULE_4__["default"].get("/checklists-empleado/".concat(empleadoId));
+            return _axiosConfig__WEBPACK_IMPORTED_MODULE_3__["default"].get("/checklists-empleado/".concat(empleadoId));
           case 3:
             r = _context6.sent;
             setChecklistsExistentes(r.data);
@@ -169860,7 +169870,7 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
           case 2:
             _context7.prev = 2;
             _context7.next = 5;
-            return Promise.all([_axiosConfig__WEBPACK_IMPORTED_MODULE_4__["default"].get("/cargarTareaSeleccionada/".concat(tareaId)), _axiosConfig__WEBPACK_IMPORTED_MODULE_4__["default"].get("/subtareas/".concat(tareaId))]);
+            return Promise.all([_axiosConfig__WEBPACK_IMPORTED_MODULE_3__["default"].get("/cargarTareaSeleccionada/".concat(tareaId)), _axiosConfig__WEBPACK_IMPORTED_MODULE_3__["default"].get("/subtareas/".concat(tareaId))]);
           case 5:
             _yield$Promise$all = _context7.sent;
             _yield$Promise$all2 = _slicedToArray(_yield$Promise$all, 2);
@@ -169906,7 +169916,7 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
             _context7.prev = 25;
             _context7.t0 = _context7["catch"](2);
             console.error('Error al cargar plantilla:', _context7.t0);
-            sweetalert2__WEBPACK_IMPORTED_MODULE_5___default().fire('Error', 'No se pudo cargar la plantilla de la tarea', 'error');
+            sweetalert2__WEBPACK_IMPORTED_MODULE_4___default().fire('Error', 'No se pudo cargar la plantilla de la tarea', 'error');
           case 29:
           case "end":
             return _context7.stop();
@@ -169943,7 +169953,7 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
               _context8.next = 8;
               break;
             }
-            sweetalert2__WEBPACK_IMPORTED_MODULE_5___default().fire({
+            sweetalert2__WEBPACK_IMPORTED_MODULE_4___default().fire({
               title: 'Error',
               text: 'Completa título, descripción y fecha límite',
               icon: 'error',
@@ -169955,7 +169965,7 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
               _context8.next = 11;
               break;
             }
-            sweetalert2__WEBPACK_IMPORTED_MODULE_5___default().fire({
+            sweetalert2__WEBPACK_IMPORTED_MODULE_4___default().fire({
               title: 'Error',
               text: 'La fecha pactada no puede ser menor a la fecha actual',
               icon: 'error',
@@ -169964,7 +169974,7 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
             return _context8.abrupt("return");
           case 11:
             _context8.next = 13;
-            return _axiosConfig__WEBPACK_IMPORTED_MODULE_4__["default"].post('/guardarTarea', {
+            return _axiosConfig__WEBPACK_IMPORTED_MODULE_3__["default"].post('/guardarTarea', {
               titulo: newTaskTitulo,
               descripcion: newTaskDescripcion,
               fecha_pactada: newTaskFecha,
@@ -169991,7 +170001,7 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
             });
             _context8.next = 19;
             return Promise.all(items.map(function (s) {
-              return _axiosConfig__WEBPACK_IMPORTED_MODULE_4__["default"].post('/subtareas', {
+              return _axiosConfig__WEBPACK_IMPORTED_MODULE_3__["default"].post('/subtareas', {
                 tarea_id: tareaId,
                 titulo: s.titulo,
                 fecha_vencimiento: s.fecha_vencimiento || null,
@@ -170006,7 +170016,7 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
 
             // preguntar si la tarea es para un empleado o para el lider
             _context8.next = 23;
-            return _axiosConfig__WEBPACK_IMPORTED_MODULE_4__["default"].get("/cargarTareas/".concat(user.empleado));
+            return _axiosConfig__WEBPACK_IMPORTED_MODULE_3__["default"].get("/cargarTareas/".concat(user.empleado));
           case 23:
             tasksResponse = _context8.sent;
             tasks = tasksResponse.data.tareas; // Organizar las tareas en las columnas
@@ -170037,14 +170047,14 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
               }
             };
             setColumns(newColumns);
-            sweetalert2__WEBPACK_IMPORTED_MODULE_5___default().fire('¡Éxito!', 'Tarea creada correctamente', 'success');
+            sweetalert2__WEBPACK_IMPORTED_MODULE_4___default().fire('¡Éxito!', 'Tarea creada correctamente', 'success');
             _context8.next = 34;
             break;
           case 30:
             _context8.prev = 30;
             _context8.t0 = _context8["catch"](2);
             console.error('Error al crear la tarea:', _context8.t0);
-            sweetalert2__WEBPACK_IMPORTED_MODULE_5___default().fire('Error', 'Error al crear la tarea', 'error');
+            sweetalert2__WEBPACK_IMPORTED_MODULE_4___default().fire('Error', 'Error al crear la tarea', 'error');
           case 34:
             _context8.prev = 34;
             setIsSaving(false);
@@ -170062,11 +170072,11 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
   var renderIcon = function renderIcon(iconName) {
     switch (iconName) {
       case 'FaClock':
-        return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaClock, {});
+        return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_6__.FaClock, {});
       case 'FaSpinner':
-        return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaSpinner, {});
+        return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_6__.FaSpinner, {});
       case 'FaCheck':
-        return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaCheck, {});
+        return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_6__.FaCheck, {});
       default:
         return null;
     }
@@ -170082,7 +170092,7 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
           case 0:
             _context9.prev = 0;
             _context9.next = 3;
-            return _axiosConfig__WEBPACK_IMPORTED_MODULE_4__["default"].put("/desarchivarTarea/".concat(taskId));
+            return _axiosConfig__WEBPACK_IMPORTED_MODULE_3__["default"].put("/desarchivarTarea/".concat(taskId));
           case 3:
             _context9.next = 5;
             return loadTasks();
@@ -170090,14 +170100,14 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
             // Recargar tareas para actualizar la lista
             setShowArchivedTaskDetails(false);
             setSelectedArchivedTask(null);
-            sweetalert2__WEBPACK_IMPORTED_MODULE_5___default().fire('¡Éxito!', 'Tarea desarchivada correctamente', 'success');
+            sweetalert2__WEBPACK_IMPORTED_MODULE_4___default().fire('¡Éxito!', 'Tarea desarchivada correctamente', 'success');
             _context9.next = 14;
             break;
           case 10:
             _context9.prev = 10;
             _context9.t0 = _context9["catch"](0);
             console.error('Error al desarchivar tarea:', _context9.t0);
-            sweetalert2__WEBPACK_IMPORTED_MODULE_5___default().fire('Error', 'Error al desarchivar la tarea', 'error');
+            sweetalert2__WEBPACK_IMPORTED_MODULE_4___default().fire('Error', 'Error al desarchivar la tarea', 'error');
           case 14:
             J;
           case 15:
@@ -170110,32 +170120,32 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
       return _ref0.apply(this, arguments);
     };
   }();
-  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
     className: "kanban-container",
-    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
       className: "kanban-header",
-      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("h2", {
+      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("h2", {
         children: "Mis Tareas"
-      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
+      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
         className: "header-right",
-        children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+        children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
           className: "task-options-dropdown",
           ref: optionsDropdownRef,
-          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("button", {
+          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("button", {
             className: "task-options-btn",
             onClick: function onClick() {
               return setShowOptionsDropdown(function (prev) {
                 return !prev;
               });
             },
-            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaEllipsisV, {}), " ", /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("span", {
+            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_6__.FaEllipsisV, {}), " ", /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("span", {
               children: "Opciones"
-            }), " ", /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaChevronDown, {
+            }), " ", /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_6__.FaChevronDown, {
               className: showOptionsDropdown ? 'rotated' : ''
             })]
-          }), showOptionsDropdown && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+          }), showOptionsDropdown && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
             className: "task-options-menu",
-            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("button", {
+            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("button", {
               className: "task-options-item item-new",
               onClick: function onClick() {
                 resetNewTaskModalState();
@@ -170143,8 +170153,8 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
                 setAsignarTareasEmpleado(false);
                 setShowOptionsDropdown(false);
               },
-              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaPlus, {}), " Nueva Tarea"]
-            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("button", {
+              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_6__.FaPlus, {}), " Nueva Tarea"]
+            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("button", {
               className: "task-options-item item-calendar",
               onClick: function onClick() {
                 var d = new Date();
@@ -170152,55 +170162,52 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
                 setShowCalendarModal(true);
                 setShowOptionsDropdown(false);
               },
-              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaCalendar, {}), " Calendario"]
-            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("button", {
+              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_6__.FaCalendar, {}), " Calendario"]
+            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("button", {
               className: "task-options-item item-archive",
               onClick: function onClick() {
                 setShowArchiveModal(true);
                 setShowOptionsDropdown(false);
               },
-              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaArchive, {}), " Tareas Archivadas"]
-            }), user.lider == 'Si' && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.Fragment, {
-              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
+              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_6__.FaArchive, {}), " Tareas Archivadas"]
+            }), user.lider == 'Si' && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.Fragment, {
+              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
                 className: "task-options-divider"
-              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("button", {
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("button", {
                 className: "task-options-item item-seguimiento",
                 onClick: function onClick() {
                   abrirListaEmpleadosAsignados();
                   setShowOptionsDropdown(false);
                 },
-                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaSearch, {}), " Seguimiento de Tareas"]
-              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("button", {
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_6__.FaSearch, {}), " Seguimiento de Tareas"]
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("button", {
                 className: "task-options-item item-reportes",
                 onClick: abrirReportesDepartamento,
-                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaChartBar, {}), " Reportes del Departamento"]
-              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("button", {
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_6__.FaChartBar, {}), " Reportes del Departamento"]
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("button", {
                 className: "task-options-item item-tablero",
-                onClick: function onClick() {
-                  setShowOptionsDropdown(false);
-                  setShowTableroSeguimiento(true);
-                },
-                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaDesktop, {}), " Tablero de Seguimiento"]
+                onClick: abrirTableroSeguimiento,
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_6__.FaDesktop, {}), " Tablero de Seguimiento"]
               })]
             })]
           })]
         })
       })]
-    }), showNewTaskModal && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.Fragment, {
-      children: [isSaving && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
+    }), showNewTaskModal && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.Fragment, {
+      children: [isSaving && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
         className: "loader",
-        children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
+        children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
           className: "justify-content-center jimu-primary-loading"
         })
-      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
+      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
         className: "modal-overlay",
-        children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+        children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
           className: "new-task-modal",
-          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
             className: "modal-header",
-            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("h2", {
+            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("h2", {
               children: "Nueva Tarea"
-            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("button", {
+            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("button", {
               type: "button",
               className: "close-button",
               onClick: function onClick() {
@@ -170209,42 +170216,42 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
               },
               children: "\xD7"
             })]
-          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("form", {
+          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("form", {
             className: "new-task-modal-form",
             onSubmit: handleSubmitNewTask,
-            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
               className: "new-task-modal-body",
-              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
                 className: "form-group",
-                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("label", {
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("label", {
                   htmlFor: "plantilla_tarea",
                   children: "Plantilla (tarea ya creada)"
-                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("select", {
+                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("select", {
                   id: "plantilla_tarea",
                   className: "plantilla-tarea-select",
                   value: selectedPlantillaId,
                   onChange: function onChange(e) {
                     return onPlantillaSelectChange(e.target.value);
                   },
-                  children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("option", {
+                  children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("option", {
                     value: "",
                     children: "Empezar en blanco"
                   }), tareasPlantillaOpciones.map(function (opt) {
-                    return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("option", {
+                    return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("option", {
                       value: String(opt.id),
                       children: opt.titulo
                     }, opt.id);
                   })]
-                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("p", {
+                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("p", {
                   className: "plantilla-tarea-hint",
                   children: "Carga t\xEDtulo, descripci\xF3n, fechas, prioridad, proyecto y checklist de una tarea tuya del tablero para editar solo lo necesario."
                 })]
-              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
                 className: "form-group",
-                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("label", {
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("label", {
                   htmlFor: "titulo",
                   children: "T\xEDtulo"
-                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("input", {
+                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("input", {
                   type: "text",
                   id: "titulo",
                   name: "titulo",
@@ -170254,12 +170261,12 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
                   },
                   required: true
                 })]
-              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
                 className: "form-group",
-                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("label", {
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("label", {
                   htmlFor: "descripcion",
                   children: "Descripci\xF3n"
-                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("textarea", {
+                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("textarea", {
                   id: "descripcion",
                   name: "descripcion",
                   value: newTaskDescripcion,
@@ -170268,12 +170275,12 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
                   },
                   required: true
                 })]
-              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
                 className: "form-group",
-                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("label", {
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("label", {
                   htmlFor: "fecha_pactada",
                   children: "Fecha l\xEDmite"
-                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("input", {
+                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("input", {
                   type: "date",
                   id: "fecha_pactada",
                   name: "fecha_pactada",
@@ -170283,12 +170290,12 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
                   },
                   required: true
                 })]
-              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
                 className: "form-group",
-                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("label", {
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("label", {
                   htmlFor: "prioridad",
                   children: "Prioridad"
-                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("select", {
+                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("select", {
                   id: "prioridad",
                   name: "prioridad",
                   value: newTaskPrioridad,
@@ -170296,23 +170303,23 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
                     return setNewTaskPrioridad(e.target.value);
                   },
                   required: true,
-                  children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("option", {
+                  children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("option", {
                     value: "Alta",
                     children: "Alta"
-                  }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("option", {
+                  }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("option", {
                     value: "Media",
                     children: "Media"
-                  }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("option", {
+                  }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("option", {
                     value: "Baja",
                     children: "Baja"
                   })]
                 })]
-              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
                 className: "form-group",
-                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("label", {
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("label", {
                   htmlFor: "estado",
                   children: "Estado"
-                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("select", {
+                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("select", {
                   id: "estado",
                   name: "estado",
                   value: newTaskEstado,
@@ -170320,42 +170327,42 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
                     return setNewTaskEstado(e.target.value);
                   },
                   required: true,
-                  children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("option", {
+                  children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("option", {
                     value: "Pendiente",
                     children: "Pendiente"
-                  }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("option", {
+                  }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("option", {
                     value: "En Proceso",
                     children: "En Proceso"
                   })]
                 })]
-              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
                 className: "form-group",
-                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("label", {
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("label", {
                   htmlFor: "proyecto_id",
                   children: "Proyecto (opcional)"
-                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("select", {
+                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("select", {
                   id: "proyecto_id",
                   name: "proyecto_id",
                   value: formProyectoId,
                   onChange: function onChange(e) {
                     return setFormProyectoId(e.target.value);
                   },
-                  children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("option", {
+                  children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("option", {
                     value: "",
                     children: "Sin proyecto"
                   }), proyectos.map(function (p) {
-                    return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("option", {
+                    return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("option", {
                       value: p.id,
                       children: p.nombre
                     }, p.id);
                   })]
                 })]
-              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
                 className: "form-group",
                 ref: checklistBlockRef,
-                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
                   className: "checklist-toggle-row",
-                  children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("button", {
+                  children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("button", {
                     type: "button",
                     className: "checklist-toggle-btn".concat(showChecklist ? ' active' : ''),
                     onClick: function onClick() {
@@ -170368,15 +170375,15 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
                       });
                     },
                     children: "\u2611 Checklist"
-                  }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("span", {
+                  }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("span", {
                     className: "checklist-hint",
                     children: "Aqu\xED abajo agregas los \xEDtems"
                   })]
-                }), showChecklist && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+                }), showChecklist && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
                   className: "checklist-form-section",
-                  children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+                  children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
                     className: "checklist-header-row",
-                    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("input", {
+                    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("input", {
                       type: "text",
                       className: "checklist-titulo-input",
                       placeholder: "T\xEDtulo del checklist (opcional)...",
@@ -170384,28 +170391,28 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
                       onChange: function onChange(e) {
                         return setChecklistTitulo(e.target.value);
                       }
-                    }), checklistsExistentes.length > 0 && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("select", {
+                    }), checklistsExistentes.length > 0 && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("select", {
                       className: "checklist-copy-select",
                       value: selectedChecklistId,
                       onChange: function onChange(e) {
                         return handleCopyChecklist(e.target.value);
                       },
-                      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("option", {
+                      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("option", {
                         value: "",
                         children: "Copiar checklist de otra tarea\u2026"
                       }), checklistsExistentes.map(function (c) {
-                        return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("option", {
+                        return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("option", {
                           value: c.tarea_id,
                           children: [c.tarea_titulo, c.checklist_titulo ? " \u2014 ".concat(c.checklist_titulo) : '']
                         }, c.tarea_id);
                       })]
                     })]
-                  }), subtareasForm.length > 0 && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("ul", {
+                  }), subtareasForm.length > 0 && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("ul", {
                     className: "subtareas-list checklist-items-preview new-task-subtareas-editable",
                     children: subtareasForm.map(function (s) {
-                      return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("li", {
+                      return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("li", {
                         className: "subtarea-item",
-                        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("input", {
+                        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("input", {
                           type: "text",
                           className: "subtarea-edit-input",
                           value: s.titulo,
@@ -170419,7 +170426,7 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
                               });
                             });
                           }
-                        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("input", {
+                        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("input", {
                           type: "date",
                           className: "subtarea-edit-date",
                           value: s.fecha_vencimiento || '',
@@ -170433,7 +170440,7 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
                             });
                           },
                           title: "Fecha de vencimiento del \xEDtem"
-                        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("button", {
+                        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("button", {
                           type: "button",
                           className: "subtarea-delete",
                           style: {
@@ -170447,18 +170454,18 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
                               });
                             });
                           },
-                          children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaTimes, {})
+                          children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_6__.FaTimes, {})
                         })]
                       }, s.tempId);
                     })
-                  }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+                  }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
                     className: "checklist-add-zone",
-                    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
+                    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
                       className: "checklist-add-zone-label",
                       children: "Nuevo \xEDtem del checklist"
-                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
                       className: "subtarea-add-row",
-                      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("input", {
+                      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("input", {
                         type: "text",
                         className: "subtarea-add-input",
                         placeholder: "Escribe el \xEDtem y pulsa + o Enter",
@@ -170481,7 +170488,7 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
                             setNuevaSubtareaFecha('');
                           }
                         }
-                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("input", {
+                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("input", {
                         type: "date",
                         className: "subtarea-add-date",
                         value: nuevaSubtareaFecha,
@@ -170489,7 +170496,7 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
                           return setNuevaSubtareaFecha(e.target.value);
                         },
                         title: "Fecha de vencimiento del \xEDtem"
-                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("button", {
+                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("button", {
                         type: "button",
                         className: "subtarea-add-btn",
                         disabled: !nuevaSubtareaTexto.trim(),
@@ -170505,96 +170512,96 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
                           setNuevaSubtareaTexto('');
                           setNuevaSubtareaFecha('');
                         },
-                        children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaPlus, {})
+                        children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_6__.FaPlus, {})
                       })]
                     })]
                   })]
                 })]
               })]
-            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
               className: "modal-actions new-task-modal-actions",
-              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("button", {
+              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("button", {
                 type: "button",
                 className: "cancel-button-new-task",
                 onClick: function onClick() {
                   setShowNewTaskModal(false);
                   resetNewTaskModalState();
                 },
-                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaTimes, {}), " Cancelar"]
-              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("button", {
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_6__.FaTimes, {}), " Cancelar"]
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("button", {
                 type: "submit",
                 className: "submit-button-new-task",
-                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaSave, {}), " Crear Tarea"]
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_6__.FaSave, {}), " Crear Tarea"]
               })]
             })]
           })]
         })
       })]
-    }), showListaEmpleadosAsignados && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
+    }), showListaEmpleadosAsignados && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
       className: "modal-overlay",
-      children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+      children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
         className: "lista-empleados-asignados-modal",
-        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
           className: "modal-header",
-          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("h2", {
+          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("h2", {
             children: "\uD83D\uDC65 Empleados Asignados"
-          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("button", {
+          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("button", {
             className: "close-button",
             onClick: function onClick() {
               return setShowListaEmpleadosAsignados(false);
             },
             children: "\xD7"
           })]
-        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
+        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
           className: "modal-content empleados-grid",
           children: user.empleados_asignados.map(function (empleado) {
-            return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+            return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
               className: "empleado-card",
-              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
+              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
                 className: "empleado-info",
-                children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("span", {
+                children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("span", {
                   className: "empleado-nombre",
                   children: empleado.nombre.toLowerCase()
                 })
-              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("button", {
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("button", {
                 className: "btn-ver",
                 onClick: function onClick() {
                   return verTareas(empleado.id);
                 },
-                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaEye, {}), " Ver Tareas"]
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_6__.FaEye, {}), " Ver Tareas"]
               })]
             }, empleado.id);
           })
         })]
       })
-    }), showTareasEmpleado && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
+    }), showTareasEmpleado && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
       className: "modal-overlay",
-      children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+      children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
         className: "tareas-empleado-modal",
-        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
           className: "modal-header",
-          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("h2", {
+          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("h2", {
             children: ["TAREAS DE ", empleadoSeleccionado === null || empleadoSeleccionado === void 0 ? void 0 : empleadoSeleccionado.nombre]
-          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("button", {
+          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("button", {
             className: "close-button",
             onClick: cerrarTareasEmpleado,
             children: "\xD7"
           })]
-        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
+        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
           className: "modal-content",
-          children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
+          children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
             className: "tareas-empleado-container",
             children: !mostrarTareasEstado ?
             /*#__PURE__*/
             // Vista de estados (nivel 1)
-            (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.Fragment, {
-              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
+            (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.Fragment, {
+              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
                 className: "estados-cards",
                 children: Object.entries(columns).map(function (_ref1) {
                   var _ref10 = _slicedToArray(_ref1, 2),
                     estado = _ref10[0],
                     column = _ref10[1];
-                  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+                  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
                     className: "estado-card",
                     onClick: function onClick() {
                       return seleccionarEstado(estado);
@@ -170602,119 +170609,119 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
                     style: {
                       borderTop: "4px solid ".concat(column.color)
                     },
-                    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+                    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
                       className: "estado-card-header",
-                      children: [renderIcon(column.iconComponent), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("h3", {
+                      children: [renderIcon(column.iconComponent), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("h3", {
                         children: column.title
                       })]
-                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
                       className: "estado-card-count",
-                      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("span", {
+                      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("span", {
                         children: tareasEmpleado.filter(function (task) {
                           return task.estado === estado;
                         }).length
-                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("span", {
+                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("span", {
                         children: "tareas"
                       })]
                     })]
                   }, estado);
                 })
-              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
                 className: "buttons-container",
-                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("button", {
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("button", {
                   className: "back-button",
                   onClick: volverAEmpleados,
-                  children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaArrowLeft, {}), " Volver a empleados"]
-                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("button", {
+                  children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_6__.FaArrowLeft, {}), " Volver a empleados"]
+                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("button", {
                   className: "asignar-tareas-button",
                   onClick: function onClick() {
                     return asignarTareas();
                   },
-                  children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaPlus, {}), " Asignar Tareas"]
+                  children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_6__.FaPlus, {}), " Asignar Tareas"]
                 })]
               })]
             }) :
             /*#__PURE__*/
             // Vista de tareas de un estado (nivel 2)
-            (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+            (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
               className: "tareas-estado-container",
-              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
+              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
                 className: "estado-tareas-header",
-                children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+                children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
                   style: {
                     fontSize: '1.5rem',
                     fontWeight: 'bold'
                   },
                   children: ["Tareas ", estadoSeleccionado]
                 })
-              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
                 className: "tareas-list-container",
-                children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
+                children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
                   className: "tareas-list",
                   children: tareasEmpleado.filter(function (task) {
                     return task.estado === estadoSeleccionado;
                   }).map(function (task) {
-                    return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+                    return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
                       className: "task-card",
                       onClick: function onClick() {
                         return handleTaskClick(task);
                       },
-                      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+                      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
                         className: "task-card-header",
-                        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("h4", {
+                        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("h4", {
                           style: {
                             textTransform: 'capitalize',
                             marginBottom: '0.5rem'
                           },
                           children: task.titulo
-                        }), task.proyecto_nombre && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("span", {
+                        }), task.proyecto_nombre && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("span", {
                           className: "proyecto-badge",
-                          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaFolder, {
+                          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_6__.FaFolder, {
                             style: {
                               marginRight: '4px',
                               fontSize: '0.7rem'
                             }
                           }), task.proyecto_nombre]
-                        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+                        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
                           className: "task-card-header-right",
-                          children: [task.prioridad && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("span", {
+                          children: [task.prioridad && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("span", {
                             className: "prioridad-badge ".concat(task.prioridad.toLowerCase()),
                             children: task.prioridad
-                          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+                          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
                             className: "task-card-header-right-icons",
-                            children: [task.aprobada ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa6__WEBPACK_IMPORTED_MODULE_8__.FaCircleCheck, {
+                            children: [task.aprobada ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa6__WEBPACK_IMPORTED_MODULE_7__.FaCircleCheck, {
                               color: "green",
                               title: "Aprobada",
                               style: {
                                 marginRight: '0.5rem'
                               }
-                            }) : /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa6__WEBPACK_IMPORTED_MODULE_8__.FaCircleCheck, {
+                            }) : /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa6__WEBPACK_IMPORTED_MODULE_7__.FaCircleCheck, {
                               color: "grey",
                               title: "No aprobada",
                               style: {
                                 marginRight: '0.5rem',
                                 opacity: 0.5
                               }
-                            }), task.estado === 'Completada' && task.visto_bueno && !task.rechazada ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaEye, {
+                            }), task.estado === 'Completada' && task.visto_bueno && !task.rechazada ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_6__.FaEye, {
                               color: "green",
                               title: "Visto bueno",
                               style: {
                                 marginRight: '0.5rem'
                               }
-                            }) : /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaEye, {
+                            }) : /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_6__.FaEye, {
                               color: "grey",
                               title: "Pendiente de visto bueno",
                               style: {
                                 marginRight: '0.5rem',
                                 opacity: 0.5
                               }
-                            }), (task.estado === 'Completada' || task.estado === 'En Proceso') && task.rechazada ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa6__WEBPACK_IMPORTED_MODULE_8__.FaCircleXmark, {
+                            }), (task.estado === 'Completada' || task.estado === 'En Proceso') && task.rechazada ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa6__WEBPACK_IMPORTED_MODULE_7__.FaCircleXmark, {
                               color: "red",
                               title: "Rechazada",
                               style: {
                                 marginRight: '0.5rem'
                               }
-                            }) : null, task.pausada == 1 || task.pausada === true ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaPause, {
+                            }) : null, task.pausada == 1 || task.pausada === true ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_6__.FaPause, {
                               color: "#f97316",
                               title: "Tarea pausada",
                               style: {
@@ -170723,37 +170730,37 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
                             }) : null]
                           })]
                         })]
-                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("p", {
+                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("p", {
                         className: "task-description",
                         children: [task.descripcion.substring(0, 100), "..."]
-                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
                         className: "task-dates",
-                        children: [(task.estado === 'Pendiente' || task.estado === 'En Proceso') && task.fecha_pactada && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("span", {
+                        children: [(task.estado === 'Pendiente' || task.estado === 'En Proceso') && task.fecha_pactada && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("span", {
                           className: "date-badge due-date",
-                          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaClock, {}), "Fecha l\xEDmite: ", new Date(task.fecha_pactada + 'T00:00:00').toLocaleDateString()]
-                        }), task.estado === 'Completada' && task.fecha_entregada && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("span", {
+                          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_6__.FaClock, {}), "Fecha l\xEDmite: ", new Date(task.fecha_pactada + 'T00:00:00').toLocaleDateString()]
+                        }), task.estado === 'Completada' && task.fecha_entregada && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("span", {
                           className: "date-badge completed-date",
-                          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaCheck, {}), "Entregado: ", new Date(task.fecha_entregada).toLocaleDateString()]
+                          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_6__.FaCheck, {}), "Entregado: ", new Date(task.fecha_entregada).toLocaleDateString()]
                         })]
-                      }), task.evidencias && task.evidencias.length > 0 && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
+                      }), task.evidencias && task.evidencias.length > 0 && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
                         className: "evidences-container",
                         children: task.evidencias.map(function (evidencia) {
-                          return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("span", {
+                          return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("span", {
                             className: "evidence-icon",
                             title: evidencia.nombre,
                             children: getFileIcon(evidencia.tipo)
                           }, evidencia.id);
                         })
-                      }), task.subtareas_total > 0 && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+                      }), task.subtareas_total > 0 && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
                         className: "checklist-badge".concat(task.subtareas_completadas === task.subtareas_total ? ' completo' : ''),
-                        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa6__WEBPACK_IMPORTED_MODULE_8__.FaListCheck, {}), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("span", {
+                        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa6__WEBPACK_IMPORTED_MODULE_7__.FaListCheck, {}), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("span", {
                           children: [task.subtareas_completadas, "/", task.subtareas_total]
                         })]
                       })]
                     }, task.id);
                   })
                 })
-              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("button", {
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("button", {
                 className: "back-button",
                 onClick: volverAEstados,
                 children: "\u2190 Volver a estados"
@@ -170762,35 +170769,35 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
           })
         })]
       })
-    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(_hello_pangea_dnd__WEBPACK_IMPORTED_MODULE_9__.DragDropContext, {
+    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(_hello_pangea_dnd__WEBPACK_IMPORTED_MODULE_8__.DragDropContext, {
       onDragEnd: onDragEnd,
-      children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
+      children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
         className: "kanban-board",
         children: Object.entries(columns).map(function (_ref11) {
           var _ref12 = _slicedToArray(_ref11, 2),
             columnId = _ref12[0],
             column = _ref12[1];
-          return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+          return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
             className: "kanban-column",
             "data-status": column.title,
             style: {
               overflow: 'hidden'
             },
-            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
               className: "column-header",
               style: {
                 backgroundColor: column.color
               },
-              children: [renderIcon(column.iconComponent), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("h3", {
+              children: [renderIcon(column.iconComponent), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("h3", {
                 children: column.title
-              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("span", {
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("span", {
                 className: "task-count",
                 children: column.items.length
               })]
-            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(_hello_pangea_dnd__WEBPACK_IMPORTED_MODULE_9__.Droppable, {
+            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(_hello_pangea_dnd__WEBPACK_IMPORTED_MODULE_8__.Droppable, {
               droppableId: columnId,
               children: function children(provided) {
-                return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", _objectSpread(_objectSpread({}, provided.droppableProps), {}, {
+                return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", _objectSpread(_objectSpread({}, provided.droppableProps), {}, {
                   ref: provided.innerRef,
                   className: "task-list",
                   style: {
@@ -170798,99 +170805,99 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
                     maxHeight: 'calc(100vh - 200px)'
                   },
                   children: [column.items.map(function (task, index) {
-                    return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(_hello_pangea_dnd__WEBPACK_IMPORTED_MODULE_9__.Draggable, {
+                    return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(_hello_pangea_dnd__WEBPACK_IMPORTED_MODULE_8__.Draggable, {
                       draggableId: task.id.toString(),
                       index: index,
                       isDragDisabled: !task.aprobada,
                       children: function children(provided, snapshot) {
-                        return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", _objectSpread(_objectSpread(_objectSpread({
+                        return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", _objectSpread(_objectSpread(_objectSpread({
                           ref: provided.innerRef
                         }, provided.draggableProps), provided.dragHandleProps), {}, {
                           className: "task-card ".concat(snapshot.isDragging ? 'dragging' : '', " ").concat(!task.aprobada ? 'disabled-drag' : ''),
                           onClick: function onClick() {
                             return handleTaskClick(task);
                           },
-                          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+                          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
                             className: "kanban-column-visto-bueno",
-                            children: [task.aprobada ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa6__WEBPACK_IMPORTED_MODULE_8__.FaCircleCheck, {
+                            children: [task.aprobada ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa6__WEBPACK_IMPORTED_MODULE_7__.FaCircleCheck, {
                               color: "green",
                               title: "Aprobada",
                               style: {
                                 marginRight: '0.5rem'
                               }
-                            }) : /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa6__WEBPACK_IMPORTED_MODULE_8__.FaCircleCheck, {
+                            }) : /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa6__WEBPACK_IMPORTED_MODULE_7__.FaCircleCheck, {
                               color: "grey",
                               title: "No aprobada",
                               style: {
                                 marginRight: '0.5rem',
                                 opacity: 0.5
                               }
-                            }), task.estado === 'Completada' && task.visto_bueno && !task.rechazada ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaEye, {
+                            }), task.estado === 'Completada' && task.visto_bueno && !task.rechazada ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_6__.FaEye, {
                               color: "green",
                               title: "Visto bueno",
                               style: {
                                 marginRight: '0.5rem'
                               }
-                            }) : /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaEye, {
+                            }) : /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_6__.FaEye, {
                               color: "grey",
                               title: "Pendiente de visto bueno",
                               style: {
                                 marginRight: '0.5rem',
                                 opacity: 0.5
                               }
-                            }), (task.estado === 'Completada' || task.estado === 'En Proceso') && task.rechazada ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa6__WEBPACK_IMPORTED_MODULE_8__.FaCircleXmark, {
+                            }), (task.estado === 'Completada' || task.estado === 'En Proceso') && task.rechazada ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa6__WEBPACK_IMPORTED_MODULE_7__.FaCircleXmark, {
                               color: "red",
                               title: "Rechazada",
                               style: {
                                 marginRight: '0.5rem'
                               }
-                            }) : null, task.pausada == 1 || task.pausada === true ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaPause, {
+                            }) : null, task.pausada == 1 || task.pausada === true ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_6__.FaPause, {
                               color: "#f97316",
                               title: "Tarea pausada",
                               style: {
                                 marginRight: '0.5rem'
                               }
                             }) : null]
-                          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+                          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
                             className: "task-card-header",
-                            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("h4", {
+                            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("h4", {
                               children: task.titulo
-                            }), task.prioridad && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("span", {
+                            }), task.prioridad && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("span", {
                               className: "prioridad-badge ".concat(task.prioridad.toLowerCase()),
                               children: task.prioridad
                             })]
-                          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("p", {
+                          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("p", {
                             className: "task-description",
                             children: [task.descripcion.substring(0, 100), "..."]
-                          }), task.proyecto_nombre && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("span", {
+                          }), task.proyecto_nombre && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("span", {
                             className: "proyecto-badge",
-                            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaFolder, {
+                            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_6__.FaFolder, {
                               style: {
                                 marginRight: '4px',
                                 fontSize: '0.7rem'
                               }
                             }), task.proyecto_nombre]
-                          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+                          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
                             className: "task-dates",
-                            children: [(task.estado === 'Pendiente' || task.estado === 'En Proceso') && task.fecha_pactada && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("span", {
+                            children: [(task.estado === 'Pendiente' || task.estado === 'En Proceso') && task.fecha_pactada && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("span", {
                               className: "date-badge due-date",
-                              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaClock, {}), "Fecha l\xEDmite: ", new Date(task.fecha_pactada + 'T00:00:00').toLocaleDateString()]
-                            }), task.estado === 'Completada' && task.fecha_entregada && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("span", {
+                              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_6__.FaClock, {}), "Fecha l\xEDmite: ", new Date(task.fecha_pactada + 'T00:00:00').toLocaleDateString()]
+                            }), task.estado === 'Completada' && task.fecha_entregada && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("span", {
                               className: "date-badge completed-date",
-                              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaCheck, {}), "Entregado: ", new Date(task.fecha_entregada + 'T00:00:00').toLocaleDateString()]
+                              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_6__.FaCheck, {}), "Entregado: ", new Date(task.fecha_entregada + 'T00:00:00').toLocaleDateString()]
                             })]
-                          }), task.evidencias && task.evidencias.length > 0 && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
+                          }), task.evidencias && task.evidencias.length > 0 && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
                             className: "evidences-container",
                             children: task.evidencias.map(function (evidencia) {
-                              return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("span", {
+                              return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("span", {
                                 className: "evidence-icon",
                                 title: evidencia.nombre,
                                 children: getFileIcon(evidencia.tipo)
                               }, evidencia.id);
                             })
-                          }), task.subtareas_total > 0 && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+                          }), task.subtareas_total > 0 && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
                             className: "checklist-badge".concat(task.subtareas_completadas === task.subtareas_total ? ' completo' : ''),
-                            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa6__WEBPACK_IMPORTED_MODULE_8__.FaListCheck, {}), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("span", {
+                            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa6__WEBPACK_IMPORTED_MODULE_7__.FaListCheck, {}), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("span", {
                               children: [task.subtareas_completadas, "/", task.subtareas_total]
                             })]
                           })]
@@ -170904,33 +170911,33 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
           }, columnId);
         })
       })
-    }), showTaskDetails && selectedTask && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(_TaskDetailsModal__WEBPACK_IMPORTED_MODULE_1__["default"], {
+    }), showTaskDetails && selectedTask && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(_TaskDetailsModal__WEBPACK_IMPORTED_MODULE_1__["default"], {
       task: selectedTask,
       onClose: function onClose() {
         return setShowTaskDetails(false);
       },
       onUpdate: handleTaskUpdate
-    }), showCalendarModal && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
+    }), showCalendarModal && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
       className: "modal-overlay",
       role: "presentation",
       onClick: function onClick(e) {
         if (e.target === e.currentTarget) setShowCalendarModal(false);
       },
-      children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+      children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
         className: "employee-calendar-modal",
         role: "dialog",
         "aria-labelledby": "employee-calendar-title",
-        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
           className: "modal-header employee-calendar-header",
-          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("h2", {
+          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("h2", {
             id: "employee-calendar-title",
-            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaCalendar, {
+            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_6__.FaCalendar, {
               style: {
                 marginRight: '0.45rem',
                 verticalAlign: 'middle'
               }
             }), "Calendario de tareas"]
-          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("button", {
+          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("button", {
             type: "button",
             className: "close-button",
             onClick: function onClick() {
@@ -170939,54 +170946,54 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
             "aria-label": "Cerrar calendario",
             children: "\xD7"
           })]
-        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
           className: "modal-content employee-calendar-body",
-          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
             className: "employee-calendar-toolbar",
-            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("button", {
+            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("button", {
               type: "button",
               className: "employee-calendar-nav-btn",
               onClick: goCalendarPrevMonth,
               "aria-label": "Mes anterior",
-              children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaChevronLeft, {})
-            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("span", {
+              children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_6__.FaChevronLeft, {})
+            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("span", {
               className: "employee-calendar-month-label",
               children: calendarMonthTitle
-            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("button", {
+            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("button", {
               type: "button",
               className: "employee-calendar-nav-btn",
               onClick: goCalendarNextMonth,
               "aria-label": "Mes siguiente",
-              children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaChevronRight, {})
+              children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_6__.FaChevronRight, {})
             })]
-          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("p", {
+          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("p", {
             className: "employee-calendar-hint",
             children: "Pendientes y en proceso por fecha l\xEDmite; completadas por fecha de entrega."
-          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
+          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
             className: "employee-calendar-weekdays",
             "aria-hidden": "true",
             children: ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map(function (label) {
-              return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
+              return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
                 className: "employee-calendar-weekday",
                 children: label
               }, label);
             })
-          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
+          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
             className: "employee-calendar-grid",
             children: calendarCells.map(function (cell) {
-              return cell.type === 'empty' ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
+              return cell.type === 'empty' ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
                 className: "employee-calendar-cell employee-calendar-cell--empty"
-              }, cell.key) : /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+              }, cell.key) : /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
                 className: "employee-calendar-cell".concat(isCalendarToday(cell.day) ? ' employee-calendar-cell--today' : ''),
-                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
                   className: "employee-calendar-daynum",
                   children: cell.day
-                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
+                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
                   className: "employee-calendar-tasks",
                   children: (tasksByEndDate[cell.dateKey] || []).map(function (task) {
                     var estado = (task.estado || '').trim();
                     var estadoClass = estado === 'Completada' ? 'done' : estado === 'En Proceso' ? 'progress' : 'pending';
-                    return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("button", {
+                    return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("button", {
                       type: "button",
                       className: "employee-calendar-task ".concat(estadoClass),
                       title: task.titulo,
@@ -171003,85 +171010,85 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
           })]
         })]
       })
-    }), showArchiveModal && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
+    }), showArchiveModal && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
       className: "modal-overlay",
-      children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+      children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
         className: "tareas-archivadas-modal",
-        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
           className: "modal-header",
-          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("h2", {
+          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("h2", {
             children: "\uD83D\uDCC1 Tareas Archivadas"
-          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("button", {
+          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("button", {
             className: "close-button",
             onClick: function onClick() {
               return setShowArchiveModal(false);
             },
             children: "\xD7"
           })]
-        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
+        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
           className: "modal-content",
-          children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
+          children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
             className: "tareas-archivadas-container",
-            children: tareasArchivadas.length === 0 ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+            children: tareasArchivadas.length === 0 ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
               className: "no-archived-tasks",
-              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
+              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
                 className: "no-archived-icon",
                 children: "\uD83D\uDCC1"
-              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("h3", {
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("h3", {
                 children: "No hay tareas archivadas"
-              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("p", {
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("p", {
                 children: "Las tareas archivadas aparecer\xE1n aqu\xED cuando las archives"
               })]
             }) : tareasArchivadas.map(function (task) {
               var _task$prioridad;
-              return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+              return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
                 className: "tarea-archivada-card",
                 onClick: function onClick() {
                   return handleArchivedTaskClick(task);
                 },
-                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
                   className: "archived-task-header",
-                  children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+                  children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
                     className: "archived-task-info",
-                    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("h4", {
+                    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("h4", {
                       children: task.titulo
-                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("p", {
+                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("p", {
                       className: "archived-task-description",
                       children: task.descripcion.length > 100 ? "".concat(task.descripcion.substring(0, 100), "...") : task.descripcion
                     })]
-                  }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+                  }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
                     className: "archived-task-meta",
-                    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("span", {
+                    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("span", {
                       className: "prioridad-badge ".concat((_task$prioridad = task.prioridad) === null || _task$prioridad === void 0 ? void 0 : _task$prioridad.toLowerCase()),
                       children: task.prioridad
-                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("span", {
+                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("span", {
                       className: "archived-date",
                       children: ["Archivada: ", new Date(task.fecha_archivada + 'T00:00:00').toLocaleDateString()]
                     })]
                   })]
-                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
                   className: "archived-task-footer",
-                  children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+                  children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
                     className: "archived-task-dates",
-                    children: [task.fecha_pactada && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("span", {
+                    children: [task.fecha_pactada && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("span", {
                       className: "date-badge due-date",
-                      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaClock, {}), "Fecha l\xEDmite: ", new Date(task.fecha_pactada + 'T00:00:00').toLocaleDateString()]
-                    }), task.fecha_entregada && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("span", {
+                      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_6__.FaClock, {}), "Fecha l\xEDmite: ", new Date(task.fecha_pactada + 'T00:00:00').toLocaleDateString()]
+                    }), task.fecha_entregada && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("span", {
                       className: "date-badge completed-date",
-                      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaCheck, {}), "Entregado: ", new Date(task.fecha_entregada + 'T00:00:00').toLocaleDateString()]
+                      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_6__.FaCheck, {}), "Entregado: ", new Date(task.fecha_entregada + 'T00:00:00').toLocaleDateString()]
                     })]
-                  }), task.evidencias && task.evidencias.length > 0 && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+                  }), task.evidencias && task.evidencias.length > 0 && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
                     className: "evidences-container",
-                    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("span", {
+                    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("span", {
                       className: "evidence-count",
                       children: [task.evidencias.length, " evidencia", task.evidencias.length !== 1 ? 's' : '']
                     }), task.evidencias.slice(0, 3).map(function (evidencia) {
-                      return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("span", {
+                      return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("span", {
                         className: "evidence-icon",
                         title: evidencia.nombre,
                         children: getFileIcon(evidencia.tipo)
                       }, evidencia.id);
-                    }), task.evidencias.length > 3 && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("span", {
+                    }), task.evidencias.length > 3 && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("span", {
                       className: "evidence-more",
                       children: ["+", task.evidencias.length - 3]
                     })]
@@ -171092,16 +171099,12 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
           })
         })]
       })
-    }), showReportesModal && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(_ReportesDepartamentoModal__WEBPACK_IMPORTED_MODULE_2__["default"], {
+    }), showReportesModal && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(_ReportesDepartamentoModal__WEBPACK_IMPORTED_MODULE_2__["default"], {
       user: user,
       onClose: function onClose() {
         return setShowReportesModal(false);
       }
-    }), showTableroSeguimiento && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(_tablero_TableroSeguimiento__WEBPACK_IMPORTED_MODULE_3__["default"], {
-      onCerrar: function onCerrar() {
-        return setShowTableroSeguimiento(false);
-      }
-    }), showArchivedTaskDetails && selectedArchivedTask && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(_TaskDetailsModal__WEBPACK_IMPORTED_MODULE_1__["default"], {
+    }), showArchivedTaskDetails && selectedArchivedTask && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(_TaskDetailsModal__WEBPACK_IMPORTED_MODULE_1__["default"], {
       task: selectedArchivedTask,
       onClose: function onClose() {
         setShowArchivedTaskDetails(false);
@@ -189492,6 +189495,9 @@ function TableroContenido(_ref4) {
     _useState4 = _slicedToArray(_useState3, 2),
     modoTv = _useState4[0],
     setModoTv = _useState4[1];
+  // Sin onCerrar el tablero vive en su propia pestaña: no hay a dónde "volver",
+  // así que se ofrece cerrarla en lugar de regresar a la vista anterior.
+  var enPestanaPropia = !onCerrar;
   var _useState5 = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(7),
     _useState6 = _slicedToArray(_useState5, 1),
     dias = _useState6[0];
@@ -189520,9 +189526,10 @@ function TableroContenido(_ref4) {
   // Salir del modo TV con Escape, ya que en TV no hay barra de navegación.
   (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(function () {
     var onKey = function onKey(ev) {
-      if (ev.key === 'Escape') {
-        if (modoTv) setModoTv(false);else if (onCerrar) onCerrar();
-      }
+      if (ev.key !== 'Escape') return;
+      // En pestaña propia Escape sólo sale del modo TV: cerrar la pestaña
+      // desde el script no es fiable y sería un salto brusco para el usuario.
+      if (modoTv) setModoTv(false);else if (onCerrar) onCerrar();
     };
     window.addEventListener('keydown', onKey);
     return function () {
@@ -189549,10 +189556,14 @@ function TableroContenido(_ref4) {
       children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_8__.jsx)("p", {
         className: "tb-error",
         children: "No fue posible cargar el tablero."
-      }), onCerrar && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_8__.jsx)("button", {
+      }), onCerrar ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_8__.jsx)("button", {
         className: "tb-btn",
         onClick: onCerrar,
         children: "Volver"
+      }) : /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_8__.jsx)("a", {
+        className: "tb-btn",
+        href: "#/dashboard",
+        children: "Ir al tablero de trabajo"
       })]
     });
   }
@@ -189598,6 +189609,10 @@ function TableroContenido(_ref4) {
             className: "tb-btn tb-btn-sec",
             onClick: onCerrar,
             children: "Salir"
+          }), enPestanaPropia && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_8__.jsx)("a", {
+            className: "tb-btn tb-btn-sec",
+            href: "#/dashboard",
+            children: "Ir al tablero de trabajo"
           })]
         })]
       })]
