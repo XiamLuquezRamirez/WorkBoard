@@ -292,6 +292,24 @@ const EmployeeInterface = ({ user }) => {
 
         const destinationId = destination.droppableId;
 
+        // Una tarea en pausa no cambia de estado arrastrándola: debe reanudarse
+        // primero, para que la reanudación quede registrada en su historial. Se
+        // comprueba antes de tocar las columnas para que la tarjeta no llegue a
+        // moverse en pantalla y luego regrese.
+        if (sourceId !== destinationId) {
+            const tareaArrastrada = (columns[sourceId]?.items || [])
+                .find((t) => String(t.id) === String(draggableId));
+            if (tareaArrastrada && Number(tareaArrastrada.pausada) === 1) {
+                Swal.fire({
+                    title: 'Tarea en pausa',
+                    text: 'Debes reanudar la tarea antes de cambiar su estado.',
+                    icon: 'info',
+                    confirmButtonText: 'Entendido',
+                });
+                return;
+            }
+        }
+
         // Crear copias profundas para evitar mutaciones
         const newColumns = JSON.parse(JSON.stringify(columns));
 
@@ -346,10 +364,23 @@ const EmployeeInterface = ({ user }) => {
                 updateData.fecha_entregada = new Date().toISOString().split('T')[0];
             }
 
-            // Actualizar en el servidor
+            // Actualizar en el servidor. Si lo rechaza —por ejemplo porque la
+            // tarea está pausada— hay que devolver la tarjeta a su columna: de
+            // lo contrario quedaría movida en pantalla sin estarlo en la base
+            // de datos.
+            const columnasPrevias = columns;
             axiosInstance.put(`/actualizarEstadoTarea/${draggableId}`, updateData)
                 .catch(error => {
                     console.error('Error al actualizar estado:', error);
+                    setColumns(columnasPrevias);
+                    const msg = error?.response?.data?.error
+                        || 'No fue posible actualizar el estado de la tarea.';
+                    Swal.fire({
+                        title: error?.response?.status === 409 ? 'Tarea en pausa' : 'Error',
+                        text: msg,
+                        icon: error?.response?.status === 409 ? 'info' : 'error',
+                        confirmButtonText: 'Entendido',
+                    });
                 });
         }
 

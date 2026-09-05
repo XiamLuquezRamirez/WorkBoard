@@ -709,6 +709,21 @@ class EmpleadosController extends Controller
     {
         $tarea = $request->all();
 
+        // Una tarea pausada no se mueve arrastrándola: primero debe reanudarse
+        // por su flujo propio (pausarTarea con pausada=false), que además deja
+        // constancia en el historial de actividad. Sin esta comprobación, mover
+        // la tarjeta saltaba la reanudación y dejaba la tarea en un estado
+        // contradictorio: activa según 'estado' pero marcada como pausada.
+        $actual = DB::connection('mysql2')->table('tareas_empleados')->where('id', $id)->first();
+        if (!$actual) {
+            return response()->json(['error' => 'Tarea no encontrada'], 404);
+        }
+        if ((int) ($actual->pausada ?? 0) === 1) {
+            return response()->json([
+                'error' => 'La tarea está en pausa. Debe reanudarse antes de cambiar su estado.',
+                'pausada' => true,
+            ], 409);
+        }
 
         DB::connection('mysql2')->beginTransaction();
         try {

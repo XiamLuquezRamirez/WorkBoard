@@ -169613,6 +169613,26 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
     var sourceId = source.droppableId;
     var destinationId = destination.droppableId;
 
+    // Una tarea en pausa no cambia de estado arrastrándola: debe reanudarse
+    // primero, para que la reanudación quede registrada en su historial. Se
+    // comprueba antes de tocar las columnas para que la tarjeta no llegue a
+    // moverse en pantalla y luego regrese.
+    if (sourceId !== destinationId) {
+      var _columns$sourceId;
+      var tareaArrastrada = (((_columns$sourceId = columns[sourceId]) === null || _columns$sourceId === void 0 ? void 0 : _columns$sourceId.items) || []).find(function (t) {
+        return String(t.id) === String(draggableId);
+      });
+      if (tareaArrastrada && Number(tareaArrastrada.pausada) === 1) {
+        sweetalert2__WEBPACK_IMPORTED_MODULE_4___default().fire({
+          title: 'Tarea en pausa',
+          text: 'Debes reanudar la tarea antes de cambiar su estado.',
+          icon: 'info',
+          confirmButtonText: 'Entendido'
+        });
+        return;
+      }
+    }
+
     // Crear copias profundas para evitar mutaciones
     var newColumns = JSON.parse(JSON.stringify(columns));
 
@@ -169667,9 +169687,22 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
         updateData.fecha_entregada = new Date().toISOString().split('T')[0];
       }
 
-      // Actualizar en el servidor
+      // Actualizar en el servidor. Si lo rechaza —por ejemplo porque la
+      // tarea está pausada— hay que devolver la tarjeta a su columna: de
+      // lo contrario quedaría movida en pantalla sin estarlo en la base
+      // de datos.
+      var columnasPrevias = columns;
       _axiosConfig__WEBPACK_IMPORTED_MODULE_3__["default"].put("/actualizarEstadoTarea/".concat(draggableId), updateData)["catch"](function (error) {
+        var _error$response, _error$response2, _error$response3;
         console.error('Error al actualizar estado:', error);
+        setColumns(columnasPrevias);
+        var msg = (error === null || error === void 0 || (_error$response = error.response) === null || _error$response === void 0 || (_error$response = _error$response.data) === null || _error$response === void 0 ? void 0 : _error$response.error) || 'No fue posible actualizar el estado de la tarea.';
+        sweetalert2__WEBPACK_IMPORTED_MODULE_4___default().fire({
+          title: (error === null || error === void 0 || (_error$response2 = error.response) === null || _error$response2 === void 0 ? void 0 : _error$response2.status) === 409 ? 'Tarea en pausa' : 'Error',
+          text: msg,
+          icon: (error === null || error === void 0 || (_error$response3 = error.response) === null || _error$response3 === void 0 ? void 0 : _error$response3.status) === 409 ? 'info' : 'error',
+          confirmButtonText: 'Entendido'
+        });
       });
     }
     setColumns(newColumns);
