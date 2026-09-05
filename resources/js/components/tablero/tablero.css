@@ -316,6 +316,41 @@ a.tb-btn-sec, a.tb-btn-sec:visited { color: var(--tb-txt); }
     color: var(--tb-azul);
     font-weight: 600;
 }
+/* Avance del checklist: sólo en tarjetas en proceso o en pausa */
+.tb-avance { display: flex; flex-direction: column; gap: 3px; }
+.tb-avance-top {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 6px;
+}
+.tb-avance-pct {
+    font-size: clamp(11px, .75vw, 14px);
+    font-weight: 700;
+    color: var(--tb-azul);
+    font-variant-numeric: tabular-nums;
+}
+.tb-avance-frac {
+    font-size: 9px;
+    color: var(--tb-txt-tenue);
+    font-variant-numeric: tabular-nums;
+}
+.tb-avance-barra {
+    height: 5px;
+    background: var(--tb-borde);
+    border-radius: 999px;
+    overflow: hidden;
+}
+.tb-avance-fill {
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--tb-marca-azul), var(--tb-azul));
+    transition: width .6s ease;
+}
+/* Checklist terminado: se refuerza con el verde de marca */
+.tb-avance-fill.es-completo {
+    background: linear-gradient(90deg, var(--tb-marca-verde), var(--tb-verde));
+}
 .tb-card-pie {
     display: flex;
     align-items: center;

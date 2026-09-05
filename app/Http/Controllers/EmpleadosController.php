@@ -1898,12 +1898,37 @@ class EmpleadosController extends Controller
             });
         };
 
-        $mapear = function ($rows) use ($hoy) {
-            return collect($rows)->map(function ($t) use ($hoy) {
+        // Avance por checklist, en una única consulta agregada para no repetir un
+        // conteo por tarjeta. Sólo unas pocas tareas tienen subtareas, así que el
+        // mapa resultante es pequeño; las que no aparecen simplemente no muestran
+        // porcentaje.
+        $avances = $conn->table('subtareas')
+            ->select('tarea_id',
+                DB::connection('mysql2')->raw('COUNT(*) as total'),
+                DB::connection('mysql2')->raw('SUM(CASE WHEN completada = 1 THEN 1 ELSE 0 END) as hechas'))
+            ->groupBy('tarea_id')
+            ->get()
+            ->keyBy('tarea_id');
+
+        $mapear = function ($rows) use ($hoy, $avances) {
+            return collect($rows)->map(function ($t) use ($hoy, $avances) {
                 $dias = null;
                 if ($t->fecha_pactada) {
                     $dias = $hoy->diffInDays(Carbon::parse($t->fecha_pactada)->startOfDay(), false);
                 }
+
+                // Avance sólo cuando la tarea tiene checklist; el resto queda en null
+                // y la tarjeta no dibuja barra alguna.
+                $checklist = null;
+                $a = $avances[$t->id] ?? null;
+                if ($a && (int) $a->total > 0) {
+                    $checklist = [
+                        'total'  => (int) $a->total,
+                        'hechas' => (int) $a->hechas,
+                        'pct'    => (int) round($a->hechas / $a->total * 100),
+                    ];
+                }
+
                 return [
                     'id'              => (int) $t->id,
                     'titulo'          => $t->titulo,
@@ -1917,13 +1942,22 @@ class EmpleadosController extends Controller
                     'pausada'         => (int) ($t->pausada ?? 0) === 1,
                     'motivo'          => $t->motivo_reprogramacion,
                     'dias_restantes'  => $dias,
+                    'checklist'       => $checklist,
                 ];
             })->values();
         };
 
         $pendiente = $mapear($noPausada($base())->where('t.estado', 'Pendiente')->orderBy('t.fecha_pactada')->get());
         $proceso   = $mapear($noPausada($base())->where('t.estado', 'En Proceso')->orderBy('t.fecha_pactada')->get());
-        $pausa     = $mapear($base()->where('t.pausada', 1)->orderBy('t.fecha_pactada')->get());
+        // Se excluyen las completadas: al cerrar una tarea el sistema no limpia la
+        // bandera 'pausada', de modo que sin este filtro una tarea terminada
+        // aparecería a la vez en "En Pausa" y en "Completadas", duplicando la
+        // tarjeta y el conteo de los indicadores.
+        $pausa = $mapear(
+            $base()->where('t.pausada', 1)
+                ->where('t.estado', '<>', 'Completada')
+                ->orderBy('t.fecha_pactada')->get()
+        );
 
         // Completadas dentro de la ventana; si no hay ninguna (histórico inactivo)
         // se degrada a las últimas completadas para no dejar la columna vacía.

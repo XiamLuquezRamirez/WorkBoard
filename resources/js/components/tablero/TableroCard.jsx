@@ -31,6 +31,12 @@ export default function TableroCard({ tarea, estadoVisual }) {
     const vencida = dias !== null && dias < 0 && !tarea.fecha_entregada;
     const venceHoy = dias === 0;
 
+    // El avance sólo aporta información mientras la tarea se está trabajando: en
+    // "Completada" el 100% es redundante y en "Pendiente" aún no ha empezado.
+    // Una tarea en pausa sí lo conserva, porque indica dónde se detuvo.
+    const mostrarAvance = Boolean(tarea.checklist)
+        && (tarea.estado === 'En Proceso' || tarea.pausada);
+
     return (
         <article
             className={`tb-card ${estadoVisual ? `tb-anim-${estadoVisual}` : ''} ${tarea.pausada ? 'tb-card-pausada' : ''}`}
@@ -46,6 +52,30 @@ export default function TableroCard({ tarea, estadoVisual }) {
             <h4 className="tb-card-titulo" title={tarea.titulo}>{tarea.titulo}</h4>
 
             {tarea.proyecto && <p className="tb-card-proyecto">{tarea.proyecto}</p>}
+
+            {mostrarAvance && (
+                <div className="tb-avance">
+                    <div className="tb-avance-top">
+                        <span className="tb-avance-pct">{tarea.checklist.pct}%</span>
+                        <span className="tb-avance-frac">
+                            {tarea.checklist.hechas}/{tarea.checklist.total}
+                        </span>
+                    </div>
+                    <div
+                        className="tb-avance-barra"
+                        role="progressbar"
+                        aria-valuenow={tarea.checklist.pct}
+                        aria-valuemin={0}
+                        aria-valuemax={100}
+                        aria-label={`Avance del checklist: ${tarea.checklist.hechas} de ${tarea.checklist.total}`}
+                    >
+                        <div
+                            className={`tb-avance-fill ${tarea.checklist.pct === 100 ? 'es-completo' : ''}`}
+                            style={{ width: `${tarea.checklist.pct}%` }}
+                        />
+                    </div>
+                </div>
+            )}
 
             <footer className="tb-card-pie">
                 <span className="tb-card-persona">
