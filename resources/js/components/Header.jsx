@@ -76,6 +76,12 @@ const Header = ({ currentUser, showUserMenu, setShowUserMenu, setIsSidebarOpen }
         localStorage.setItem("userWorkBoard", JSON.stringify(updatedUser));
     };
 
+    // El listado incluye también las leídas recientes (para la pestaña "Leídas"
+    // del modal), así que el contador debe descartarlas explícitamente.
+    const noLeidas = notifications.filter(
+        (n) => n.leida !== true && Number(n.leido) !== 1
+    ).length;
+
     return (
         <header className="header">
             <div className="header-content">
@@ -86,15 +92,9 @@ const Header = ({ currentUser, showUserMenu, setShowUserMenu, setIsSidebarOpen }
                     <div className="notification-section">
                         <div className="notification-icon" onClick={() => setShowNotificationModal(true)}>
                             <FaBell size={30} />
-                            {notifications.filter((n) => !n.leida).length >
-                                0 && (
-                                    <span className="notification-badge">
-                                        {
-                                            notifications.filter((n) => !n.leida)
-                                                .length
-                                        }
-                                    </span>
-                                )}
+                            {noLeidas > 0 && (
+                                <span className="notification-badge">{noLeidas}</span>
+                            )}
                         </div>
                     </div>
 

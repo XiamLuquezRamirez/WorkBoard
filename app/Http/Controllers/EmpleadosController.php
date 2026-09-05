@@ -17,32 +17,48 @@ class EmpleadosController extends Controller
     {
         $id = $request->input('id');
         $tipo = $request->input('tipo');
-        // $usuarioActual = Auth::user();
+
+        // Se devuelven las no leídas completas más un tramo reciente de leídas,
+        // para que la pestaña "Leídas" del modal conserve el historial en lugar
+        // de vaciarse en el siguiente sondeo. El histórico completo puede tener
+        // miles de filas por receptor, de ahí el tope en las leídas.
+        $limiteLeidas = 50;
+
+        $receptorId = $id;
+        $tipoReceptor = 'usuario';
+
         if ($tipo === 'empleado') {
-            // Obtener ID del empleado asociado
             $empleado = DB::connection('mysql2')->table('empleados')
                 ->join('users', 'empleados.id', 'users.empleado')
                 ->select('users.id as id_usuario', 'empleados.*')
                 ->where('users.id', $id)->first();
-            if ($empleado) {
-                $notificaciones = DB::connection('mysql2')->table('notif_generales')->where('id_receptor', $empleado->id_usuario)
-                    ->where('tipo_receptor', 'empleado')
-                    ->where('leido', 0)
-                    ->orderBy('notif_generales.id', 'desc')
-                    ->get();
+            if (!$empleado) {
+                return response()->json([]);
             }
-        } else {
-            // Usuario administrador o líder
-            $notificaciones = DB::connection('mysql2')->table('notif_generales')->where('id_receptor', $id)
-                ->where('tipo_receptor', 'usuario')
-                ->where('leido', 0)
-                ->orderBy('notif_generales.id', 'desc')
-                ->get();
+            $receptorId = $empleado->id_usuario;
+            $tipoReceptor = 'empleado';
         }
 
+        $base = fn () => DB::connection('mysql2')->table('notif_generales')
+            ->where('id_receptor', $receptorId)
+            ->where('tipo_receptor', $tipoReceptor);
 
-        //agregar notificaciones de tareas atrasadas
-        // $notificaciones = $notificaciones->merge($notificacion);
+        $noLeidas = $base()->where('leido', 0)
+            ->orderBy('notif_generales.id', 'desc')
+            ->get();
+
+        $leidas = $base()->where('leido', 1)
+            ->orderBy('notif_generales.id', 'desc')
+            ->limit($limiteLeidas)
+            ->get();
+
+        // 'leida' se expone además de 'leido' porque el frontend filtra por ese
+        // nombre; se mantiene 'leido' para no romper otros consumidores.
+        $notificaciones = $noLeidas->concat($leidas)->map(function ($n) {
+            $n->leida = (int) $n->leido === 1;
+            return $n;
+        })->values();
+
         return response()->json($notificaciones);
     }
 

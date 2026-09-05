@@ -54,9 +54,12 @@ const NotificationModal = ({ isOpen, onClose, notifications, setNotifications, c
 
 
     const handleMarkAsRead = (notificationId) => {
-        setNotifications(notifications.map(notif =>
+        // Se actualizan ambos campos: 'leida' es el que usa la UI y 'leido' el que
+        // llega de la base de datos. Si sólo se tocara uno, el siguiente sondeo del
+        // Header devolvería la notificación al estado anterior.
+        setNotifications(prev => prev.map(notif =>
             notif.id === notificationId
-                ? { ...notif, leida: true }
+                ? { ...notif, leida: true, leido: 1 }
                 : notif
         ));
     };
@@ -68,14 +71,16 @@ const NotificationModal = ({ isOpen, onClose, notifications, setNotifications, c
     };
 
     const handleNotificationClick = async (notification) => {
-        // Marcar como leída si no lo está
-        if (!notification.leida) {
+        // Marcar como leída si no lo está: primero en la UI y después en la base
+        // de datos, de modo que el cambio persista al recargar las notificaciones.
+        if (!notification.leida && !(Number(notification.leido) === 1)) {
             handleMarkAsRead(notification.id);
+            try {
+                await axiosInstance.get(`/cambioEstadoNotificaciones/${notification.id}`);
+            } catch (error) {
+                console.error('Error al marcar la notificación como leída:', error);
+            }
         }
-        // Cambiar estado de la notificacion en la base de datos
-        await axiosInstance.get(`/cambioEstadoNotificaciones/${notification.id}`, {
-            leida: true
-        });
 
         // Abrir el detalle de la tarea
         try {
@@ -95,9 +100,11 @@ const NotificationModal = ({ isOpen, onClose, notifications, setNotifications, c
 
     };
 
-    // Filtrar notificaciones por estado
-    const readNotifications = notifications.filter(notif => notif.leida);
-    const unreadNotifications = notifications.filter(notif => !notif.leida);
+    // Filtrar notificaciones por estado. Se contempla 'leido' (columna de la base
+    // de datos) además de 'leida' (campo que usa la interfaz).
+    const estaLeida = (notif) => notif.leida === true || Number(notif.leido) === 1;
+    const readNotifications = notifications.filter(estaLeida);
+    const unreadNotifications = notifications.filter(notif => !estaLeida(notif));
 
 
 
