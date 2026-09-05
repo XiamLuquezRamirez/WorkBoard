@@ -511,8 +511,40 @@ class EmpleadosController extends Controller
 
     function guardarTarea(Request $request)
     {
+        $accion = $request->input('accion', 'guardar');
+
+        // Validación unificada en el servidor. Antes cada pantalla aplicaba sus
+        // propias reglas en el cliente y ninguna se comprobaba aquí: Dashboard y
+        // EmployeeModal exigían descripción >= 10 caracteres pero no fecha futura,
+        // mientras EmployeeInterface exigía fecha futura pero no longitud mínima.
+        //
+        // Las reglas estrictas (longitud mínima y fecha no pasada) sólo se aplican
+        // al crear. Al editar se relajan a propósito: existen tareas antiguas con
+        // descripciones de pocos caracteres y con fecha pactada ya vencida, y
+        // exigirles el formato nuevo impediría guardar cambios en campos ajenos.
+        $reglas = [
+            'titulo'        => 'required|string|max:255',
+            'descripcion'   => 'required|string',
+            'fecha_pactada' => 'required|date',
+            'empleado'      => 'required|integer',
+            'prioridad'     => 'required|string',
+            'estado'        => 'required|string',
+            'proyecto_id'   => 'nullable|integer',
+            'accion'        => 'nullable|in:guardar,editar',
+        ];
+        if ($accion === 'guardar') {
+            $reglas['descripcion']   = 'required|string|min:10';
+            $reglas['fecha_pactada'] = 'required|date|after_or_equal:today';
+        } else {
+            $reglas['id'] = 'required|integer';
+        }
+
+        $request->validate($reglas, [
+            'descripcion.min'                => 'La descripción debe tener al menos 10 caracteres.',
+            'fecha_pactada.after_or_equal'   => 'La fecha pactada no puede ser anterior a hoy.',
+        ]);
+
         $tarea = $request->all();
-        $accion = $tarea['accion'] ?? 'guardar';
         DB::connection('mysql2')->beginTransaction();
         try {
             if ($accion == 'guardar') {
@@ -1337,6 +1369,8 @@ class EmpleadosController extends Controller
 
     function informeTareas()
     {
+        $alcance = $this->alcanceEmpleadosInformes();
+
         $tareas = DB::connection('mysql2')->table('tareas_empleados')
             ->join('empleados', 'tareas_empleados.empleado', 'empleados.id')
             ->join('empresas', 'empleados.empresa', 'empresas.id')
@@ -1353,6 +1387,9 @@ class EmpleadosController extends Controller
             ->where('estado_reg', 'Activo')
             ->where('empleados.estado_registro', 'Activo')
             ->where('empleados.estado', 'Activo')
+            ->when($alcance !== null, function ($q) use ($alcance) {
+                $q->whereIn('tareas_empleados.empleado', $alcance);
+            })
             ->get();
 
         return response()->json($tareas);
@@ -1360,6 +1397,8 @@ class EmpleadosController extends Controller
 
     function informeEficiencia()
     {
+        $alcance = $this->alcanceEmpleadosInformes();
+
         $tareas = DB::connection('mysql2')->table('tareas_empleados')
             ->join('empleados', 'tareas_empleados.empleado', 'empleados.id')
             ->join('cargos', 'empleados.cargo', 'cargos.id')
@@ -1378,6 +1417,9 @@ class EmpleadosController extends Controller
             ->where('tareas_empleados.estado_reg', 'Activo')
             ->where('empleados.estado_registro', 'Activo')
             ->where('empleados.estado', 'Activo')
+            ->when($alcance !== null, function ($q) use ($alcance) {
+                $q->whereIn('tareas_empleados.empleado', $alcance);
+            })
             ->orderBy('empleados.id')
             ->get();
 
@@ -1386,11 +1428,20 @@ class EmpleadosController extends Controller
 
     function informeProyectos()
     {
-        // Proyectos con sus tareas activas
+        $alcance = $this->alcanceEmpleadosInformes();
+
+        // Proyectos con sus tareas activas.
+        // El alcance se aplica dentro del leftJoin (no en el where) para que un
+        // proyecto siga apareciendo aunque ninguna de sus tareas sea visible
+        // para el usuario; de lo contrario el filtro convertiría el leftJoin en
+        // un inner join y descartaría proyectos completos.
         $rows = DB::connection('mysql2')->table('proyectos')
-            ->leftJoin('tareas_empleados', function ($join) {
+            ->leftJoin('tareas_empleados', function ($join) use ($alcance) {
                 $join->on('tareas_empleados.proyecto_id', '=', 'proyectos.id')
                      ->where('tareas_empleados.estado_reg', 'Activo');
+                if ($alcance !== null) {
+                    $join->whereIn('tareas_empleados.empleado', $alcance);
+                }
             })
             ->leftJoin('empleados', function ($join) {
                 $join->on('tareas_empleados.empleado', '=', 'empleados.id')
@@ -1690,9 +1741,11 @@ class EmpleadosController extends Controller
 
     function resolverSolicitudPausa(Request $request, $id)
     {
+        // aprobado_por se acepta por compatibilidad con el frontend pero NO se usa:
+        // el resolutor se deriva del usuario autenticado.
         $data = $request->validate([
             'accion'               => 'required|in:aprobar,rechazar',
-            'aprobado_por'         => 'required|integer',
+            'aprobado_por'         => 'nullable|integer',
             'observacion_rechazo'  => 'nullable|string',
         ]);
 
@@ -1704,16 +1757,22 @@ class EmpleadosController extends Controller
             return response()->json(['message' => 'La solicitud ya fue resuelta'], 422);
         }
 
+        $tareaPausa = DB::connection('mysql2')->table('tareas_empleados')->where('id', $solicitud->tarea_id)->first();
+        $resolutor = $this->resolutorAutorizado($tareaPausa);
+        if (!$resolutor) {
+            return response()->json(['message' => 'No autorizado para resolver esta solicitud'], 403);
+        }
+
         $estado = $data['accion'] === 'aprobar' ? 'Aprobada' : 'Rechazada';
 
         DB::connection('mysql2')->table('pausas_solicitadas')->where('id', $id)->update([
             'estado'              => $estado,
-            'aprobado_por'        => $data['aprobado_por'],
+            'aprobado_por'        => $resolutor->id,
             'observacion_rechazo' => $data['observacion_rechazo'] ?? null,
             'fecha_resolucion'    => now(),
         ]);
 
-        $aprobadorNombre = DB::connection('mysql2')->table('users')->where('id', $data['aprobado_por'])->value('name') ?? 'Usuario';
+        $aprobadorNombre = $resolutor->name ?? 'Usuario';
 
         if ($data['accion'] === 'aprobar') {
             $update = ['pausada' => 1];
@@ -1763,6 +1822,100 @@ class EmpleadosController extends Controller
             ->get();
 
         return response()->json($rows);
+    }
+
+    /**
+     * Devuelve los ids de empleados que el usuario autenticado puede ver en los informes.
+     *
+     * - Administrador y Supervisor: null (sin restricción, ven toda la organización).
+     * - Líder: sus empleados asignados en lideres_empleados, más él mismo.
+     * - Empleado: únicamente él mismo.
+     * - Sin usuario o sin empleado asociado: array vacío (no ve nada).
+     *
+     * La relación replica la misma consulta que construye 'empleados_asignados'
+     * en el login (Auth\LoginController), de modo que el alcance del servidor
+     * coincide con el que el frontend ya venía aplicando en el cliente.
+     */
+    private function alcanceEmpleadosInformes(): ?array
+    {
+        $email = Auth::user()->email ?? null;
+        if (!$email) {
+            return [];
+        }
+
+        $usuarioActual = DB::connection('mysql2')->table('users')->where('email', $email)->first();
+        if (!$usuarioActual) {
+            return [];
+        }
+
+        $tipo = strtolower(trim($usuarioActual->tipo_usuario ?? ''));
+        if ($tipo === 'administrador' || $tipo === 'supervisor') {
+            return null;
+        }
+
+        $empleadoId = $usuarioActual->empleado ?? null;
+        if (!$empleadoId) {
+            return [];
+        }
+
+        $ids = [(int) $empleadoId];
+
+        if ($this->usuarioEsLiderParaNotificaciones($usuarioActual)) {
+            $asignados = DB::connection('mysql2')->table('lideres_empleados')
+                ->join('empleados', 'lideres_empleados.empleado', 'empleados.id')
+                ->where('lideres_empleados.lider', $empleadoId)
+                ->where('empleados.estado_registro', 'Activo')
+                ->pluck('empleados.id')
+                ->all();
+
+            $ids = array_merge($ids, array_map('intval', $asignados));
+        }
+
+        return array_values(array_unique($ids));
+    }
+
+    /**
+     * Verifica que el usuario autenticado pueda resolver (aprobar/rechazar) una
+     * solicitud de pausa o reprogramación sobre una tarea.
+     *
+     * Puede resolver un Administrador, o el líder del empleado dueño de la tarea.
+     * El dueño de la tarea nunca puede resolver su propia solicitud.
+     *
+     * Devuelve el registro de users del resolutor, o null si no está autorizado.
+     * El id devuelto es el que debe persistirse en aprobado_por: confiar en el
+     * valor enviado por el cliente permitía atribuir la aprobación a un tercero.
+     */
+    private function resolutorAutorizado($tarea): ?object
+    {
+        $email = Auth::user()->email ?? null;
+        if (!$email) {
+            return null;
+        }
+
+        $usuarioActual = DB::connection('mysql2')->table('users')->where('email', $email)->first();
+        if (!$usuarioActual || !$tarea) {
+            return null;
+        }
+
+        if (strcasecmp($usuarioActual->tipo_usuario ?? '', 'Administrador') === 0) {
+            return $usuarioActual;
+        }
+
+        if (!$usuarioActual->empleado) {
+            return null;
+        }
+
+        // El dueño de la tarea no resuelve su propia solicitud.
+        if ((int) $usuarioActual->empleado === (int) $tarea->empleado) {
+            return null;
+        }
+
+        $esLiderDeAsignado = DB::connection('mysql2')->table('lideres_empleados')
+            ->where('lider', $usuarioActual->empleado)
+            ->where('empleado', $tarea->empleado)
+            ->exists();
+
+        return $esLiderDeAsignado ? $usuarioActual : null;
     }
 
     private function usuarioEsLiderParaNotificaciones($u): bool
@@ -2336,15 +2489,46 @@ class EmpleadosController extends Controller
 
     function solicitarReprogramacion(Request $request)
     {
+        // solicitado_por, solicitado_por_user y tipo_aprobador se aceptan por
+        // compatibilidad con el frontend actual pero NO se usan: el solicitante y
+        // el tipo de aprobador se derivan del usuario autenticado, igual que en
+        // solicitarPausa. Confiar en esos campos permitía que quien solicita
+        // eligiera a su propio aprobador.
         $data = $request->validate([
             'tarea_id'             => 'required|integer',
-            'solicitado_por'       => 'required|integer',
-            'solicitado_por_user'  => 'required|integer',
+            'solicitado_por'       => 'nullable|integer',
+            'solicitado_por_user'  => 'nullable|integer',
             'fecha_actual'         => 'nullable|date',
             'fecha_nueva'          => 'required|date',
             'motivo'               => 'required|string|min:5',
-            'tipo_aprobador'       => 'required|in:lider,admin',
+            'tipo_aprobador'       => 'nullable|in:lider,admin',
         ]);
+
+        $usuarioActual = DB::connection('mysql2')->table('users')->where('email', Auth::user()->email)->first();
+        if (!$usuarioActual) {
+            return response()->json(['message' => 'Usuario no encontrado'], 403);
+        }
+
+        $tarea = DB::connection('mysql2')->table('tareas_empleados')->where('id', $data['tarea_id'])->first();
+        if (!$tarea) {
+            return response()->json(['message' => 'Tarea no encontrada'], 404);
+        }
+
+        $esDueño = $usuarioActual->empleado && (int) $usuarioActual->empleado === (int) $tarea->empleado;
+        $esAdmin = strcasecmp($usuarioActual->tipo_usuario ?? '', 'Administrador') === 0;
+        $esLiderDeAsignado = false;
+        if (!$esDueño && !$esAdmin && $usuarioActual->empleado) {
+            $esLiderDeAsignado = DB::connection('mysql2')->table('lideres_empleados')
+                ->where('lider', $usuarioActual->empleado)
+                ->where('empleado', $tarea->empleado)
+                ->exists();
+        }
+        if (!$esDueño && !$esAdmin && !$esLiderDeAsignado) {
+            return response()->json(['message' => 'No autorizado para solicitar reprogramación en esta tarea'], 403);
+        }
+
+        $usuarioEsLider = $this->usuarioEsLiderParaNotificaciones($usuarioActual) || $esLiderDeAsignado;
+        $tipoAprobador  = $usuarioEsLider ? 'admin' : 'lider';
 
         // Sólo puede existir una solicitud pendiente por tarea
         $pendiente = DB::connection('mysql2')->table('reprogramaciones_tareas')
@@ -2357,17 +2541,17 @@ class EmpleadosController extends Controller
 
         $id = DB::connection('mysql2')->table('reprogramaciones_tareas')->insertGetId([
             'tarea_id'            => $data['tarea_id'],
-            'solicitado_por'      => $data['solicitado_por'],
-            'solicitado_por_user' => $data['solicitado_por_user'],
-            'fecha_actual'        => $data['fecha_actual'] ?? null,
+            'solicitado_por'      => $usuarioActual->empleado,
+            'solicitado_por_user' => $usuarioActual->id,
+            'fecha_actual'        => $data['fecha_actual'] ?? $tarea->fecha_pactada,
             'fecha_nueva'         => $data['fecha_nueva'],
             'motivo'              => $data['motivo'],
             'estado'              => 'Pendiente',
-            'tipo_aprobador'      => $data['tipo_aprobador'],
+            'tipo_aprobador'      => $tipoAprobador,
             'fecha_solicitud'     => now(),
         ]);
 
-        $solicitante = DB::connection('mysql2')->table('users')->where('id', $data['solicitado_por_user'])->value('name') ?? 'Usuario';
+        $solicitante = $usuarioActual->name ?? 'Usuario';
         $fechaNuevaFmt = Carbon::parse($data['fecha_nueva'])->format('d/m/Y');
         $fechaActualFmt = $data['fecha_actual'] ? Carbon::parse($data['fecha_actual'])->format('d/m/Y') : 'N/A';
         $this->registrarActividad(
@@ -2381,9 +2565,11 @@ class EmpleadosController extends Controller
 
     function resolverReprogramacion(Request $request, $id)
     {
+        // aprobado_por se acepta por compatibilidad con el frontend pero NO se usa:
+        // el resolutor se deriva del usuario autenticado.
         $data = $request->validate([
             'accion'                => 'required|in:aprobar,rechazar',
-            'aprobado_por'          => 'required|integer',
+            'aprobado_por'          => 'nullable|integer',
             'observacion_rechazo'   => 'nullable|string',
         ]);
 
@@ -2395,16 +2581,22 @@ class EmpleadosController extends Controller
             return response()->json(['message' => 'La solicitud ya fue resuelta'], 422);
         }
 
+        $tarea = DB::connection('mysql2')->table('tareas_empleados')->where('id', $reprg->tarea_id)->first();
+        $resolutor = $this->resolutorAutorizado($tarea);
+        if (!$resolutor) {
+            return response()->json(['message' => 'No autorizado para resolver esta solicitud'], 403);
+        }
+
         $estado = $data['accion'] === 'aprobar' ? 'Aprobada' : 'Rechazada';
 
         DB::connection('mysql2')->table('reprogramaciones_tareas')->where('id', $id)->update([
             'estado'               => $estado,
-            'aprobado_por'         => $data['aprobado_por'],
+            'aprobado_por'         => $resolutor->id,
             'observacion_rechazo'  => $data['observacion_rechazo'] ?? null,
             'fecha_resolucion'     => now(),
         ]);
 
-        $aprobadorNombre = DB::connection('mysql2')->table('users')->where('id', $data['aprobado_por'])->value('name') ?? 'Usuario';
+        $aprobadorNombre = $resolutor->name ?? 'Usuario';
 
         if ($data['accion'] === 'aprobar') {
             DB::connection('mysql2')->table('tareas_empleados')->where('id', $reprg->tarea_id)->update([
@@ -2476,6 +2668,7 @@ class EmpleadosController extends Controller
     {
         $inicio = $request->query('inicio');
         $fin    = $request->query('fin');
+        $alcance = $this->alcanceEmpleadosInformes();
 
         $query = DB::connection('mysql2')->table('reprogramaciones_tareas as r')
             ->join('tareas_empleados as t', 'r.tarea_id', '=', 't.id')
@@ -2495,6 +2688,17 @@ class EmpleadosController extends Controller
                 DB::connection('mysql2')->raw('CONCAT(ea.nombres, " ", ea.apellidos) as nombre_aprobador')
             )
             ->orderBy('r.fecha_solicitud', 'desc');
+
+        // Alcance por rol: se incluye la solicitud si el solicitante está dentro
+        // del alcance o si lo está el empleado dueño de la tarea reprogramada,
+        // de modo que un líder siga viendo las reprogramaciones de las tareas de
+        // su equipo aunque las haya solicitado un tercero.
+        if ($alcance !== null) {
+            $query->where(function ($q) use ($alcance) {
+                $q->whereIn('r.solicitado_por', $alcance)
+                  ->orWhereIn('t.empleado', $alcance);
+            });
+        }
 
         if ($inicio) $query->where('r.fecha_solicitud', '>=', $inicio . ' 00:00:00');
         if ($fin)    $query->where('r.fecha_solicitud', '<=', $fin . ' 23:59:59');
