@@ -1402,22 +1402,32 @@ class EmpleadosController extends Controller
     {
         $alcance = $this->alcanceEmpleadosInformes();
 
+        // Los joins con empleados y sus tablas asociadas son LEFT: hay tareas
+        // activas cuyo empleado ya no figura en 'empleados' —personas dadas de
+        // baja cuyo registro se eliminó— y con INNER JOIN quedaban fuera del
+        // informe sin dejar rastro. El trabajo realizado sigue contando aunque
+        // su responsable haya salido; el nombre se recupera de 'users'.
         $tareas = DB::connection('mysql2')->table('tareas_empleados')
-            ->join('empleados', 'tareas_empleados.empleado', 'empleados.id')
-            ->join('empresas', 'empleados.empresa', 'empresas.id')
-            ->join('departamentos', 'empleados.departamento', 'departamentos.id')
+            ->leftJoin('empleados', function ($join) {
+                $join->on('tareas_empleados.empleado', '=', 'empleados.id')
+                     ->where('empleados.estado_registro', 'Activo')
+                     ->where('empleados.estado', 'Activo');
+            })
+            ->leftJoin('users', 'tareas_empleados.empleado', '=', 'users.empleado')
+            ->leftJoin('empresas', 'empleados.empresa', '=', 'empresas.id')
+            ->leftJoin('departamentos', 'empleados.departamento', '=', 'departamentos.id')
             ->leftJoin('cargos', 'empleados.cargo', '=', 'cargos.id')
             ->select(
                 'tareas_empleados.*',
-                DB::connection('mysql2')->raw('concat(empleados.nombres, " ", empleados.apellidos) as empleado'),
+                DB::connection('mysql2')->raw(
+                    'COALESCE(NULLIF(TRIM(CONCAT(COALESCE(empleados.nombres, ""), " ", COALESCE(empleados.apellidos, ""))), ""), users.name, "Sin responsable") as empleado'
+                ),
                 'empresas.nombre as empresa',
                 'departamentos.nombre as departamento',
                 'cargos.nombre as cargo'
             )
             ->where('aprobada', 1)
             ->where('estado_reg', 'Activo')
-            ->where('empleados.estado_registro', 'Activo')
-            ->where('empleados.estado', 'Activo')
             ->when($alcance !== null, function ($q) use ($alcance) {
                 $q->whereIn('tareas_empleados.empleado', $alcance);
             })
@@ -1430,10 +1440,18 @@ class EmpleadosController extends Controller
     {
         $alcance = $this->alcanceEmpleadosInformes();
 
+        // Mismo criterio que informeTareas: con INNER JOIN se perdían las tareas
+        // de empleados ya eliminados, lo que falseaba el cálculo de eficiencia al
+        // dejar fuera trabajo realmente entregado.
         $tareas = DB::connection('mysql2')->table('tareas_empleados')
-            ->join('empleados', 'tareas_empleados.empleado', 'empleados.id')
-            ->join('cargos', 'empleados.cargo', 'cargos.id')
-            ->join('departamentos', 'empleados.departamento', 'departamentos.id')
+            ->leftJoin('empleados', function ($join) {
+                $join->on('tareas_empleados.empleado', '=', 'empleados.id')
+                     ->where('empleados.estado_registro', 'Activo')
+                     ->where('empleados.estado', 'Activo');
+            })
+            ->leftJoin('users', 'tareas_empleados.empleado', '=', 'users.empleado')
+            ->leftJoin('cargos', 'empleados.cargo', '=', 'cargos.id')
+            ->leftJoin('departamentos', 'empleados.departamento', '=', 'departamentos.id')
             ->select(
                 'tareas_empleados.id',
                 'tareas_empleados.estado',
@@ -1441,17 +1459,20 @@ class EmpleadosController extends Controller
                 'tareas_empleados.fecha_entregada',
                 'tareas_empleados.rechazada',
                 'tareas_empleados.pausada',
-                DB::connection('mysql2')->raw('concat(empleados.nombres, " ", empleados.apellidos) as nombre_empleado'),
+                DB::connection('mysql2')->raw(
+                    'COALESCE(NULLIF(TRIM(CONCAT(COALESCE(empleados.nombres, ""), " ", COALESCE(empleados.apellidos, ""))), ""), users.name, "Sin responsable") as nombre_empleado'
+                ),
                 'cargos.nombre as cargo',
                 'departamentos.nombre as departamento'
             )
             ->where('tareas_empleados.estado_reg', 'Activo')
-            ->where('empleados.estado_registro', 'Activo')
-            ->where('empleados.estado', 'Activo')
             ->when($alcance !== null, function ($q) use ($alcance) {
                 $q->whereIn('tareas_empleados.empleado', $alcance);
             })
-            ->orderBy('empleados.id')
+            // Se ordena por la columna de la tarea y no por empleados.id, que con
+            // el LEFT JOIN puede ser NULL y dispersaría las filas de un mismo
+            // responsable eliminado.
+            ->orderBy('tareas_empleados.empleado')
             ->get();
 
         return response()->json($tareas);
