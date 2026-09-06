@@ -188929,9 +188929,9 @@ function TableroCard(_ref) {
       }), tarea.pausada && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsx)("span", {
         className: "tb-badge-pausa",
         children: "\u23F8 EN PAUSA"
-      }), vencida && !tarea.pausada && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsx)("span", {
+      }), vencida && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsxs)("span", {
         className: "tb-badge-vencida",
-        children: "\u26A0 VENCIDA"
+        children: ["\u26A0 ", dias === -1 ? '1 DÍA' : "".concat(Math.abs(dias), " D\xCDAS")]
       }), venceHoy && !tarea.pausada && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsx)("span", {
         className: "tb-badge-hoy",
         children: "HOY"

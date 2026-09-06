@@ -1877,13 +1877,24 @@ class EmpleadosController extends Controller
         // archivar admite NULL en la mayoría de filas históricas, por lo que la
         // comparación debe contemplarlo explícitamente: 'archivar <> 1' por sí
         // solo descarta los NULL y vaciaría el tablero.
+        // El join con empleados es LEFT y su filtro de actividad va dentro de la
+        // condición: hay 150 tareas activas cuyo empleado ya no existe en la
+        // tabla, y un INNER JOIN las descartaba del tablero sin dejar rastro.
+        // Una tarea sigue siendo trabajo pendiente aunque su responsable haya
+        // salido; se muestra con el responsable sin resolver.
         $base = function () use ($conn, $alcance) {
             $q = $conn->table('tareas_empleados as t')
-                ->join('empleados as e', 't.empleado', '=', 'e.id')
+                ->leftJoin('empleados as e', function ($join) {
+                    $join->on('t.empleado', '=', 'e.id')
+                         ->where('e.estado_registro', 'Activo')
+                         ->where('e.estado', 'Activo');
+                })
+                // Respaldo del nombre: si el empleado ya no está en 'empleados'
+                // pero conserva su usuario, se recupera de ahí en lugar de dejar
+                // la tarjeta sin responsable.
+                ->leftJoin('users as u', 't.empleado', '=', 'u.empleado')
                 ->leftJoin('proyectos as p', 't.proyecto_id', '=', 'p.id')
                 ->where('t.estado_reg', 'Activo')
-                ->where('e.estado_registro', 'Activo')
-                ->where('e.estado', 'Activo')
                 ->where(function ($w) {
                     $w->whereNull('t.archivar')->orWhere('t.archivar', '<>', 1);
                 });
@@ -1903,6 +1914,7 @@ class EmpleadosController extends Controller
                 't.motivo_reprogramacion',
                 't.empleado as empleado_id',
                 'p.nombre as proyecto_nombre',
+                'u.name as empleado_usuario',
                 DB::connection('mysql2')->raw('CONCAT(e.nombres, " ", e.apellidos) as empleado')
             );
         };
@@ -1965,7 +1977,10 @@ class EmpleadosController extends Controller
                     'fecha_pactada'   => $t->fecha_pactada,
                     'fecha_entregada' => $t->fecha_entregada,
                     'empleado_id'     => (int) $t->empleado_id,
-                    'empleado'        => $t->empleado,
+                    // Con el LEFT JOIN el nombre llega nulo si el empleado ya no
+                    // está en 'empleados': se recurre al de su usuario y, sólo si
+                    // tampoco existe, se indica que no tiene responsable.
+                    'empleado'        => $t->empleado ?: ($t->empleado_usuario ?: 'Sin responsable'),
                     'proyecto'        => $t->proyecto_nombre,
                     // Coherente con el criterio de la columna "En Pausa": una tarea
                     // reanudada o cerrada no se pinta como pausada aunque conserve

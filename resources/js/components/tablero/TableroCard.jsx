@@ -64,7 +64,14 @@ export default function TableroCard({ tarea, estadoVisual, innerRef }) {
             <header className="tb-card-top">
                 <span className={`tb-prio ${prio.clase}`}>{prio.etiqueta}</span>
                 {tarea.pausada && <span className="tb-badge-pausa">⏸ EN PAUSA</span>}
-                {vencida && !tarea.pausada && <span className="tb-badge-vencida">⚠ VENCIDA</span>}
+                {/* El vencimiento se muestra también en las pausadas: una tarea
+                    detenida y fuera de plazo es justo la que hay que atender, y
+                    ocultarlo dejaba esa señal invisible en el tablero. */}
+                {vencida && (
+                    <span className="tb-badge-vencida">
+                        ⚠ {dias === -1 ? '1 DÍA' : `${Math.abs(dias)} DÍAS`}
+                    </span>
+                )}
                 {venceHoy && !tarea.pausada && <span className="tb-badge-hoy">HOY</span>}
             </header>
 
