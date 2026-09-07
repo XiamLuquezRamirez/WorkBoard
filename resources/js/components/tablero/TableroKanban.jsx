@@ -62,6 +62,23 @@ export default function TableroKanban({ datos, previo, modoTv }) {
     // modo que la tarjeta viaje en lugar de desaparecer y reaparecer.
     const registrarTarjeta = useFlipTarjetas(firma);
 
+    // Escala de temperatura relativa al conjunto visible. Con cortes fijos en
+    // meses el reparto depende de lo desfasado que esté el tablero: aquí todas
+    // las tareas llevan entre 63 y 427 días vencidas y el 80% caía en el mismo
+    // nivel, con lo que volvían a verse iguales. Repartiendo por cuartiles del
+    // retraso real siempre hay contraste, sea cual sea la antigüedad absoluta.
+    const cortes = useMemo(() => {
+        const retrasos = UBICACIONES
+            .flatMap((c) => items(datos.columnas, c))
+            .filter((t) => !t.fecha_entregada && t.dias_restantes !== null && t.dias_restantes < 0)
+            .map((t) => Math.abs(t.dias_restantes))
+            .sort((a, b) => a - b);
+
+        if (retrasos.length < 4) return null;
+        const p = (q) => retrasos[Math.floor(q * (retrasos.length - 1))];
+        return [p(0.25), p(0.5), p(0.75)];
+    }, [datos]);
+
     // En modo TV se recorta cada columna a lo que cabe sin scroll. Con las
     // tarjetas dimensionadas en vh caben unas doce en una pantalla 16:9; el
     // resto se resume en el contador "+N más" al pie de la columna.
@@ -92,6 +109,7 @@ export default function TableroKanban({ datos, previo, modoTv }) {
                                     tarea={t}
                                     estadoVisual={cambios[t.id]}
                                     innerRef={registrarTarjeta(t.id)}
+                                    cortes={cortes}
                                 />
                             ))}
                             {lista.length === 0 && <p className="tb-col-vacia">Sin tareas</p>}
