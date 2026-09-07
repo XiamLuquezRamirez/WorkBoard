@@ -118,6 +118,17 @@ class EmpleadosController extends Controller
         ]);
     }
 
+    /** Nombre del usuario autenticado, para los mensajes del historial. */
+    private function nombreActor(): string
+    {
+        $email = Auth::user()->email ?? null;
+        if (!$email) {
+            return 'Usuario';
+        }
+        return DB::connection('mysql2')->table('users')
+            ->where('email', $email)->value('name') ?? 'Usuario';
+    }
+
     function guardarObservacionesEmpleado(Request $request, $id)
     {
         $observaciones = $request->all();
@@ -2591,11 +2602,21 @@ class EmpleadosController extends Controller
 
         $subtarea = DB::connection('mysql2')->table('subtareas')->where('id', $id)->first();
 
+        // Las subtareas se borran físicamente al quitarlas del checklist, así que
+        // el historial de la tarea es el único lugar donde queda constancia de
+        // quién añadió, completó o eliminó cada punto.
+        $this->registrarActividad(
+            (int) $request->tarea_id,
+            'Checklist',
+            "{$this->nombreActor()} agregó el punto \"{$request->titulo}\" al checklist."
+        );
+
         return response()->json(['success' => true, 'subtarea' => $subtarea]);
     }
 
     function actualizarSubtarea(Request $request, $id)
     {
+        $previa = DB::connection('mysql2')->table('subtareas')->where('id', $id)->first();
         $data = ['updated_at' => now()];
 
         if ($request->has('completada')) {
@@ -2615,12 +2636,49 @@ class EmpleadosController extends Controller
 
         $subtarea = DB::connection('mysql2')->table('subtareas')->where('id', $id)->first();
 
+        if ($previa && $subtarea) {
+            $actor = $this->nombreActor();
+            $titulo = $subtarea->titulo;
+
+            // Sólo se registra el marcado y desmarcado, que es lo que refleja el
+            // avance real. Un cambio de texto o de fecha no altera el progreso y
+            // llenaría el historial de ruido.
+            if (array_key_exists('completada', $data)
+                && (int) $previa->completada !== (int) $data['completada']) {
+                $this->registrarActividad(
+                    (int) $subtarea->tarea_id,
+                    'Checklist',
+                    $data['completada']
+                        ? "{$actor} completó el punto \"{$titulo}\" del checklist."
+                        : "{$actor} reabrió el punto \"{$titulo}\" del checklist."
+                );
+            } elseif (array_key_exists('titulo', $data) && $previa->titulo !== $subtarea->titulo) {
+                $this->registrarActividad(
+                    (int) $subtarea->tarea_id,
+                    'Checklist',
+                    "{$actor} renombró un punto del checklist: \"{$previa->titulo}\" → \"{$titulo}\"."
+                );
+            }
+        }
+
         return response()->json(['success' => true, 'subtarea' => $subtarea]);
     }
 
     function eliminarSubtarea($id)
     {
+        // Se lee antes de borrar: la fila desaparece y el historial es el único
+        // registro que queda del punto eliminado.
+        $subtarea = DB::connection('mysql2')->table('subtareas')->where('id', $id)->first();
+
         DB::connection('mysql2')->table('subtareas')->where('id', $id)->delete();
+
+        if ($subtarea) {
+            $this->registrarActividad(
+                (int) $subtarea->tarea_id,
+                'Checklist',
+                "{$this->nombreActor()} eliminó el punto \"{$subtarea->titulo}\" del checklist."
+            );
+        }
 
         return response()->json(['success' => true]);
     }
