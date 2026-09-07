@@ -543,9 +543,16 @@ a.tb-btn-sec, a.tb-btn-sec:visited { color: var(--tb-txt); }
 
 /* Marco 16:9 para que el reproductor conserve su proporción */
 .tb-ambiente-video {
+    /* El vídeo se ajusta al hueco disponible manteniendo su proporción. El
+       truco antiguo del padding-top fijaba la altura a partir del ancho e
+       ignoraba el alto del panel, de modo que en un lateral bajo —o en modo TV,
+       donde no hay scroll— el reproductor desbordaba su contenedor. */
     position: relative;
     width: 100%;
-    padding-top: 56.25%;
+    aspect-ratio: 16 / 9;
+    min-height: 0;
+    max-height: 100%;
+    margin-inline: auto;
     border-radius: 8px;
     overflow: hidden;
     background: #000;
@@ -645,8 +652,12 @@ a.tb-btn-sec, a.tb-btn-sec:visited { color: var(--tb-txt); }
     display: flex;
     flex-direction: column;
     gap: 9px;
+    overflow: hidden;      /* nada asoma fuera del panel */
     animation: tb-entra .28s ease-out;
 }
+/* El cuerpo cede altura al vídeo y la lista de pistas conserva la suya */
+.tb-amb-panel > .tb-ambiente-video { flex: 1 1 auto; }
+.tb-amb-panel > .tb-amb-lista { flex: 0 0 auto; }
 
 .tb-amb-lista { display: flex; flex-wrap: wrap; gap: 6px; }
 .tb-amb-pista {
