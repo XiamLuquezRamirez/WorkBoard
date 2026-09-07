@@ -120,5 +120,12 @@ export default function useFlipTarjetas(firma, { activo = true } = {}) {
         }
     }, [firma, activo]);
 
-    return registrar;
+    // El carrusel necesita saber dónde está la tarjeta destacada para que la
+    // ficha ampliada parezca surgir de ella.
+    const rectDe = useCallback((id) => {
+        const nodo = nodosRef.current.get(String(id));
+        return nodo ? nodo.getBoundingClientRect() : null;
+    }, []);
+
+    return Object.assign(registrar, { rectDe });
 }

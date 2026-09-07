@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useLayoutEffect, useMemo, useState } from 'react';
 import TableroCard from './TableroCard';
 import useFlipTarjetas from './useFlipTarjetas';
 import useCarruselDestaque from './useCarruselDestaque';
@@ -99,6 +99,16 @@ export default function TableroKanban({ datos, previo, modoTv }) {
         [datos, destacado]
     );
 
+    // Posición de la tarjeta que se destaca, para que la ficha ampliada salga
+    // desde ella y se vea de dónde procede. Se mide en useLayoutEffect, antes
+    // de pintar, de modo que la animación arranque ya con el origen correcto.
+    const [origen, setOrigen] = useState(null);
+    useLayoutEffect(() => {
+        if (!destacado) { setOrigen(null); return; }
+        const r = registrarTarjeta.rectDe(destacado);
+        setOrigen(r ? { x: r.left + r.width / 2, y: r.top + r.height / 2, w: r.width, h: r.height } : null);
+    }, [destacado, registrarTarjeta]);
+
     return (
         <div className="tb-kanban">
             {COLUMNAS.map(({ clave, titulo, color }) => {
@@ -136,7 +146,7 @@ export default function TableroKanban({ datos, previo, modoTv }) {
             })}
 
             {tareaDestacada && (
-                <ModalDestaque tarea={tareaDestacada} cortes={cortes} />
+                <ModalDestaque tarea={tareaDestacada} cortes={cortes} origen={origen} />
             )}
         </div>
     );

@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 
-const DURACION = 5000;   // tiempo que cada tarjeta permanece al frente
-const RESPIRO = 700;     // pausa entre una tarjeta y la siguiente
+const DURACION = 10000;  // tiempo que cada tarjeta permanece al frente
+const RESPIRO = 10000;   // pausa entre una tarjeta y la siguiente
 
 /**
  * Rota el destaque entre las tareas en proceso: una tarjeta pasa al frente,
- * permanece cinco segundos y regresa a su lugar antes de que entre la siguiente.
+ * permanece diez segundos y regresa a su lugar; diez segundos después entra la
+ * siguiente, de modo que el tablero queda despejado entre una y otra.
  *
  * Devuelve el id destacado (o null durante el respiro). El recorrido se reinicia
  * si la lista cambia, y se detiene con la pestaña oculta para no acumular

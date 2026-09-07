@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useLayoutEffect, useRef, useState } from 'react';
 import { useAvatar } from './AvataresContext';
 
 const MESES = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC'];
@@ -54,7 +54,38 @@ function textoRetraso(dias) {
  * ancho de una columna. Es sólo informativa —la rota el carrusel, no el
  * usuario— así que no captura el foco ni bloquea nada detrás.
  */
-export default function ModalDestaque({ tarea, cortes }) {
+export default function ModalDestaque({ tarea, cortes, origen }) {
+    const fichaRef = useRef(null);
+    const [entrando, setEntrando] = useState(Boolean(origen));
+
+    // La ficha nace encogida sobre la tarjeta de origen y se expande hasta su
+    // sitio: así se ve de qué tarjeta procede en lugar de aparecer sin más.
+    useLayoutEffect(() => {
+        const nodo = fichaRef.current;
+        if (!nodo || !origen) { setEntrando(false); return undefined; }
+
+        const destino = nodo.getBoundingClientRect();
+        const dx = origen.x - (destino.left + destino.width / 2);
+        const dy = origen.y - (destino.top + destino.height / 2);
+        const escala = Math.max(0.12, Math.min(origen.w / destino.width, 0.6));
+
+        nodo.style.transition = 'none';
+        nodo.style.transform = `translate(${dx}px, ${dy}px) scale(${escala})`;
+        nodo.style.opacity = '0.25';
+        setEntrando(true);
+
+        const id = requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                nodo.style.transition =
+                    'transform .72s cubic-bezier(.2,.72,.28,1.02), opacity .45s ease-out';
+                nodo.style.transform = '';
+                nodo.style.opacity = '';
+                setEntrando(false);
+            });
+        });
+        return () => cancelAnimationFrame(id);
+    }, [origen, tarea.id]);
+
     const foto = useAvatar(tarea.empleado_id);
     const nivel = nivelTemperatura(tarea.dias_restantes, tarea.fecha_entregada, cortes);
     const retraso = textoRetraso(tarea.dias_restantes);
@@ -62,7 +93,11 @@ export default function ModalDestaque({ tarea, cortes }) {
 
     return (
         <div className="tb-dest-fondo" aria-hidden="true">
-            <article className={`tb-dest tb-temp-${nivel}`} key={tarea.id}>
+            <article
+                ref={fichaRef}
+                className={`tb-dest tb-temp-${nivel} ${entrando ? 'es-entrando' : ''}`}
+                key={tarea.id}
+            >
                 <span className="tb-dest-barra" />
 
                 <header className="tb-dest-head">
@@ -122,7 +157,7 @@ export default function ModalDestaque({ tarea, cortes }) {
                     )}
                 </dl>
 
-                {/* Barra que agota los cinco segundos del destaque */}
+                {/* Barra que agota el tiempo del destaque */}
                 <span className="tb-dest-tiempo" />
             </article>
         </div>

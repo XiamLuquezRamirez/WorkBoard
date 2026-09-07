@@ -847,8 +847,14 @@ a.tb-btn-sec, a.tb-btn-sec:visited { color: var(--tb-txt); }
     background: linear-gradient(150deg, var(--temp-fondo), var(--tb-panel) 55%);
     border: 1px solid var(--tb-borde);
     box-shadow: 0 30px 80px rgba(0, 0, 0, .68);
+    transform-origin: center;
+    /* Respaldo cuando no se conoce la tarjeta de origen (por ejemplo si está
+       fuera del recorte de la columna): entra con una elevación simple. */
     animation: tb-dest-entra .55s cubic-bezier(.22, .72, .3, 1.05);
 }
+/* Mientras el JS anima desde la tarjeta, la animación CSS no debe competir:
+   ambas escriben transform. */
+.tb-dest.es-entrando { animation: none; }
 @keyframes tb-dest-entra {
     from { opacity: 0; transform: translateY(26px) scale(.94); }
     to   { opacity: 1; transform: none; }
@@ -946,13 +952,13 @@ a.tb-btn-sec, a.tb-btn-sec:visited { color: var(--tb-txt); }
 }
 .tb-dest-retraso { color: var(--temp); }
 
-/* Barra que agota los cinco segundos del destaque */
+/* Barra que agota el tiempo del destaque */
 .tb-dest-tiempo {
     position: absolute;
     left: 0; bottom: 0;
     height: 3px;
     background: var(--temp);
-    animation: tb-dest-cuenta 5s linear forwards;
+    animation: tb-dest-cuenta 10s linear forwards;
 }
 @keyframes tb-dest-cuenta { from { width: 100%; } to { width: 0%; } }
 
