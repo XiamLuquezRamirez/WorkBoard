@@ -169143,15 +169143,16 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 /* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! react */ "./node_modules/react/index.js");
 /* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
-/* harmony import */ var _hello_pangea_dnd__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! @hello-pangea/dnd */ "./node_modules/@hello-pangea/dnd/dist/dnd.esm.js");
-/* harmony import */ var react_icons_fa__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! react-icons/fa */ "./node_modules/react-icons/fa/index.mjs");
+/* harmony import */ var _hello_pangea_dnd__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! @hello-pangea/dnd */ "./node_modules/@hello-pangea/dnd/dist/dnd.esm.js");
+/* harmony import */ var react_icons_fa__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! react-icons/fa */ "./node_modules/react-icons/fa/index.mjs");
 /* harmony import */ var _TaskDetailsModal__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./TaskDetailsModal */ "./resources/js/components/TaskDetailsModal.jsx");
 /* harmony import */ var _ReportesDepartamentoModal__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./ReportesDepartamentoModal */ "./resources/js/components/ReportesDepartamentoModal.jsx");
-/* harmony import */ var _axiosConfig__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../axiosConfig */ "./resources/js/axiosConfig.js");
-/* harmony import */ var sweetalert2__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! sweetalert2 */ "./node_modules/sweetalert2/dist/sweetalert2.all.js");
-/* harmony import */ var sweetalert2__WEBPACK_IMPORTED_MODULE_4___default = /*#__PURE__*/__webpack_require__.n(sweetalert2__WEBPACK_IMPORTED_MODULE_4__);
-/* harmony import */ var react_icons_fa6__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! react-icons/fa6 */ "./node_modules/react-icons/fa6/index.mjs");
-/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! react/jsx-runtime */ "./node_modules/react/jsx-runtime.js");
+/* harmony import */ var _VideosTableroModal__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./VideosTableroModal */ "./resources/js/components/VideosTableroModal.jsx");
+/* harmony import */ var _axiosConfig__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../axiosConfig */ "./resources/js/axiosConfig.js");
+/* harmony import */ var sweetalert2__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! sweetalert2 */ "./node_modules/sweetalert2/dist/sweetalert2.all.js");
+/* harmony import */ var sweetalert2__WEBPACK_IMPORTED_MODULE_5___default = /*#__PURE__*/__webpack_require__.n(sweetalert2__WEBPACK_IMPORTED_MODULE_5__);
+/* harmony import */ var react_icons_fa6__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! react-icons/fa6 */ "./node_modules/react-icons/fa6/index.mjs");
+/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! react/jsx-runtime */ "./node_modules/react/jsx-runtime.js");
 function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, _typeof(o); }
 function ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
 function _objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? ownKeys(Object(t), !0).forEach(function (r) { _defineProperty(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
@@ -169181,25 +169182,26 @@ function _arrayWithHoles(r) { if (Array.isArray(r)) return r; }
 
 
 
+
 var EmployeeInterface = function EmployeeInterface(_ref) {
   var user = _ref.user;
   var _useState = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)({
       'Pendiente': {
         title: 'Pendiente',
         items: [],
-        icon: react_icons_fa__WEBPACK_IMPORTED_MODULE_6__.FaClock,
+        icon: react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaClock,
         color: '#f97316'
       },
       'En Proceso': {
         title: 'En Proceso',
         items: [],
-        icon: react_icons_fa__WEBPACK_IMPORTED_MODULE_6__.FaSpinner,
+        icon: react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaSpinner,
         color: '#2563eb'
       },
       'Completada': {
         title: 'Completada',
         items: [],
-        icon: react_icons_fa__WEBPACK_IMPORTED_MODULE_6__.FaCheck,
+        icon: react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaCheck,
         color: '#16a34a'
       }
     }),
@@ -169346,15 +169348,19 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
     setShowReportesModal = _useState68[1];
   var _useState69 = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(false),
     _useState70 = _slicedToArray(_useState69, 2),
-    showCalendarModal = _useState70[0],
-    setShowCalendarModal = _useState70[1];
-  var _useState71 = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(function () {
+    showVideosModal = _useState70[0],
+    setShowVideosModal = _useState70[1];
+  var _useState71 = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(false),
+    _useState72 = _slicedToArray(_useState71, 2),
+    showCalendarModal = _useState72[0],
+    setShowCalendarModal = _useState72[1];
+  var _useState73 = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(function () {
       var d = new Date();
       return new Date(d.getFullYear(), d.getMonth(), 1);
     }),
-    _useState72 = _slicedToArray(_useState71, 2),
-    calendarMonthAnchor = _useState72[0],
-    setCalendarMonthAnchor = _useState72[1];
+    _useState74 = _slicedToArray(_useState73, 2),
+    calendarMonthAnchor = _useState74[0],
+    setCalendarMonthAnchor = _useState74[1];
   var resetNewTaskModalState = function resetNewTaskModalState() {
     setSubtareasForm([]);
     setNuevaSubtareaTexto('');
@@ -169512,7 +169518,7 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
           case 0:
             _context.prev = 0;
             _context.next = 3;
-            return _axiosConfig__WEBPACK_IMPORTED_MODULE_3__["default"].get('/cargarProyectos');
+            return _axiosConfig__WEBPACK_IMPORTED_MODULE_4__["default"].get('/cargarProyectos');
           case 3:
             response = _context.sent;
             setProyectos(response.data);
@@ -169535,16 +169541,16 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
   var getFileIcon = function getFileIcon(tipo) {
     switch (tipo) {
       case 'application/pdf':
-        return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_6__.FaFilePdf, {});
+        return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaFilePdf, {});
       case 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
-        return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_6__.FaFileWord, {});
+        return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaFileWord, {});
       case 'image/jpeg':
       case 'image/png':
-        return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_6__.FaFileImage, {});
+        return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaFileImage, {});
       case 'application/link':
-        return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_6__.FaLink, {});
+        return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaLink, {});
       default:
-        return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_6__.FaFile, {});
+        return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaFile, {});
     }
   };
   var loadTasks = /*#__PURE__*/function () {
@@ -169555,7 +169561,7 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
           case 0:
             _context2.prev = 0;
             _context2.next = 3;
-            return _axiosConfig__WEBPACK_IMPORTED_MODULE_3__["default"].get("/cargarTareas/".concat(user.empleado));
+            return _axiosConfig__WEBPACK_IMPORTED_MODULE_4__["default"].get("/cargarTareas/".concat(user.empleado));
           case 3:
             response = _context2.sent;
             organizeTasks(response.data.tareas);
@@ -169623,7 +169629,7 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
         return String(t.id) === String(draggableId);
       });
       if (tareaArrastrada && Number(tareaArrastrada.pausada) === 1) {
-        sweetalert2__WEBPACK_IMPORTED_MODULE_4___default().fire({
+        sweetalert2__WEBPACK_IMPORTED_MODULE_5___default().fire({
           title: 'Tarea en pausa',
           text: 'Debes reanudar la tarea antes de cambiar su estado.',
           icon: 'info',
@@ -169657,7 +169663,7 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
 
       // Validar checklist antes de mover a Completada
       if (destinationId === 'Completada' && (moved.subtareas_total || 0) > 0 && (moved.subtareas_completadas || 0) < moved.subtareas_total) {
-        sweetalert2__WEBPACK_IMPORTED_MODULE_4___default().fire({
+        sweetalert2__WEBPACK_IMPORTED_MODULE_5___default().fire({
           title: 'Checklist incompleto',
           text: "Debes completar todas las subtareas antes de mover la tarea a Completada. (".concat(moved.subtareas_completadas || 0, "/").concat(moved.subtareas_total, " completadas)"),
           icon: 'warning',
@@ -169692,12 +169698,12 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
       // lo contrario quedaría movida en pantalla sin estarlo en la base
       // de datos.
       var columnasPrevias = columns;
-      _axiosConfig__WEBPACK_IMPORTED_MODULE_3__["default"].put("/actualizarEstadoTarea/".concat(draggableId), updateData)["catch"](function (error) {
+      _axiosConfig__WEBPACK_IMPORTED_MODULE_4__["default"].put("/actualizarEstadoTarea/".concat(draggableId), updateData)["catch"](function (error) {
         var _error$response, _error$response2, _error$response3;
         console.error('Error al actualizar estado:', error);
         setColumns(columnasPrevias);
         var msg = (error === null || error === void 0 || (_error$response = error.response) === null || _error$response === void 0 || (_error$response = _error$response.data) === null || _error$response === void 0 ? void 0 : _error$response.error) || 'No fue posible actualizar el estado de la tarea.';
-        sweetalert2__WEBPACK_IMPORTED_MODULE_4___default().fire({
+        sweetalert2__WEBPACK_IMPORTED_MODULE_5___default().fire({
           title: (error === null || error === void 0 || (_error$response2 = error.response) === null || _error$response2 === void 0 ? void 0 : _error$response2.status) === 409 ? 'Tarea en pausa' : 'Error',
           text: msg,
           icon: (error === null || error === void 0 || (_error$response3 = error.response) === null || _error$response3 === void 0 ? void 0 : _error$response3.status) === 409 ? 'info' : 'error',
@@ -169742,7 +169748,7 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
             }
             _context3.prev = 1;
             _context3.next = 4;
-            return _axiosConfig__WEBPACK_IMPORTED_MODULE_3__["default"].get("/cargarTareas/".concat(empleadoSeleccionado.id));
+            return _axiosConfig__WEBPACK_IMPORTED_MODULE_4__["default"].get("/cargarTareas/".concat(empleadoSeleccionado.id));
           case 4:
             response = _context3.sent;
             setTareasEmpleado(response.data.tareas);
@@ -169793,7 +169799,7 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
             _context5.prev = 0;
             setEmpleadoAsignado(empleadoId);
             _context5.next = 4;
-            return _axiosConfig__WEBPACK_IMPORTED_MODULE_3__["default"].get("/cargarTareas/".concat(empleadoId));
+            return _axiosConfig__WEBPACK_IMPORTED_MODULE_4__["default"].get("/cargarTareas/".concat(empleadoId));
           case 4:
             response = _context5.sent;
             setTareasEmpleado(response.data.tareas);
@@ -169815,7 +169821,7 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
             _context5.prev = 14;
             _context5.t0 = _context5["catch"](0);
             console.error('Error al cargar tareas del empleado:', _context5.t0);
-            sweetalert2__WEBPACK_IMPORTED_MODULE_4___default().fire('Error', 'No se pudieron cargar las tareas del empleado', 'error');
+            sweetalert2__WEBPACK_IMPORTED_MODULE_5___default().fire('Error', 'No se pudieron cargar las tareas del empleado', 'error');
           case 18:
           case "end":
             return _context5.stop();
@@ -169853,7 +169859,7 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
           case 0:
             _context6.prev = 0;
             _context6.next = 3;
-            return _axiosConfig__WEBPACK_IMPORTED_MODULE_3__["default"].get("/checklists-empleado/".concat(empleadoId));
+            return _axiosConfig__WEBPACK_IMPORTED_MODULE_4__["default"].get("/checklists-empleado/".concat(empleadoId));
           case 3:
             r = _context6.sent;
             setChecklistsExistentes(r.data);
@@ -169903,7 +169909,7 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
           case 2:
             _context7.prev = 2;
             _context7.next = 5;
-            return Promise.all([_axiosConfig__WEBPACK_IMPORTED_MODULE_3__["default"].get("/cargarTareaSeleccionada/".concat(tareaId)), _axiosConfig__WEBPACK_IMPORTED_MODULE_3__["default"].get("/subtareas/".concat(tareaId))]);
+            return Promise.all([_axiosConfig__WEBPACK_IMPORTED_MODULE_4__["default"].get("/cargarTareaSeleccionada/".concat(tareaId)), _axiosConfig__WEBPACK_IMPORTED_MODULE_4__["default"].get("/subtareas/".concat(tareaId))]);
           case 5:
             _yield$Promise$all = _context7.sent;
             _yield$Promise$all2 = _slicedToArray(_yield$Promise$all, 2);
@@ -169949,7 +169955,7 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
             _context7.prev = 25;
             _context7.t0 = _context7["catch"](2);
             console.error('Error al cargar plantilla:', _context7.t0);
-            sweetalert2__WEBPACK_IMPORTED_MODULE_4___default().fire('Error', 'No se pudo cargar la plantilla de la tarea', 'error');
+            sweetalert2__WEBPACK_IMPORTED_MODULE_5___default().fire('Error', 'No se pudo cargar la plantilla de la tarea', 'error');
           case 29:
           case "end":
             return _context7.stop();
@@ -169986,7 +169992,7 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
               _context8.next = 8;
               break;
             }
-            sweetalert2__WEBPACK_IMPORTED_MODULE_4___default().fire({
+            sweetalert2__WEBPACK_IMPORTED_MODULE_5___default().fire({
               title: 'Error',
               text: 'Completa título, descripción y fecha límite',
               icon: 'error',
@@ -169998,7 +170004,7 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
               _context8.next = 11;
               break;
             }
-            sweetalert2__WEBPACK_IMPORTED_MODULE_4___default().fire({
+            sweetalert2__WEBPACK_IMPORTED_MODULE_5___default().fire({
               title: 'Error',
               text: 'La fecha pactada no puede ser menor a la fecha actual',
               icon: 'error',
@@ -170007,7 +170013,7 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
             return _context8.abrupt("return");
           case 11:
             _context8.next = 13;
-            return _axiosConfig__WEBPACK_IMPORTED_MODULE_3__["default"].post('/guardarTarea', {
+            return _axiosConfig__WEBPACK_IMPORTED_MODULE_4__["default"].post('/guardarTarea', {
               titulo: newTaskTitulo,
               descripcion: newTaskDescripcion,
               fecha_pactada: newTaskFecha,
@@ -170034,7 +170040,7 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
             });
             _context8.next = 19;
             return Promise.all(items.map(function (s) {
-              return _axiosConfig__WEBPACK_IMPORTED_MODULE_3__["default"].post('/subtareas', {
+              return _axiosConfig__WEBPACK_IMPORTED_MODULE_4__["default"].post('/subtareas', {
                 tarea_id: tareaId,
                 titulo: s.titulo,
                 fecha_vencimiento: s.fecha_vencimiento || null,
@@ -170049,7 +170055,7 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
 
             // preguntar si la tarea es para un empleado o para el lider
             _context8.next = 23;
-            return _axiosConfig__WEBPACK_IMPORTED_MODULE_3__["default"].get("/cargarTareas/".concat(user.empleado));
+            return _axiosConfig__WEBPACK_IMPORTED_MODULE_4__["default"].get("/cargarTareas/".concat(user.empleado));
           case 23:
             tasksResponse = _context8.sent;
             tasks = tasksResponse.data.tareas; // Organizar las tareas en las columnas
@@ -170080,14 +170086,14 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
               }
             };
             setColumns(newColumns);
-            sweetalert2__WEBPACK_IMPORTED_MODULE_4___default().fire('¡Éxito!', 'Tarea creada correctamente', 'success');
+            sweetalert2__WEBPACK_IMPORTED_MODULE_5___default().fire('¡Éxito!', 'Tarea creada correctamente', 'success');
             _context8.next = 34;
             break;
           case 30:
             _context8.prev = 30;
             _context8.t0 = _context8["catch"](2);
             console.error('Error al crear la tarea:', _context8.t0);
-            sweetalert2__WEBPACK_IMPORTED_MODULE_4___default().fire('Error', 'Error al crear la tarea', 'error');
+            sweetalert2__WEBPACK_IMPORTED_MODULE_5___default().fire('Error', 'Error al crear la tarea', 'error');
           case 34:
             _context8.prev = 34;
             setIsSaving(false);
@@ -170105,11 +170111,11 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
   var renderIcon = function renderIcon(iconName) {
     switch (iconName) {
       case 'FaClock':
-        return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_6__.FaClock, {});
+        return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaClock, {});
       case 'FaSpinner':
-        return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_6__.FaSpinner, {});
+        return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaSpinner, {});
       case 'FaCheck':
-        return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_6__.FaCheck, {});
+        return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaCheck, {});
       default:
         return null;
     }
@@ -170125,7 +170131,7 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
           case 0:
             _context9.prev = 0;
             _context9.next = 3;
-            return _axiosConfig__WEBPACK_IMPORTED_MODULE_3__["default"].put("/desarchivarTarea/".concat(taskId));
+            return _axiosConfig__WEBPACK_IMPORTED_MODULE_4__["default"].put("/desarchivarTarea/".concat(taskId));
           case 3:
             _context9.next = 5;
             return loadTasks();
@@ -170133,14 +170139,14 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
             // Recargar tareas para actualizar la lista
             setShowArchivedTaskDetails(false);
             setSelectedArchivedTask(null);
-            sweetalert2__WEBPACK_IMPORTED_MODULE_4___default().fire('¡Éxito!', 'Tarea desarchivada correctamente', 'success');
+            sweetalert2__WEBPACK_IMPORTED_MODULE_5___default().fire('¡Éxito!', 'Tarea desarchivada correctamente', 'success');
             _context9.next = 14;
             break;
           case 10:
             _context9.prev = 10;
             _context9.t0 = _context9["catch"](0);
             console.error('Error al desarchivar tarea:', _context9.t0);
-            sweetalert2__WEBPACK_IMPORTED_MODULE_4___default().fire('Error', 'Error al desarchivar la tarea', 'error');
+            sweetalert2__WEBPACK_IMPORTED_MODULE_5___default().fire('Error', 'Error al desarchivar la tarea', 'error');
           case 14:
             J;
           case 15:
@@ -170153,32 +170159,32 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
       return _ref0.apply(this, arguments);
     };
   }();
-  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
     className: "kanban-container",
-    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
       className: "kanban-header",
-      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("h2", {
+      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("h2", {
         children: "Mis Tareas"
-      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
+      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
         className: "header-right",
-        children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+        children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
           className: "task-options-dropdown",
           ref: optionsDropdownRef,
-          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("button", {
+          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("button", {
             className: "task-options-btn",
             onClick: function onClick() {
               return setShowOptionsDropdown(function (prev) {
                 return !prev;
               });
             },
-            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_6__.FaEllipsisV, {}), " ", /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("span", {
+            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaEllipsisV, {}), " ", /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("span", {
               children: "Opciones"
-            }), " ", /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_6__.FaChevronDown, {
+            }), " ", /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaChevronDown, {
               className: showOptionsDropdown ? 'rotated' : ''
             })]
-          }), showOptionsDropdown && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+          }), showOptionsDropdown && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
             className: "task-options-menu",
-            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("button", {
+            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("button", {
               className: "task-options-item item-new",
               onClick: function onClick() {
                 resetNewTaskModalState();
@@ -170186,8 +170192,8 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
                 setAsignarTareasEmpleado(false);
                 setShowOptionsDropdown(false);
               },
-              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_6__.FaPlus, {}), " Nueva Tarea"]
-            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("button", {
+              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaPlus, {}), " Nueva Tarea"]
+            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("button", {
               className: "task-options-item item-calendar",
               onClick: function onClick() {
                 var d = new Date();
@@ -170195,52 +170201,59 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
                 setShowCalendarModal(true);
                 setShowOptionsDropdown(false);
               },
-              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_6__.FaCalendar, {}), " Calendario"]
-            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("button", {
+              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaCalendar, {}), " Calendario"]
+            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("button", {
               className: "task-options-item item-archive",
               onClick: function onClick() {
                 setShowArchiveModal(true);
                 setShowOptionsDropdown(false);
               },
-              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_6__.FaArchive, {}), " Tareas Archivadas"]
-            }), user.lider == 'Si' && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.Fragment, {
-              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
+              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaArchive, {}), " Tareas Archivadas"]
+            }), user.lider == 'Si' && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.Fragment, {
+              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
                 className: "task-options-divider"
-              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("button", {
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("button", {
                 className: "task-options-item item-seguimiento",
                 onClick: function onClick() {
                   abrirListaEmpleadosAsignados();
                   setShowOptionsDropdown(false);
                 },
-                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_6__.FaSearch, {}), " Seguimiento de Tareas"]
-              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("button", {
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaSearch, {}), " Seguimiento de Tareas"]
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("button", {
                 className: "task-options-item item-reportes",
                 onClick: abrirReportesDepartamento,
-                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_6__.FaChartBar, {}), " Reportes del Departamento"]
-              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("button", {
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaChartBar, {}), " Reportes del Departamento"]
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("button", {
+                className: "task-options-item item-videos",
+                onClick: function onClick() {
+                  setShowOptionsDropdown(false);
+                  setShowVideosModal(true);
+                },
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaVideo, {}), " V\xEDdeos del Tablero"]
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("button", {
                 className: "task-options-item item-tablero",
                 onClick: abrirTableroSeguimiento,
-                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_6__.FaDesktop, {}), " Tablero de Seguimiento"]
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaDesktop, {}), " Tablero de Seguimiento"]
               })]
             })]
           })]
         })
       })]
-    }), showNewTaskModal && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.Fragment, {
-      children: [isSaving && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
+    }), showNewTaskModal && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.Fragment, {
+      children: [isSaving && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
         className: "loader",
-        children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
+        children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
           className: "justify-content-center jimu-primary-loading"
         })
-      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
+      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
         className: "modal-overlay",
-        children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+        children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
           className: "new-task-modal",
-          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
             className: "modal-header",
-            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("h2", {
+            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("h2", {
               children: "Nueva Tarea"
-            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("button", {
+            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("button", {
               type: "button",
               className: "close-button",
               onClick: function onClick() {
@@ -170249,42 +170262,42 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
               },
               children: "\xD7"
             })]
-          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("form", {
+          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("form", {
             className: "new-task-modal-form",
             onSubmit: handleSubmitNewTask,
-            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
               className: "new-task-modal-body",
-              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
                 className: "form-group",
-                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("label", {
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("label", {
                   htmlFor: "plantilla_tarea",
                   children: "Plantilla (tarea ya creada)"
-                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("select", {
+                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("select", {
                   id: "plantilla_tarea",
                   className: "plantilla-tarea-select",
                   value: selectedPlantillaId,
                   onChange: function onChange(e) {
                     return onPlantillaSelectChange(e.target.value);
                   },
-                  children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("option", {
+                  children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("option", {
                     value: "",
                     children: "Empezar en blanco"
                   }), tareasPlantillaOpciones.map(function (opt) {
-                    return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("option", {
+                    return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("option", {
                       value: String(opt.id),
                       children: opt.titulo
                     }, opt.id);
                   })]
-                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("p", {
+                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("p", {
                   className: "plantilla-tarea-hint",
                   children: "Carga t\xEDtulo, descripci\xF3n, fechas, prioridad, proyecto y checklist de una tarea tuya del tablero para editar solo lo necesario."
                 })]
-              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
                 className: "form-group",
-                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("label", {
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("label", {
                   htmlFor: "titulo",
                   children: "T\xEDtulo"
-                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("input", {
+                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("input", {
                   type: "text",
                   id: "titulo",
                   name: "titulo",
@@ -170294,12 +170307,12 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
                   },
                   required: true
                 })]
-              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
                 className: "form-group",
-                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("label", {
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("label", {
                   htmlFor: "descripcion",
                   children: "Descripci\xF3n"
-                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("textarea", {
+                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("textarea", {
                   id: "descripcion",
                   name: "descripcion",
                   value: newTaskDescripcion,
@@ -170308,12 +170321,12 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
                   },
                   required: true
                 })]
-              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
                 className: "form-group",
-                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("label", {
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("label", {
                   htmlFor: "fecha_pactada",
                   children: "Fecha l\xEDmite"
-                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("input", {
+                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("input", {
                   type: "date",
                   id: "fecha_pactada",
                   name: "fecha_pactada",
@@ -170323,12 +170336,12 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
                   },
                   required: true
                 })]
-              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
                 className: "form-group",
-                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("label", {
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("label", {
                   htmlFor: "prioridad",
                   children: "Prioridad"
-                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("select", {
+                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("select", {
                   id: "prioridad",
                   name: "prioridad",
                   value: newTaskPrioridad,
@@ -170336,23 +170349,23 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
                     return setNewTaskPrioridad(e.target.value);
                   },
                   required: true,
-                  children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("option", {
+                  children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("option", {
                     value: "Alta",
                     children: "Alta"
-                  }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("option", {
+                  }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("option", {
                     value: "Media",
                     children: "Media"
-                  }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("option", {
+                  }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("option", {
                     value: "Baja",
                     children: "Baja"
                   })]
                 })]
-              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
                 className: "form-group",
-                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("label", {
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("label", {
                   htmlFor: "estado",
                   children: "Estado"
-                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("select", {
+                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("select", {
                   id: "estado",
                   name: "estado",
                   value: newTaskEstado,
@@ -170360,42 +170373,42 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
                     return setNewTaskEstado(e.target.value);
                   },
                   required: true,
-                  children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("option", {
+                  children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("option", {
                     value: "Pendiente",
                     children: "Pendiente"
-                  }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("option", {
+                  }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("option", {
                     value: "En Proceso",
                     children: "En Proceso"
                   })]
                 })]
-              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
                 className: "form-group",
-                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("label", {
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("label", {
                   htmlFor: "proyecto_id",
                   children: "Proyecto (opcional)"
-                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("select", {
+                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("select", {
                   id: "proyecto_id",
                   name: "proyecto_id",
                   value: formProyectoId,
                   onChange: function onChange(e) {
                     return setFormProyectoId(e.target.value);
                   },
-                  children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("option", {
+                  children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("option", {
                     value: "",
                     children: "Sin proyecto"
                   }), proyectos.map(function (p) {
-                    return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("option", {
+                    return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("option", {
                       value: p.id,
                       children: p.nombre
                     }, p.id);
                   })]
                 })]
-              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
                 className: "form-group",
                 ref: checklistBlockRef,
-                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
                   className: "checklist-toggle-row",
-                  children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("button", {
+                  children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("button", {
                     type: "button",
                     className: "checklist-toggle-btn".concat(showChecklist ? ' active' : ''),
                     onClick: function onClick() {
@@ -170408,15 +170421,15 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
                       });
                     },
                     children: "\u2611 Checklist"
-                  }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("span", {
+                  }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("span", {
                     className: "checklist-hint",
                     children: "Aqu\xED abajo agregas los \xEDtems"
                   })]
-                }), showChecklist && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+                }), showChecklist && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
                   className: "checklist-form-section",
-                  children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+                  children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
                     className: "checklist-header-row",
-                    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("input", {
+                    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("input", {
                       type: "text",
                       className: "checklist-titulo-input",
                       placeholder: "T\xEDtulo del checklist (opcional)...",
@@ -170424,28 +170437,28 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
                       onChange: function onChange(e) {
                         return setChecklistTitulo(e.target.value);
                       }
-                    }), checklistsExistentes.length > 0 && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("select", {
+                    }), checklistsExistentes.length > 0 && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("select", {
                       className: "checklist-copy-select",
                       value: selectedChecklistId,
                       onChange: function onChange(e) {
                         return handleCopyChecklist(e.target.value);
                       },
-                      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("option", {
+                      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("option", {
                         value: "",
                         children: "Copiar checklist de otra tarea\u2026"
                       }), checklistsExistentes.map(function (c) {
-                        return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("option", {
+                        return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("option", {
                           value: c.tarea_id,
                           children: [c.tarea_titulo, c.checklist_titulo ? " \u2014 ".concat(c.checklist_titulo) : '']
                         }, c.tarea_id);
                       })]
                     })]
-                  }), subtareasForm.length > 0 && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("ul", {
+                  }), subtareasForm.length > 0 && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("ul", {
                     className: "subtareas-list checklist-items-preview new-task-subtareas-editable",
                     children: subtareasForm.map(function (s) {
-                      return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("li", {
+                      return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("li", {
                         className: "subtarea-item",
-                        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("input", {
+                        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("input", {
                           type: "text",
                           className: "subtarea-edit-input",
                           value: s.titulo,
@@ -170459,7 +170472,7 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
                               });
                             });
                           }
-                        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("input", {
+                        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("input", {
                           type: "date",
                           className: "subtarea-edit-date",
                           value: s.fecha_vencimiento || '',
@@ -170473,7 +170486,7 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
                             });
                           },
                           title: "Fecha de vencimiento del \xEDtem"
-                        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("button", {
+                        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("button", {
                           type: "button",
                           className: "subtarea-delete",
                           style: {
@@ -170487,18 +170500,18 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
                               });
                             });
                           },
-                          children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_6__.FaTimes, {})
+                          children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaTimes, {})
                         })]
                       }, s.tempId);
                     })
-                  }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+                  }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
                     className: "checklist-add-zone",
-                    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
+                    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
                       className: "checklist-add-zone-label",
                       children: "Nuevo \xEDtem del checklist"
-                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
                       className: "subtarea-add-row",
-                      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("input", {
+                      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("input", {
                         type: "text",
                         className: "subtarea-add-input",
                         placeholder: "Escribe el \xEDtem y pulsa + o Enter",
@@ -170521,7 +170534,7 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
                             setNuevaSubtareaFecha('');
                           }
                         }
-                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("input", {
+                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("input", {
                         type: "date",
                         className: "subtarea-add-date",
                         value: nuevaSubtareaFecha,
@@ -170529,7 +170542,7 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
                           return setNuevaSubtareaFecha(e.target.value);
                         },
                         title: "Fecha de vencimiento del \xEDtem"
-                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("button", {
+                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("button", {
                         type: "button",
                         className: "subtarea-add-btn",
                         disabled: !nuevaSubtareaTexto.trim(),
@@ -170545,96 +170558,96 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
                           setNuevaSubtareaTexto('');
                           setNuevaSubtareaFecha('');
                         },
-                        children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_6__.FaPlus, {})
+                        children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaPlus, {})
                       })]
                     })]
                   })]
                 })]
               })]
-            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
               className: "modal-actions new-task-modal-actions",
-              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("button", {
+              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("button", {
                 type: "button",
                 className: "cancel-button-new-task",
                 onClick: function onClick() {
                   setShowNewTaskModal(false);
                   resetNewTaskModalState();
                 },
-                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_6__.FaTimes, {}), " Cancelar"]
-              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("button", {
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaTimes, {}), " Cancelar"]
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("button", {
                 type: "submit",
                 className: "submit-button-new-task",
-                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_6__.FaSave, {}), " Crear Tarea"]
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaSave, {}), " Crear Tarea"]
               })]
             })]
           })]
         })
       })]
-    }), showListaEmpleadosAsignados && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
+    }), showListaEmpleadosAsignados && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
       className: "modal-overlay",
-      children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+      children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
         className: "lista-empleados-asignados-modal",
-        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
           className: "modal-header",
-          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("h2", {
+          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("h2", {
             children: "\uD83D\uDC65 Empleados Asignados"
-          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("button", {
+          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("button", {
             className: "close-button",
             onClick: function onClick() {
               return setShowListaEmpleadosAsignados(false);
             },
             children: "\xD7"
           })]
-        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
+        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
           className: "modal-content empleados-grid",
           children: user.empleados_asignados.map(function (empleado) {
-            return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+            return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
               className: "empleado-card",
-              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
+              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
                 className: "empleado-info",
-                children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("span", {
+                children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("span", {
                   className: "empleado-nombre",
                   children: empleado.nombre.toLowerCase()
                 })
-              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("button", {
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("button", {
                 className: "btn-ver",
                 onClick: function onClick() {
                   return verTareas(empleado.id);
                 },
-                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_6__.FaEye, {}), " Ver Tareas"]
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaEye, {}), " Ver Tareas"]
               })]
             }, empleado.id);
           })
         })]
       })
-    }), showTareasEmpleado && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
+    }), showTareasEmpleado && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
       className: "modal-overlay",
-      children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+      children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
         className: "tareas-empleado-modal",
-        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
           className: "modal-header",
-          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("h2", {
+          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("h2", {
             children: ["TAREAS DE ", empleadoSeleccionado === null || empleadoSeleccionado === void 0 ? void 0 : empleadoSeleccionado.nombre]
-          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("button", {
+          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("button", {
             className: "close-button",
             onClick: cerrarTareasEmpleado,
             children: "\xD7"
           })]
-        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
+        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
           className: "modal-content",
-          children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
+          children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
             className: "tareas-empleado-container",
             children: !mostrarTareasEstado ?
             /*#__PURE__*/
             // Vista de estados (nivel 1)
-            (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.Fragment, {
-              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
+            (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.Fragment, {
+              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
                 className: "estados-cards",
                 children: Object.entries(columns).map(function (_ref1) {
                   var _ref10 = _slicedToArray(_ref1, 2),
                     estado = _ref10[0],
                     column = _ref10[1];
-                  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+                  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
                     className: "estado-card",
                     onClick: function onClick() {
                       return seleccionarEstado(estado);
@@ -170642,119 +170655,119 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
                     style: {
                       borderTop: "4px solid ".concat(column.color)
                     },
-                    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+                    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
                       className: "estado-card-header",
-                      children: [renderIcon(column.iconComponent), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("h3", {
+                      children: [renderIcon(column.iconComponent), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("h3", {
                         children: column.title
                       })]
-                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
                       className: "estado-card-count",
-                      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("span", {
+                      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("span", {
                         children: tareasEmpleado.filter(function (task) {
                           return task.estado === estado;
                         }).length
-                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("span", {
+                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("span", {
                         children: "tareas"
                       })]
                     })]
                   }, estado);
                 })
-              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
                 className: "buttons-container",
-                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("button", {
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("button", {
                   className: "back-button",
                   onClick: volverAEmpleados,
-                  children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_6__.FaArrowLeft, {}), " Volver a empleados"]
-                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("button", {
+                  children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaArrowLeft, {}), " Volver a empleados"]
+                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("button", {
                   className: "asignar-tareas-button",
                   onClick: function onClick() {
                     return asignarTareas();
                   },
-                  children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_6__.FaPlus, {}), " Asignar Tareas"]
+                  children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaPlus, {}), " Asignar Tareas"]
                 })]
               })]
             }) :
             /*#__PURE__*/
             // Vista de tareas de un estado (nivel 2)
-            (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+            (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
               className: "tareas-estado-container",
-              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
+              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
                 className: "estado-tareas-header",
-                children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+                children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
                   style: {
                     fontSize: '1.5rem',
                     fontWeight: 'bold'
                   },
                   children: ["Tareas ", estadoSeleccionado]
                 })
-              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
                 className: "tareas-list-container",
-                children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
+                children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
                   className: "tareas-list",
                   children: tareasEmpleado.filter(function (task) {
                     return task.estado === estadoSeleccionado;
                   }).map(function (task) {
-                    return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+                    return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
                       className: "task-card",
                       onClick: function onClick() {
                         return handleTaskClick(task);
                       },
-                      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+                      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
                         className: "task-card-header",
-                        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("h4", {
+                        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("h4", {
                           style: {
                             textTransform: 'capitalize',
                             marginBottom: '0.5rem'
                           },
                           children: task.titulo
-                        }), task.proyecto_nombre && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("span", {
+                        }), task.proyecto_nombre && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("span", {
                           className: "proyecto-badge",
-                          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_6__.FaFolder, {
+                          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaFolder, {
                             style: {
                               marginRight: '4px',
                               fontSize: '0.7rem'
                             }
                           }), task.proyecto_nombre]
-                        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+                        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
                           className: "task-card-header-right",
-                          children: [task.prioridad && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("span", {
+                          children: [task.prioridad && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("span", {
                             className: "prioridad-badge ".concat(task.prioridad.toLowerCase()),
                             children: task.prioridad
-                          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+                          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
                             className: "task-card-header-right-icons",
-                            children: [task.aprobada ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa6__WEBPACK_IMPORTED_MODULE_7__.FaCircleCheck, {
+                            children: [task.aprobada ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa6__WEBPACK_IMPORTED_MODULE_8__.FaCircleCheck, {
                               color: "green",
                               title: "Aprobada",
                               style: {
                                 marginRight: '0.5rem'
                               }
-                            }) : /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa6__WEBPACK_IMPORTED_MODULE_7__.FaCircleCheck, {
+                            }) : /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa6__WEBPACK_IMPORTED_MODULE_8__.FaCircleCheck, {
                               color: "grey",
                               title: "No aprobada",
                               style: {
                                 marginRight: '0.5rem',
                                 opacity: 0.5
                               }
-                            }), task.estado === 'Completada' && task.visto_bueno && !task.rechazada ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_6__.FaEye, {
+                            }), task.estado === 'Completada' && task.visto_bueno && !task.rechazada ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaEye, {
                               color: "green",
                               title: "Visto bueno",
                               style: {
                                 marginRight: '0.5rem'
                               }
-                            }) : /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_6__.FaEye, {
+                            }) : /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaEye, {
                               color: "grey",
                               title: "Pendiente de visto bueno",
                               style: {
                                 marginRight: '0.5rem',
                                 opacity: 0.5
                               }
-                            }), (task.estado === 'Completada' || task.estado === 'En Proceso') && task.rechazada ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa6__WEBPACK_IMPORTED_MODULE_7__.FaCircleXmark, {
+                            }), (task.estado === 'Completada' || task.estado === 'En Proceso') && task.rechazada ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa6__WEBPACK_IMPORTED_MODULE_8__.FaCircleXmark, {
                               color: "red",
                               title: "Rechazada",
                               style: {
                                 marginRight: '0.5rem'
                               }
-                            }) : null, task.pausada == 1 || task.pausada === true ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_6__.FaPause, {
+                            }) : null, task.pausada == 1 || task.pausada === true ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaPause, {
                               color: "#f97316",
                               title: "Tarea pausada",
                               style: {
@@ -170763,37 +170776,37 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
                             }) : null]
                           })]
                         })]
-                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("p", {
+                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("p", {
                         className: "task-description",
                         children: [task.descripcion.substring(0, 100), "..."]
-                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
                         className: "task-dates",
-                        children: [(task.estado === 'Pendiente' || task.estado === 'En Proceso') && task.fecha_pactada && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("span", {
+                        children: [(task.estado === 'Pendiente' || task.estado === 'En Proceso') && task.fecha_pactada && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("span", {
                           className: "date-badge due-date",
-                          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_6__.FaClock, {}), "Fecha l\xEDmite: ", new Date(task.fecha_pactada + 'T00:00:00').toLocaleDateString()]
-                        }), task.estado === 'Completada' && task.fecha_entregada && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("span", {
+                          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaClock, {}), "Fecha l\xEDmite: ", new Date(task.fecha_pactada + 'T00:00:00').toLocaleDateString()]
+                        }), task.estado === 'Completada' && task.fecha_entregada && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("span", {
                           className: "date-badge completed-date",
-                          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_6__.FaCheck, {}), "Entregado: ", new Date(task.fecha_entregada).toLocaleDateString()]
+                          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaCheck, {}), "Entregado: ", new Date(task.fecha_entregada).toLocaleDateString()]
                         })]
-                      }), task.evidencias && task.evidencias.length > 0 && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
+                      }), task.evidencias && task.evidencias.length > 0 && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
                         className: "evidences-container",
                         children: task.evidencias.map(function (evidencia) {
-                          return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("span", {
+                          return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("span", {
                             className: "evidence-icon",
                             title: evidencia.nombre,
                             children: getFileIcon(evidencia.tipo)
                           }, evidencia.id);
                         })
-                      }), task.subtareas_total > 0 && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+                      }), task.subtareas_total > 0 && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
                         className: "checklist-badge".concat(task.subtareas_completadas === task.subtareas_total ? ' completo' : ''),
-                        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa6__WEBPACK_IMPORTED_MODULE_7__.FaListCheck, {}), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("span", {
+                        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa6__WEBPACK_IMPORTED_MODULE_8__.FaListCheck, {}), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("span", {
                           children: [task.subtareas_completadas, "/", task.subtareas_total]
                         })]
                       })]
                     }, task.id);
                   })
                 })
-              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("button", {
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("button", {
                 className: "back-button",
                 onClick: volverAEstados,
                 children: "\u2190 Volver a estados"
@@ -170802,35 +170815,35 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
           })
         })]
       })
-    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(_hello_pangea_dnd__WEBPACK_IMPORTED_MODULE_8__.DragDropContext, {
+    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(_hello_pangea_dnd__WEBPACK_IMPORTED_MODULE_9__.DragDropContext, {
       onDragEnd: onDragEnd,
-      children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
+      children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
         className: "kanban-board",
         children: Object.entries(columns).map(function (_ref11) {
           var _ref12 = _slicedToArray(_ref11, 2),
             columnId = _ref12[0],
             column = _ref12[1];
-          return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+          return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
             className: "kanban-column",
             "data-status": column.title,
             style: {
               overflow: 'hidden'
             },
-            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
               className: "column-header",
               style: {
                 backgroundColor: column.color
               },
-              children: [renderIcon(column.iconComponent), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("h3", {
+              children: [renderIcon(column.iconComponent), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("h3", {
                 children: column.title
-              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("span", {
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("span", {
                 className: "task-count",
                 children: column.items.length
               })]
-            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(_hello_pangea_dnd__WEBPACK_IMPORTED_MODULE_8__.Droppable, {
+            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(_hello_pangea_dnd__WEBPACK_IMPORTED_MODULE_9__.Droppable, {
               droppableId: columnId,
               children: function children(provided) {
-                return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", _objectSpread(_objectSpread({}, provided.droppableProps), {}, {
+                return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", _objectSpread(_objectSpread({}, provided.droppableProps), {}, {
                   ref: provided.innerRef,
                   className: "task-list",
                   style: {
@@ -170838,99 +170851,99 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
                     maxHeight: 'calc(100vh - 200px)'
                   },
                   children: [column.items.map(function (task, index) {
-                    return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(_hello_pangea_dnd__WEBPACK_IMPORTED_MODULE_8__.Draggable, {
+                    return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(_hello_pangea_dnd__WEBPACK_IMPORTED_MODULE_9__.Draggable, {
                       draggableId: task.id.toString(),
                       index: index,
                       isDragDisabled: !task.aprobada,
                       children: function children(provided, snapshot) {
-                        return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", _objectSpread(_objectSpread(_objectSpread({
+                        return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", _objectSpread(_objectSpread(_objectSpread({
                           ref: provided.innerRef
                         }, provided.draggableProps), provided.dragHandleProps), {}, {
                           className: "task-card ".concat(snapshot.isDragging ? 'dragging' : '', " ").concat(!task.aprobada ? 'disabled-drag' : ''),
                           onClick: function onClick() {
                             return handleTaskClick(task);
                           },
-                          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+                          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
                             className: "kanban-column-visto-bueno",
-                            children: [task.aprobada ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa6__WEBPACK_IMPORTED_MODULE_7__.FaCircleCheck, {
+                            children: [task.aprobada ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa6__WEBPACK_IMPORTED_MODULE_8__.FaCircleCheck, {
                               color: "green",
                               title: "Aprobada",
                               style: {
                                 marginRight: '0.5rem'
                               }
-                            }) : /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa6__WEBPACK_IMPORTED_MODULE_7__.FaCircleCheck, {
+                            }) : /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa6__WEBPACK_IMPORTED_MODULE_8__.FaCircleCheck, {
                               color: "grey",
                               title: "No aprobada",
                               style: {
                                 marginRight: '0.5rem',
                                 opacity: 0.5
                               }
-                            }), task.estado === 'Completada' && task.visto_bueno && !task.rechazada ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_6__.FaEye, {
+                            }), task.estado === 'Completada' && task.visto_bueno && !task.rechazada ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaEye, {
                               color: "green",
                               title: "Visto bueno",
                               style: {
                                 marginRight: '0.5rem'
                               }
-                            }) : /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_6__.FaEye, {
+                            }) : /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaEye, {
                               color: "grey",
                               title: "Pendiente de visto bueno",
                               style: {
                                 marginRight: '0.5rem',
                                 opacity: 0.5
                               }
-                            }), (task.estado === 'Completada' || task.estado === 'En Proceso') && task.rechazada ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa6__WEBPACK_IMPORTED_MODULE_7__.FaCircleXmark, {
+                            }), (task.estado === 'Completada' || task.estado === 'En Proceso') && task.rechazada ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa6__WEBPACK_IMPORTED_MODULE_8__.FaCircleXmark, {
                               color: "red",
                               title: "Rechazada",
                               style: {
                                 marginRight: '0.5rem'
                               }
-                            }) : null, task.pausada == 1 || task.pausada === true ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_6__.FaPause, {
+                            }) : null, task.pausada == 1 || task.pausada === true ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaPause, {
                               color: "#f97316",
                               title: "Tarea pausada",
                               style: {
                                 marginRight: '0.5rem'
                               }
                             }) : null]
-                          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+                          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
                             className: "task-card-header",
-                            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("h4", {
+                            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("h4", {
                               children: task.titulo
-                            }), task.prioridad && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("span", {
+                            }), task.prioridad && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("span", {
                               className: "prioridad-badge ".concat(task.prioridad.toLowerCase()),
                               children: task.prioridad
                             })]
-                          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("p", {
+                          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("p", {
                             className: "task-description",
                             children: [task.descripcion.substring(0, 100), "..."]
-                          }), task.proyecto_nombre && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("span", {
+                          }), task.proyecto_nombre && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("span", {
                             className: "proyecto-badge",
-                            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_6__.FaFolder, {
+                            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaFolder, {
                               style: {
                                 marginRight: '4px',
                                 fontSize: '0.7rem'
                               }
                             }), task.proyecto_nombre]
-                          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+                          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
                             className: "task-dates",
-                            children: [(task.estado === 'Pendiente' || task.estado === 'En Proceso') && task.fecha_pactada && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("span", {
+                            children: [(task.estado === 'Pendiente' || task.estado === 'En Proceso') && task.fecha_pactada && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("span", {
                               className: "date-badge due-date",
-                              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_6__.FaClock, {}), "Fecha l\xEDmite: ", new Date(task.fecha_pactada + 'T00:00:00').toLocaleDateString()]
-                            }), task.estado === 'Completada' && task.fecha_entregada && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("span", {
+                              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaClock, {}), "Fecha l\xEDmite: ", new Date(task.fecha_pactada + 'T00:00:00').toLocaleDateString()]
+                            }), task.estado === 'Completada' && task.fecha_entregada && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("span", {
                               className: "date-badge completed-date",
-                              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_6__.FaCheck, {}), "Entregado: ", new Date(task.fecha_entregada + 'T00:00:00').toLocaleDateString()]
+                              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaCheck, {}), "Entregado: ", new Date(task.fecha_entregada + 'T00:00:00').toLocaleDateString()]
                             })]
-                          }), task.evidencias && task.evidencias.length > 0 && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
+                          }), task.evidencias && task.evidencias.length > 0 && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
                             className: "evidences-container",
                             children: task.evidencias.map(function (evidencia) {
-                              return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("span", {
+                              return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("span", {
                                 className: "evidence-icon",
                                 title: evidencia.nombre,
                                 children: getFileIcon(evidencia.tipo)
                               }, evidencia.id);
                             })
-                          }), task.subtareas_total > 0 && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+                          }), task.subtareas_total > 0 && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
                             className: "checklist-badge".concat(task.subtareas_completadas === task.subtareas_total ? ' completo' : ''),
-                            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa6__WEBPACK_IMPORTED_MODULE_7__.FaListCheck, {}), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("span", {
+                            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa6__WEBPACK_IMPORTED_MODULE_8__.FaListCheck, {}), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("span", {
                               children: [task.subtareas_completadas, "/", task.subtareas_total]
                             })]
                           })]
@@ -170944,33 +170957,33 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
           }, columnId);
         })
       })
-    }), showTaskDetails && selectedTask && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(_TaskDetailsModal__WEBPACK_IMPORTED_MODULE_1__["default"], {
+    }), showTaskDetails && selectedTask && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(_TaskDetailsModal__WEBPACK_IMPORTED_MODULE_1__["default"], {
       task: selectedTask,
       onClose: function onClose() {
         return setShowTaskDetails(false);
       },
       onUpdate: handleTaskUpdate
-    }), showCalendarModal && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
+    }), showCalendarModal && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
       className: "modal-overlay",
       role: "presentation",
       onClick: function onClick(e) {
         if (e.target === e.currentTarget) setShowCalendarModal(false);
       },
-      children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+      children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
         className: "employee-calendar-modal",
         role: "dialog",
         "aria-labelledby": "employee-calendar-title",
-        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
           className: "modal-header employee-calendar-header",
-          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("h2", {
+          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("h2", {
             id: "employee-calendar-title",
-            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_6__.FaCalendar, {
+            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaCalendar, {
               style: {
                 marginRight: '0.45rem',
                 verticalAlign: 'middle'
               }
             }), "Calendario de tareas"]
-          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("button", {
+          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("button", {
             type: "button",
             className: "close-button",
             onClick: function onClick() {
@@ -170979,54 +170992,54 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
             "aria-label": "Cerrar calendario",
             children: "\xD7"
           })]
-        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
           className: "modal-content employee-calendar-body",
-          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
             className: "employee-calendar-toolbar",
-            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("button", {
+            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("button", {
               type: "button",
               className: "employee-calendar-nav-btn",
               onClick: goCalendarPrevMonth,
               "aria-label": "Mes anterior",
-              children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_6__.FaChevronLeft, {})
-            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("span", {
+              children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaChevronLeft, {})
+            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("span", {
               className: "employee-calendar-month-label",
               children: calendarMonthTitle
-            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("button", {
+            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("button", {
               type: "button",
               className: "employee-calendar-nav-btn",
               onClick: goCalendarNextMonth,
               "aria-label": "Mes siguiente",
-              children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_6__.FaChevronRight, {})
+              children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaChevronRight, {})
             })]
-          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("p", {
+          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("p", {
             className: "employee-calendar-hint",
             children: "Pendientes y en proceso por fecha l\xEDmite; completadas por fecha de entrega."
-          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
+          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
             className: "employee-calendar-weekdays",
             "aria-hidden": "true",
             children: ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map(function (label) {
-              return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
+              return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
                 className: "employee-calendar-weekday",
                 children: label
               }, label);
             })
-          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
+          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
             className: "employee-calendar-grid",
             children: calendarCells.map(function (cell) {
-              return cell.type === 'empty' ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
+              return cell.type === 'empty' ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
                 className: "employee-calendar-cell employee-calendar-cell--empty"
-              }, cell.key) : /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+              }, cell.key) : /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
                 className: "employee-calendar-cell".concat(isCalendarToday(cell.day) ? ' employee-calendar-cell--today' : ''),
-                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
                   className: "employee-calendar-daynum",
                   children: cell.day
-                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
+                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
                   className: "employee-calendar-tasks",
                   children: (tasksByEndDate[cell.dateKey] || []).map(function (task) {
                     var estado = (task.estado || '').trim();
                     var estadoClass = estado === 'Completada' ? 'done' : estado === 'En Proceso' ? 'progress' : 'pending';
-                    return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("button", {
+                    return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("button", {
                       type: "button",
                       className: "employee-calendar-task ".concat(estadoClass),
                       title: task.titulo,
@@ -171043,85 +171056,85 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
           })]
         })]
       })
-    }), showArchiveModal && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
+    }), showArchiveModal && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
       className: "modal-overlay",
-      children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+      children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
         className: "tareas-archivadas-modal",
-        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
           className: "modal-header",
-          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("h2", {
+          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("h2", {
             children: "\uD83D\uDCC1 Tareas Archivadas"
-          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("button", {
+          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("button", {
             className: "close-button",
             onClick: function onClick() {
               return setShowArchiveModal(false);
             },
             children: "\xD7"
           })]
-        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
+        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
           className: "modal-content",
-          children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
+          children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
             className: "tareas-archivadas-container",
-            children: tareasArchivadas.length === 0 ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+            children: tareasArchivadas.length === 0 ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
               className: "no-archived-tasks",
-              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
+              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
                 className: "no-archived-icon",
                 children: "\uD83D\uDCC1"
-              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("h3", {
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("h3", {
                 children: "No hay tareas archivadas"
-              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("p", {
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("p", {
                 children: "Las tareas archivadas aparecer\xE1n aqu\xED cuando las archives"
               })]
             }) : tareasArchivadas.map(function (task) {
               var _task$prioridad;
-              return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+              return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
                 className: "tarea-archivada-card",
                 onClick: function onClick() {
                   return handleArchivedTaskClick(task);
                 },
-                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
                   className: "archived-task-header",
-                  children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+                  children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
                     className: "archived-task-info",
-                    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("h4", {
+                    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("h4", {
                       children: task.titulo
-                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("p", {
+                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("p", {
                       className: "archived-task-description",
                       children: task.descripcion.length > 100 ? "".concat(task.descripcion.substring(0, 100), "...") : task.descripcion
                     })]
-                  }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+                  }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
                     className: "archived-task-meta",
-                    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("span", {
+                    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("span", {
                       className: "prioridad-badge ".concat((_task$prioridad = task.prioridad) === null || _task$prioridad === void 0 ? void 0 : _task$prioridad.toLowerCase()),
                       children: task.prioridad
-                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("span", {
+                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("span", {
                       className: "archived-date",
                       children: ["Archivada: ", new Date(task.fecha_archivada + 'T00:00:00').toLocaleDateString()]
                     })]
                   })]
-                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
                   className: "archived-task-footer",
-                  children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+                  children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
                     className: "archived-task-dates",
-                    children: [task.fecha_pactada && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("span", {
+                    children: [task.fecha_pactada && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("span", {
                       className: "date-badge due-date",
-                      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_6__.FaClock, {}), "Fecha l\xEDmite: ", new Date(task.fecha_pactada + 'T00:00:00').toLocaleDateString()]
-                    }), task.fecha_entregada && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("span", {
+                      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaClock, {}), "Fecha l\xEDmite: ", new Date(task.fecha_pactada + 'T00:00:00').toLocaleDateString()]
+                    }), task.fecha_entregada && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("span", {
                       className: "date-badge completed-date",
-                      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_6__.FaCheck, {}), "Entregado: ", new Date(task.fecha_entregada + 'T00:00:00').toLocaleDateString()]
+                      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaCheck, {}), "Entregado: ", new Date(task.fecha_entregada + 'T00:00:00').toLocaleDateString()]
                     })]
-                  }), task.evidencias && task.evidencias.length > 0 && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+                  }), task.evidencias && task.evidencias.length > 0 && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
                     className: "evidences-container",
-                    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("span", {
+                    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("span", {
                       className: "evidence-count",
                       children: [task.evidencias.length, " evidencia", task.evidencias.length !== 1 ? 's' : '']
                     }), task.evidencias.slice(0, 3).map(function (evidencia) {
-                      return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("span", {
+                      return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("span", {
                         className: "evidence-icon",
                         title: evidencia.nombre,
                         children: getFileIcon(evidencia.tipo)
                       }, evidencia.id);
-                    }), task.evidencias.length > 3 && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("span", {
+                    }), task.evidencias.length > 3 && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("span", {
                       className: "evidence-more",
                       children: ["+", task.evidencias.length - 3]
                     })]
@@ -171132,12 +171145,16 @@ var EmployeeInterface = function EmployeeInterface(_ref) {
           })
         })]
       })
-    }), showReportesModal && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(_ReportesDepartamentoModal__WEBPACK_IMPORTED_MODULE_2__["default"], {
+    }), showReportesModal && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(_ReportesDepartamentoModal__WEBPACK_IMPORTED_MODULE_2__["default"], {
       user: user,
       onClose: function onClose() {
         return setShowReportesModal(false);
       }
-    }), showArchivedTaskDetails && selectedArchivedTask && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(_TaskDetailsModal__WEBPACK_IMPORTED_MODULE_1__["default"], {
+    }), showVideosModal && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(_VideosTableroModal__WEBPACK_IMPORTED_MODULE_3__["default"], {
+      onClose: function onClose() {
+        return setShowVideosModal(false);
+      }
+    }), showArchivedTaskDetails && selectedArchivedTask && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(_TaskDetailsModal__WEBPACK_IMPORTED_MODULE_1__["default"], {
       task: selectedArchivedTask,
       onClose: function onClose() {
         setShowArchivedTaskDetails(false);
