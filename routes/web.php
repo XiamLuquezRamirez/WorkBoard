@@ -166,6 +166,11 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::get('/tablero/estado', [EmpleadosController::class, 'tableroEstado']);
         Route::get('/tablero/avatares', [EmpleadosController::class, 'tableroAvatares']);
 
+        // videos ambientales del tablero (se administran desde Parámetros)
+        Route::get('/tablero/videos', [EmpleadosController::class, 'tableroVideos']);
+        Route::post('/tablero/videos', [EmpleadosController::class, 'guardarTableroVideo']);
+        Route::delete('/tablero/videos/{id}', [EmpleadosController::class, 'eliminarTableroVideo']);
+
         //verificar empleado lider
         Route::get('/verificarEmpleadoLider/{id}', [empleadosController::class, 'verificarEmpleadoLider']);
         //eliminar funcion

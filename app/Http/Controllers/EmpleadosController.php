@@ -2179,6 +2179,112 @@ class EmpleadosController extends Controller
     }
 
     /**
+     * Extrae el id de vídeo de un enlace de YouTube.
+     *
+     * Se valida en el servidor además de en el cliente: la lista se administra
+     * desde Parámetros y no debe aceptar una URL arbitraria que después acabe
+     * incrustada en el tablero.
+     */
+    private function idYoutube(?string $entrada): ?string
+    {
+        $v = trim((string) $entrada);
+        if ($v === '') {
+            return null;
+        }
+        if (preg_match('/^[\w-]{11}$/', $v)) {
+            return $v;
+        }
+
+        $url = parse_url(str_starts_with($v, 'http') ? $v : "https://{$v}");
+        if (!$url || empty($url['host'])) {
+            return null;
+        }
+
+        $host = preg_replace('/^www\./', '', strtolower($url['host']));
+        $ruta = trim($url['path'] ?? '', '/');
+
+        if ($host === 'youtu.be') {
+            $id = explode('/', $ruta)[0] ?? '';
+            return preg_match('/^[\w-]{11}$/', $id) ? $id : null;
+        }
+
+        if ($host === 'youtube.com' || $host === 'youtube-nocookie.com'
+            || str_ends_with($host, '.youtube.com')) {
+            parse_str($url['query'] ?? '', $q);
+            if (!empty($q['v']) && preg_match('/^[\w-]{11}$/', $q['v'])) {
+                return $q['v'];
+            }
+            $partes = array_values(array_filter(explode('/', $ruta)));
+            foreach ($partes as $i => $p) {
+                if (in_array($p, ['embed', 'live', 'shorts', 'v'], true)
+                    && isset($partes[$i + 1])
+                    && preg_match('/^[\w-]{11}$/', $partes[$i + 1])) {
+                    return $partes[$i + 1];
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /** Lista de vídeos del tablero. Con ?todos=1 incluye los inactivos (gestión). */
+    function tableroVideos(Request $request)
+    {
+        $todos = filter_var($request->query('todos', false), FILTER_VALIDATE_BOOLEAN);
+
+        $videos = DB::connection('mysql2')->table('tablero_videos')
+            ->when(!$todos, fn ($q) => $q->where('estado', 'Activo'))
+            ->orderBy('orden')
+            ->orderBy('id')
+            ->get();
+
+        return response()->json($videos);
+    }
+
+    function guardarTableroVideo(Request $request)
+    {
+        $data = $request->validate([
+            'id'     => 'nullable|integer',
+            'titulo' => 'required|string|max:200',
+            'url'    => 'required|string|max:500',
+            'orden'  => 'nullable|integer',
+            'estado' => 'nullable|in:Activo,Inactivo',
+        ]);
+
+        $videoId = $this->idYoutube($data['url']);
+        if (!$videoId) {
+            return response()->json([
+                'message' => 'El enlace no corresponde a un vídeo de YouTube válido.',
+            ], 422);
+        }
+
+        $fila = [
+            'titulo'     => trim($data['titulo']),
+            'video_id'   => $videoId,
+            'orden'      => $data['orden'] ?? 0,
+            'estado'     => $data['estado'] ?? 'Activo',
+            'updated_at' => now(),
+        ];
+
+        if (!empty($data['id'])) {
+            DB::connection('mysql2')->table('tablero_videos')
+                ->where('id', $data['id'])->update($fila);
+            return response()->json(['id' => (int) $data['id'], 'message' => 'Vídeo actualizado']);
+        }
+
+        $fila['created_at'] = now();
+        $id = DB::connection('mysql2')->table('tablero_videos')->insertGetId($fila);
+
+        return response()->json(['id' => $id, 'message' => 'Vídeo agregado']);
+    }
+
+    function eliminarTableroVideo($id)
+    {
+        DB::connection('mysql2')->table('tablero_videos')->where('id', $id)->delete();
+        return response()->json(['success' => true, 'message' => 'Vídeo eliminado']);
+    }
+
+    /**
      * Avatares de los empleados dentro del alcance del usuario, indexados por id.
      *
      * Se sirve aparte de tableroEstado porque las fotos se guardan como base64 en

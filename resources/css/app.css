@@ -9118,3 +9118,72 @@ body {
     color: #94a3b8;
     margin-top: 0.15rem;
 }
+
+/* ── Gestión de vídeos del Tablero (Parámetros) ─────────────────────────── */
+.tbv-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 14px;
+}
+.tbv-form input {
+    flex: 1 1 160px;
+    min-width: 0;
+    padding: 8px 10px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    font-size: 13px;
+}
+.tbv-form input:focus { outline: none; border-color: #0891b2; }
+
+.tbv-btn-ok, .tbv-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+.tbv-btn-ok { background: #0891b2; color: #fff; }
+.tbv-btn-ok:disabled { opacity: .6; cursor: default; }
+.tbv-btn { background: #e2e8f0; color: #475569; }
+
+.tbv-tabla { width: 100%; border-collapse: collapse; font-size: 13px; }
+.tbv-tabla th {
+    text-align: left;
+    padding: 8px 10px;
+    background: #f1f5f9;
+    color: #475569;
+    font-size: 11px;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+.tbv-tabla td { padding: 8px 10px; border-bottom: 1px solid #e2e8f0; }
+.tbv-tabla a { color: #0891b2; text-decoration: none; }
+.tbv-tabla a:hover { text-decoration: underline; }
+
+.tbv-estado {
+    border: 1px solid #cbd5e1;
+    background: #f8fafc;
+    color: #64748b;
+    border-radius: 999px;
+    padding: 2px 10px;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+}
+.tbv-estado.es-activo { background: #ecfdf5; border-color: #6ee7b7; color: #047857; }
+
+.tbv-icono {
+    border: none;
+    background: transparent;
+    color: #64748b;
+    cursor: pointer;
+    padding: 4px 6px;
+    font-size: 13px;
+}
+.tbv-icono:hover { color: #0891b2; }
+.tbv-icono.tbv-borrar:hover { color: #dc2626; }

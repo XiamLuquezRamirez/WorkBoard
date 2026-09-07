@@ -14742,7 +14742,7 @@ __webpack_require__.r(__webpack_exports__);
 
 var ___CSS_LOADER_EXPORT___ = _node_modules_css_loader_dist_runtime_api_js__WEBPACK_IMPORTED_MODULE_1___default()((_node_modules_css_loader_dist_runtime_cssWithMappingToString_js__WEBPACK_IMPORTED_MODULE_0___default()));
 // Module
-___CSS_LOADER_EXPORT___.push([module.id, "/* Tablero de Seguimiento — dark mode operativo, optimizado para 1920x1080 */\n\n.tb-root {\n    --tb-bg: #0F172A;\n    --tb-panel: #1E293B;\n    --tb-panel-2: #273449;\n    --tb-borde: #334155;\n    --tb-txt: #E2E8F0;\n    --tb-txt-tenue: #94A3B8;\n\n    /* Colores institucionales Ingeer, tomados del logo:\n       azul (agua/infraestructura), verde (vías/agro) y ámbar (innovación).\n       Se aclaran ligeramente para el fondo oscuro sin perder la identidad. */\n    --tb-marca-azul: #018EB2;\n    --tb-marca-verde: #3EAB2B;\n    --tb-marca-ambar: #ECA200;\n\n    --tb-azul: #22A8CC;      /* azul institucional legible sobre #0F172A */\n    --tb-verde: #4FC23A;     /* verde institucional aclarado */\n    --tb-amarillo: #ECA200;  /* ámbar institucional */\n    --tb-naranja: #F08A00;   /* ámbar oscurecido: pausa */\n    --tb-rojo: #E5484D;      /* alerta: fuera de marca por significado */\n    --tb-morado: #7CC4D8;    /* completadas: azul claro derivado de la marca */\n\n    position: fixed;\n    inset: 0;\n    z-index: 9000;\n    display: flex;\n    flex-direction: column;\n    gap: 14px;\n    padding: 18px 22px;\n    background: var(--tb-bg);\n    color: var(--tb-txt);\n    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;\n    overflow: hidden;\n}\n\n.tb-cargando {\n    align-items: center;\n    justify-content: center;\n    gap: 18px;\n}\n.tb-spinner {\n    width: 44px; height: 44px;\n    border: 3px solid var(--tb-borde);\n    border-top-color: var(--tb-azul);\n    border-radius: 50%;\n    animation: tb-giro .8s linear infinite;\n}\n@keyframes tb-giro { to { transform: rotate(360deg); } }\n.tb-error { color: var(--tb-rojo); }\n\n/* ---------- Encabezado ---------- */\n.tb-header {\n    display: flex;\n    align-items: center;\n    justify-content: space-between;\n    gap: 16px;\n    flex-shrink: 0;\n}\n.tb-header-izq {\n    display: flex;\n    align-items: center;\n    gap: 16px;\n    min-width: 0;\n}\n\n/* El logotipo lleva el texto \"es más que INGENIERÍA\" en negro, ilegible sobre el\n   fondo oscuro: se apoya en una placa clara con las esquinas redondeadas, que\n   además reproduce el uso habitual de la marca sobre fondo blanco. */\n.tb-logo {\n    height: clamp(38px, 3.4vw, 62px);\n    width: auto;\n    background: #FFFFFF;\n    padding: 6px 12px;\n    border-radius: 9px;\n    flex-shrink: 0;\n}\n\n.tb-header h1 {\n    margin: 0;\n    font-size: clamp(20px, 1.7vw, 32px);\n    font-weight: 700;\n    letter-spacing: .06em;\n}\n\n/* Franja con los tres colores de la marca bajo el título */\n.tb-header-txt { position: relative; padding-bottom: 6px; }\n.tb-header-txt::after {\n    content: '';\n    position: absolute;\n    left: 0; bottom: 0;\n    width: 108px; height: 3px;\n    border-radius: 2px;\n    background: linear-gradient(90deg,\n        var(--tb-marca-azul) 0 33.33%,\n        var(--tb-marca-verde) 33.33% 66.66%,\n        var(--tb-marca-ambar) 66.66% 100%);\n}\n\n.tb-ambito {\n    margin: 3px 0 0;\n    font-size: clamp(12px, .95vw, 18px);\n    color: var(--tb-azul);\n    font-weight: 600;\n    letter-spacing: .08em;\n}\n.tb-header-der { display: flex; align-items: center; gap: 12px; }\n\n.tb-conexion {\n    font-size: clamp(10px, .7vw, 13px);\n    font-weight: 700;\n    padding: 5px 11px;\n    border-radius: 999px;\n    letter-spacing: .05em;\n}\n.tb-conexion.ok { color: var(--tb-verde); background: rgba(62, 171, 43, .12); }\n.tb-conexion.ko {\n    color: var(--tb-rojo);\n    background: rgba(239, 68, 68, .14);\n    animation: tb-latido 1.8s ease-in-out infinite;\n}\n@keyframes tb-latido { 50% { opacity: .55; } }\n\n.tb-hora {\n    font-size: clamp(15px, 1.3vw, 24px);\n    font-weight: 600;\n    color: var(--tb-txt-tenue);\n    font-variant-numeric: tabular-nums;\n}\n\n.tb-btn {\n    background: var(--tb-azul);\n    color: #fff;\n    border: none;\n    border-radius: 7px;\n    padding: 7px 15px;\n    font-size: 13px;\n    font-weight: 600;\n    cursor: pointer;\n    transition: filter .2s ease;\n}\n.tb-btn:hover { filter: brightness(1.12); }\n.tb-btn-sec { background: var(--tb-panel-2); color: var(--tb-txt); }\n/* El botón de vuelta es un enlace <a>: hay que neutralizar su estilo por defecto */\na.tb-btn { text-decoration: none; display: inline-block; line-height: normal; }\na.tb-btn:visited { color: #fff; }\na.tb-btn-sec, a.tb-btn-sec:visited { color: var(--tb-txt); }\n\n/* ---------- KPIs ---------- */\n.tb-kpis {\n    display: grid;\n    grid-template-columns: repeat(6, 1fr);\n    gap: 12px;\n    flex-shrink: 0;\n}\n.tb-kpi {\n    background: var(--tb-panel);\n    border: 1px solid var(--tb-borde);\n    border-left: 4px solid var(--tb-azul);\n    border-radius: 10px;\n    padding: 10px 14px;\n    display: flex;\n    flex-direction: column;\n    gap: 2px;\n    transition: box-shadow .4s ease, transform .4s ease;\n}\n.tb-kpi-cambio {\n    box-shadow: 0 0 0 2px rgba(1, 142, 178, .5);\n    transform: translateY(-2px);\n}\n.tb-kpi-num {\n    font-size: clamp(22px, 2vw, 40px);\n    font-weight: 700;\n    line-height: 1.05;\n    font-variant-numeric: tabular-nums;\n}\n.tb-kpi-label {\n    font-size: clamp(9px, .62vw, 12px);\n    color: var(--tb-txt-tenue);\n    letter-spacing: .09em;\n    font-weight: 600;\n}\n.kpi-total { border-left-color: var(--tb-azul); }\n.kpi-proceso { border-left-color: var(--tb-azul); }\n.kpi-pendiente { border-left-color: var(--tb-amarillo); }\n.kpi-pausa { border-left-color: var(--tb-naranja); }\n.kpi-completadas { border-left-color: var(--tb-morado); }\n.kpi-avance { border-left-color: var(--tb-verde); }\n\n/* ---------- Cuerpo ---------- */\n.tb-cuerpo {\n    display: grid;\n    grid-template-columns: 1fr 300px;\n    gap: 14px;\n    flex: 1;\n    min-height: 0;\n}\n\n.tb-kanban {\n    position: relative;   /* contexto de apilado para la tarjeta en tránsito */\n    display: grid;\n    grid-template-columns: repeat(4, 1fr);\n    gap: 12px;\n    min-height: 0;\n}\n.tb-col {\n    background: var(--tb-panel);\n    border: 1px solid var(--tb-borde);\n    border-top: 3px solid var(--tb-txt-tenue);\n    border-radius: 10px;\n    display: flex;\n    flex-direction: column;\n    min-height: 0;\n    overflow: hidden;\n}\n.col-pendiente { border-top-color: var(--tb-amarillo); }\n.col-proceso { border-top-color: var(--tb-azul); }\n.col-pausa { border-top-color: var(--tb-naranja); }\n.col-completadas { border-top-color: var(--tb-morado); }\n\n.tb-col-head {\n    display: flex;\n    align-items: center;\n    justify-content: space-between;\n    padding: 9px 12px;\n    border-bottom: 1px solid var(--tb-borde);\n    flex-shrink: 0;\n}\n.tb-col-head h3 {\n    margin: 0;\n    font-size: clamp(11px, .78vw, 15px);\n    letter-spacing: .09em;\n    font-weight: 700;\n}\n.tb-col-count {\n    background: var(--tb-panel-2);\n    border-radius: 999px;\n    padding: 1px 10px;\n    font-size: clamp(12px, .85vw, 17px);\n    font-weight: 700;\n    font-variant-numeric: tabular-nums;\n}\n.tb-col-nota {\n    margin: 0;\n    padding: 5px 12px;\n    font-size: 10px;\n    color: var(--tb-txt-tenue);\n    font-style: italic;\n    border-bottom: 1px solid var(--tb-borde);\n}\n.tb-col-body {\n    display: flex;\n    flex-direction: column;\n    gap: 8px;\n    padding: 10px;\n    overflow-y: auto;\n    min-height: 0;\n}\n.tb-col-vacia, .tb-col-mas {\n    text-align: center;\n    color: var(--tb-txt-tenue);\n    font-size: 11px;\n    padding: 8px 0;\n    margin: 0;\n}\n\n/* ---------- Tarjetas ---------- */\n.tb-card {\n    position: relative;          /* ancla el sello y el barrido de luz */\n    background: var(--tb-panel-2);\n    border: 1px solid var(--tb-borde);\n    border-radius: 8px;\n    padding: 9px 11px;\n    display: flex;\n    flex-direction: column;\n    gap: 6px;\n    transition: border-color .3s ease, box-shadow .3s ease;\n    /* Aviso al navegador de que transform va a animarse: evita el parpadeo\n       del primer frame del FLIP en pantallas grandes. */\n    will-change: transform;\n}\n.tb-card-pausada { opacity: .82; border-style: dashed; }\n\n.tb-card-top { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }\n.tb-prio {\n    font-size: 9px;\n    font-weight: 800;\n    letter-spacing: .07em;\n    padding: 2px 7px;\n    border-radius: 4px;\n}\n.prio-alta { background: rgba(239, 68, 68, .18); color: #FCA5A5; }\n.prio-media { background: rgba(236, 162, 0, .18); color: #F5C556; }\n.prio-baja { background: rgba(148, 163, 184, .18); color: var(--tb-txt-tenue); }\n\n.tb-badge-pausa, .tb-badge-vencida, .tb-badge-hoy {\n    font-size: 9px;\n    font-weight: 700;\n    padding: 2px 7px;\n    border-radius: 4px;\n    letter-spacing: .05em;\n}\n.tb-badge-pausa { background: rgba(240, 138, 0, .2); color: #F5B759; }\n.tb-badge-vencida { background: rgba(239, 68, 68, .2); color: #FCA5A5; }\n.tb-badge-hoy { background: rgba(1, 142, 178, .2); color: #7CC4D8; }\n\n.tb-card-titulo {\n    margin: 0;\n    font-size: clamp(11px, .8vw, 15px);\n    font-weight: 600;\n    line-height: 1.3;\n    display: -webkit-box;\n    -webkit-line-clamp: 2;\n    -webkit-box-orient: vertical;\n    overflow: hidden;\n}\n.tb-card-proyecto {\n    margin: 0;\n    font-size: 10px;\n    color: var(--tb-azul);\n    font-weight: 600;\n}\n/* Avance del checklist: sólo en tarjetas en proceso o en pausa */\n.tb-avance { display: flex; flex-direction: column; gap: 3px; }\n.tb-avance-top {\n    display: flex;\n    align-items: baseline;\n    justify-content: space-between;\n    gap: 6px;\n}\n.tb-avance-pct {\n    font-size: clamp(11px, .75vw, 14px);\n    font-weight: 700;\n    color: var(--tb-azul);\n    font-variant-numeric: tabular-nums;\n}\n.tb-avance-frac {\n    font-size: 9px;\n    color: var(--tb-txt-tenue);\n    font-variant-numeric: tabular-nums;\n}\n.tb-avance-barra {\n    height: 5px;\n    background: var(--tb-borde);\n    border-radius: 999px;\n    overflow: hidden;\n}\n.tb-avance-fill {\n    height: 100%;\n    border-radius: 999px;\n    background: linear-gradient(90deg, var(--tb-marca-azul), var(--tb-azul));\n    transition: width .6s ease;\n}\n/* Checklist terminado: se refuerza con el verde de marca */\n.tb-avance-fill.es-completo {\n    background: linear-gradient(90deg, var(--tb-marca-verde), var(--tb-verde));\n}\n.tb-card-pie {\n    display: flex;\n    align-items: center;\n    justify-content: space-between;\n    gap: 8px;\n    margin-top: 1px;\n}\n.tb-card-persona { display: flex; align-items: center; gap: 5px; min-width: 0; }\n.tb-avatar-mini {\n    width: 18px; height: 18px;\n    border-radius: 50%;\n    -o-object-fit: cover;\n       object-fit: cover;\n    flex-shrink: 0;\n}\n.tb-avatar-vacio {\n    background: var(--tb-borde);\n    display: inline-flex;\n    align-items: center;\n    justify-content: center;\n    font-size: 8px;\n    font-weight: 700;\n    color: var(--tb-txt-tenue);\n    letter-spacing: .02em;\n}\n.tb-avatar.tb-avatar-vacio { font-size: 11px; }\n.tb-card-nombre {\n    font-size: 10px;\n    color: var(--tb-txt-tenue);\n    white-space: nowrap;\n    overflow: hidden;\n    text-overflow: ellipsis;\n}\n.tb-card-fecha {\n    font-size: 10px;\n    font-weight: 700;\n    color: var(--tb-txt-tenue);\n    white-space: nowrap;\n}\n.tb-card-fecha.es-vencida { color: #FCA5A5; }\n\n/* ---------- Animaciones de cambio (300-700 ms) ---------- */\n@keyframes tb-entra {\n    from { opacity: 0; transform: translateY(-10px) scale(.97); }\n    to { opacity: 1; transform: none; }\n}\n@keyframes tb-destaca-azul {\n    0% { box-shadow: 0 0 0 0 rgba(1, 142, 178, .65); }\n    100% { box-shadow: 0 0 0 9px rgba(1, 142, 178, 0); }\n}\n@keyframes tb-destaca-verde {\n    0% { box-shadow: 0 0 0 0 rgba(62, 171, 43, .65); }\n    100% { box-shadow: 0 0 0 9px rgba(62, 171, 43, 0); }\n}\n@keyframes tb-destaca-naranja {\n    0% { box-shadow: 0 0 0 0 rgba(240, 138, 0, .7); }\n    100% { box-shadow: 0 0 0 9px rgba(240, 138, 0, 0); }\n}\n/* Una tarjeta que aparece por primera vez sí entra con fade; las que sólo\n   cambian de columna viajan con FLIP y no deben re-animar su entrada. */\n.tb-anim-nueva { animation: tb-entra .5s ease-out, tb-destaca-azul .7s ease-out; }\n\n/* Tarjeta en tránsito entre columnas: se despega del tablero mientras viaja */\n.tb-card-viajando {\n    box-shadow: 0 14px 34px rgba(0, 0, 0, .55);\n    border-color: var(--tb-azul);\n}\n\n/* Mientras una tarjeta viaja, la columna deja de recortar su contenido: con el\n   overflow activo el trayecto se cortaría en el borde de la columna. Se aplica\n   sólo durante el trayecto para no perder el recorte del resto del tiempo. */\n.tb-col-body:has(.tb-card-viajando) { overflow: visible; }\n.tb-col:has(.tb-card-viajando) { overflow: visible; z-index: 4; }\n\n/* Barrido de luz que recorre la tarjeta al confirmarse el cambio */\n.tb-anim-movida::after,\n.tb-anim-completada::after,\n.tb-anim-pausada::after,\n.tb-anim-nueva::after {\n    content: '';\n    position: absolute;\n    inset: 0;\n    border-radius: inherit;\n    pointer-events: none;\n    background: linear-gradient(\n        105deg,\n        transparent 35%,\n        rgba(255, 255, 255, .16) 50%,\n        transparent 65%);\n    background-size: 260% 100%;\n    animation: tb-barrido .85s ease-out forwards;\n}\n@keyframes tb-barrido {\n    from { background-position: 190% 0; }\n    to { background-position: -60% 0; }\n}\n\n/* Sello de confirmación: aparece, se sostiene y se retira solo */\n.tb-sello {\n    position: absolute;\n    top: 6px;\n    right: 6px;\n    z-index: 3;\n    display: inline-flex;\n    align-items: center;\n    gap: 4px;\n    padding: 2px 8px;\n    border-radius: 999px;\n    font-size: 9px;\n    font-weight: 800;\n    letter-spacing: .06em;\n    color: #06121F;\n    white-space: nowrap;\n    transform-origin: 90% 50%;\n    animation: tb-sello-vida 2.6s cubic-bezier(.2, .9, .3, 1.1) forwards;\n}\n.tb-sello-icono { font-size: 11px; line-height: 1; }\n.tb-sello-completada { background: var(--tb-verde); }\n.tb-sello-pausada { background: var(--tb-naranja); }\n.tb-sello-movida { background: var(--tb-azul); }\n.tb-sello-nueva { background: var(--tb-amarillo); }\n\n@keyframes tb-sello-vida {\n    0% { opacity: 0; transform: scale(.5) translateY(-6px); }\n    14% { opacity: 1; transform: scale(1.08) translateY(0); }\n    22% { transform: scale(1); }\n    76% { opacity: 1; transform: scale(1); }\n    100% { opacity: 0; transform: scale(.9) translateY(-4px); }\n}\n\n/* El latido se hace sobre el borde y no con transform: FLIP anima el transform\n   de la tarjeta para desplazarla, y una animación simultánea sobre la misma\n   propiedad anularía el viaje entre columnas. */\n@keyframes tb-realce-verde {\n    0%, 100% { border-color: var(--tb-borde); }\n    40% { border-color: var(--tb-verde); }\n}\n@keyframes tb-realce-azul {\n    0%, 100% { border-color: var(--tb-borde); }\n    40% { border-color: var(--tb-azul); }\n}\n@keyframes tb-realce-naranja {\n    0%, 100% { border-color: var(--tb-borde); }\n    40% { border-color: var(--tb-naranja); }\n}\n.tb-anim-completada { animation: tb-destaca-verde .7s ease-out, tb-realce-verde 1.1s ease-out; }\n.tb-anim-movida { animation: tb-destaca-azul .7s ease-out, tb-realce-azul 1.1s ease-out; }\n.tb-anim-pausada { animation: tb-destaca-naranja .7s ease-out, tb-realce-naranja 1.1s ease-out; }\n\n/* ---------- Lateral ---------- */\n.tb-lateral {\n    display: flex;\n    flex-direction: column;\n    gap: 12px;\n    min-height: 0;\n    overflow-y: auto;\n}\n.tb-panel {\n    background: var(--tb-panel);\n    border: 1px solid var(--tb-borde);\n    border-radius: 10px;\n    padding: 11px 13px;\n}\n.tb-panel-titulo {\n    margin: 0 0 9px;\n    font-size: clamp(10px, .7vw, 13px);\n    letter-spacing: .1em;\n    color: var(--tb-txt-tenue);\n    font-weight: 700;\n}\n\n.tb-alertas, .tb-equipo, .tb-entregas { list-style: none; margin: 0; padding: 0; }\n.tb-alertas { display: flex; flex-direction: column; gap: 6px; }\n.tb-alerta {\n    font-size: clamp(11px, .75vw, 14px);\n    padding: 6px 9px;\n    border-radius: 6px;\n    border-left: 3px solid;\n}\n.tb-alerta strong { font-size: 1.15em; margin-right: 3px; }\n.al-roja { background: rgba(239, 68, 68, .12); border-color: var(--tb-rojo); color: #FCA5A5; }\n.al-naranja { background: rgba(240, 138, 0, .12); border-color: var(--tb-naranja); color: #F5B759; }\n.al-amarilla { background: rgba(236, 162, 0, .12); border-color: var(--tb-amarillo); color: #F5C556; }\n.al-azul { background: rgba(1, 142, 178, .12); border-color: var(--tb-azul); color: #7CC4D8; }\n.tb-sin-alertas { margin: 0; color: var(--tb-verde); font-size: 13px; font-weight: 600; }\n\n.tb-equipo { display: flex; flex-direction: column; gap: 9px; }\n.tb-persona { display: flex; align-items: center; gap: 9px; }\n.tb-avatar { width: 30px; height: 30px; border-radius: 50%; -o-object-fit: cover; object-fit: cover; flex-shrink: 0; }\n.tb-persona-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }\n.tb-persona-nombre {\n    font-size: clamp(10px, .68vw, 13px);\n    font-weight: 600;\n    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;\n}\n.tb-persona-cargo {\n    font-size: 9px;\n    color: var(--tb-txt-tenue);\n    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;\n}\n.tb-carga { height: 5px; background: var(--tb-borde); border-radius: 999px; overflow: hidden; }\n.tb-carga-fill {\n    height: 100%;\n    background: linear-gradient(90deg, var(--tb-azul), var(--tb-verde));\n    border-radius: 999px;\n    transition: width .6s ease;\n}\n.tb-persona-n {\n    font-size: clamp(13px, .95vw, 18px);\n    font-weight: 700;\n    font-variant-numeric: tabular-nums;\n    flex-shrink: 0;\n}\n\n.tb-entregas { display: flex; flex-direction: column; gap: 8px; }\n.tb-entrega { display: flex; gap: 9px; align-items: flex-start; }\n.tb-entrega-fecha {\n    font-size: 10px;\n    font-weight: 700;\n    color: var(--tb-azul);\n    background: rgba(1, 142, 178, .12);\n    padding: 3px 7px;\n    border-radius: 5px;\n    white-space: nowrap;\n    flex-shrink: 0;\n}\n.tb-entrega-fecha.es-vencida { color: #FCA5A5; background: rgba(239, 68, 68, .12); }\n.tb-entrega-info { display: flex; flex-direction: column; min-width: 0; }\n.tb-entrega-titulo {\n    font-size: clamp(10px, .68vw, 13px);\n    font-weight: 600;\n    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;\n}\n.tb-entrega-persona { font-size: 9px; color: var(--tb-txt-tenue); }\n\n/* ---------- Panel ambiental (vídeo) ---------- */\n.tb-ambiente-abrir {\n    background: var(--tb-panel);\n    border: 1px dashed var(--tb-borde);\n    color: var(--tb-txt-tenue);\n    border-radius: 10px;\n    padding: 9px 12px;\n    font-size: 11px;\n    font-weight: 700;\n    letter-spacing: .07em;\n    cursor: pointer;\n    transition: color .2s ease, border-color .2s ease;\n}\n.tb-ambiente-abrir:hover {\n    color: var(--tb-azul);\n    border-color: var(--tb-azul);\n}\n\n.tb-ambiente { display: flex; flex-direction: column; gap: 8px; }\n.tb-ambiente-head {\n    display: flex;\n    align-items: center;\n    justify-content: space-between;\n    gap: 8px;\n}\n.tb-ambiente-head .tb-panel-titulo { margin: 0; }\n.tb-ambiente-acciones { display: flex; gap: 5px; }\n\n.tb-ambiente-btn {\n    background: var(--tb-panel-2);\n    border: 1px solid var(--tb-borde);\n    color: var(--tb-txt-tenue);\n    border-radius: 6px;\n    padding: 3px 8px;\n    font-size: 10px;\n    font-weight: 700;\n    cursor: pointer;\n    transition: color .2s ease, border-color .2s ease;\n}\n.tb-ambiente-btn:hover { color: var(--tb-txt); border-color: var(--tb-azul); }\n.tb-ambiente-btn-ok {\n    background: var(--tb-azul);\n    border-color: var(--tb-azul);\n    color: #fff;\n    padding: 5px 10px;\n    font-size: 11px;\n}\n.tb-ambiente-btn-ok:hover { color: #fff; filter: brightness(1.12); }\n\n/* Marco 16:9 para que el reproductor conserve su proporción */\n.tb-ambiente-video {\n    position: relative;\n    width: 100%;\n    padding-top: 56.25%;\n    border-radius: 8px;\n    overflow: hidden;\n    background: #000;\n    border: 1px solid var(--tb-borde);\n}\n.tb-ambiente-video iframe {\n    position: absolute;\n    inset: 0;\n    width: 100%;\n    height: 100%;\n    border: 0;\n}\n\n.tb-ambiente-form { display: flex; flex-direction: column; gap: 7px; }\n.tb-ambiente-input {\n    background: var(--tb-bg);\n    border: 1px solid var(--tb-borde);\n    border-radius: 6px;\n    padding: 7px 9px;\n    color: var(--tb-txt);\n    font-size: 11px;\n    width: 100%;\n}\n.tb-ambiente-input:focus {\n    outline: none;\n    border-color: var(--tb-azul);\n}\n.tb-ambiente-input::-moz-placeholder { color: var(--tb-txt-tenue); }\n.tb-ambiente-input::placeholder { color: var(--tb-txt-tenue); }\n.tb-ambiente-error { margin: 0; font-size: 10px; color: #FCA5A5; }\n.tb-ambiente-nota { margin: 0; font-size: 9px; color: var(--tb-txt-tenue); line-height: 1.4; }\n\n/* En modo TV el componente ya se renderiza sin controles; el panel sólo\n   reproduce lo configurado previamente desde la vista de escritorio. */\n\n/* ---------- Avisos temporales ---------- */\n.tb-avisos {\n    position: absolute;\n    right: 22px;\n    bottom: 20px;\n    display: flex;\n    flex-direction: column;\n    gap: 9px;\n    z-index: 20;\n}\n.tb-aviso {\n    display: flex;\n    align-items: center;\n    gap: 11px;\n    background: var(--tb-panel);\n    border: 1px solid var(--tb-borde);\n    border-left: 4px solid var(--tb-azul);\n    border-radius: 9px;\n    padding: 10px 15px;\n    min-width: 260px;\n    box-shadow: 0 8px 26px rgba(0, 0, 0, .45);\n    animation: tb-aviso-in .4s ease-out;\n}\n@keyframes tb-aviso-in {\n    from { opacity: 0; transform: translateX(28px); }\n    to { opacity: 1; transform: none; }\n}\n.tb-aviso-icono { font-size: 20px; font-weight: 700; }\n.tb-aviso strong { font-size: 10px; letter-spacing: .09em; color: var(--tb-txt-tenue); }\n.tb-aviso p {\n    margin: 2px 0 0;\n    font-size: 13px;\n    font-weight: 600;\n    max-width: 260px;\n    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;\n}\n.tb-aviso small { font-size: 10px; color: var(--tb-txt-tenue); }\n.tb-aviso-completada { border-left-color: var(--tb-verde); }\n.tb-aviso-completada .tb-aviso-icono { color: var(--tb-verde); }\n.tb-aviso-pausada { border-left-color: var(--tb-naranja); }\n.tb-aviso-pausada .tb-aviso-icono { color: var(--tb-naranja); }\n.tb-aviso-nueva .tb-aviso-icono, .tb-aviso-movida .tb-aviso-icono { color: var(--tb-azul); }\n\n/* ---------- Modo TV ---------- */\n.tb-tv { padding: 26px 32px; gap: 18px; }\n.tb-tv .tb-logo { height: clamp(50px, 4vw, 76px); padding: 8px 15px; }\n.tb-tv .tb-col-body { overflow: hidden; }\n/* En TV el lateral no scrollea, pero el panel de vídeo añade altura: se permite\n   que la lista de entregas ceda espacio antes que recortar el reproductor. */\n.tb-tv .tb-lateral { overflow: hidden; }\n.tb-tv .tb-lateral .tb-entregas { overflow: hidden; }\n.tb-tv .tb-ambiente { flex-shrink: 0; }\n.tb-tv .tb-card-titulo { -webkit-line-clamp: 2; }\n\n.tb-salir-tv {\n    position: absolute;\n    top: 14px; right: 14px;\n    width: 30px; height: 30px;\n    border-radius: 50%;\n    border: 1px solid var(--tb-borde);\n    background: var(--tb-panel);\n    color: var(--tb-txt-tenue);\n    cursor: pointer;\n    opacity: .12;\n    transition: opacity .25s ease;\n    z-index: 30;\n}\n.tb-salir-tv:hover { opacity: 1; }\n\n/* ---------- Responsive ---------- */\n@media (max-width: 1400px) {\n    .tb-cuerpo { grid-template-columns: 1fr 260px; }\n}\n@media (max-width: 1100px) {\n    .tb-cuerpo { grid-template-columns: 1fr; overflow-y: auto; }\n    .tb-lateral { flex-direction: row; flex-wrap: wrap; }\n    .tb-lateral .tb-panel { flex: 1 1 240px; }\n    .tb-kpis { grid-template-columns: repeat(3, 1fr); }\n    .tb-kanban { grid-template-columns: repeat(2, 1fr); min-height: 560px; }\n}\n@media (max-width: 700px) {\n    .tb-root { padding: 12px; }\n    .tb-kpis { grid-template-columns: repeat(2, 1fr); }\n    .tb-kanban { grid-template-columns: 1fr; }\n    .tb-header { flex-direction: column; align-items: flex-start; gap: 8px; }\n    .tb-header-izq { gap: 10px; }\n    .tb-logo { height: 34px; padding: 5px 9px; }\n}\n\n/* Respeta la preferencia del sistema de reducir movimiento */\n@media (prefers-reduced-motion: reduce) {\n    .tb-root *, .tb-root *::before, .tb-root *::after {\n        animation-duration: .01ms !important;\n        animation-iteration-count: 1 !important;\n        transition-duration: .01ms !important;\n    }\n}\n", "",{"version":3,"sources":["webpack://./resources/js/components/tablero/tablero.css"],"names":[],"mappings":"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","sourcesContent":["/* Tablero de Seguimiento — dark mode operativo, optimizado para 1920x1080 */\n\n.tb-root {\n    --tb-bg: #0F172A;\n    --tb-panel: #1E293B;\n    --tb-panel-2: #273449;\n    --tb-borde: #334155;\n    --tb-txt: #E2E8F0;\n    --tb-txt-tenue: #94A3B8;\n\n    /* Colores institucionales Ingeer, tomados del logo:\n       azul (agua/infraestructura), verde (vías/agro) y ámbar (innovación).\n       Se aclaran ligeramente para el fondo oscuro sin perder la identidad. */\n    --tb-marca-azul: #018EB2;\n    --tb-marca-verde: #3EAB2B;\n    --tb-marca-ambar: #ECA200;\n\n    --tb-azul: #22A8CC;      /* azul institucional legible sobre #0F172A */\n    --tb-verde: #4FC23A;     /* verde institucional aclarado */\n    --tb-amarillo: #ECA200;  /* ámbar institucional */\n    --tb-naranja: #F08A00;   /* ámbar oscurecido: pausa */\n    --tb-rojo: #E5484D;      /* alerta: fuera de marca por significado */\n    --tb-morado: #7CC4D8;    /* completadas: azul claro derivado de la marca */\n\n    position: fixed;\n    inset: 0;\n    z-index: 9000;\n    display: flex;\n    flex-direction: column;\n    gap: 14px;\n    padding: 18px 22px;\n    background: var(--tb-bg);\n    color: var(--tb-txt);\n    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;\n    overflow: hidden;\n}\n\n.tb-cargando {\n    align-items: center;\n    justify-content: center;\n    gap: 18px;\n}\n.tb-spinner {\n    width: 44px; height: 44px;\n    border: 3px solid var(--tb-borde);\n    border-top-color: var(--tb-azul);\n    border-radius: 50%;\n    animation: tb-giro .8s linear infinite;\n}\n@keyframes tb-giro { to { transform: rotate(360deg); } }\n.tb-error { color: var(--tb-rojo); }\n\n/* ---------- Encabezado ---------- */\n.tb-header {\n    display: flex;\n    align-items: center;\n    justify-content: space-between;\n    gap: 16px;\n    flex-shrink: 0;\n}\n.tb-header-izq {\n    display: flex;\n    align-items: center;\n    gap: 16px;\n    min-width: 0;\n}\n\n/* El logotipo lleva el texto \"es más que INGENIERÍA\" en negro, ilegible sobre el\n   fondo oscuro: se apoya en una placa clara con las esquinas redondeadas, que\n   además reproduce el uso habitual de la marca sobre fondo blanco. */\n.tb-logo {\n    height: clamp(38px, 3.4vw, 62px);\n    width: auto;\n    background: #FFFFFF;\n    padding: 6px 12px;\n    border-radius: 9px;\n    flex-shrink: 0;\n}\n\n.tb-header h1 {\n    margin: 0;\n    font-size: clamp(20px, 1.7vw, 32px);\n    font-weight: 700;\n    letter-spacing: .06em;\n}\n\n/* Franja con los tres colores de la marca bajo el título */\n.tb-header-txt { position: relative; padding-bottom: 6px; }\n.tb-header-txt::after {\n    content: '';\n    position: absolute;\n    left: 0; bottom: 0;\n    width: 108px; height: 3px;\n    border-radius: 2px;\n    background: linear-gradient(90deg,\n        var(--tb-marca-azul) 0 33.33%,\n        var(--tb-marca-verde) 33.33% 66.66%,\n        var(--tb-marca-ambar) 66.66% 100%);\n}\n\n.tb-ambito {\n    margin: 3px 0 0;\n    font-size: clamp(12px, .95vw, 18px);\n    color: var(--tb-azul);\n    font-weight: 600;\n    letter-spacing: .08em;\n}\n.tb-header-der { display: flex; align-items: center; gap: 12px; }\n\n.tb-conexion {\n    font-size: clamp(10px, .7vw, 13px);\n    font-weight: 700;\n    padding: 5px 11px;\n    border-radius: 999px;\n    letter-spacing: .05em;\n}\n.tb-conexion.ok { color: var(--tb-verde); background: rgba(62, 171, 43, .12); }\n.tb-conexion.ko {\n    color: var(--tb-rojo);\n    background: rgba(239, 68, 68, .14);\n    animation: tb-latido 1.8s ease-in-out infinite;\n}\n@keyframes tb-latido { 50% { opacity: .55; } }\n\n.tb-hora {\n    font-size: clamp(15px, 1.3vw, 24px);\n    font-weight: 600;\n    color: var(--tb-txt-tenue);\n    font-variant-numeric: tabular-nums;\n}\n\n.tb-btn {\n    background: var(--tb-azul);\n    color: #fff;\n    border: none;\n    border-radius: 7px;\n    padding: 7px 15px;\n    font-size: 13px;\n    font-weight: 600;\n    cursor: pointer;\n    transition: filter .2s ease;\n}\n.tb-btn:hover { filter: brightness(1.12); }\n.tb-btn-sec { background: var(--tb-panel-2); color: var(--tb-txt); }\n/* El botón de vuelta es un enlace <a>: hay que neutralizar su estilo por defecto */\na.tb-btn { text-decoration: none; display: inline-block; line-height: normal; }\na.tb-btn:visited { color: #fff; }\na.tb-btn-sec, a.tb-btn-sec:visited { color: var(--tb-txt); }\n\n/* ---------- KPIs ---------- */\n.tb-kpis {\n    display: grid;\n    grid-template-columns: repeat(6, 1fr);\n    gap: 12px;\n    flex-shrink: 0;\n}\n.tb-kpi {\n    background: var(--tb-panel);\n    border: 1px solid var(--tb-borde);\n    border-left: 4px solid var(--tb-azul);\n    border-radius: 10px;\n    padding: 10px 14px;\n    display: flex;\n    flex-direction: column;\n    gap: 2px;\n    transition: box-shadow .4s ease, transform .4s ease;\n}\n.tb-kpi-cambio {\n    box-shadow: 0 0 0 2px rgba(1, 142, 178, .5);\n    transform: translateY(-2px);\n}\n.tb-kpi-num {\n    font-size: clamp(22px, 2vw, 40px);\n    font-weight: 700;\n    line-height: 1.05;\n    font-variant-numeric: tabular-nums;\n}\n.tb-kpi-label {\n    font-size: clamp(9px, .62vw, 12px);\n    color: var(--tb-txt-tenue);\n    letter-spacing: .09em;\n    font-weight: 600;\n}\n.kpi-total { border-left-color: var(--tb-azul); }\n.kpi-proceso { border-left-color: var(--tb-azul); }\n.kpi-pendiente { border-left-color: var(--tb-amarillo); }\n.kpi-pausa { border-left-color: var(--tb-naranja); }\n.kpi-completadas { border-left-color: var(--tb-morado); }\n.kpi-avance { border-left-color: var(--tb-verde); }\n\n/* ---------- Cuerpo ---------- */\n.tb-cuerpo {\n    display: grid;\n    grid-template-columns: 1fr 300px;\n    gap: 14px;\n    flex: 1;\n    min-height: 0;\n}\n\n.tb-kanban {\n    position: relative;   /* contexto de apilado para la tarjeta en tránsito */\n    display: grid;\n    grid-template-columns: repeat(4, 1fr);\n    gap: 12px;\n    min-height: 0;\n}\n.tb-col {\n    background: var(--tb-panel);\n    border: 1px solid var(--tb-borde);\n    border-top: 3px solid var(--tb-txt-tenue);\n    border-radius: 10px;\n    display: flex;\n    flex-direction: column;\n    min-height: 0;\n    overflow: hidden;\n}\n.col-pendiente { border-top-color: var(--tb-amarillo); }\n.col-proceso { border-top-color: var(--tb-azul); }\n.col-pausa { border-top-color: var(--tb-naranja); }\n.col-completadas { border-top-color: var(--tb-morado); }\n\n.tb-col-head {\n    display: flex;\n    align-items: center;\n    justify-content: space-between;\n    padding: 9px 12px;\n    border-bottom: 1px solid var(--tb-borde);\n    flex-shrink: 0;\n}\n.tb-col-head h3 {\n    margin: 0;\n    font-size: clamp(11px, .78vw, 15px);\n    letter-spacing: .09em;\n    font-weight: 700;\n}\n.tb-col-count {\n    background: var(--tb-panel-2);\n    border-radius: 999px;\n    padding: 1px 10px;\n    font-size: clamp(12px, .85vw, 17px);\n    font-weight: 700;\n    font-variant-numeric: tabular-nums;\n}\n.tb-col-nota {\n    margin: 0;\n    padding: 5px 12px;\n    font-size: 10px;\n    color: var(--tb-txt-tenue);\n    font-style: italic;\n    border-bottom: 1px solid var(--tb-borde);\n}\n.tb-col-body {\n    display: flex;\n    flex-direction: column;\n    gap: 8px;\n    padding: 10px;\n    overflow-y: auto;\n    min-height: 0;\n}\n.tb-col-vacia, .tb-col-mas {\n    text-align: center;\n    color: var(--tb-txt-tenue);\n    font-size: 11px;\n    padding: 8px 0;\n    margin: 0;\n}\n\n/* ---------- Tarjetas ---------- */\n.tb-card {\n    position: relative;          /* ancla el sello y el barrido de luz */\n    background: var(--tb-panel-2);\n    border: 1px solid var(--tb-borde);\n    border-radius: 8px;\n    padding: 9px 11px;\n    display: flex;\n    flex-direction: column;\n    gap: 6px;\n    transition: border-color .3s ease, box-shadow .3s ease;\n    /* Aviso al navegador de que transform va a animarse: evita el parpadeo\n       del primer frame del FLIP en pantallas grandes. */\n    will-change: transform;\n}\n.tb-card-pausada { opacity: .82; border-style: dashed; }\n\n.tb-card-top { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }\n.tb-prio {\n    font-size: 9px;\n    font-weight: 800;\n    letter-spacing: .07em;\n    padding: 2px 7px;\n    border-radius: 4px;\n}\n.prio-alta { background: rgba(239, 68, 68, .18); color: #FCA5A5; }\n.prio-media { background: rgba(236, 162, 0, .18); color: #F5C556; }\n.prio-baja { background: rgba(148, 163, 184, .18); color: var(--tb-txt-tenue); }\n\n.tb-badge-pausa, .tb-badge-vencida, .tb-badge-hoy {\n    font-size: 9px;\n    font-weight: 700;\n    padding: 2px 7px;\n    border-radius: 4px;\n    letter-spacing: .05em;\n}\n.tb-badge-pausa { background: rgba(240, 138, 0, .2); color: #F5B759; }\n.tb-badge-vencida { background: rgba(239, 68, 68, .2); color: #FCA5A5; }\n.tb-badge-hoy { background: rgba(1, 142, 178, .2); color: #7CC4D8; }\n\n.tb-card-titulo {\n    margin: 0;\n    font-size: clamp(11px, .8vw, 15px);\n    font-weight: 600;\n    line-height: 1.3;\n    display: -webkit-box;\n    -webkit-line-clamp: 2;\n    -webkit-box-orient: vertical;\n    overflow: hidden;\n}\n.tb-card-proyecto {\n    margin: 0;\n    font-size: 10px;\n    color: var(--tb-azul);\n    font-weight: 600;\n}\n/* Avance del checklist: sólo en tarjetas en proceso o en pausa */\n.tb-avance { display: flex; flex-direction: column; gap: 3px; }\n.tb-avance-top {\n    display: flex;\n    align-items: baseline;\n    justify-content: space-between;\n    gap: 6px;\n}\n.tb-avance-pct {\n    font-size: clamp(11px, .75vw, 14px);\n    font-weight: 700;\n    color: var(--tb-azul);\n    font-variant-numeric: tabular-nums;\n}\n.tb-avance-frac {\n    font-size: 9px;\n    color: var(--tb-txt-tenue);\n    font-variant-numeric: tabular-nums;\n}\n.tb-avance-barra {\n    height: 5px;\n    background: var(--tb-borde);\n    border-radius: 999px;\n    overflow: hidden;\n}\n.tb-avance-fill {\n    height: 100%;\n    border-radius: 999px;\n    background: linear-gradient(90deg, var(--tb-marca-azul), var(--tb-azul));\n    transition: width .6s ease;\n}\n/* Checklist terminado: se refuerza con el verde de marca */\n.tb-avance-fill.es-completo {\n    background: linear-gradient(90deg, var(--tb-marca-verde), var(--tb-verde));\n}\n.tb-card-pie {\n    display: flex;\n    align-items: center;\n    justify-content: space-between;\n    gap: 8px;\n    margin-top: 1px;\n}\n.tb-card-persona { display: flex; align-items: center; gap: 5px; min-width: 0; }\n.tb-avatar-mini {\n    width: 18px; height: 18px;\n    border-radius: 50%;\n    object-fit: cover;\n    flex-shrink: 0;\n}\n.tb-avatar-vacio {\n    background: var(--tb-borde);\n    display: inline-flex;\n    align-items: center;\n    justify-content: center;\n    font-size: 8px;\n    font-weight: 700;\n    color: var(--tb-txt-tenue);\n    letter-spacing: .02em;\n}\n.tb-avatar.tb-avatar-vacio { font-size: 11px; }\n.tb-card-nombre {\n    font-size: 10px;\n    color: var(--tb-txt-tenue);\n    white-space: nowrap;\n    overflow: hidden;\n    text-overflow: ellipsis;\n}\n.tb-card-fecha {\n    font-size: 10px;\n    font-weight: 700;\n    color: var(--tb-txt-tenue);\n    white-space: nowrap;\n}\n.tb-card-fecha.es-vencida { color: #FCA5A5; }\n\n/* ---------- Animaciones de cambio (300-700 ms) ---------- */\n@keyframes tb-entra {\n    from { opacity: 0; transform: translateY(-10px) scale(.97); }\n    to { opacity: 1; transform: none; }\n}\n@keyframes tb-destaca-azul {\n    0% { box-shadow: 0 0 0 0 rgba(1, 142, 178, .65); }\n    100% { box-shadow: 0 0 0 9px rgba(1, 142, 178, 0); }\n}\n@keyframes tb-destaca-verde {\n    0% { box-shadow: 0 0 0 0 rgba(62, 171, 43, .65); }\n    100% { box-shadow: 0 0 0 9px rgba(62, 171, 43, 0); }\n}\n@keyframes tb-destaca-naranja {\n    0% { box-shadow: 0 0 0 0 rgba(240, 138, 0, .7); }\n    100% { box-shadow: 0 0 0 9px rgba(240, 138, 0, 0); }\n}\n/* Una tarjeta que aparece por primera vez sí entra con fade; las que sólo\n   cambian de columna viajan con FLIP y no deben re-animar su entrada. */\n.tb-anim-nueva { animation: tb-entra .5s ease-out, tb-destaca-azul .7s ease-out; }\n\n/* Tarjeta en tránsito entre columnas: se despega del tablero mientras viaja */\n.tb-card-viajando {\n    box-shadow: 0 14px 34px rgba(0, 0, 0, .55);\n    border-color: var(--tb-azul);\n}\n\n/* Mientras una tarjeta viaja, la columna deja de recortar su contenido: con el\n   overflow activo el trayecto se cortaría en el borde de la columna. Se aplica\n   sólo durante el trayecto para no perder el recorte del resto del tiempo. */\n.tb-col-body:has(.tb-card-viajando) { overflow: visible; }\n.tb-col:has(.tb-card-viajando) { overflow: visible; z-index: 4; }\n\n/* Barrido de luz que recorre la tarjeta al confirmarse el cambio */\n.tb-anim-movida::after,\n.tb-anim-completada::after,\n.tb-anim-pausada::after,\n.tb-anim-nueva::after {\n    content: '';\n    position: absolute;\n    inset: 0;\n    border-radius: inherit;\n    pointer-events: none;\n    background: linear-gradient(\n        105deg,\n        transparent 35%,\n        rgba(255, 255, 255, .16) 50%,\n        transparent 65%);\n    background-size: 260% 100%;\n    animation: tb-barrido .85s ease-out forwards;\n}\n@keyframes tb-barrido {\n    from { background-position: 190% 0; }\n    to { background-position: -60% 0; }\n}\n\n/* Sello de confirmación: aparece, se sostiene y se retira solo */\n.tb-sello {\n    position: absolute;\n    top: 6px;\n    right: 6px;\n    z-index: 3;\n    display: inline-flex;\n    align-items: center;\n    gap: 4px;\n    padding: 2px 8px;\n    border-radius: 999px;\n    font-size: 9px;\n    font-weight: 800;\n    letter-spacing: .06em;\n    color: #06121F;\n    white-space: nowrap;\n    transform-origin: 90% 50%;\n    animation: tb-sello-vida 2.6s cubic-bezier(.2, .9, .3, 1.1) forwards;\n}\n.tb-sello-icono { font-size: 11px; line-height: 1; }\n.tb-sello-completada { background: var(--tb-verde); }\n.tb-sello-pausada { background: var(--tb-naranja); }\n.tb-sello-movida { background: var(--tb-azul); }\n.tb-sello-nueva { background: var(--tb-amarillo); }\n\n@keyframes tb-sello-vida {\n    0% { opacity: 0; transform: scale(.5) translateY(-6px); }\n    14% { opacity: 1; transform: scale(1.08) translateY(0); }\n    22% { transform: scale(1); }\n    76% { opacity: 1; transform: scale(1); }\n    100% { opacity: 0; transform: scale(.9) translateY(-4px); }\n}\n\n/* El latido se hace sobre el borde y no con transform: FLIP anima el transform\n   de la tarjeta para desplazarla, y una animación simultánea sobre la misma\n   propiedad anularía el viaje entre columnas. */\n@keyframes tb-realce-verde {\n    0%, 100% { border-color: var(--tb-borde); }\n    40% { border-color: var(--tb-verde); }\n}\n@keyframes tb-realce-azul {\n    0%, 100% { border-color: var(--tb-borde); }\n    40% { border-color: var(--tb-azul); }\n}\n@keyframes tb-realce-naranja {\n    0%, 100% { border-color: var(--tb-borde); }\n    40% { border-color: var(--tb-naranja); }\n}\n.tb-anim-completada { animation: tb-destaca-verde .7s ease-out, tb-realce-verde 1.1s ease-out; }\n.tb-anim-movida { animation: tb-destaca-azul .7s ease-out, tb-realce-azul 1.1s ease-out; }\n.tb-anim-pausada { animation: tb-destaca-naranja .7s ease-out, tb-realce-naranja 1.1s ease-out; }\n\n/* ---------- Lateral ---------- */\n.tb-lateral {\n    display: flex;\n    flex-direction: column;\n    gap: 12px;\n    min-height: 0;\n    overflow-y: auto;\n}\n.tb-panel {\n    background: var(--tb-panel);\n    border: 1px solid var(--tb-borde);\n    border-radius: 10px;\n    padding: 11px 13px;\n}\n.tb-panel-titulo {\n    margin: 0 0 9px;\n    font-size: clamp(10px, .7vw, 13px);\n    letter-spacing: .1em;\n    color: var(--tb-txt-tenue);\n    font-weight: 700;\n}\n\n.tb-alertas, .tb-equipo, .tb-entregas { list-style: none; margin: 0; padding: 0; }\n.tb-alertas { display: flex; flex-direction: column; gap: 6px; }\n.tb-alerta {\n    font-size: clamp(11px, .75vw, 14px);\n    padding: 6px 9px;\n    border-radius: 6px;\n    border-left: 3px solid;\n}\n.tb-alerta strong { font-size: 1.15em; margin-right: 3px; }\n.al-roja { background: rgba(239, 68, 68, .12); border-color: var(--tb-rojo); color: #FCA5A5; }\n.al-naranja { background: rgba(240, 138, 0, .12); border-color: var(--tb-naranja); color: #F5B759; }\n.al-amarilla { background: rgba(236, 162, 0, .12); border-color: var(--tb-amarillo); color: #F5C556; }\n.al-azul { background: rgba(1, 142, 178, .12); border-color: var(--tb-azul); color: #7CC4D8; }\n.tb-sin-alertas { margin: 0; color: var(--tb-verde); font-size: 13px; font-weight: 600; }\n\n.tb-equipo { display: flex; flex-direction: column; gap: 9px; }\n.tb-persona { display: flex; align-items: center; gap: 9px; }\n.tb-avatar { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }\n.tb-persona-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }\n.tb-persona-nombre {\n    font-size: clamp(10px, .68vw, 13px);\n    font-weight: 600;\n    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;\n}\n.tb-persona-cargo {\n    font-size: 9px;\n    color: var(--tb-txt-tenue);\n    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;\n}\n.tb-carga { height: 5px; background: var(--tb-borde); border-radius: 999px; overflow: hidden; }\n.tb-carga-fill {\n    height: 100%;\n    background: linear-gradient(90deg, var(--tb-azul), var(--tb-verde));\n    border-radius: 999px;\n    transition: width .6s ease;\n}\n.tb-persona-n {\n    font-size: clamp(13px, .95vw, 18px);\n    font-weight: 700;\n    font-variant-numeric: tabular-nums;\n    flex-shrink: 0;\n}\n\n.tb-entregas { display: flex; flex-direction: column; gap: 8px; }\n.tb-entrega { display: flex; gap: 9px; align-items: flex-start; }\n.tb-entrega-fecha {\n    font-size: 10px;\n    font-weight: 700;\n    color: var(--tb-azul);\n    background: rgba(1, 142, 178, .12);\n    padding: 3px 7px;\n    border-radius: 5px;\n    white-space: nowrap;\n    flex-shrink: 0;\n}\n.tb-entrega-fecha.es-vencida { color: #FCA5A5; background: rgba(239, 68, 68, .12); }\n.tb-entrega-info { display: flex; flex-direction: column; min-width: 0; }\n.tb-entrega-titulo {\n    font-size: clamp(10px, .68vw, 13px);\n    font-weight: 600;\n    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;\n}\n.tb-entrega-persona { font-size: 9px; color: var(--tb-txt-tenue); }\n\n/* ---------- Panel ambiental (vídeo) ---------- */\n.tb-ambiente-abrir {\n    background: var(--tb-panel);\n    border: 1px dashed var(--tb-borde);\n    color: var(--tb-txt-tenue);\n    border-radius: 10px;\n    padding: 9px 12px;\n    font-size: 11px;\n    font-weight: 700;\n    letter-spacing: .07em;\n    cursor: pointer;\n    transition: color .2s ease, border-color .2s ease;\n}\n.tb-ambiente-abrir:hover {\n    color: var(--tb-azul);\n    border-color: var(--tb-azul);\n}\n\n.tb-ambiente { display: flex; flex-direction: column; gap: 8px; }\n.tb-ambiente-head {\n    display: flex;\n    align-items: center;\n    justify-content: space-between;\n    gap: 8px;\n}\n.tb-ambiente-head .tb-panel-titulo { margin: 0; }\n.tb-ambiente-acciones { display: flex; gap: 5px; }\n\n.tb-ambiente-btn {\n    background: var(--tb-panel-2);\n    border: 1px solid var(--tb-borde);\n    color: var(--tb-txt-tenue);\n    border-radius: 6px;\n    padding: 3px 8px;\n    font-size: 10px;\n    font-weight: 700;\n    cursor: pointer;\n    transition: color .2s ease, border-color .2s ease;\n}\n.tb-ambiente-btn:hover { color: var(--tb-txt); border-color: var(--tb-azul); }\n.tb-ambiente-btn-ok {\n    background: var(--tb-azul);\n    border-color: var(--tb-azul);\n    color: #fff;\n    padding: 5px 10px;\n    font-size: 11px;\n}\n.tb-ambiente-btn-ok:hover { color: #fff; filter: brightness(1.12); }\n\n/* Marco 16:9 para que el reproductor conserve su proporción */\n.tb-ambiente-video {\n    position: relative;\n    width: 100%;\n    padding-top: 56.25%;\n    border-radius: 8px;\n    overflow: hidden;\n    background: #000;\n    border: 1px solid var(--tb-borde);\n}\n.tb-ambiente-video iframe {\n    position: absolute;\n    inset: 0;\n    width: 100%;\n    height: 100%;\n    border: 0;\n}\n\n.tb-ambiente-form { display: flex; flex-direction: column; gap: 7px; }\n.tb-ambiente-input {\n    background: var(--tb-bg);\n    border: 1px solid var(--tb-borde);\n    border-radius: 6px;\n    padding: 7px 9px;\n    color: var(--tb-txt);\n    font-size: 11px;\n    width: 100%;\n}\n.tb-ambiente-input:focus {\n    outline: none;\n    border-color: var(--tb-azul);\n}\n.tb-ambiente-input::placeholder { color: var(--tb-txt-tenue); }\n.tb-ambiente-error { margin: 0; font-size: 10px; color: #FCA5A5; }\n.tb-ambiente-nota { margin: 0; font-size: 9px; color: var(--tb-txt-tenue); line-height: 1.4; }\n\n/* En modo TV el componente ya se renderiza sin controles; el panel sólo\n   reproduce lo configurado previamente desde la vista de escritorio. */\n\n/* ---------- Avisos temporales ---------- */\n.tb-avisos {\n    position: absolute;\n    right: 22px;\n    bottom: 20px;\n    display: flex;\n    flex-direction: column;\n    gap: 9px;\n    z-index: 20;\n}\n.tb-aviso {\n    display: flex;\n    align-items: center;\n    gap: 11px;\n    background: var(--tb-panel);\n    border: 1px solid var(--tb-borde);\n    border-left: 4px solid var(--tb-azul);\n    border-radius: 9px;\n    padding: 10px 15px;\n    min-width: 260px;\n    box-shadow: 0 8px 26px rgba(0, 0, 0, .45);\n    animation: tb-aviso-in .4s ease-out;\n}\n@keyframes tb-aviso-in {\n    from { opacity: 0; transform: translateX(28px); }\n    to { opacity: 1; transform: none; }\n}\n.tb-aviso-icono { font-size: 20px; font-weight: 700; }\n.tb-aviso strong { font-size: 10px; letter-spacing: .09em; color: var(--tb-txt-tenue); }\n.tb-aviso p {\n    margin: 2px 0 0;\n    font-size: 13px;\n    font-weight: 600;\n    max-width: 260px;\n    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;\n}\n.tb-aviso small { font-size: 10px; color: var(--tb-txt-tenue); }\n.tb-aviso-completada { border-left-color: var(--tb-verde); }\n.tb-aviso-completada .tb-aviso-icono { color: var(--tb-verde); }\n.tb-aviso-pausada { border-left-color: var(--tb-naranja); }\n.tb-aviso-pausada .tb-aviso-icono { color: var(--tb-naranja); }\n.tb-aviso-nueva .tb-aviso-icono, .tb-aviso-movida .tb-aviso-icono { color: var(--tb-azul); }\n\n/* ---------- Modo TV ---------- */\n.tb-tv { padding: 26px 32px; gap: 18px; }\n.tb-tv .tb-logo { height: clamp(50px, 4vw, 76px); padding: 8px 15px; }\n.tb-tv .tb-col-body { overflow: hidden; }\n/* En TV el lateral no scrollea, pero el panel de vídeo añade altura: se permite\n   que la lista de entregas ceda espacio antes que recortar el reproductor. */\n.tb-tv .tb-lateral { overflow: hidden; }\n.tb-tv .tb-lateral .tb-entregas { overflow: hidden; }\n.tb-tv .tb-ambiente { flex-shrink: 0; }\n.tb-tv .tb-card-titulo { -webkit-line-clamp: 2; }\n\n.tb-salir-tv {\n    position: absolute;\n    top: 14px; right: 14px;\n    width: 30px; height: 30px;\n    border-radius: 50%;\n    border: 1px solid var(--tb-borde);\n    background: var(--tb-panel);\n    color: var(--tb-txt-tenue);\n    cursor: pointer;\n    opacity: .12;\n    transition: opacity .25s ease;\n    z-index: 30;\n}\n.tb-salir-tv:hover { opacity: 1; }\n\n/* ---------- Responsive ---------- */\n@media (max-width: 1400px) {\n    .tb-cuerpo { grid-template-columns: 1fr 260px; }\n}\n@media (max-width: 1100px) {\n    .tb-cuerpo { grid-template-columns: 1fr; overflow-y: auto; }\n    .tb-lateral { flex-direction: row; flex-wrap: wrap; }\n    .tb-lateral .tb-panel { flex: 1 1 240px; }\n    .tb-kpis { grid-template-columns: repeat(3, 1fr); }\n    .tb-kanban { grid-template-columns: repeat(2, 1fr); min-height: 560px; }\n}\n@media (max-width: 700px) {\n    .tb-root { padding: 12px; }\n    .tb-kpis { grid-template-columns: repeat(2, 1fr); }\n    .tb-kanban { grid-template-columns: 1fr; }\n    .tb-header { flex-direction: column; align-items: flex-start; gap: 8px; }\n    .tb-header-izq { gap: 10px; }\n    .tb-logo { height: 34px; padding: 5px 9px; }\n}\n\n/* Respeta la preferencia del sistema de reducir movimiento */\n@media (prefers-reduced-motion: reduce) {\n    .tb-root *, .tb-root *::before, .tb-root *::after {\n        animation-duration: .01ms !important;\n        animation-iteration-count: 1 !important;\n        transition-duration: .01ms !important;\n    }\n}\n"],"sourceRoot":""}]);
+___CSS_LOADER_EXPORT___.push([module.id, "/* Tablero de Seguimiento — dark mode operativo, optimizado para 1920x1080 */\n\n.tb-root {\n    --tb-bg: #0F172A;\n    --tb-panel: #1E293B;\n    --tb-panel-2: #273449;\n    --tb-borde: #334155;\n    --tb-txt: #E2E8F0;\n    --tb-txt-tenue: #94A3B8;\n\n    /* Colores institucionales Ingeer, tomados del logo:\n       azul (agua/infraestructura), verde (vías/agro) y ámbar (innovación).\n       Se aclaran ligeramente para el fondo oscuro sin perder la identidad. */\n    --tb-marca-azul: #018EB2;\n    --tb-marca-verde: #3EAB2B;\n    --tb-marca-ambar: #ECA200;\n\n    --tb-azul: #22A8CC;      /* azul institucional legible sobre #0F172A */\n    --tb-verde: #4FC23A;     /* verde institucional aclarado */\n    --tb-amarillo: #ECA200;  /* ámbar institucional */\n    --tb-naranja: #F08A00;   /* ámbar oscurecido: pausa */\n    --tb-rojo: #E5484D;      /* alerta: fuera de marca por significado */\n    --tb-morado: #7CC4D8;    /* completadas: azul claro derivado de la marca */\n\n    position: fixed;\n    inset: 0;\n    z-index: 9000;\n    display: flex;\n    flex-direction: column;\n    gap: 14px;\n    padding: 18px 22px;\n    background: var(--tb-bg);\n    color: var(--tb-txt);\n    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;\n    overflow: hidden;\n}\n\n.tb-cargando {\n    align-items: center;\n    justify-content: center;\n    gap: 18px;\n}\n.tb-spinner {\n    width: 44px; height: 44px;\n    border: 3px solid var(--tb-borde);\n    border-top-color: var(--tb-azul);\n    border-radius: 50%;\n    animation: tb-giro .8s linear infinite;\n}\n@keyframes tb-giro { to { transform: rotate(360deg); } }\n.tb-error { color: var(--tb-rojo); }\n\n/* ---------- Encabezado ---------- */\n.tb-header {\n    display: flex;\n    align-items: center;\n    justify-content: space-between;\n    gap: 16px;\n    flex-shrink: 0;\n}\n.tb-header-izq {\n    display: flex;\n    align-items: center;\n    gap: 16px;\n    min-width: 0;\n}\n\n/* El logotipo lleva el texto \"es más que INGENIERÍA\" en negro, ilegible sobre el\n   fondo oscuro: se apoya en una placa clara con las esquinas redondeadas, que\n   además reproduce el uso habitual de la marca sobre fondo blanco. */\n.tb-logo {\n    height: clamp(38px, 3.4vw, 62px);\n    width: auto;\n    background: #FFFFFF;\n    padding: 6px 12px;\n    border-radius: 9px;\n    flex-shrink: 0;\n}\n\n.tb-header h1 {\n    margin: 0;\n    font-size: clamp(20px, 1.7vw, 32px);\n    font-weight: 700;\n    letter-spacing: .06em;\n}\n\n/* Franja con los tres colores de la marca bajo el título */\n.tb-header-txt { position: relative; padding-bottom: 6px; }\n.tb-header-txt::after {\n    content: '';\n    position: absolute;\n    left: 0; bottom: 0;\n    width: 108px; height: 3px;\n    border-radius: 2px;\n    background: linear-gradient(90deg,\n        var(--tb-marca-azul) 0 33.33%,\n        var(--tb-marca-verde) 33.33% 66.66%,\n        var(--tb-marca-ambar) 66.66% 100%);\n}\n\n.tb-ambito {\n    margin: 3px 0 0;\n    font-size: clamp(12px, .95vw, 18px);\n    color: var(--tb-azul);\n    font-weight: 600;\n    letter-spacing: .08em;\n}\n.tb-header-der { display: flex; align-items: center; gap: 12px; }\n\n.tb-conexion {\n    font-size: clamp(10px, .7vw, 13px);\n    font-weight: 700;\n    padding: 5px 11px;\n    border-radius: 999px;\n    letter-spacing: .05em;\n}\n.tb-conexion.ok { color: var(--tb-verde); background: rgba(62, 171, 43, .12); }\n.tb-conexion.ko {\n    color: var(--tb-rojo);\n    background: rgba(239, 68, 68, .14);\n    animation: tb-latido 1.8s ease-in-out infinite;\n}\n@keyframes tb-latido { 50% { opacity: .55; } }\n\n.tb-hora {\n    font-size: clamp(15px, 1.3vw, 24px);\n    font-weight: 600;\n    color: var(--tb-txt-tenue);\n    font-variant-numeric: tabular-nums;\n}\n\n.tb-btn {\n    background: var(--tb-azul);\n    color: #fff;\n    border: none;\n    border-radius: 7px;\n    padding: 7px 15px;\n    font-size: 13px;\n    font-weight: 600;\n    cursor: pointer;\n    transition: filter .2s ease;\n}\n.tb-btn:hover { filter: brightness(1.12); }\n.tb-btn-sec { background: var(--tb-panel-2); color: var(--tb-txt); }\n/* El botón de vuelta es un enlace <a>: hay que neutralizar su estilo por defecto */\na.tb-btn { text-decoration: none; display: inline-block; line-height: normal; }\na.tb-btn:visited { color: #fff; }\na.tb-btn-sec, a.tb-btn-sec:visited { color: var(--tb-txt); }\n\n/* ---------- KPIs ---------- */\n.tb-kpis {\n    display: grid;\n    grid-template-columns: repeat(6, 1fr);\n    gap: 12px;\n    flex-shrink: 0;\n}\n.tb-kpi {\n    background: var(--tb-panel);\n    border: 1px solid var(--tb-borde);\n    border-left: 4px solid var(--tb-azul);\n    border-radius: 10px;\n    padding: 10px 14px;\n    display: flex;\n    flex-direction: column;\n    gap: 2px;\n    transition: box-shadow .4s ease, transform .4s ease;\n}\n.tb-kpi-cambio {\n    box-shadow: 0 0 0 2px rgba(1, 142, 178, .5);\n    transform: translateY(-2px);\n}\n.tb-kpi-num {\n    font-size: clamp(22px, 2vw, 40px);\n    font-weight: 700;\n    line-height: 1.05;\n    font-variant-numeric: tabular-nums;\n}\n.tb-kpi-label {\n    font-size: clamp(9px, .62vw, 12px);\n    color: var(--tb-txt-tenue);\n    letter-spacing: .09em;\n    font-weight: 600;\n}\n.kpi-total { border-left-color: var(--tb-azul); }\n.kpi-proceso { border-left-color: var(--tb-azul); }\n.kpi-pendiente { border-left-color: var(--tb-amarillo); }\n.kpi-pausa { border-left-color: var(--tb-naranja); }\n.kpi-completadas { border-left-color: var(--tb-morado); }\n.kpi-avance { border-left-color: var(--tb-verde); }\n\n/* ---------- Cuerpo ---------- */\n.tb-cuerpo {\n    display: grid;\n    grid-template-columns: 1fr 300px;\n    gap: 14px;\n    flex: 1;\n    min-height: 0;\n}\n\n.tb-kanban {\n    position: relative;   /* contexto de apilado para la tarjeta en tránsito */\n    display: grid;\n    grid-template-columns: repeat(4, 1fr);\n    gap: 12px;\n    min-height: 0;\n}\n.tb-col {\n    background: var(--tb-panel);\n    border: 1px solid var(--tb-borde);\n    border-top: 3px solid var(--tb-txt-tenue);\n    border-radius: 10px;\n    display: flex;\n    flex-direction: column;\n    min-height: 0;\n    overflow: hidden;\n}\n.col-pendiente { border-top-color: var(--tb-amarillo); }\n.col-proceso { border-top-color: var(--tb-azul); }\n.col-pausa { border-top-color: var(--tb-naranja); }\n.col-completadas { border-top-color: var(--tb-morado); }\n\n.tb-col-head {\n    display: flex;\n    align-items: center;\n    justify-content: space-between;\n    padding: 9px 12px;\n    border-bottom: 1px solid var(--tb-borde);\n    flex-shrink: 0;\n}\n.tb-col-head h3 {\n    margin: 0;\n    font-size: clamp(11px, .78vw, 15px);\n    letter-spacing: .09em;\n    font-weight: 700;\n}\n.tb-col-count {\n    background: var(--tb-panel-2);\n    border-radius: 999px;\n    padding: 1px 10px;\n    font-size: clamp(12px, .85vw, 17px);\n    font-weight: 700;\n    font-variant-numeric: tabular-nums;\n}\n.tb-col-nota {\n    margin: 0;\n    padding: 5px 12px;\n    font-size: 10px;\n    color: var(--tb-txt-tenue);\n    font-style: italic;\n    border-bottom: 1px solid var(--tb-borde);\n}\n.tb-col-body {\n    display: flex;\n    flex-direction: column;\n    gap: 8px;\n    padding: 10px;\n    overflow-y: auto;\n    min-height: 0;\n}\n.tb-col-vacia, .tb-col-mas {\n    text-align: center;\n    color: var(--tb-txt-tenue);\n    font-size: 11px;\n    padding: 8px 0;\n    margin: 0;\n}\n\n/* ---------- Tarjetas ---------- */\n.tb-card {\n    position: relative;          /* ancla el sello y el barrido de luz */\n    background: var(--tb-panel-2);\n    border: 1px solid var(--tb-borde);\n    border-radius: 8px;\n    padding: 9px 11px;\n    display: flex;\n    flex-direction: column;\n    gap: 6px;\n    transition: border-color .3s ease, box-shadow .3s ease;\n    /* Aviso al navegador de que transform va a animarse: evita el parpadeo\n       del primer frame del FLIP en pantallas grandes. */\n    will-change: transform;\n}\n.tb-card-pausada { opacity: .82; border-style: dashed; }\n\n.tb-card-top { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }\n.tb-prio {\n    font-size: 9px;\n    font-weight: 800;\n    letter-spacing: .07em;\n    padding: 2px 7px;\n    border-radius: 4px;\n}\n.prio-alta { background: rgba(239, 68, 68, .18); color: #FCA5A5; }\n.prio-media { background: rgba(236, 162, 0, .18); color: #F5C556; }\n.prio-baja { background: rgba(148, 163, 184, .18); color: var(--tb-txt-tenue); }\n\n.tb-badge-pausa, .tb-badge-vencida, .tb-badge-hoy {\n    font-size: 9px;\n    font-weight: 700;\n    padding: 2px 7px;\n    border-radius: 4px;\n    letter-spacing: .05em;\n}\n.tb-badge-pausa { background: rgba(240, 138, 0, .2); color: #F5B759; }\n.tb-badge-vencida { background: rgba(239, 68, 68, .2); color: #FCA5A5; }\n.tb-badge-hoy { background: rgba(1, 142, 178, .2); color: #7CC4D8; }\n\n.tb-card-titulo {\n    margin: 0;\n    font-size: clamp(11px, .8vw, 15px);\n    font-weight: 600;\n    line-height: 1.3;\n    display: -webkit-box;\n    -webkit-line-clamp: 2;\n    -webkit-box-orient: vertical;\n    overflow: hidden;\n}\n.tb-card-proyecto {\n    margin: 0;\n    font-size: 10px;\n    color: var(--tb-azul);\n    font-weight: 600;\n}\n/* Avance del checklist: sólo en tarjetas en proceso o en pausa */\n.tb-avance { display: flex; flex-direction: column; gap: 3px; }\n.tb-avance-top {\n    display: flex;\n    align-items: baseline;\n    justify-content: space-between;\n    gap: 6px;\n}\n.tb-avance-pct {\n    font-size: clamp(11px, .75vw, 14px);\n    font-weight: 700;\n    color: var(--tb-azul);\n    font-variant-numeric: tabular-nums;\n}\n.tb-avance-frac {\n    font-size: 9px;\n    color: var(--tb-txt-tenue);\n    font-variant-numeric: tabular-nums;\n}\n.tb-avance-barra {\n    height: 5px;\n    background: var(--tb-borde);\n    border-radius: 999px;\n    overflow: hidden;\n}\n.tb-avance-fill {\n    height: 100%;\n    border-radius: 999px;\n    background: linear-gradient(90deg, var(--tb-marca-azul), var(--tb-azul));\n    transition: width .6s ease;\n}\n/* Checklist terminado: se refuerza con el verde de marca */\n.tb-avance-fill.es-completo {\n    background: linear-gradient(90deg, var(--tb-marca-verde), var(--tb-verde));\n}\n.tb-card-pie {\n    display: flex;\n    align-items: center;\n    justify-content: space-between;\n    gap: 8px;\n    margin-top: 1px;\n}\n.tb-card-persona { display: flex; align-items: center; gap: 5px; min-width: 0; }\n.tb-avatar-mini {\n    width: 18px; height: 18px;\n    border-radius: 50%;\n    -o-object-fit: cover;\n       object-fit: cover;\n    flex-shrink: 0;\n}\n.tb-avatar-vacio {\n    background: var(--tb-borde);\n    display: inline-flex;\n    align-items: center;\n    justify-content: center;\n    font-size: 8px;\n    font-weight: 700;\n    color: var(--tb-txt-tenue);\n    letter-spacing: .02em;\n}\n.tb-avatar.tb-avatar-vacio { font-size: 11px; }\n.tb-card-nombre {\n    font-size: 10px;\n    color: var(--tb-txt-tenue);\n    white-space: nowrap;\n    overflow: hidden;\n    text-overflow: ellipsis;\n}\n.tb-card-fecha {\n    font-size: 10px;\n    font-weight: 700;\n    color: var(--tb-txt-tenue);\n    white-space: nowrap;\n}\n.tb-card-fecha.es-vencida { color: #FCA5A5; }\n\n/* ---------- Animaciones de cambio (300-700 ms) ---------- */\n@keyframes tb-entra {\n    from { opacity: 0; transform: translateY(-10px) scale(.97); }\n    to { opacity: 1; transform: none; }\n}\n@keyframes tb-destaca-azul {\n    0% { box-shadow: 0 0 0 0 rgba(1, 142, 178, .65); }\n    100% { box-shadow: 0 0 0 9px rgba(1, 142, 178, 0); }\n}\n@keyframes tb-destaca-verde {\n    0% { box-shadow: 0 0 0 0 rgba(62, 171, 43, .65); }\n    100% { box-shadow: 0 0 0 9px rgba(62, 171, 43, 0); }\n}\n@keyframes tb-destaca-naranja {\n    0% { box-shadow: 0 0 0 0 rgba(240, 138, 0, .7); }\n    100% { box-shadow: 0 0 0 9px rgba(240, 138, 0, 0); }\n}\n/* Una tarjeta que aparece por primera vez sí entra con fade; las que sólo\n   cambian de columna viajan con FLIP y no deben re-animar su entrada. */\n.tb-anim-nueva { animation: tb-entra .5s ease-out, tb-destaca-azul .7s ease-out; }\n\n/* Tarjeta en tránsito entre columnas: se despega del tablero mientras viaja */\n.tb-card-viajando {\n    box-shadow: 0 14px 34px rgba(0, 0, 0, .55);\n    border-color: var(--tb-azul);\n}\n\n/* Mientras una tarjeta viaja, la columna deja de recortar su contenido: con el\n   overflow activo el trayecto se cortaría en el borde de la columna. Se aplica\n   sólo durante el trayecto para no perder el recorte del resto del tiempo. */\n.tb-col-body:has(.tb-card-viajando) { overflow: visible; }\n.tb-col:has(.tb-card-viajando) { overflow: visible; z-index: 4; }\n\n/* Barrido de luz que recorre la tarjeta al confirmarse el cambio */\n.tb-anim-movida::after,\n.tb-anim-completada::after,\n.tb-anim-pausada::after,\n.tb-anim-nueva::after {\n    content: '';\n    position: absolute;\n    inset: 0;\n    border-radius: inherit;\n    pointer-events: none;\n    background: linear-gradient(\n        105deg,\n        transparent 35%,\n        rgba(255, 255, 255, .16) 50%,\n        transparent 65%);\n    background-size: 260% 100%;\n    animation: tb-barrido .85s ease-out forwards;\n}\n@keyframes tb-barrido {\n    from { background-position: 190% 0; }\n    to { background-position: -60% 0; }\n}\n\n/* Sello de confirmación: aparece, se sostiene y se retira solo */\n.tb-sello {\n    position: absolute;\n    top: 6px;\n    right: 6px;\n    z-index: 3;\n    display: inline-flex;\n    align-items: center;\n    gap: 4px;\n    padding: 2px 8px;\n    border-radius: 999px;\n    font-size: 9px;\n    font-weight: 800;\n    letter-spacing: .06em;\n    color: #06121F;\n    white-space: nowrap;\n    transform-origin: 90% 50%;\n    animation: tb-sello-vida 2.6s cubic-bezier(.2, .9, .3, 1.1) forwards;\n}\n.tb-sello-icono { font-size: 11px; line-height: 1; }\n.tb-sello-completada { background: var(--tb-verde); }\n.tb-sello-pausada { background: var(--tb-naranja); }\n.tb-sello-movida { background: var(--tb-azul); }\n.tb-sello-nueva { background: var(--tb-amarillo); }\n\n@keyframes tb-sello-vida {\n    0% { opacity: 0; transform: scale(.5) translateY(-6px); }\n    14% { opacity: 1; transform: scale(1.08) translateY(0); }\n    22% { transform: scale(1); }\n    76% { opacity: 1; transform: scale(1); }\n    100% { opacity: 0; transform: scale(.9) translateY(-4px); }\n}\n\n/* El latido se hace sobre el borde y no con transform: FLIP anima el transform\n   de la tarjeta para desplazarla, y una animación simultánea sobre la misma\n   propiedad anularía el viaje entre columnas. */\n@keyframes tb-realce-verde {\n    0%, 100% { border-color: var(--tb-borde); }\n    40% { border-color: var(--tb-verde); }\n}\n@keyframes tb-realce-azul {\n    0%, 100% { border-color: var(--tb-borde); }\n    40% { border-color: var(--tb-azul); }\n}\n@keyframes tb-realce-naranja {\n    0%, 100% { border-color: var(--tb-borde); }\n    40% { border-color: var(--tb-naranja); }\n}\n.tb-anim-completada { animation: tb-destaca-verde .7s ease-out, tb-realce-verde 1.1s ease-out; }\n.tb-anim-movida { animation: tb-destaca-azul .7s ease-out, tb-realce-azul 1.1s ease-out; }\n.tb-anim-pausada { animation: tb-destaca-naranja .7s ease-out, tb-realce-naranja 1.1s ease-out; }\n\n/* ---------- Lateral ---------- */\n.tb-lateral {\n    display: flex;\n    flex-direction: column;\n    gap: 12px;\n    min-height: 0;\n    overflow-y: auto;\n}\n.tb-panel {\n    background: var(--tb-panel);\n    border: 1px solid var(--tb-borde);\n    border-radius: 10px;\n    padding: 11px 13px;\n}\n.tb-panel-titulo {\n    margin: 0 0 9px;\n    font-size: clamp(10px, .7vw, 13px);\n    letter-spacing: .1em;\n    color: var(--tb-txt-tenue);\n    font-weight: 700;\n}\n\n.tb-alertas, .tb-equipo, .tb-entregas { list-style: none; margin: 0; padding: 0; }\n.tb-alertas { display: flex; flex-direction: column; gap: 6px; }\n.tb-alerta {\n    font-size: clamp(11px, .75vw, 14px);\n    padding: 6px 9px;\n    border-radius: 6px;\n    border-left: 3px solid;\n}\n.tb-alerta strong { font-size: 1.15em; margin-right: 3px; }\n.al-roja { background: rgba(239, 68, 68, .12); border-color: var(--tb-rojo); color: #FCA5A5; }\n.al-naranja { background: rgba(240, 138, 0, .12); border-color: var(--tb-naranja); color: #F5B759; }\n.al-amarilla { background: rgba(236, 162, 0, .12); border-color: var(--tb-amarillo); color: #F5C556; }\n.al-azul { background: rgba(1, 142, 178, .12); border-color: var(--tb-azul); color: #7CC4D8; }\n.tb-sin-alertas { margin: 0; color: var(--tb-verde); font-size: 13px; font-weight: 600; }\n\n.tb-equipo { display: flex; flex-direction: column; gap: 9px; }\n.tb-persona { display: flex; align-items: center; gap: 9px; }\n.tb-avatar { width: 30px; height: 30px; border-radius: 50%; -o-object-fit: cover; object-fit: cover; flex-shrink: 0; }\n.tb-persona-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }\n.tb-persona-nombre {\n    font-size: clamp(10px, .68vw, 13px);\n    font-weight: 600;\n    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;\n}\n.tb-persona-cargo {\n    font-size: 9px;\n    color: var(--tb-txt-tenue);\n    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;\n}\n.tb-carga { height: 5px; background: var(--tb-borde); border-radius: 999px; overflow: hidden; }\n.tb-carga-fill {\n    height: 100%;\n    background: linear-gradient(90deg, var(--tb-azul), var(--tb-verde));\n    border-radius: 999px;\n    transition: width .6s ease;\n}\n.tb-persona-n {\n    font-size: clamp(13px, .95vw, 18px);\n    font-weight: 700;\n    font-variant-numeric: tabular-nums;\n    flex-shrink: 0;\n}\n\n.tb-entregas { display: flex; flex-direction: column; gap: 8px; }\n.tb-entrega { display: flex; gap: 9px; align-items: flex-start; }\n.tb-entrega-fecha {\n    font-size: 10px;\n    font-weight: 700;\n    color: var(--tb-azul);\n    background: rgba(1, 142, 178, .12);\n    padding: 3px 7px;\n    border-radius: 5px;\n    white-space: nowrap;\n    flex-shrink: 0;\n}\n.tb-entrega-fecha.es-vencida { color: #FCA5A5; background: rgba(239, 68, 68, .12); }\n.tb-entrega-info { display: flex; flex-direction: column; min-width: 0; }\n.tb-entrega-titulo {\n    font-size: clamp(10px, .68vw, 13px);\n    font-weight: 600;\n    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;\n}\n.tb-entrega-persona { font-size: 9px; color: var(--tb-txt-tenue); }\n\n/* ---------- Panel ambiental (vídeo) ---------- */\n.tb-ambiente-abrir {\n    background: var(--tb-panel);\n    border: 1px dashed var(--tb-borde);\n    color: var(--tb-txt-tenue);\n    border-radius: 10px;\n    padding: 9px 12px;\n    font-size: 11px;\n    font-weight: 700;\n    letter-spacing: .07em;\n    cursor: pointer;\n    transition: color .2s ease, border-color .2s ease;\n}\n.tb-ambiente-abrir:hover {\n    color: var(--tb-azul);\n    border-color: var(--tb-azul);\n}\n\n.tb-ambiente { display: flex; flex-direction: column; gap: 8px; }\n.tb-ambiente-head {\n    display: flex;\n    align-items: center;\n    justify-content: space-between;\n    gap: 8px;\n}\n.tb-ambiente-head .tb-panel-titulo { margin: 0; }\n.tb-ambiente-acciones { display: flex; gap: 5px; }\n\n.tb-ambiente-btn {\n    background: var(--tb-panel-2);\n    border: 1px solid var(--tb-borde);\n    color: var(--tb-txt-tenue);\n    border-radius: 6px;\n    padding: 3px 8px;\n    font-size: 10px;\n    font-weight: 700;\n    cursor: pointer;\n    transition: color .2s ease, border-color .2s ease;\n}\n.tb-ambiente-btn:hover { color: var(--tb-txt); border-color: var(--tb-azul); }\n.tb-ambiente-btn-ok {\n    background: var(--tb-azul);\n    border-color: var(--tb-azul);\n    color: #fff;\n    padding: 5px 10px;\n    font-size: 11px;\n}\n.tb-ambiente-btn-ok:hover { color: #fff; filter: brightness(1.12); }\n\n/* Marco 16:9 para que el reproductor conserve su proporción */\n.tb-ambiente-video {\n    position: relative;\n    width: 100%;\n    padding-top: 56.25%;\n    border-radius: 8px;\n    overflow: hidden;\n    background: #000;\n    border: 1px solid var(--tb-borde);\n}\n.tb-ambiente-video iframe {\n    position: absolute;\n    inset: 0;\n    width: 100%;\n    height: 100%;\n    border: 0;\n}\n\n.tb-ambiente-select {\n    background: var(--tb-bg);\n    border: 1px solid var(--tb-borde);\n    border-radius: 6px;\n    padding: 6px 8px;\n    color: var(--tb-txt);\n    font-size: 11px;\n    width: 100%;\n    cursor: pointer;\n}\n.tb-ambiente-select:focus { outline: none; border-color: var(--tb-azul); }\n.tb-ambiente-nota { margin: 0; font-size: 9px; color: var(--tb-txt-tenue); line-height: 1.4; }\n.tb-ambiente-vacio {\n    margin: 0;\n    padding: 9px 12px;\n    font-size: 10px;\n    line-height: 1.5;\n    color: var(--tb-txt-tenue);\n    background: var(--tb-panel);\n    border: 1px dashed var(--tb-borde);\n    border-radius: 10px;\n}\n\n/* En modo TV el componente ya se renderiza sin controles; el panel sólo\n   reproduce lo configurado previamente desde la vista de escritorio. */\n\n/* ---------- Avisos temporales ---------- */\n.tb-avisos {\n    position: absolute;\n    right: 22px;\n    bottom: 20px;\n    display: flex;\n    flex-direction: column;\n    gap: 9px;\n    z-index: 20;\n}\n.tb-aviso {\n    display: flex;\n    align-items: center;\n    gap: 11px;\n    background: var(--tb-panel);\n    border: 1px solid var(--tb-borde);\n    border-left: 4px solid var(--tb-azul);\n    border-radius: 9px;\n    padding: 10px 15px;\n    min-width: 260px;\n    box-shadow: 0 8px 26px rgba(0, 0, 0, .45);\n    animation: tb-aviso-in .4s ease-out;\n}\n@keyframes tb-aviso-in {\n    from { opacity: 0; transform: translateX(28px); }\n    to { opacity: 1; transform: none; }\n}\n.tb-aviso-icono { font-size: 20px; font-weight: 700; }\n.tb-aviso strong { font-size: 10px; letter-spacing: .09em; color: var(--tb-txt-tenue); }\n.tb-aviso p {\n    margin: 2px 0 0;\n    font-size: 13px;\n    font-weight: 600;\n    max-width: 260px;\n    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;\n}\n.tb-aviso small { font-size: 10px; color: var(--tb-txt-tenue); }\n.tb-aviso-completada { border-left-color: var(--tb-verde); }\n.tb-aviso-completada .tb-aviso-icono { color: var(--tb-verde); }\n.tb-aviso-pausada { border-left-color: var(--tb-naranja); }\n.tb-aviso-pausada .tb-aviso-icono { color: var(--tb-naranja); }\n.tb-aviso-nueva .tb-aviso-icono, .tb-aviso-movida .tb-aviso-icono { color: var(--tb-azul); }\n\n/* ---------- Modo TV ---------- */\n.tb-tv { padding: 26px 32px; gap: 18px; }\n.tb-tv .tb-logo { height: clamp(50px, 4vw, 76px); padding: 8px 15px; }\n.tb-tv .tb-col-body { overflow: hidden; }\n/* En TV el lateral no scrollea, pero el panel de vídeo añade altura: se permite\n   que la lista de entregas ceda espacio antes que recortar el reproductor. */\n.tb-tv .tb-lateral { overflow: hidden; }\n.tb-tv .tb-lateral .tb-entregas { overflow: hidden; }\n.tb-tv .tb-ambiente { flex-shrink: 0; }\n.tb-tv .tb-card-titulo { -webkit-line-clamp: 2; }\n\n.tb-salir-tv {\n    position: absolute;\n    top: 14px; right: 14px;\n    width: 30px; height: 30px;\n    border-radius: 50%;\n    border: 1px solid var(--tb-borde);\n    background: var(--tb-panel);\n    color: var(--tb-txt-tenue);\n    cursor: pointer;\n    opacity: .12;\n    transition: opacity .25s ease;\n    z-index: 30;\n}\n.tb-salir-tv:hover { opacity: 1; }\n\n/* ---------- Responsive ---------- */\n@media (max-width: 1400px) {\n    .tb-cuerpo { grid-template-columns: 1fr 260px; }\n}\n@media (max-width: 1100px) {\n    .tb-cuerpo { grid-template-columns: 1fr; overflow-y: auto; }\n    .tb-lateral { flex-direction: row; flex-wrap: wrap; }\n    .tb-lateral .tb-panel { flex: 1 1 240px; }\n    .tb-kpis { grid-template-columns: repeat(3, 1fr); }\n    .tb-kanban { grid-template-columns: repeat(2, 1fr); min-height: 560px; }\n}\n@media (max-width: 700px) {\n    .tb-root { padding: 12px; }\n    .tb-kpis { grid-template-columns: repeat(2, 1fr); }\n    .tb-kanban { grid-template-columns: 1fr; }\n    .tb-header { flex-direction: column; align-items: flex-start; gap: 8px; }\n    .tb-header-izq { gap: 10px; }\n    .tb-logo { height: 34px; padding: 5px 9px; }\n}\n\n/* Respeta la preferencia del sistema de reducir movimiento */\n@media (prefers-reduced-motion: reduce) {\n    .tb-root *, .tb-root *::before, .tb-root *::after {\n        animation-duration: .01ms !important;\n        animation-iteration-count: 1 !important;\n        transition-duration: .01ms !important;\n    }\n}\n", "",{"version":3,"sources":["webpack://./resources/js/components/tablero/tablero.css"],"names":[],"mappings":"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","sourcesContent":["/* Tablero de Seguimiento — dark mode operativo, optimizado para 1920x1080 */\n\n.tb-root {\n    --tb-bg: #0F172A;\n    --tb-panel: #1E293B;\n    --tb-panel-2: #273449;\n    --tb-borde: #334155;\n    --tb-txt: #E2E8F0;\n    --tb-txt-tenue: #94A3B8;\n\n    /* Colores institucionales Ingeer, tomados del logo:\n       azul (agua/infraestructura), verde (vías/agro) y ámbar (innovación).\n       Se aclaran ligeramente para el fondo oscuro sin perder la identidad. */\n    --tb-marca-azul: #018EB2;\n    --tb-marca-verde: #3EAB2B;\n    --tb-marca-ambar: #ECA200;\n\n    --tb-azul: #22A8CC;      /* azul institucional legible sobre #0F172A */\n    --tb-verde: #4FC23A;     /* verde institucional aclarado */\n    --tb-amarillo: #ECA200;  /* ámbar institucional */\n    --tb-naranja: #F08A00;   /* ámbar oscurecido: pausa */\n    --tb-rojo: #E5484D;      /* alerta: fuera de marca por significado */\n    --tb-morado: #7CC4D8;    /* completadas: azul claro derivado de la marca */\n\n    position: fixed;\n    inset: 0;\n    z-index: 9000;\n    display: flex;\n    flex-direction: column;\n    gap: 14px;\n    padding: 18px 22px;\n    background: var(--tb-bg);\n    color: var(--tb-txt);\n    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;\n    overflow: hidden;\n}\n\n.tb-cargando {\n    align-items: center;\n    justify-content: center;\n    gap: 18px;\n}\n.tb-spinner {\n    width: 44px; height: 44px;\n    border: 3px solid var(--tb-borde);\n    border-top-color: var(--tb-azul);\n    border-radius: 50%;\n    animation: tb-giro .8s linear infinite;\n}\n@keyframes tb-giro { to { transform: rotate(360deg); } }\n.tb-error { color: var(--tb-rojo); }\n\n/* ---------- Encabezado ---------- */\n.tb-header {\n    display: flex;\n    align-items: center;\n    justify-content: space-between;\n    gap: 16px;\n    flex-shrink: 0;\n}\n.tb-header-izq {\n    display: flex;\n    align-items: center;\n    gap: 16px;\n    min-width: 0;\n}\n\n/* El logotipo lleva el texto \"es más que INGENIERÍA\" en negro, ilegible sobre el\n   fondo oscuro: se apoya en una placa clara con las esquinas redondeadas, que\n   además reproduce el uso habitual de la marca sobre fondo blanco. */\n.tb-logo {\n    height: clamp(38px, 3.4vw, 62px);\n    width: auto;\n    background: #FFFFFF;\n    padding: 6px 12px;\n    border-radius: 9px;\n    flex-shrink: 0;\n}\n\n.tb-header h1 {\n    margin: 0;\n    font-size: clamp(20px, 1.7vw, 32px);\n    font-weight: 700;\n    letter-spacing: .06em;\n}\n\n/* Franja con los tres colores de la marca bajo el título */\n.tb-header-txt { position: relative; padding-bottom: 6px; }\n.tb-header-txt::after {\n    content: '';\n    position: absolute;\n    left: 0; bottom: 0;\n    width: 108px; height: 3px;\n    border-radius: 2px;\n    background: linear-gradient(90deg,\n        var(--tb-marca-azul) 0 33.33%,\n        var(--tb-marca-verde) 33.33% 66.66%,\n        var(--tb-marca-ambar) 66.66% 100%);\n}\n\n.tb-ambito {\n    margin: 3px 0 0;\n    font-size: clamp(12px, .95vw, 18px);\n    color: var(--tb-azul);\n    font-weight: 600;\n    letter-spacing: .08em;\n}\n.tb-header-der { display: flex; align-items: center; gap: 12px; }\n\n.tb-conexion {\n    font-size: clamp(10px, .7vw, 13px);\n    font-weight: 700;\n    padding: 5px 11px;\n    border-radius: 999px;\n    letter-spacing: .05em;\n}\n.tb-conexion.ok { color: var(--tb-verde); background: rgba(62, 171, 43, .12); }\n.tb-conexion.ko {\n    color: var(--tb-rojo);\n    background: rgba(239, 68, 68, .14);\n    animation: tb-latido 1.8s ease-in-out infinite;\n}\n@keyframes tb-latido { 50% { opacity: .55; } }\n\n.tb-hora {\n    font-size: clamp(15px, 1.3vw, 24px);\n    font-weight: 600;\n    color: var(--tb-txt-tenue);\n    font-variant-numeric: tabular-nums;\n}\n\n.tb-btn {\n    background: var(--tb-azul);\n    color: #fff;\n    border: none;\n    border-radius: 7px;\n    padding: 7px 15px;\n    font-size: 13px;\n    font-weight: 600;\n    cursor: pointer;\n    transition: filter .2s ease;\n}\n.tb-btn:hover { filter: brightness(1.12); }\n.tb-btn-sec { background: var(--tb-panel-2); color: var(--tb-txt); }\n/* El botón de vuelta es un enlace <a>: hay que neutralizar su estilo por defecto */\na.tb-btn { text-decoration: none; display: inline-block; line-height: normal; }\na.tb-btn:visited { color: #fff; }\na.tb-btn-sec, a.tb-btn-sec:visited { color: var(--tb-txt); }\n\n/* ---------- KPIs ---------- */\n.tb-kpis {\n    display: grid;\n    grid-template-columns: repeat(6, 1fr);\n    gap: 12px;\n    flex-shrink: 0;\n}\n.tb-kpi {\n    background: var(--tb-panel);\n    border: 1px solid var(--tb-borde);\n    border-left: 4px solid var(--tb-azul);\n    border-radius: 10px;\n    padding: 10px 14px;\n    display: flex;\n    flex-direction: column;\n    gap: 2px;\n    transition: box-shadow .4s ease, transform .4s ease;\n}\n.tb-kpi-cambio {\n    box-shadow: 0 0 0 2px rgba(1, 142, 178, .5);\n    transform: translateY(-2px);\n}\n.tb-kpi-num {\n    font-size: clamp(22px, 2vw, 40px);\n    font-weight: 700;\n    line-height: 1.05;\n    font-variant-numeric: tabular-nums;\n}\n.tb-kpi-label {\n    font-size: clamp(9px, .62vw, 12px);\n    color: var(--tb-txt-tenue);\n    letter-spacing: .09em;\n    font-weight: 600;\n}\n.kpi-total { border-left-color: var(--tb-azul); }\n.kpi-proceso { border-left-color: var(--tb-azul); }\n.kpi-pendiente { border-left-color: var(--tb-amarillo); }\n.kpi-pausa { border-left-color: var(--tb-naranja); }\n.kpi-completadas { border-left-color: var(--tb-morado); }\n.kpi-avance { border-left-color: var(--tb-verde); }\n\n/* ---------- Cuerpo ---------- */\n.tb-cuerpo {\n    display: grid;\n    grid-template-columns: 1fr 300px;\n    gap: 14px;\n    flex: 1;\n    min-height: 0;\n}\n\n.tb-kanban {\n    position: relative;   /* contexto de apilado para la tarjeta en tránsito */\n    display: grid;\n    grid-template-columns: repeat(4, 1fr);\n    gap: 12px;\n    min-height: 0;\n}\n.tb-col {\n    background: var(--tb-panel);\n    border: 1px solid var(--tb-borde);\n    border-top: 3px solid var(--tb-txt-tenue);\n    border-radius: 10px;\n    display: flex;\n    flex-direction: column;\n    min-height: 0;\n    overflow: hidden;\n}\n.col-pendiente { border-top-color: var(--tb-amarillo); }\n.col-proceso { border-top-color: var(--tb-azul); }\n.col-pausa { border-top-color: var(--tb-naranja); }\n.col-completadas { border-top-color: var(--tb-morado); }\n\n.tb-col-head {\n    display: flex;\n    align-items: center;\n    justify-content: space-between;\n    padding: 9px 12px;\n    border-bottom: 1px solid var(--tb-borde);\n    flex-shrink: 0;\n}\n.tb-col-head h3 {\n    margin: 0;\n    font-size: clamp(11px, .78vw, 15px);\n    letter-spacing: .09em;\n    font-weight: 700;\n}\n.tb-col-count {\n    background: var(--tb-panel-2);\n    border-radius: 999px;\n    padding: 1px 10px;\n    font-size: clamp(12px, .85vw, 17px);\n    font-weight: 700;\n    font-variant-numeric: tabular-nums;\n}\n.tb-col-nota {\n    margin: 0;\n    padding: 5px 12px;\n    font-size: 10px;\n    color: var(--tb-txt-tenue);\n    font-style: italic;\n    border-bottom: 1px solid var(--tb-borde);\n}\n.tb-col-body {\n    display: flex;\n    flex-direction: column;\n    gap: 8px;\n    padding: 10px;\n    overflow-y: auto;\n    min-height: 0;\n}\n.tb-col-vacia, .tb-col-mas {\n    text-align: center;\n    color: var(--tb-txt-tenue);\n    font-size: 11px;\n    padding: 8px 0;\n    margin: 0;\n}\n\n/* ---------- Tarjetas ---------- */\n.tb-card {\n    position: relative;          /* ancla el sello y el barrido de luz */\n    background: var(--tb-panel-2);\n    border: 1px solid var(--tb-borde);\n    border-radius: 8px;\n    padding: 9px 11px;\n    display: flex;\n    flex-direction: column;\n    gap: 6px;\n    transition: border-color .3s ease, box-shadow .3s ease;\n    /* Aviso al navegador de que transform va a animarse: evita el parpadeo\n       del primer frame del FLIP en pantallas grandes. */\n    will-change: transform;\n}\n.tb-card-pausada { opacity: .82; border-style: dashed; }\n\n.tb-card-top { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }\n.tb-prio {\n    font-size: 9px;\n    font-weight: 800;\n    letter-spacing: .07em;\n    padding: 2px 7px;\n    border-radius: 4px;\n}\n.prio-alta { background: rgba(239, 68, 68, .18); color: #FCA5A5; }\n.prio-media { background: rgba(236, 162, 0, .18); color: #F5C556; }\n.prio-baja { background: rgba(148, 163, 184, .18); color: var(--tb-txt-tenue); }\n\n.tb-badge-pausa, .tb-badge-vencida, .tb-badge-hoy {\n    font-size: 9px;\n    font-weight: 700;\n    padding: 2px 7px;\n    border-radius: 4px;\n    letter-spacing: .05em;\n}\n.tb-badge-pausa { background: rgba(240, 138, 0, .2); color: #F5B759; }\n.tb-badge-vencida { background: rgba(239, 68, 68, .2); color: #FCA5A5; }\n.tb-badge-hoy { background: rgba(1, 142, 178, .2); color: #7CC4D8; }\n\n.tb-card-titulo {\n    margin: 0;\n    font-size: clamp(11px, .8vw, 15px);\n    font-weight: 600;\n    line-height: 1.3;\n    display: -webkit-box;\n    -webkit-line-clamp: 2;\n    -webkit-box-orient: vertical;\n    overflow: hidden;\n}\n.tb-card-proyecto {\n    margin: 0;\n    font-size: 10px;\n    color: var(--tb-azul);\n    font-weight: 600;\n}\n/* Avance del checklist: sólo en tarjetas en proceso o en pausa */\n.tb-avance { display: flex; flex-direction: column; gap: 3px; }\n.tb-avance-top {\n    display: flex;\n    align-items: baseline;\n    justify-content: space-between;\n    gap: 6px;\n}\n.tb-avance-pct {\n    font-size: clamp(11px, .75vw, 14px);\n    font-weight: 700;\n    color: var(--tb-azul);\n    font-variant-numeric: tabular-nums;\n}\n.tb-avance-frac {\n    font-size: 9px;\n    color: var(--tb-txt-tenue);\n    font-variant-numeric: tabular-nums;\n}\n.tb-avance-barra {\n    height: 5px;\n    background: var(--tb-borde);\n    border-radius: 999px;\n    overflow: hidden;\n}\n.tb-avance-fill {\n    height: 100%;\n    border-radius: 999px;\n    background: linear-gradient(90deg, var(--tb-marca-azul), var(--tb-azul));\n    transition: width .6s ease;\n}\n/* Checklist terminado: se refuerza con el verde de marca */\n.tb-avance-fill.es-completo {\n    background: linear-gradient(90deg, var(--tb-marca-verde), var(--tb-verde));\n}\n.tb-card-pie {\n    display: flex;\n    align-items: center;\n    justify-content: space-between;\n    gap: 8px;\n    margin-top: 1px;\n}\n.tb-card-persona { display: flex; align-items: center; gap: 5px; min-width: 0; }\n.tb-avatar-mini {\n    width: 18px; height: 18px;\n    border-radius: 50%;\n    object-fit: cover;\n    flex-shrink: 0;\n}\n.tb-avatar-vacio {\n    background: var(--tb-borde);\n    display: inline-flex;\n    align-items: center;\n    justify-content: center;\n    font-size: 8px;\n    font-weight: 700;\n    color: var(--tb-txt-tenue);\n    letter-spacing: .02em;\n}\n.tb-avatar.tb-avatar-vacio { font-size: 11px; }\n.tb-card-nombre {\n    font-size: 10px;\n    color: var(--tb-txt-tenue);\n    white-space: nowrap;\n    overflow: hidden;\n    text-overflow: ellipsis;\n}\n.tb-card-fecha {\n    font-size: 10px;\n    font-weight: 700;\n    color: var(--tb-txt-tenue);\n    white-space: nowrap;\n}\n.tb-card-fecha.es-vencida { color: #FCA5A5; }\n\n/* ---------- Animaciones de cambio (300-700 ms) ---------- */\n@keyframes tb-entra {\n    from { opacity: 0; transform: translateY(-10px) scale(.97); }\n    to { opacity: 1; transform: none; }\n}\n@keyframes tb-destaca-azul {\n    0% { box-shadow: 0 0 0 0 rgba(1, 142, 178, .65); }\n    100% { box-shadow: 0 0 0 9px rgba(1, 142, 178, 0); }\n}\n@keyframes tb-destaca-verde {\n    0% { box-shadow: 0 0 0 0 rgba(62, 171, 43, .65); }\n    100% { box-shadow: 0 0 0 9px rgba(62, 171, 43, 0); }\n}\n@keyframes tb-destaca-naranja {\n    0% { box-shadow: 0 0 0 0 rgba(240, 138, 0, .7); }\n    100% { box-shadow: 0 0 0 9px rgba(240, 138, 0, 0); }\n}\n/* Una tarjeta que aparece por primera vez sí entra con fade; las que sólo\n   cambian de columna viajan con FLIP y no deben re-animar su entrada. */\n.tb-anim-nueva { animation: tb-entra .5s ease-out, tb-destaca-azul .7s ease-out; }\n\n/* Tarjeta en tránsito entre columnas: se despega del tablero mientras viaja */\n.tb-card-viajando {\n    box-shadow: 0 14px 34px rgba(0, 0, 0, .55);\n    border-color: var(--tb-azul);\n}\n\n/* Mientras una tarjeta viaja, la columna deja de recortar su contenido: con el\n   overflow activo el trayecto se cortaría en el borde de la columna. Se aplica\n   sólo durante el trayecto para no perder el recorte del resto del tiempo. */\n.tb-col-body:has(.tb-card-viajando) { overflow: visible; }\n.tb-col:has(.tb-card-viajando) { overflow: visible; z-index: 4; }\n\n/* Barrido de luz que recorre la tarjeta al confirmarse el cambio */\n.tb-anim-movida::after,\n.tb-anim-completada::after,\n.tb-anim-pausada::after,\n.tb-anim-nueva::after {\n    content: '';\n    position: absolute;\n    inset: 0;\n    border-radius: inherit;\n    pointer-events: none;\n    background: linear-gradient(\n        105deg,\n        transparent 35%,\n        rgba(255, 255, 255, .16) 50%,\n        transparent 65%);\n    background-size: 260% 100%;\n    animation: tb-barrido .85s ease-out forwards;\n}\n@keyframes tb-barrido {\n    from { background-position: 190% 0; }\n    to { background-position: -60% 0; }\n}\n\n/* Sello de confirmación: aparece, se sostiene y se retira solo */\n.tb-sello {\n    position: absolute;\n    top: 6px;\n    right: 6px;\n    z-index: 3;\n    display: inline-flex;\n    align-items: center;\n    gap: 4px;\n    padding: 2px 8px;\n    border-radius: 999px;\n    font-size: 9px;\n    font-weight: 800;\n    letter-spacing: .06em;\n    color: #06121F;\n    white-space: nowrap;\n    transform-origin: 90% 50%;\n    animation: tb-sello-vida 2.6s cubic-bezier(.2, .9, .3, 1.1) forwards;\n}\n.tb-sello-icono { font-size: 11px; line-height: 1; }\n.tb-sello-completada { background: var(--tb-verde); }\n.tb-sello-pausada { background: var(--tb-naranja); }\n.tb-sello-movida { background: var(--tb-azul); }\n.tb-sello-nueva { background: var(--tb-amarillo); }\n\n@keyframes tb-sello-vida {\n    0% { opacity: 0; transform: scale(.5) translateY(-6px); }\n    14% { opacity: 1; transform: scale(1.08) translateY(0); }\n    22% { transform: scale(1); }\n    76% { opacity: 1; transform: scale(1); }\n    100% { opacity: 0; transform: scale(.9) translateY(-4px); }\n}\n\n/* El latido se hace sobre el borde y no con transform: FLIP anima el transform\n   de la tarjeta para desplazarla, y una animación simultánea sobre la misma\n   propiedad anularía el viaje entre columnas. */\n@keyframes tb-realce-verde {\n    0%, 100% { border-color: var(--tb-borde); }\n    40% { border-color: var(--tb-verde); }\n}\n@keyframes tb-realce-azul {\n    0%, 100% { border-color: var(--tb-borde); }\n    40% { border-color: var(--tb-azul); }\n}\n@keyframes tb-realce-naranja {\n    0%, 100% { border-color: var(--tb-borde); }\n    40% { border-color: var(--tb-naranja); }\n}\n.tb-anim-completada { animation: tb-destaca-verde .7s ease-out, tb-realce-verde 1.1s ease-out; }\n.tb-anim-movida { animation: tb-destaca-azul .7s ease-out, tb-realce-azul 1.1s ease-out; }\n.tb-anim-pausada { animation: tb-destaca-naranja .7s ease-out, tb-realce-naranja 1.1s ease-out; }\n\n/* ---------- Lateral ---------- */\n.tb-lateral {\n    display: flex;\n    flex-direction: column;\n    gap: 12px;\n    min-height: 0;\n    overflow-y: auto;\n}\n.tb-panel {\n    background: var(--tb-panel);\n    border: 1px solid var(--tb-borde);\n    border-radius: 10px;\n    padding: 11px 13px;\n}\n.tb-panel-titulo {\n    margin: 0 0 9px;\n    font-size: clamp(10px, .7vw, 13px);\n    letter-spacing: .1em;\n    color: var(--tb-txt-tenue);\n    font-weight: 700;\n}\n\n.tb-alertas, .tb-equipo, .tb-entregas { list-style: none; margin: 0; padding: 0; }\n.tb-alertas { display: flex; flex-direction: column; gap: 6px; }\n.tb-alerta {\n    font-size: clamp(11px, .75vw, 14px);\n    padding: 6px 9px;\n    border-radius: 6px;\n    border-left: 3px solid;\n}\n.tb-alerta strong { font-size: 1.15em; margin-right: 3px; }\n.al-roja { background: rgba(239, 68, 68, .12); border-color: var(--tb-rojo); color: #FCA5A5; }\n.al-naranja { background: rgba(240, 138, 0, .12); border-color: var(--tb-naranja); color: #F5B759; }\n.al-amarilla { background: rgba(236, 162, 0, .12); border-color: var(--tb-amarillo); color: #F5C556; }\n.al-azul { background: rgba(1, 142, 178, .12); border-color: var(--tb-azul); color: #7CC4D8; }\n.tb-sin-alertas { margin: 0; color: var(--tb-verde); font-size: 13px; font-weight: 600; }\n\n.tb-equipo { display: flex; flex-direction: column; gap: 9px; }\n.tb-persona { display: flex; align-items: center; gap: 9px; }\n.tb-avatar { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }\n.tb-persona-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }\n.tb-persona-nombre {\n    font-size: clamp(10px, .68vw, 13px);\n    font-weight: 600;\n    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;\n}\n.tb-persona-cargo {\n    font-size: 9px;\n    color: var(--tb-txt-tenue);\n    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;\n}\n.tb-carga { height: 5px; background: var(--tb-borde); border-radius: 999px; overflow: hidden; }\n.tb-carga-fill {\n    height: 100%;\n    background: linear-gradient(90deg, var(--tb-azul), var(--tb-verde));\n    border-radius: 999px;\n    transition: width .6s ease;\n}\n.tb-persona-n {\n    font-size: clamp(13px, .95vw, 18px);\n    font-weight: 700;\n    font-variant-numeric: tabular-nums;\n    flex-shrink: 0;\n}\n\n.tb-entregas { display: flex; flex-direction: column; gap: 8px; }\n.tb-entrega { display: flex; gap: 9px; align-items: flex-start; }\n.tb-entrega-fecha {\n    font-size: 10px;\n    font-weight: 700;\n    color: var(--tb-azul);\n    background: rgba(1, 142, 178, .12);\n    padding: 3px 7px;\n    border-radius: 5px;\n    white-space: nowrap;\n    flex-shrink: 0;\n}\n.tb-entrega-fecha.es-vencida { color: #FCA5A5; background: rgba(239, 68, 68, .12); }\n.tb-entrega-info { display: flex; flex-direction: column; min-width: 0; }\n.tb-entrega-titulo {\n    font-size: clamp(10px, .68vw, 13px);\n    font-weight: 600;\n    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;\n}\n.tb-entrega-persona { font-size: 9px; color: var(--tb-txt-tenue); }\n\n/* ---------- Panel ambiental (vídeo) ---------- */\n.tb-ambiente-abrir {\n    background: var(--tb-panel);\n    border: 1px dashed var(--tb-borde);\n    color: var(--tb-txt-tenue);\n    border-radius: 10px;\n    padding: 9px 12px;\n    font-size: 11px;\n    font-weight: 700;\n    letter-spacing: .07em;\n    cursor: pointer;\n    transition: color .2s ease, border-color .2s ease;\n}\n.tb-ambiente-abrir:hover {\n    color: var(--tb-azul);\n    border-color: var(--tb-azul);\n}\n\n.tb-ambiente { display: flex; flex-direction: column; gap: 8px; }\n.tb-ambiente-head {\n    display: flex;\n    align-items: center;\n    justify-content: space-between;\n    gap: 8px;\n}\n.tb-ambiente-head .tb-panel-titulo { margin: 0; }\n.tb-ambiente-acciones { display: flex; gap: 5px; }\n\n.tb-ambiente-btn {\n    background: var(--tb-panel-2);\n    border: 1px solid var(--tb-borde);\n    color: var(--tb-txt-tenue);\n    border-radius: 6px;\n    padding: 3px 8px;\n    font-size: 10px;\n    font-weight: 700;\n    cursor: pointer;\n    transition: color .2s ease, border-color .2s ease;\n}\n.tb-ambiente-btn:hover { color: var(--tb-txt); border-color: var(--tb-azul); }\n.tb-ambiente-btn-ok {\n    background: var(--tb-azul);\n    border-color: var(--tb-azul);\n    color: #fff;\n    padding: 5px 10px;\n    font-size: 11px;\n}\n.tb-ambiente-btn-ok:hover { color: #fff; filter: brightness(1.12); }\n\n/* Marco 16:9 para que el reproductor conserve su proporción */\n.tb-ambiente-video {\n    position: relative;\n    width: 100%;\n    padding-top: 56.25%;\n    border-radius: 8px;\n    overflow: hidden;\n    background: #000;\n    border: 1px solid var(--tb-borde);\n}\n.tb-ambiente-video iframe {\n    position: absolute;\n    inset: 0;\n    width: 100%;\n    height: 100%;\n    border: 0;\n}\n\n.tb-ambiente-select {\n    background: var(--tb-bg);\n    border: 1px solid var(--tb-borde);\n    border-radius: 6px;\n    padding: 6px 8px;\n    color: var(--tb-txt);\n    font-size: 11px;\n    width: 100%;\n    cursor: pointer;\n}\n.tb-ambiente-select:focus { outline: none; border-color: var(--tb-azul); }\n.tb-ambiente-nota { margin: 0; font-size: 9px; color: var(--tb-txt-tenue); line-height: 1.4; }\n.tb-ambiente-vacio {\n    margin: 0;\n    padding: 9px 12px;\n    font-size: 10px;\n    line-height: 1.5;\n    color: var(--tb-txt-tenue);\n    background: var(--tb-panel);\n    border: 1px dashed var(--tb-borde);\n    border-radius: 10px;\n}\n\n/* En modo TV el componente ya se renderiza sin controles; el panel sólo\n   reproduce lo configurado previamente desde la vista de escritorio. */\n\n/* ---------- Avisos temporales ---------- */\n.tb-avisos {\n    position: absolute;\n    right: 22px;\n    bottom: 20px;\n    display: flex;\n    flex-direction: column;\n    gap: 9px;\n    z-index: 20;\n}\n.tb-aviso {\n    display: flex;\n    align-items: center;\n    gap: 11px;\n    background: var(--tb-panel);\n    border: 1px solid var(--tb-borde);\n    border-left: 4px solid var(--tb-azul);\n    border-radius: 9px;\n    padding: 10px 15px;\n    min-width: 260px;\n    box-shadow: 0 8px 26px rgba(0, 0, 0, .45);\n    animation: tb-aviso-in .4s ease-out;\n}\n@keyframes tb-aviso-in {\n    from { opacity: 0; transform: translateX(28px); }\n    to { opacity: 1; transform: none; }\n}\n.tb-aviso-icono { font-size: 20px; font-weight: 700; }\n.tb-aviso strong { font-size: 10px; letter-spacing: .09em; color: var(--tb-txt-tenue); }\n.tb-aviso p {\n    margin: 2px 0 0;\n    font-size: 13px;\n    font-weight: 600;\n    max-width: 260px;\n    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;\n}\n.tb-aviso small { font-size: 10px; color: var(--tb-txt-tenue); }\n.tb-aviso-completada { border-left-color: var(--tb-verde); }\n.tb-aviso-completada .tb-aviso-icono { color: var(--tb-verde); }\n.tb-aviso-pausada { border-left-color: var(--tb-naranja); }\n.tb-aviso-pausada .tb-aviso-icono { color: var(--tb-naranja); }\n.tb-aviso-nueva .tb-aviso-icono, .tb-aviso-movida .tb-aviso-icono { color: var(--tb-azul); }\n\n/* ---------- Modo TV ---------- */\n.tb-tv { padding: 26px 32px; gap: 18px; }\n.tb-tv .tb-logo { height: clamp(50px, 4vw, 76px); padding: 8px 15px; }\n.tb-tv .tb-col-body { overflow: hidden; }\n/* En TV el lateral no scrollea, pero el panel de vídeo añade altura: se permite\n   que la lista de entregas ceda espacio antes que recortar el reproductor. */\n.tb-tv .tb-lateral { overflow: hidden; }\n.tb-tv .tb-lateral .tb-entregas { overflow: hidden; }\n.tb-tv .tb-ambiente { flex-shrink: 0; }\n.tb-tv .tb-card-titulo { -webkit-line-clamp: 2; }\n\n.tb-salir-tv {\n    position: absolute;\n    top: 14px; right: 14px;\n    width: 30px; height: 30px;\n    border-radius: 50%;\n    border: 1px solid var(--tb-borde);\n    background: var(--tb-panel);\n    color: var(--tb-txt-tenue);\n    cursor: pointer;\n    opacity: .12;\n    transition: opacity .25s ease;\n    z-index: 30;\n}\n.tb-salir-tv:hover { opacity: 1; }\n\n/* ---------- Responsive ---------- */\n@media (max-width: 1400px) {\n    .tb-cuerpo { grid-template-columns: 1fr 260px; }\n}\n@media (max-width: 1100px) {\n    .tb-cuerpo { grid-template-columns: 1fr; overflow-y: auto; }\n    .tb-lateral { flex-direction: row; flex-wrap: wrap; }\n    .tb-lateral .tb-panel { flex: 1 1 240px; }\n    .tb-kpis { grid-template-columns: repeat(3, 1fr); }\n    .tb-kanban { grid-template-columns: repeat(2, 1fr); min-height: 560px; }\n}\n@media (max-width: 700px) {\n    .tb-root { padding: 12px; }\n    .tb-kpis { grid-template-columns: repeat(2, 1fr); }\n    .tb-kanban { grid-template-columns: 1fr; }\n    .tb-header { flex-direction: column; align-items: flex-start; gap: 8px; }\n    .tb-header-izq { gap: 10px; }\n    .tb-logo { height: 34px; padding: 5px 9px; }\n}\n\n/* Respeta la preferencia del sistema de reducir movimiento */\n@media (prefers-reduced-motion: reduce) {\n    .tb-root *, .tb-root *::before, .tb-root *::after {\n        animation-duration: .01ms !important;\n        animation-iteration-count: 1 !important;\n        transition-duration: .01ms !important;\n    }\n}\n"],"sourceRoot":""}]);
 // Exports
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (___CSS_LOADER_EXPORT___);
 
@@ -175027,7 +175027,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _Header__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./Header */ "./resources/js/components/Header.jsx");
 /* harmony import */ var _Sidebar__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./Sidebar */ "./resources/js/components/Sidebar.jsx");
 /* harmony import */ var _UserContext__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./UserContext */ "./resources/js/components/UserContext.jsx");
-/* harmony import */ var react_icons_fa__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! react-icons/fa */ "./node_modules/react-icons/fa/index.mjs");
+/* harmony import */ var react_icons_fa__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__(/*! react-icons/fa */ "./node_modules/react-icons/fa/index.mjs");
 /* harmony import */ var _EmployeeModal__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./EmployeeModal */ "./resources/js/components/EmployeeModal.jsx");
 /* harmony import */ var _UserModal__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./UserModal */ "./resources/js/components/UserModal.jsx");
 /* harmony import */ var _CompanyModal__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./CompanyModal */ "./resources/js/components/CompanyModal.jsx");
@@ -175035,14 +175035,16 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _LeaderModal__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./LeaderModal */ "./resources/js/components/LeaderModal.jsx");
 /* harmony import */ var _DepartmentModal__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ./DepartmentModal */ "./resources/js/components/DepartmentModal.jsx");
 /* harmony import */ var _CargosModal__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ./CargosModal */ "./resources/js/components/CargosModal.jsx");
-/* harmony import */ var _utils_assetHelper__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ../utils/assetHelper */ "./resources/js/utils/assetHelper.js");
-/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! react/jsx-runtime */ "./node_modules/react/jsx-runtime.js");
+/* harmony import */ var _VideosTableroModal__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ./VideosTableroModal */ "./resources/js/components/VideosTableroModal.jsx");
+/* harmony import */ var _utils_assetHelper__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! ../utils/assetHelper */ "./resources/js/utils/assetHelper.js");
+/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! react/jsx-runtime */ "./node_modules/react/jsx-runtime.js");
 function _slicedToArray(r, e) { return _arrayWithHoles(r) || _iterableToArrayLimit(r, e) || _unsupportedIterableToArray(r, e) || _nonIterableRest(); }
 function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
 function _unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return _arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? _arrayLikeToArray(r, a) : void 0; } }
 function _arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length); for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e]; return n; }
 function _iterableToArrayLimit(r, l) { var t = null == r ? null : "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (null != t) { var e, n, i, u, a = [], f = !0, o = !1; try { if (i = (t = t.call(r)).next, 0 === l) { if (Object(t) !== t) return; f = !1; } else for (; !(f = (e = i.call(t)).done) && (a.push(e.value), a.length !== l); f = !0); } catch (r) { o = !0, n = r; } finally { try { if (!f && null != t["return"] && (u = t["return"](), Object(u) !== u)) return; } finally { if (o) throw n; } } return a; } }
 function _arrayWithHoles(r) { if (Array.isArray(r)) return r; }
+
 
 
 
@@ -175092,10 +175094,14 @@ var Parameters = function Parameters() {
     _useState14 = _slicedToArray(_useState13, 2),
     showCargosModal = _useState14[0],
     setShowCargosModal = _useState14[1];
+  var _useState15 = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(false),
+    _useState16 = _slicedToArray(_useState15, 2),
+    showVideosModal = _useState16[0],
+    setShowVideosModal = _useState16[1];
   var parameterCards = [{
     id: 2,
     title: 'Empleados',
-    icon: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_12__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_13__.FaUserTie, {
+    icon: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_13__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_14__.FaUserTie, {
       size: 25
     }),
     description: 'Administración de empleados y sus perfiles',
@@ -175106,7 +175112,7 @@ var Parameters = function Parameters() {
   }, {
     id: 1,
     title: 'Usuarios',
-    icon: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_12__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_13__.FaUsers, {
+    icon: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_13__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_14__.FaUsers, {
       size: 25
     }),
     description: 'Gestión de usuarios y permisos del sistema',
@@ -175117,7 +175123,7 @@ var Parameters = function Parameters() {
   }, {
     id: 4,
     title: 'Empresas',
-    icon: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_12__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_13__.FaBuilding, {
+    icon: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_13__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_14__.FaBuilding, {
       size: 25
     }),
     description: 'Gestión de empresas y sucursales',
@@ -175128,7 +175134,7 @@ var Parameters = function Parameters() {
   }, {
     id: 6,
     title: 'Proyectos',
-    icon: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_12__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_13__.FaFileAlt, {
+    icon: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_13__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_14__.FaFileAlt, {
       size: 25
     }),
     description: 'Gestión de proyectos',
@@ -175139,7 +175145,7 @@ var Parameters = function Parameters() {
   }, {
     id: 7,
     title: 'Departamentos',
-    icon: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_12__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_13__.FaBuilding, {
+    icon: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_13__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_14__.FaBuilding, {
       size: 25
     }),
     description: 'Gestión de departamentos',
@@ -175150,13 +175156,24 @@ var Parameters = function Parameters() {
   }, {
     id: 8,
     title: 'Cargos',
-    icon: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_12__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_13__.FaBriefcase, {
+    icon: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_13__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_14__.FaBriefcase, {
       size: 25
     }),
     description: 'Gestión de cargos y posiciones de empleados',
     color: '#7c3aed',
     onClick: function onClick() {
       return setShowCargosModal(true);
+    }
+  }, {
+    id: 9,
+    title: 'Vídeos del Tablero',
+    icon: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_13__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_14__.FaVideo, {
+      size: 25
+    }),
+    description: 'Vídeos ambientales del Tablero de Seguimiento',
+    color: '#0891b2',
+    onClick: function onClick() {
+      return setShowVideosModal(true);
     }
   }];
 
@@ -175166,82 +175183,86 @@ var Parameters = function Parameters() {
     document.title = "Parámetros del Sistema - WorkBoard";
   }, []);
   var backDashboard = function backDashboard() {
-    var fullPath = (0,_utils_assetHelper__WEBPACK_IMPORTED_MODULE_11__.getAssetUrl)('dashboard');
+    var fullPath = (0,_utils_assetHelper__WEBPACK_IMPORTED_MODULE_12__.getAssetUrl)('dashboard');
     window.location.href = fullPath;
   };
-  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_12__.jsxs)("div", {
+  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_13__.jsxs)("div", {
     className: "dashboard-container",
-    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_12__.jsx)(_Sidebar__WEBPACK_IMPORTED_MODULE_2__["default"], {}), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_12__.jsx)(_Header__WEBPACK_IMPORTED_MODULE_1__["default"], {
+    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_13__.jsx)(_Sidebar__WEBPACK_IMPORTED_MODULE_2__["default"], {}), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_13__.jsx)(_Header__WEBPACK_IMPORTED_MODULE_1__["default"], {
       showUserMenu: showUserMenu,
       setShowUserMenu: setShowUserMenu,
       currentUser: user
-    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_12__.jsxs)("div", {
+    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_13__.jsxs)("div", {
       className: "parameters-container",
-      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_12__.jsxs)("div", {
+      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_13__.jsxs)("div", {
         className: "parameters-header",
-        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_12__.jsx)("h1", {
+        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_13__.jsx)("h1", {
           children: "Par\xE1metros del Sistema"
-        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_12__.jsxs)("button", {
+        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_13__.jsxs)("button", {
           className: "back-button",
           onClick: backDashboard,
-          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_12__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_13__.FaArrowLeft, {}), " Regresar al Dashboard"]
+          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_13__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_14__.FaArrowLeft, {}), " Regresar al Dashboard"]
         })]
-      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_12__.jsx)("div", {
+      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_13__.jsx)("div", {
         className: "parameters-grid",
         children: parameterCards.map(function (card, index) {
-          return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_12__.jsxs)("div", {
+          return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_13__.jsxs)("div", {
             className: "parameter-card",
             onClick: card.onClick,
             style: {
               '--card-index': index
             },
-            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_12__.jsx)("div", {
+            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_13__.jsx)("div", {
               className: "card-icon",
               children: card.icon
-            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_12__.jsxs)("div", {
+            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_13__.jsxs)("div", {
               className: "card-content",
-              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_12__.jsx)("h3", {
+              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_13__.jsx)("h3", {
                 children: card.title
-              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_12__.jsx)("p", {
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_13__.jsx)("p", {
                 children: card.description
               })]
             })]
           }, card.id);
         })
-      }), showEmployeeModal && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_12__.jsx)(_EmployeeModal__WEBPACK_IMPORTED_MODULE_4__["default"], {
+      }), showEmployeeModal && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_13__.jsx)(_EmployeeModal__WEBPACK_IMPORTED_MODULE_4__["default"], {
         isOpen: showEmployeeModal,
         onClose: function onClose() {
           return setShowEmployeeModal(false);
         }
-      }), showUserModal && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_12__.jsx)(_UserModal__WEBPACK_IMPORTED_MODULE_5__["default"], {
+      }), showUserModal && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_13__.jsx)(_UserModal__WEBPACK_IMPORTED_MODULE_5__["default"], {
         isOpen: showUserModal,
         onClose: function onClose() {
           return setShowUserModal(false);
         }
-      }), showCompanyModal && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_12__.jsx)(_CompanyModal__WEBPACK_IMPORTED_MODULE_6__["default"], {
+      }), showCompanyModal && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_13__.jsx)(_CompanyModal__WEBPACK_IMPORTED_MODULE_6__["default"], {
         isOpen: showCompanyModal,
         onClose: function onClose() {
           return setShowCompanyModal(false);
         }
-      }), showLeaderModal && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_12__.jsx)(_LeaderModal__WEBPACK_IMPORTED_MODULE_8__["default"], {
+      }), showLeaderModal && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_13__.jsx)(_LeaderModal__WEBPACK_IMPORTED_MODULE_8__["default"], {
         isOpen: showLeaderModal,
         onClose: function onClose() {
           return setShowLeaderModal(false);
         }
-      }), showProjectModal && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_12__.jsx)(_ProjectModal__WEBPACK_IMPORTED_MODULE_7__["default"], {
+      }), showProjectModal && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_13__.jsx)(_ProjectModal__WEBPACK_IMPORTED_MODULE_7__["default"], {
         isOpen: showProjectModal,
         onClose: function onClose() {
           return setShowProjectModal(false);
         }
-      }), showDepartmentModal && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_12__.jsx)(_DepartmentModal__WEBPACK_IMPORTED_MODULE_9__["default"], {
+      }), showDepartmentModal && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_13__.jsx)(_DepartmentModal__WEBPACK_IMPORTED_MODULE_9__["default"], {
         isOpen: showDepartmentModal,
         onClose: function onClose() {
           return setShowDepartmentModal(false);
         }
-      }), showCargosModal && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_12__.jsx)(_CargosModal__WEBPACK_IMPORTED_MODULE_10__["default"], {
+      }), showCargosModal && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_13__.jsx)(_CargosModal__WEBPACK_IMPORTED_MODULE_10__["default"], {
         isOpen: showCargosModal,
         onClose: function onClose() {
           return setShowCargosModal(false);
+        }
+      }), showVideosModal && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_13__.jsx)(_VideosTableroModal__WEBPACK_IMPORTED_MODULE_11__["default"], {
+        onClose: function onClose() {
+          return setShowVideosModal(false);
         }
       })]
     })]
@@ -188683,6 +188704,311 @@ var UserModal = function UserModal(_ref) {
 
 /***/ }),
 
+/***/ "./resources/js/components/VideosTableroModal.jsx":
+/*!********************************************************!*\
+  !*** ./resources/js/components/VideosTableroModal.jsx ***!
+  \********************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! react */ "./node_modules/react/index.js");
+/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var react_icons_fa__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! react-icons/fa */ "./node_modules/react-icons/fa/index.mjs");
+/* harmony import */ var sweetalert2__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! sweetalert2 */ "./node_modules/sweetalert2/dist/sweetalert2.all.js");
+/* harmony import */ var sweetalert2__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(sweetalert2__WEBPACK_IMPORTED_MODULE_1__);
+/* harmony import */ var _axiosConfig__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../axiosConfig */ "./resources/js/axiosConfig.js");
+/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! react/jsx-runtime */ "./node_modules/react/jsx-runtime.js");
+function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, _typeof(o); }
+function ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
+function _objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? ownKeys(Object(t), !0).forEach(function (r) { _defineProperty(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
+function _defineProperty(e, r, t) { return (r = _toPropertyKey(r)) in e ? Object.defineProperty(e, r, { value: t, enumerable: !0, configurable: !0, writable: !0 }) : e[r] = t, e; }
+function _toPropertyKey(t) { var i = _toPrimitive(t, "string"); return "symbol" == _typeof(i) ? i : i + ""; }
+function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != _typeof(i)) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
+function _slicedToArray(r, e) { return _arrayWithHoles(r) || _iterableToArrayLimit(r, e) || _unsupportedIterableToArray(r, e) || _nonIterableRest(); }
+function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
+function _unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return _arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? _arrayLikeToArray(r, a) : void 0; } }
+function _arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length); for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e]; return n; }
+function _iterableToArrayLimit(r, l) { var t = null == r ? null : "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (null != t) { var e, n, i, u, a = [], f = !0, o = !1; try { if (i = (t = t.call(r)).next, 0 === l) { if (Object(t) !== t) return; f = !1; } else for (; !(f = (e = i.call(t)).done) && (a.push(e.value), a.length !== l); f = !0); } catch (r) { o = !0, n = r; } finally { try { if (!f && null != t["return"] && (u = t["return"](), Object(u) !== u)) return; } finally { if (o) throw n; } } return a; } }
+function _arrayWithHoles(r) { if (Array.isArray(r)) return r; }
+
+
+
+
+
+var VACIO = {
+  id: null,
+  titulo: '',
+  url: '',
+  orden: 0,
+  estado: 'Activo'
+};
+
+/**
+ * Gestión de los vídeos ambientales del Tablero de Seguimiento.
+ *
+ * La lista se administra aquí y no en el propio TV: delante de una pantalla
+ * proyectada nadie escribe una URL, así que el tablero se limita a reproducir
+ * lo que se haya configurado desde el sistema.
+ */
+var VideosTableroModal = function VideosTableroModal(_ref) {
+  var onClose = _ref.onClose;
+  var _useState = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)([]),
+    _useState2 = _slicedToArray(_useState, 2),
+    videos = _useState2[0],
+    setVideos = _useState2[1];
+  var _useState3 = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(VACIO),
+    _useState4 = _slicedToArray(_useState3, 2),
+    form = _useState4[0],
+    setForm = _useState4[1];
+  var _useState5 = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(true),
+    _useState6 = _slicedToArray(_useState5, 2),
+    loading = _useState6[0],
+    setLoading = _useState6[1];
+  var _useState7 = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(false),
+    _useState8 = _slicedToArray(_useState7, 2),
+    guardando = _useState8[0],
+    setGuardando = _useState8[1];
+  var cargar = function cargar() {
+    setLoading(true);
+    _axiosConfig__WEBPACK_IMPORTED_MODULE_2__["default"].get('/tablero/videos?todos=1').then(function (r) {
+      return setVideos(r.data);
+    })["catch"](function () {
+      return setVideos([]);
+    })["finally"](function () {
+      return setLoading(false);
+    });
+  };
+  (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(cargar, []);
+  var guardar = function guardar(e) {
+    e.preventDefault();
+    if (!form.titulo.trim() || !form.url.trim()) {
+      sweetalert2__WEBPACK_IMPORTED_MODULE_1___default().fire('Error', 'Indica un nombre y un enlace de YouTube.', 'error');
+      return;
+    }
+    setGuardando(true);
+    _axiosConfig__WEBPACK_IMPORTED_MODULE_2__["default"].post('/tablero/videos', form).then(function (r) {
+      setForm(VACIO);
+      cargar();
+      sweetalert2__WEBPACK_IMPORTED_MODULE_1___default().fire('¡Listo!', r.data.message, 'success');
+    })["catch"](function (err) {
+      var _err$response;
+      sweetalert2__WEBPACK_IMPORTED_MODULE_1___default().fire('Error', (err === null || err === void 0 || (_err$response = err.response) === null || _err$response === void 0 || (_err$response = _err$response.data) === null || _err$response === void 0 ? void 0 : _err$response.message) || 'No fue posible guardar el vídeo.', 'error');
+    })["finally"](function () {
+      return setGuardando(false);
+    });
+  };
+  var editar = function editar(v) {
+    // Se reconstruye el enlace a partir del id guardado: es lo que el
+    // formulario espera y evita tener que almacenar la URL original.
+    setForm({
+      id: v.id,
+      titulo: v.titulo,
+      url: "https://youtu.be/".concat(v.video_id),
+      orden: v.orden,
+      estado: v.estado
+    });
+  };
+  var alternarEstado = function alternarEstado(v) {
+    _axiosConfig__WEBPACK_IMPORTED_MODULE_2__["default"].post('/tablero/videos', {
+      id: v.id,
+      titulo: v.titulo,
+      url: "https://youtu.be/".concat(v.video_id),
+      orden: v.orden,
+      estado: v.estado === 'Activo' ? 'Inactivo' : 'Activo'
+    }).then(cargar);
+  };
+  var eliminar = function eliminar(v) {
+    sweetalert2__WEBPACK_IMPORTED_MODULE_1___default().fire({
+      title: '¿Eliminar el vídeo?',
+      text: v.titulo,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Eliminar',
+      cancelButtonText: 'Cancelar'
+    }).then(function (res) {
+      if (!res.isConfirmed) return;
+      _axiosConfig__WEBPACK_IMPORTED_MODULE_2__["default"]["delete"]("/tablero/videos/".concat(v.id)).then(function () {
+        cargar();
+        sweetalert2__WEBPACK_IMPORTED_MODULE_1___default().fire('Eliminado', '', 'success');
+      });
+    });
+  };
+  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("div", {
+    className: "modal-overlay",
+    onClick: function onClick(e) {
+      return e.target.className === 'modal-overlay' && onClose();
+    },
+    children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsxs)("div", {
+      className: "notification-modal",
+      style: {
+        maxWidth: 720
+      },
+      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsxs)("div", {
+        className: "modal-header",
+        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("h2", {
+          children: "V\xEDdeos del Tablero"
+        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("button", {
+          className: "close-button",
+          onClick: onClose,
+          children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_4__.FaTimes, {})
+        })]
+      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsxs)("div", {
+        style: {
+          padding: '14px 18px'
+        },
+        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("p", {
+          style: {
+            margin: '0 0 12px',
+            fontSize: 13,
+            color: '#64748b'
+          },
+          children: "Estos v\xEDdeos se reproducen en el panel ambiental del Tablero de Seguimiento. S\xF3lo se admiten enlaces de YouTube."
+        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsxs)("form", {
+          onSubmit: guardar,
+          className: "tbv-form",
+          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("input", {
+            type: "text",
+            placeholder: "Nombre (ej. M\xFAsica de fondo)",
+            value: form.titulo,
+            onChange: function onChange(e) {
+              return setForm(_objectSpread(_objectSpread({}, form), {}, {
+                titulo: e.target.value
+              }));
+            }
+          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("input", {
+            type: "text",
+            placeholder: "Enlace de YouTube",
+            value: form.url,
+            onChange: function onChange(e) {
+              return setForm(_objectSpread(_objectSpread({}, form), {}, {
+                url: e.target.value
+              }));
+            }
+          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("input", {
+            type: "number",
+            placeholder: "Orden",
+            style: {
+              maxWidth: 90
+            },
+            value: form.orden,
+            onChange: function onChange(e) {
+              return setForm(_objectSpread(_objectSpread({}, form), {}, {
+                orden: e.target.value
+              }));
+            }
+          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsxs)("button", {
+            type: "submit",
+            className: "tbv-btn-ok",
+            disabled: guardando,
+            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_4__.FaPlus, {}), " ", form.id ? 'Actualizar' : 'Agregar']
+          }), form.id && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("button", {
+            type: "button",
+            className: "tbv-btn",
+            onClick: function onClick() {
+              return setForm(VACIO);
+            },
+            children: "Cancelar"
+          })]
+        }), loading ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("p", {
+          style: {
+            textAlign: 'center',
+            color: '#64748b'
+          },
+          children: "Cargando\u2026"
+        }) : /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsxs)("table", {
+          className: "tbv-tabla",
+          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("thead", {
+            children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsxs)("tr", {
+              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("th", {
+                style: {
+                  width: 60
+                },
+                children: "Orden"
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("th", {
+                children: "Nombre"
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("th", {
+                style: {
+                  width: 130
+                },
+                children: "V\xEDdeo"
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("th", {
+                style: {
+                  width: 90
+                },
+                children: "Estado"
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("th", {
+                style: {
+                  width: 90
+                },
+                children: "Acciones"
+              })]
+            })
+          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsxs)("tbody", {
+            children: [videos.map(function (v) {
+              return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsxs)("tr", {
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("td", {
+                  children: v.orden
+                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("td", {
+                  children: v.titulo
+                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("td", {
+                  children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("a", {
+                    href: "https://youtu.be/".concat(v.video_id),
+                    target: "_blank",
+                    rel: "noopener noreferrer",
+                    children: v.video_id
+                  })
+                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("td", {
+                  children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("button", {
+                    className: "tbv-estado ".concat(v.estado === 'Activo' ? 'es-activo' : ''),
+                    onClick: function onClick() {
+                      return alternarEstado(v);
+                    },
+                    title: "Cambiar estado",
+                    children: v.estado
+                  })
+                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsxs)("td", {
+                  children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("button", {
+                    className: "tbv-icono",
+                    onClick: function onClick() {
+                      return editar(v);
+                    },
+                    title: "Editar",
+                    children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_4__.FaPen, {})
+                  }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("button", {
+                    className: "tbv-icono tbv-borrar",
+                    onClick: function onClick() {
+                      return eliminar(v);
+                    },
+                    title: "Eliminar",
+                    children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_4__.FaTrash, {})
+                  })]
+                })]
+              }, v.id);
+            }), videos.length === 0 && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("tr", {
+              children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("td", {
+                colSpan: 5,
+                style: {
+                  textAlign: 'center',
+                  color: '#64748b',
+                  padding: 18
+                },
+                children: "A\xFAn no hay v\xEDdeos configurados."
+              })
+            })]
+          })]
+        })]
+      })]
+    })
+  });
+};
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (VideosTableroModal);
+
+/***/ }),
+
 /***/ "./resources/js/components/rangosFecha.jsx":
 /*!*************************************************!*\
   !*** ./resources/js/components/rangosFecha.jsx ***!
@@ -188825,12 +189151,12 @@ function useAvatar(empleadoId) {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "default": () => (/* binding */ TableroAmbiente),
-/* harmony export */   extraerIdYoutube: () => (/* binding */ extraerIdYoutube)
+/* harmony export */   "default": () => (/* binding */ TableroAmbiente)
 /* harmony export */ });
 /* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! react */ "./node_modules/react/index.js");
 /* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
-/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! react/jsx-runtime */ "./node_modules/react/jsx-runtime.js");
+/* harmony import */ var _axiosConfig__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../../axiosConfig */ "./resources/js/axiosConfig.js");
+/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! react/jsx-runtime */ "./node_modules/react/jsx-runtime.js");
 function _slicedToArray(r, e) { return _arrayWithHoles(r) || _iterableToArrayLimit(r, e) || _unsupportedIterableToArray(r, e) || _nonIterableRest(); }
 function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
 function _unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return _arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? _arrayLikeToArray(r, a) : void 0; } }
@@ -188839,193 +189165,151 @@ function _iterableToArrayLimit(r, l) { var t = null == r ? null : "undefined" !=
 function _arrayWithHoles(r) { if (Array.isArray(r)) return r; }
 
 
-var CLAVE = 'tableroAmbienteVideo';
+
+var CLAVE_SELECCION = 'tableroAmbienteSeleccion';
 
 /**
- * Extrae el id de vídeo de las formas habituales de enlace de YouTube.
- * Acepta también un id suelto de 11 caracteres.
- */
-function extraerIdYoutube(entrada) {
-  var v = String(entrada || '').trim();
-  if (!v) return null;
-  if (/^[\w-]{11}$/.test(v)) return v;
-  var url;
-  try {
-    url = new URL(v.startsWith('http') ? v : "https://".concat(v));
-  } catch (_unused) {
-    return null;
-  }
-  var host = url.hostname.replace(/^www\./, '');
-  if (host === 'youtu.be') {
-    var id = url.pathname.slice(1).split('/')[0];
-    return /^[\w-]{11}$/.test(id) ? id : null;
-  }
-  if (host.endsWith('youtube.com') || host.endsWith('youtube-nocookie.com')) {
-    var param = url.searchParams.get('v');
-    if (param && /^[\w-]{11}$/.test(param)) return param;
-
-    // /embed/ID, /live/ID, /shorts/ID
-    var partes = url.pathname.split('/').filter(Boolean);
-    var idx = partes.findIndex(function (p) {
-      return ['embed', 'live', 'shorts', 'v'].includes(p);
-    });
-    if (idx !== -1 && partes[idx + 1] && /^[\w-]{11}$/.test(partes[idx + 1])) {
-      return partes[idx + 1];
-    }
-  }
-  return null;
-}
-
-/**
- * Panel ambiental del tablero: reproduce un vídeo de YouTube junto al kanban.
+ * Panel ambiental del tablero.
  *
- * Sólo se admite YouTube porque es de los pocos servicios que permiten ser
- * embebidos; la mayoría de sitios envían cabeceras que lo impiden y el panel
- * quedaría en blanco. Se usa el dominio -nocookie y el vídeo arranca en silencio:
- * la pantalla suele estar en una oficina.
+ * Los vídeos se administran desde Parámetros > Vídeos del Tablero, no aquí:
+ * delante de una pantalla proyectada nadie escribe una URL. Este panel se
+ * limita a reproducir lo configurado y a permitir cambiar de pista.
+ *
+ * Sólo YouTube: es de los pocos servicios que permiten ser embebidos; la
+ * mayoría de sitios envían cabeceras que lo impiden y el panel quedaría vacío.
  */
 function TableroAmbiente(_ref) {
   var modoTv = _ref.modoTv;
-  var _useState = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(false),
+  var _useState = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)([]),
     _useState2 = _slicedToArray(_useState, 2),
-    abierto = _useState2[0],
-    setAbierto = _useState2[1];
-  var _useState3 = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(function () {
-      try {
-        return localStorage.getItem(CLAVE) || '';
-      } catch (_unused2) {
-        return '';
-      }
-    }),
+    videos = _useState2[0],
+    setVideos = _useState2[1];
+  var _useState3 = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(0),
     _useState4 = _slicedToArray(_useState3, 2),
-    videoId = _useState4[0],
-    setVideoId = _useState4[1];
-  var _useState5 = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(''),
+    indice = _useState4[0],
+    setIndice = _useState4[1];
+  var _useState5 = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(false),
     _useState6 = _slicedToArray(_useState5, 2),
-    entrada = _useState6[0],
-    setEntrada = _useState6[1];
-  var _useState7 = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(''),
+    abierto = _useState6[0],
+    setAbierto = _useState6[1];
+  var _useState7 = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(true),
     _useState8 = _slicedToArray(_useState7, 2),
-    error = _useState8[0],
-    setError = _useState8[1];
-  var inputRef = (0,react__WEBPACK_IMPORTED_MODULE_0__.useRef)(null);
+    cargando = _useState8[0],
+    setCargando = _useState8[1];
+  var montado = (0,react__WEBPACK_IMPORTED_MODULE_0__.useRef)(true);
   (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(function () {
-    if (abierto && !videoId && inputRef.current) inputRef.current.focus();
-  }, [abierto, videoId]);
-  var guardar = function guardar(id) {
-    setVideoId(id);
-    try {
-      if (id) localStorage.setItem(CLAVE, id);else localStorage.removeItem(CLAVE);
-    } catch (_unused3) {
-      /* sin persistencia si el navegador la bloquea */
-    }
-  };
-  var cargar = function cargar(ev) {
-    ev.preventDefault();
-    var id = extraerIdYoutube(entrada);
-    if (!id) {
-      setError('Pega un enlace de YouTube válido.');
-      return;
-    }
-    setError('');
-    setEntrada('');
-    guardar(id);
-  };
+    montado.current = true;
+    _axiosConfig__WEBPACK_IMPORTED_MODULE_1__["default"].get('/tablero/videos').then(function (r) {
+      if (!montado.current) return;
+      var lista = Array.isArray(r.data) ? r.data : [];
+      setVideos(lista);
 
-  // En modo TV el panel sólo reproduce lo ya configurado: no se ofrece el
-  // formulario ni el botón de abrir, porque delante de una pantalla proyectada
-  // nadie escribe una URL. Sin vídeo guardado, simplemente no ocupa espacio.
+      // Se recuerda la última pista elegida en esta pantalla, para que
+      // un TV recupere lo que estaba reproduciendo tras un reinicio.
+      try {
+        var guardado = localStorage.getItem(CLAVE_SELECCION);
+        var pos = lista.findIndex(function (v) {
+          return String(v.id) === guardado;
+        });
+        if (pos >= 0) setIndice(pos);
+      } catch (_unused) {
+        /* sin persistencia si el navegador la bloquea */
+      }
+    })["catch"](function () {
+      return montado.current && setVideos([]);
+    })["finally"](function () {
+      return montado.current && setCargando(false);
+    });
+    return function () {
+      montado.current = false;
+    };
+  }, []);
+  var elegir = function elegir(pos) {
+    setIndice(pos);
+    try {
+      if (videos[pos]) localStorage.setItem(CLAVE_SELECCION, String(videos[pos].id));
+    } catch (_unused2) {
+      /* ignorado */
+    }
+  };
+  if (cargando) return null;
+
+  // Sin vídeos configurados el panel no ocupa espacio. En escritorio se deja
+  // una pista de dónde se configuran; en TV no se muestra nada.
+  if (videos.length === 0) {
+    if (modoTv) return null;
+    return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsx)("p", {
+      className: "tb-ambiente-vacio",
+      children: "Sin v\xEDdeos. Se configuran en Par\xE1metros \u2192 V\xEDdeos del Tablero."
+    });
+  }
+  var actual = videos[Math.min(indice, videos.length - 1)];
+  var src = "https://www.youtube-nocookie.com/embed/".concat(actual.video_id) + "?autoplay=1&mute=1&rel=0&modestbranding=1&loop=1&playlist=".concat(actual.video_id);
+  var reproductor = /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsx)("div", {
+    className: "tb-ambiente-video",
+    children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsx)("iframe", {
+      src: src,
+      title: actual.titulo,
+      frameBorder: "0",
+      allow: "accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture",
+      allowFullScreen: true,
+      referrerPolicy: "strict-origin-when-cross-origin"
+    }, actual.video_id)
+  });
+
+  // En modo TV el panel es sólo de visualización: sin controles.
   if (modoTv) {
-    if (!videoId) return null;
-    return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsxs)("section", {
+    return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsxs)("section", {
       className: "tb-panel tb-ambiente",
       "aria-label": "Panel de v\xEDdeo",
-      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsx)("h3", {
+      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsx)("h3", {
         className: "tb-panel-titulo",
-        children: "AMBIENTE"
-      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsx)("div", {
-        className: "tb-ambiente-video",
-        children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsx)("iframe", {
-          src: "https://www.youtube-nocookie.com/embed/".concat(videoId, "?autoplay=1&mute=1&rel=0&modestbranding=1&loop=1&playlist=").concat(videoId),
-          title: "V\xEDdeo ambiental",
-          frameBorder: "0",
-          allow: "accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture",
-          allowFullScreen: true,
-          referrerPolicy: "strict-origin-when-cross-origin"
-        })
-      })]
+        children: actual.titulo.toUpperCase()
+      }), reproductor]
     });
   }
   if (!abierto) {
-    return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsx)("button", {
+    return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsxs)("button", {
       className: "tb-ambiente-abrir",
       onClick: function onClick() {
         return setAbierto(true);
       },
       title: "Abrir panel de v\xEDdeo",
-      children: "\u25B6 Ambiente"
+      children: ["\u25B6 Ambiente (", videos.length, ")"]
     });
   }
-  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsxs)("section", {
+  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsxs)("section", {
     className: "tb-panel tb-ambiente",
     "aria-label": "Panel de v\xEDdeo",
-    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsxs)("header", {
+    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsxs)("header", {
       className: "tb-ambiente-head",
-      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsx)("h3", {
+      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsx)("h3", {
         className: "tb-panel-titulo",
         children: "AMBIENTE"
-      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsxs)("div", {
-        className: "tb-ambiente-acciones",
-        children: [videoId && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsx)("button", {
-          className: "tb-ambiente-btn",
-          onClick: function onClick() {
-            return guardar('');
-          },
-          title: "Quitar el v\xEDdeo",
-          children: "\u2715 V\xEDdeo"
-        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsx)("button", {
-          className: "tb-ambiente-btn",
-          onClick: function onClick() {
-            return setAbierto(false);
-          },
-          title: "Plegar el panel",
-          children: "\u25BE"
-        })]
+      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsx)("button", {
+        className: "tb-ambiente-btn",
+        onClick: function onClick() {
+          return setAbierto(false);
+        },
+        title: "Plegar el panel",
+        children: "\u25BE"
       })]
-    }), videoId ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsx)("div", {
-      className: "tb-ambiente-video",
-      children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsx)("iframe", {
-        src: "https://www.youtube-nocookie.com/embed/".concat(videoId, "?autoplay=1&mute=1&rel=0&modestbranding=1"),
-        title: "V\xEDdeo ambiental",
-        frameBorder: "0",
-        allow: "accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture",
-        allowFullScreen: true,
-        referrerPolicy: "strict-origin-when-cross-origin"
+    }), reproductor, videos.length > 1 && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsx)("select", {
+      className: "tb-ambiente-select",
+      value: indice,
+      onChange: function onChange(e) {
+        return elegir(Number(e.target.value));
+      },
+      "aria-label": "Elegir v\xEDdeo",
+      children: videos.map(function (v, i) {
+        return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsx)("option", {
+          value: i,
+          children: v.titulo
+        }, v.id);
       })
-    }) : /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsxs)("form", {
-      className: "tb-ambiente-form",
-      onSubmit: cargar,
-      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsx)("input", {
-        ref: inputRef,
-        type: "text",
-        className: "tb-ambiente-input",
-        placeholder: "Pega un enlace de YouTube",
-        value: entrada,
-        onChange: function onChange(e) {
-          setEntrada(e.target.value);
-          setError('');
-        }
-      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsx)("button", {
-        type: "submit",
-        className: "tb-ambiente-btn tb-ambiente-btn-ok",
-        children: "Reproducir"
-      }), error && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsx)("p", {
-        className: "tb-ambiente-error",
-        children: error
-      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsx)("p", {
-        className: "tb-ambiente-nota",
-        children: "El v\xEDdeo empieza sin sonido. Act\xEDvalo desde el propio reproductor."
-      })]
+    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsx)("p", {
+      className: "tb-ambiente-nota",
+      children: "Empieza sin sonido. Act\xEDvalo desde el reproductor."
     })]
   });
 }

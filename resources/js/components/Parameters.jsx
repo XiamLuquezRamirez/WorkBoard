@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Header from './Header';
 import Sidebar from './Sidebar';
 import { useUser } from './UserContext';
-import { FaArrowLeft, FaUsers, FaUserTie, FaBuilding, FaFileAlt, FaBriefcase } from 'react-icons/fa';
+import { FaArrowLeft, FaUsers, FaUserTie, FaBuilding, FaFileAlt, FaBriefcase, FaVideo } from 'react-icons/fa';
 import EmployeeModal from './EmployeeModal';
 import UserModal from './UserModal';
 import CompanyModal from './CompanyModal';
@@ -10,6 +10,7 @@ import ProjectModal from './ProjectModal';
 import LeaderModal from './LeaderModal';
 import DepartmentModal from './DepartmentModal';
 import CargosModal from './CargosModal';
+import VideosTableroModal from './VideosTableroModal';
 import { getImageUrl, getAssetUrl } from '../utils/assetHelper';
 
 
@@ -24,6 +25,7 @@ const Parameters = () => {
     const [showProjectModal, setShowProjectModal] = useState(false);
     const [showDepartmentModal, setShowDepartmentModal] = useState(false);
     const [showCargosModal, setShowCargosModal] = useState(false);
+    const [showVideosModal, setShowVideosModal] = useState(false);
     const parameterCards = [
 
         {
@@ -73,6 +75,14 @@ const Parameters = () => {
             description: 'Gestión de cargos y posiciones de empleados',
             color: '#7c3aed',
             onClick: () => setShowCargosModal(true)
+        },
+        {
+            id: 9,
+            title: 'Vídeos del Tablero',
+            icon: <FaVideo size={25} />,
+            description: 'Vídeos ambientales del Tablero de Seguimiento',
+            color: '#0891b2',
+            onClick: () => setShowVideosModal(true)
         }
     ];
 
@@ -167,6 +177,10 @@ const Parameters = () => {
                         isOpen={showCargosModal}
                         onClose={() => setShowCargosModal(false)}
                     />
+                )}
+
+                {showVideosModal && (
+                    <VideosTableroModal onClose={() => setShowVideosModal(false)} />
                 )}
             </div>
         </div>

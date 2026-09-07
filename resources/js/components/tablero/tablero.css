@@ -657,23 +657,28 @@ a.tb-btn-sec, a.tb-btn-sec:visited { color: var(--tb-txt); }
     border: 0;
 }
 
-.tb-ambiente-form { display: flex; flex-direction: column; gap: 7px; }
-.tb-ambiente-input {
+.tb-ambiente-select {
     background: var(--tb-bg);
     border: 1px solid var(--tb-borde);
     border-radius: 6px;
-    padding: 7px 9px;
+    padding: 6px 8px;
     color: var(--tb-txt);
     font-size: 11px;
     width: 100%;
+    cursor: pointer;
 }
-.tb-ambiente-input:focus {
-    outline: none;
-    border-color: var(--tb-azul);
-}
-.tb-ambiente-input::placeholder { color: var(--tb-txt-tenue); }
-.tb-ambiente-error { margin: 0; font-size: 10px; color: #FCA5A5; }
+.tb-ambiente-select:focus { outline: none; border-color: var(--tb-azul); }
 .tb-ambiente-nota { margin: 0; font-size: 9px; color: var(--tb-txt-tenue); line-height: 1.4; }
+.tb-ambiente-vacio {
+    margin: 0;
+    padding: 9px 12px;
+    font-size: 10px;
+    line-height: 1.5;
+    color: var(--tb-txt-tenue);
+    background: var(--tb-panel);
+    border: 1px dashed var(--tb-borde);
+    border-radius: 10px;
+}
 
 /* En modo TV el componente ya se renderiza sin controles; el panel sólo
    reproduce lo configurado previamente desde la vista de escritorio. */
