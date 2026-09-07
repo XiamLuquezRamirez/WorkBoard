@@ -1175,12 +1175,17 @@ class EmpleadosController extends Controller
 
     function cargarUsuarios()
     {
+        // Los usuarios dados de baja conservan su fila para no romper las
+        // referencias de sus tareas, pero no deben figurar en la gestión.
         $usuarios = DB::connection('mysql2')->table('users')
             ->leftJoin('empleados', 'users.empleado', '=', 'empleados.id') // 🔹 LEFT JOIN para incluir admins
             ->select(
                 'users.*',
                 DB::connection('mysql2')->raw('IFNULL(CONCAT(empleados.nombres, " ", empleados.apellidos), "---") as nombre_empleado')
             )
+            ->where(function ($q) {
+                $q->whereNull('users.estado')->orWhere('users.estado', 'Activo');
+            })
             ->get();
 
         return response()->json($usuarios);
@@ -1286,8 +1291,27 @@ class EmpleadosController extends Controller
 
     function eliminarUsuario($id)
     {
-        $usuario = DB::connection('mysql2')->table('users')->where('id', $id)->delete();
-        return response()->json(['success' => 'Usuario eliminado correctamente'], 200);
+        // Baja lógica en lugar de borrado físico. Un usuario eliminado deja
+        // referencias vivas en tareas, asignaciones de líder y notificaciones:
+        // al desaparecer la fila, esas referencias quedaban huérfanas y las
+        // consultas que unen por INNER JOIN dejaban de ver el trabajo asociado.
+        // Marcarlo inactivo conserva la trazabilidad y permite seguir mostrando
+        // el nombre de quien realizó cada tarea.
+        $usuario = DB::connection('mysql2')->table('users')->where('id', $id)->first();
+        if (!$usuario) {
+            return response()->json(['error' => 'Usuario no encontrado'], 404);
+        }
+
+        DB::connection('mysql2')->table('users')->where('id', $id)->update([
+            'estado' => 'Inactivo',
+        ]);
+
+        // La tabla del chat corporativo (conexión mysql) no tiene columna de
+        // estado, así que no admite baja lógica. Su registro se conserva: el
+        // acceso a Work-Board lo decide 'users.estado' de mysql2, que es la
+        // tabla contra la que se autentica.
+
+        return response()->json(['success' => 'Usuario inactivado correctamente'], 200);
     }
 
     function buscarEmpresas(Request $request)

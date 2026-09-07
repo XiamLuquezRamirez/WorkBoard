@@ -36,7 +36,18 @@ class LoginController extends Controller
             $user = DB::connection('mysql2')->table('users')
                 ->where('email', $credentials['email'])
                 ->first();
-            
+
+            // Un usuario dado de baja conserva su fila para no dejar huérfanas
+            // las tareas y notificaciones que lo referencian, pero no debe poder
+            // entrar: sin esta comprobación la baja lógica no impediría el acceso.
+            if (!$user || strcasecmp(trim($user->estado ?? 'Activo'), 'Activo') !== 0) {
+                Auth::logout();
+                $request->session()->invalidate();
+                return response()->json([
+                    'message' => 'Este usuario está inactivo. Contacte al administrador.'
+                ], 403);
+            }
+
             // Obtener empleados asignados
             $empleadosAsignados = DB::connection('mysql2')->table('lideres_empleados')
                 ->join('empleados', 'lideres_empleados.empleado', 'empleados.id')
