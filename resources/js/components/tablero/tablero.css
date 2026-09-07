@@ -590,6 +590,94 @@ a.tb-btn-sec, a.tb-btn-sec:visited { color: var(--tb-txt); }
 }
 .tb-entrega-persona { font-size: 9px; color: var(--tb-txt-tenue); }
 
+/* ---------- Panel ambiental (vídeo) ---------- */
+.tb-ambiente-abrir {
+    background: var(--tb-panel);
+    border: 1px dashed var(--tb-borde);
+    color: var(--tb-txt-tenue);
+    border-radius: 10px;
+    padding: 9px 12px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .07em;
+    cursor: pointer;
+    transition: color .2s ease, border-color .2s ease;
+}
+.tb-ambiente-abrir:hover {
+    color: var(--tb-azul);
+    border-color: var(--tb-azul);
+}
+
+.tb-ambiente { display: flex; flex-direction: column; gap: 8px; }
+.tb-ambiente-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+.tb-ambiente-head .tb-panel-titulo { margin: 0; }
+.tb-ambiente-acciones { display: flex; gap: 5px; }
+
+.tb-ambiente-btn {
+    background: var(--tb-panel-2);
+    border: 1px solid var(--tb-borde);
+    color: var(--tb-txt-tenue);
+    border-radius: 6px;
+    padding: 3px 8px;
+    font-size: 10px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: color .2s ease, border-color .2s ease;
+}
+.tb-ambiente-btn:hover { color: var(--tb-txt); border-color: var(--tb-azul); }
+.tb-ambiente-btn-ok {
+    background: var(--tb-azul);
+    border-color: var(--tb-azul);
+    color: #fff;
+    padding: 5px 10px;
+    font-size: 11px;
+}
+.tb-ambiente-btn-ok:hover { color: #fff; filter: brightness(1.12); }
+
+/* Marco 16:9 para que el reproductor conserve su proporción */
+.tb-ambiente-video {
+    position: relative;
+    width: 100%;
+    padding-top: 56.25%;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #000;
+    border: 1px solid var(--tb-borde);
+}
+.tb-ambiente-video iframe {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+}
+
+.tb-ambiente-form { display: flex; flex-direction: column; gap: 7px; }
+.tb-ambiente-input {
+    background: var(--tb-bg);
+    border: 1px solid var(--tb-borde);
+    border-radius: 6px;
+    padding: 7px 9px;
+    color: var(--tb-txt);
+    font-size: 11px;
+    width: 100%;
+}
+.tb-ambiente-input:focus {
+    outline: none;
+    border-color: var(--tb-azul);
+}
+.tb-ambiente-input::placeholder { color: var(--tb-txt-tenue); }
+.tb-ambiente-error { margin: 0; font-size: 10px; color: #FCA5A5; }
+.tb-ambiente-nota { margin: 0; font-size: 9px; color: var(--tb-txt-tenue); line-height: 1.4; }
+
+/* En modo TV el componente ya se renderiza sin controles; el panel sólo
+   reproduce lo configurado previamente desde la vista de escritorio. */
+
 /* ---------- Avisos temporales ---------- */
 .tb-avisos {
     position: absolute;
@@ -637,7 +725,11 @@ a.tb-btn-sec, a.tb-btn-sec:visited { color: var(--tb-txt); }
 .tb-tv { padding: 26px 32px; gap: 18px; }
 .tb-tv .tb-logo { height: clamp(50px, 4vw, 76px); padding: 8px 15px; }
 .tb-tv .tb-col-body { overflow: hidden; }
+/* En TV el lateral no scrollea, pero el panel de vídeo añade altura: se permite
+   que la lista de entregas ceda espacio antes que recortar el reproductor. */
 .tb-tv .tb-lateral { overflow: hidden; }
+.tb-tv .tb-lateral .tb-entregas { overflow: hidden; }
+.tb-tv .tb-ambiente { flex-shrink: 0; }
 .tb-tv .tb-card-titulo { -webkit-line-clamp: 2; }
 
 .tb-salir-tv {

@@ -174,7 +174,7 @@ function TableroContenido({ onCerrar, tvInicial = false }) {
 
             <div className="tb-cuerpo">
                 <TableroKanban datos={datos} previo={previo} modoTv={modoTv} />
-                <TableroLateral datos={datos} />
+                <TableroLateral datos={datos} modoTv={modoTv} />
             </div>
 
             <Avisos eventos={eventos} />
