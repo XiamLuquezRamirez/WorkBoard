@@ -2440,11 +2440,25 @@ class EmpleadosController extends Controller
 
     // ─── Proyectos ──────────────────────────────────────────────────────────────
 
-    function cargarProyectos()
+    function cargarProyectos(Request $request)
     {
+        // Los proyectos cancelados se ocultan por defecto: no deben ofrecerse al
+        // asignar tareas nuevas. La pantalla de gestión los pide con
+        // ?incluir_cancelados=1 para poder consultarlos y reactivarlos.
+        $incluirCancelados = filter_var(
+            $request->query('incluir_cancelados', false),
+            FILTER_VALIDATE_BOOLEAN
+        );
+
         $proyectos = DB::connection('mysql2')->table('proyectos')
             ->leftJoin('empresas', 'proyectos.empresa', 'empresas.id')
             ->select('proyectos.*', 'empresas.nombre as empresa_nombre', 'empresas.id as empresa_id')
+            ->when(!$incluirCancelados, function ($q) {
+                $q->where(function ($w) {
+                    $w->whereNull('proyectos.estado')
+                      ->orWhere('proyectos.estado', '<>', 'Cancelado');
+                });
+            })
             ->orderBy('proyectos.nombre')
             ->get();
 
@@ -2488,10 +2502,28 @@ class EmpleadosController extends Controller
 
     function eliminarProyecto($id)
     {
-        DB::connection('mysql2')->table('tareas_empleados')->where('proyecto_id', $id)->update(['proyecto_id' => null]);
-        DB::connection('mysql2')->table('proyectos')->where('id', $id)->delete();
+        $proyecto = DB::connection('mysql2')->table('proyectos')->where('id', $id)->first();
+        if (!$proyecto) {
+            return response()->json(['message' => 'Proyecto no encontrado'], 404);
+        }
 
-        return response()->json(['success' => true]);
+        // Baja lógica marcando el proyecto como Cancelado, un valor que el ENUM
+        // de estado ya contempla. Antes se borraba la fila y, además, se ponía
+        // proyecto_id a NULL en sus tareas: esa desvinculación era irreversible
+        // —no quedaba constancia de a qué proyecto pertenecía cada tarea— y el
+        // informe de proyectos perdía ese historial. Ahora el vínculo se
+        // conserva y el proyecto deja de ofrecerse para nuevas asignaciones.
+        DB::connection('mysql2')->table('proyectos')->where('id', $id)
+            ->update(['estado' => 'Cancelado']);
+
+        $tareas = DB::connection('mysql2')->table('tareas_empleados')
+            ->where('proyecto_id', $id)->count();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Proyecto cancelado',
+            'tareas_conservadas' => $tareas,
+        ]);
     }
 
     function importarProyectosIniciales()

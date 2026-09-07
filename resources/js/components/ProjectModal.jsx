@@ -53,7 +53,9 @@ const ProjectModal = ({ isOpen, onClose }) => {
 
     const cargarProyectos = () => {
         setLoading(true);
-        axiosInstance.get('/cargarProyectos').then((response) => {
+        // La pantalla de gestión sí muestra los cancelados, para poder
+        // consultarlos y reactivarlos; el resto de vistas los omite.
+        axiosInstance.get('/cargarProyectos?incluir_cancelados=1').then((response) => {
             setProyectos(response.data);
             setLoading(false);
         });

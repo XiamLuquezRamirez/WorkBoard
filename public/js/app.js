@@ -175698,7 +175698,9 @@ var ProjectModal = function ProjectModal(_ref) {
   };
   var cargarProyectos = function cargarProyectos() {
     setLoading(true);
-    _axiosConfig__WEBPACK_IMPORTED_MODULE_1__["default"].get('/cargarProyectos').then(function (response) {
+    // La pantalla de gestión sí muestra los cancelados, para poder
+    // consultarlos y reactivarlos; el resto de vistas los omite.
+    _axiosConfig__WEBPACK_IMPORTED_MODULE_1__["default"].get('/cargarProyectos?incluir_cancelados=1').then(function (response) {
       setProyectos(response.data);
       setLoading(false);
     });
