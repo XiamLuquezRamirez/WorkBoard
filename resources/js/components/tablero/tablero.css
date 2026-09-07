@@ -273,7 +273,6 @@ a.tb-btn-sec, a.tb-btn-sec:visited { color: var(--tb-txt); }
     display: flex;
     flex-direction: column;
     gap: 7px;
-    transition: border-color .3s ease, box-shadow .3s ease;
     will-change: transform;
 }
 .tb-card-pausada { opacity: .82; border-style: dashed; }
@@ -806,6 +805,96 @@ a.tb-btn-sec, a.tb-btn-sec:visited { color: var(--tb-txt); }
     gap: 8px;
 }
 .tb-card-señales { display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
+
+/* ---------- Carrusel de destaque ----------
+   La tarjeta se adelanta hacia el espectador, se sostiene cinco segundos con
+   más detalle y regresa a su sitio. La columna conserva perspectiva para que
+   el avance se perciba como profundidad y no como un simple crecimiento. */
+.tb-col-body { perspective: 1400px; }
+
+.tb-card {
+    transform-origin: center left;
+    transition:
+        transform .75s cubic-bezier(.22, .68, .32, 1.02),
+        box-shadow .75s ease,
+        border-color .4s ease;
+}
+
+.tb-card-destacada {
+    transform: translateZ(60px) scale(1.045);
+    z-index: 6;
+    border-color: var(--temp);
+    box-shadow:
+        0 18px 44px rgba(0, 0, 0, .58),
+        0 0 0 1px var(--temp);
+}
+/* Halo que respira mientras la tarjeta está al frente */
+.tb-card-destacada::before {
+    content: '';
+    position: absolute;
+    inset: -3px;
+    border-radius: 10px;
+    pointer-events: none;
+    background: radial-gradient(120% 100% at 0% 50%, var(--temp-fondo), transparent 70%);
+    animation: tb-halo 2.4s ease-in-out infinite;
+}
+@keyframes tb-halo { 50% { opacity: .35; } }
+
+/* Detalle ampliado: se despliega en altura al pasar al frente */
+.tb-detalle {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    padding-top: 7px;
+    border-top: 1px solid var(--tb-borde);
+    animation: tb-detalle-abre .5s ease-out;
+    overflow: hidden;
+}
+@keyframes tb-detalle-abre {
+    from { opacity: 0; max-height: 0; transform: translateY(-6px); }
+    to   { opacity: 1; max-height: 260px; transform: none; }
+}
+.tb-detalle-desc {
+    margin: 0;
+    font-size: 11px;
+    line-height: 1.45;
+    color: var(--tb-txt);
+    opacity: .88;
+}
+.tb-detalle-datos {
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 5px 10px;
+}
+.tb-detalle-datos div { min-width: 0; }
+.tb-detalle-datos dt {
+    font-size: 8.5px;
+    letter-spacing: .09em;
+    text-transform: uppercase;
+    color: var(--tb-txt-tenue);
+}
+.tb-detalle-datos dd {
+    margin: 1px 0 0;
+    font-size: 10.5px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* En TV todo escala con la altura de pantalla */
+.tb-tv .tb-card-destacada { transform: translateZ(70px) scale(1.05); }
+.tb-tv .tb-detalle-desc { font-size: 1.35vh; }
+.tb-tv .tb-detalle-datos dt { font-size: 1vh; }
+.tb-tv .tb-detalle-datos dd { font-size: 1.25vh; }
+
+/* Sin animación cuando el sistema pide reducir movimiento: la tarjeta
+   destacada se marca con el borde, sin desplazarse. */
+@media (prefers-reduced-motion: reduce) {
+    .tb-card-destacada { transform: none; }
+    .tb-card-destacada::before { animation: none; }
+}
 
 /* ---------- Avisos temporales ---------- */
 .tb-avisos {

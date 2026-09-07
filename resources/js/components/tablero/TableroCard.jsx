@@ -68,7 +68,7 @@ const SELLO = {
 const iniciales = (nombre) => String(nombre || '?')
     .trim().split(/\s+/).slice(0, 2).map((p) => p[0]).join('').toUpperCase();
 
-export default function TableroCard({ tarea, estadoVisual, innerRef, cortes }) {
+export default function TableroCard({ tarea, estadoVisual, innerRef, cortes, destacada }) {
     const fotoOriginal = useAvatar(tarea.empleado_id);
     const [fotoFallida, setFotoFallida] = useState(false);
     const foto = fotoFallida ? null : fotoOriginal;
@@ -89,6 +89,7 @@ export default function TableroCard({ tarea, estadoVisual, innerRef, cortes }) {
             className={[
                 'tb-card',
                 `tb-temp-${temp.nivel}`,
+                destacada ? 'tb-card-destacada' : '',
                 estadoVisual ? `tb-anim-${estadoVisual}` : '',
                 tarea.pausada ? 'tb-card-pausada' : '',
             ].filter(Boolean).join(' ')}
@@ -135,6 +136,30 @@ export default function TableroCard({ tarea, estadoVisual, innerRef, cortes }) {
                     )}
                 </span>
             </div>
+
+            {destacada && (
+                <div className="tb-detalle">
+                    {tarea.descripcion && (
+                        <p className="tb-detalle-desc">{tarea.descripcion}</p>
+                    )}
+                    <dl className="tb-detalle-datos">
+                        {tarea.cargo && (
+                            <div><dt>Cargo</dt><dd>{tarea.cargo}</dd></div>
+                        )}
+                        {tarea.proyecto && (
+                            <div><dt>Proyecto</dt><dd>{tarea.proyecto}</dd></div>
+                        )}
+                        <div>
+                            <dt>Fecha pactada</dt>
+                            <dd>{fechaCorta(tarea.fecha_pactada) || '—'}</dd>
+                        </div>
+                        <div>
+                            <dt>Prioridad</dt>
+                            <dd>{tarea.prioridad || '—'}</dd>
+                        </div>
+                    </dl>
+                </div>
+            )}
 
             {mostrarAvance && (
                 <div className="tb-avance">

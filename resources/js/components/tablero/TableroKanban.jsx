@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import TableroCard from './TableroCard';
 import useFlipTarjetas from './useFlipTarjetas';
+import useCarruselDestaque from './useCarruselDestaque';
 
 /* Las pausadas no tienen columna propia: son pocas de forma habitual y una
    columna casi vacía desperdiciaba una cuarta parte del ancho. Se consultan
@@ -84,6 +85,14 @@ export default function TableroKanban({ datos, previo, modoTv }) {
     // resto se resume en el contador "+N más" al pie de la columna.
     const tope = modoTv ? 12 : 40;
 
+    // Carrusel de destaque: sólo sobre las tareas en proceso, que son las que
+    // se están trabajando ahora y por tanto las que interesa repasar en pantalla.
+    const idsProceso = useMemo(
+        () => items(datos.columnas, 'proceso').slice(0, tope).map((t) => String(t.id)),
+        [datos, tope]
+    );
+    const destacado = useCarruselDestaque(idsProceso);
+
     return (
         <div className="tb-kanban">
             {COLUMNAS.map(({ clave, titulo, color }) => {
@@ -110,6 +119,7 @@ export default function TableroKanban({ datos, previo, modoTv }) {
                                     estadoVisual={cambios[t.id]}
                                     innerRef={registrarTarjeta(t.id)}
                                     cortes={cortes}
+                                    destacada={String(t.id) === destacado}
                                 />
                             ))}
                             {lista.length === 0 && <p className="tb-col-vacia">Sin tareas</p>}

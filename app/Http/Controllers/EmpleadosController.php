@@ -1964,6 +1964,7 @@ class EmpleadosController extends Controller
                 // pero conserva su usuario, se recupera de ahí en lugar de dejar
                 // la tarjeta sin responsable.
                 ->leftJoin('users as u', 't.empleado', '=', 'u.empleado')
+                ->leftJoin('cargos as c', 'e.cargo', '=', 'c.id')
                 ->leftJoin('proyectos as p', 't.proyecto_id', '=', 'p.id')
                 ->where('t.estado_reg', 'Activo')
                 ->where(function ($w) {
@@ -1975,6 +1976,7 @@ class EmpleadosController extends Controller
             return $q->select(
                 't.id',
                 't.titulo',
+                't.descripcion',
                 't.estado',
                 't.prioridad',
                 't.fecha_pactada',
@@ -1986,6 +1988,7 @@ class EmpleadosController extends Controller
                 't.empleado as empleado_id',
                 'p.nombre as proyecto_nombre',
                 'u.name as empleado_usuario',
+                'c.nombre as empleado_cargo',
                 DB::connection('mysql2')->raw('CONCAT(e.nombres, " ", e.apellidos) as empleado')
             );
         };
@@ -2021,8 +2024,11 @@ class EmpleadosController extends Controller
             ->get()
             ->keyBy('tarea_id');
 
-        $mapear = function ($rows) use ($hoy, $avances) {
-            return collect($rows)->map(function ($t) use ($hoy, $avances) {
+        // $conDetalle activa los campos que sólo usa la vista destacada del
+        // carrusel (descripción y cargo). Se limita a "En Proceso" para no
+        // arrastrarlos en cada sondeo por todas las columnas.
+        $mapear = function ($rows, $conDetalle = false) use ($hoy, $avances) {
+            return collect($rows)->map(function ($t) use ($hoy, $avances, $conDetalle) {
                 $dias = null;
                 if ($t->fecha_pactada) {
                     $dias = $hoy->diffInDays(Carbon::parse($t->fecha_pactada)->startOfDay(), false);
@@ -2043,6 +2049,11 @@ class EmpleadosController extends Controller
                 return [
                     'id'              => (int) $t->id,
                     'titulo'          => $t->titulo,
+                    // La descripción sólo se usa en la vista destacada del
+                    // carrusel; se recorta para no inflar la respuesta del sondeo.
+                    'descripcion'     => $conDetalle && $t->descripcion
+                        ? mb_substr(trim($t->descripcion), 0, 260)
+                        : null,
                     'estado'          => $t->estado,
                     'prioridad'       => $t->prioridad,
                     'fecha_pactada'   => $t->fecha_pactada,
@@ -2053,6 +2064,7 @@ class EmpleadosController extends Controller
                     // tampoco existe, se indica que no tiene responsable.
                     'empleado'        => $t->empleado ?: ($t->empleado_usuario ?: 'Sin responsable'),
                     'proyecto'        => $t->proyecto_nombre,
+                    'cargo'           => $conDetalle ? $t->empleado_cargo : null,
                     // Coherente con el criterio de la columna "En Pausa": una tarea
                     // reanudada o cerrada no se pinta como pausada aunque conserve
                     // la bandera de una pausa anterior.
@@ -2066,7 +2078,7 @@ class EmpleadosController extends Controller
         };
 
         $pendiente = $mapear($noPausada($base())->where('t.estado', 'Pendiente')->orderBy('t.fecha_pactada')->get());
-        $proceso   = $mapear($noPausada($base())->where('t.estado', 'En Proceso')->orderBy('t.fecha_pactada')->get());
+        $proceso   = $mapear($noPausada($base())->where('t.estado', 'En Proceso')->orderBy('t.fecha_pactada')->get(), true);
         $pausa = $mapear($estaPausada($base())->orderBy('t.fecha_pactada')->get());
 
         // Completadas dentro de la ventana; si no hay ninguna (histórico inactivo)
