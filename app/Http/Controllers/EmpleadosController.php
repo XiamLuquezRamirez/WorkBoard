@@ -450,15 +450,24 @@ class EmpleadosController extends Controller
 
     function obtenerNotificacionesTareasAtrasadas()
     {
+        // El join con empleados es LEFT: con INNER quedaban sin avisar las tareas
+        // vencidas cuyo empleado ya no figura en 'empleados' (personas dadas de
+        // baja cuyo registro se eliminó), pese a seguir siendo trabajo pendiente
+        // y a que el destinatario del aviso es el líder, no el propio empleado.
+        // El nombre se recupera de 'users' para que el mensaje siga identificando
+        // a quién corresponde la tarea.
         $tareasAtrasadas = DB::connection('mysql2')->table('tareas_empleados')
-            ->join('empleados', 'tareas_empleados.empleado', 'empleados.id')
+            ->leftJoin('empleados', 'tareas_empleados.empleado', '=', 'empleados.id')
+            ->leftJoin('users', 'tareas_empleados.empleado', '=', 'users.empleado')
             ->whereRaw('DATE(fecha_pactada) < CURDATE()')
             ->where('tareas_empleados.estado', '!=', 'Completada')
             ->where('tareas_empleados.estado_reg', 'Activo')
             ->where('tareas_empleados.pausada', 0)
             ->where('tareas_empleados.aprobada', 1)
             ->select(
-                DB::connection('mysql2')->raw('CONCAT(empleados.nombres, " ", empleados.apellidos) as nombre_empleado'),
+                DB::connection('mysql2')->raw(
+                    'COALESCE(NULLIF(TRIM(CONCAT(COALESCE(empleados.nombres, ""), " ", COALESCE(empleados.apellidos, ""))), ""), users.name, "Sin responsable") as nombre_empleado'
+                ),
                 'tareas_empleados.*'
             )
             ->get();
