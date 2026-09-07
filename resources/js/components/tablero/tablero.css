@@ -726,16 +726,62 @@ a.tb-btn-sec, a.tb-btn-sec:visited { color: var(--tb-txt); }
 .tb-aviso-pausada .tb-aviso-icono { color: var(--tb-naranja); }
 .tb-aviso-nueva .tb-aviso-icono, .tb-aviso-movida .tb-aviso-icono { color: var(--tb-azul); }
 
-/* ---------- Modo TV ---------- */
-.tb-tv { padding: 26px 32px; gap: 18px; }
-.tb-tv .tb-logo { height: clamp(50px, 4vw, 76px); padding: 8px 15px; }
-.tb-tv .tb-col-body { overflow: hidden; }
-/* En TV el lateral no scrollea, pero el panel de vídeo añade altura: se permite
-   que la lista de entregas ceda espacio antes que recortar el reproductor. */
-.tb-tv .tb-lateral { overflow: hidden; }
+/* ---------- Modo TV ----------
+   Todo se dimensiona en vw/vh, no en píxeles: un televisor de 55" puede
+   reportar 1280 o 1920 px lógicos según su escalado, y lo que debe mantenerse
+   constante es la proporción, no el tamaño absoluto. Las cuatro columnas y el
+   lateral se conservan siempre; lo que cede es el tamaño del contenido. */
+.tb-tv {
+    padding: 1.6vh 1.4vw;
+    gap: 1.2vh;
+}
+.tb-tv .tb-cuerpo { grid-template-columns: 1fr 17vw; gap: 1vw; }
+.tb-tv .tb-kanban { grid-template-columns: repeat(4, 1fr); gap: .7vw; }
+
+.tb-tv .tb-logo { height: 5.2vh; padding: .6vh 1vh; }
+.tb-tv .tb-header h1 { font-size: 2.2vh; }
+.tb-tv .tb-ambito { font-size: 1.5vh; }
+.tb-tv .tb-hora { font-size: 2vh; }
+.tb-tv .tb-conexion { font-size: 1.1vh; padding: .4vh 1vh; }
+
+/* KPIs: una sola fila, compacta, para dejar el máximo al kanban */
+.tb-tv .tb-kpis { grid-template-columns: repeat(6, 1fr); gap: .7vw; }
+.tb-tv .tb-kpi { padding: .8vh 1vh; border-radius: .8vh; }
+.tb-tv .tb-kpi-num { font-size: 3.4vh; }
+.tb-tv .tb-kpi-label { font-size: 1.05vh; }
+
+/* Columnas y tarjetas */
+.tb-tv .tb-col-head { padding: .9vh 1vh; }
+.tb-tv .tb-col-head h3 { font-size: 1.35vh; }
+.tb-tv .tb-col-count { font-size: 1.6vh; padding: .1vh 1vh; }
+.tb-tv .tb-col-body { overflow: hidden; gap: .7vh; padding: .8vh; }
+.tb-tv .tb-card { padding: .8vh 1vh; gap: .5vh; border-radius: .8vh; }
+.tb-tv .tb-card-titulo { font-size: 1.45vh; -webkit-line-clamp: 2; }
+.tb-tv .tb-card-proyecto { font-size: 1.05vh; }
+.tb-tv .tb-card-nombre,
+.tb-tv .tb-card-fecha { font-size: 1.1vh; }
+.tb-tv .tb-prio,
+.tb-tv .tb-badge-pausa,
+.tb-tv .tb-badge-vencida,
+.tb-tv .tb-badge-hoy { font-size: 1vh; padding: .2vh .8vh; }
+.tb-tv .tb-avatar-mini { width: 2.1vh; height: 2.1vh; }
+.tb-tv .tb-avance-pct { font-size: 1.3vh; }
+.tb-tv .tb-avance-frac { font-size: 1vh; }
+
+/* Lateral: no scrollea; la lista de entregas cede antes que el vídeo */
+.tb-tv .tb-lateral { overflow: hidden; gap: 1vh; }
+.tb-tv .tb-panel { padding: 1vh 1.1vh; border-radius: .8vh; }
+.tb-tv .tb-panel-titulo { font-size: 1.15vh; margin-bottom: .8vh; }
+.tb-tv .tb-alerta { font-size: 1.3vh; padding: .6vh 1vh; }
+.tb-tv .tb-persona-nombre { font-size: 1.2vh; }
+.tb-tv .tb-persona-cargo { font-size: 1vh; }
+.tb-tv .tb-persona-n { font-size: 1.7vh; }
+.tb-tv .tb-avatar { width: 3.2vh; height: 3.2vh; }
+.tb-tv .tb-entrega-titulo { font-size: 1.2vh; }
+.tb-tv .tb-entrega-persona,
+.tb-tv .tb-entrega-fecha { font-size: 1vh; }
 .tb-tv .tb-lateral .tb-entregas { overflow: hidden; }
 .tb-tv .tb-ambiente { flex-shrink: 0; }
-.tb-tv .tb-card-titulo { -webkit-line-clamp: 2; }
 
 .tb-salir-tv {
     position: absolute;
@@ -753,23 +799,28 @@ a.tb-btn-sec, a.tb-btn-sec:visited { color: var(--tb-txt); }
 .tb-salir-tv:hover { opacity: 1; }
 
 /* ---------- Responsive ---------- */
+/* Los ajustes por ancho se aplican SÓLO fuera del modo TV. Un televisor de 55"
+   suele reportar 1280-1920 px lógicos según su escalado, y con estas reglas
+   activas el kanban colapsaba a dos columnas justo donde debe verse entero.
+   En modo TV la proporción es siempre 16:9 y el layout no se reorganiza: lo
+   que se adapta es el tamaño del contenido, no el número de columnas. */
 @media (max-width: 1400px) {
-    .tb-cuerpo { grid-template-columns: 1fr 260px; }
+    .tb-root:not(.tb-tv) .tb-cuerpo { grid-template-columns: 1fr 260px; }
 }
 @media (max-width: 1100px) {
-    .tb-cuerpo { grid-template-columns: 1fr; overflow-y: auto; }
-    .tb-lateral { flex-direction: row; flex-wrap: wrap; }
-    .tb-lateral .tb-panel { flex: 1 1 240px; }
-    .tb-kpis { grid-template-columns: repeat(3, 1fr); }
-    .tb-kanban { grid-template-columns: repeat(2, 1fr); min-height: 560px; }
+    .tb-root:not(.tb-tv) .tb-cuerpo { grid-template-columns: 1fr; overflow-y: auto; }
+    .tb-root:not(.tb-tv) .tb-lateral { flex-direction: row; flex-wrap: wrap; }
+    .tb-root:not(.tb-tv) .tb-lateral .tb-panel { flex: 1 1 240px; }
+    .tb-root:not(.tb-tv) .tb-kpis { grid-template-columns: repeat(3, 1fr); }
+    .tb-root:not(.tb-tv) .tb-kanban { grid-template-columns: repeat(2, 1fr); min-height: 560px; }
 }
 @media (max-width: 700px) {
-    .tb-root { padding: 12px; }
-    .tb-kpis { grid-template-columns: repeat(2, 1fr); }
-    .tb-kanban { grid-template-columns: 1fr; }
-    .tb-header { flex-direction: column; align-items: flex-start; gap: 8px; }
-    .tb-header-izq { gap: 10px; }
-    .tb-logo { height: 34px; padding: 5px 9px; }
+    .tb-root:not(.tb-tv) { padding: 12px; }
+    .tb-root:not(.tb-tv) .tb-kpis { grid-template-columns: repeat(2, 1fr); }
+    .tb-root:not(.tb-tv) .tb-kanban { grid-template-columns: 1fr; }
+    .tb-root:not(.tb-tv) .tb-header { flex-direction: column; align-items: flex-start; gap: 8px; }
+    .tb-root:not(.tb-tv) .tb-header-izq { gap: 10px; }
+    .tb-root:not(.tb-tv) .tb-logo { height: 34px; padding: 5px 9px; }
 }
 
 /* Respeta la preferencia del sistema de reducir movimiento */

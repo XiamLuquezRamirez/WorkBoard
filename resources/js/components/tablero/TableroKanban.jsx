@@ -56,8 +56,10 @@ export default function TableroKanban({ datos, previo, modoTv }) {
     // modo que la tarjeta viaje en lugar de desaparecer y reaparecer.
     const registrarTarjeta = useFlipTarjetas(firma);
 
-    // En modo TV se recorta cada columna a lo que cabe sin scroll.
-    const tope = modoTv ? 8 : 40;
+    // En modo TV se recorta cada columna a lo que cabe sin scroll. Con las
+    // tarjetas dimensionadas en vh caben unas doce en una pantalla 16:9; el
+    // resto se resume en el contador "+N más" al pie de la columna.
+    const tope = modoTv ? 12 : 40;
 
     return (
         <div className="tb-kanban">
