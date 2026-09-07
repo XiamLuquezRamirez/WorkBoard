@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import TableroCard from './TableroCard';
 import useFlipTarjetas from './useFlipTarjetas';
 import useCarruselDestaque from './useCarruselDestaque';
+import ModalDestaque from './ModalDestaque';
 
 /* Las pausadas no tienen columna propia: son pocas de forma habitual y una
    columna casi vacía desperdiciaba una cuarta parte del ancho. Se consultan
@@ -93,6 +94,11 @@ export default function TableroKanban({ datos, previo, modoTv }) {
     );
     const destacado = useCarruselDestaque(idsProceso);
 
+    const tareaDestacada = useMemo(
+        () => items(datos.columnas, 'proceso').find((t) => String(t.id) === destacado) || null,
+        [datos, destacado]
+    );
+
     return (
         <div className="tb-kanban">
             {COLUMNAS.map(({ clave, titulo, color }) => {
@@ -119,7 +125,7 @@ export default function TableroKanban({ datos, previo, modoTv }) {
                                     estadoVisual={cambios[t.id]}
                                     innerRef={registrarTarjeta(t.id)}
                                     cortes={cortes}
-                                    destacada={String(t.id) === destacado}
+                                    activa={String(t.id) === destacado}
                                 />
                             ))}
                             {lista.length === 0 && <p className="tb-col-vacia">Sin tareas</p>}
@@ -128,6 +134,10 @@ export default function TableroKanban({ datos, previo, modoTv }) {
                     </section>
                 );
             })}
+
+            {tareaDestacada && (
+                <ModalDestaque tarea={tareaDestacada} cortes={cortes} />
+            )}
         </div>
     );
 }

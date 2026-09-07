@@ -807,93 +807,170 @@ a.tb-btn-sec, a.tb-btn-sec:visited { color: var(--tb-txt); }
 .tb-card-señales { display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
 
 /* ---------- Carrusel de destaque ----------
-   La tarjeta se adelanta hacia el espectador, se sostiene cinco segundos con
-   más detalle y regresa a su sitio. La columna conserva perspectiva para que
-   el avance se perciba como profundidad y no como un simple crecimiento. */
-.tb-col-body { perspective: 1400px; }
+   La tarjeta destacada no crece dentro de su columna: ampliarla ahí desplazaba
+   al resto y el detalle no cabía en el ancho disponible. En la columna sólo
+   queda marcada, y el contenido ampliado se muestra centrado sobre el tablero. */
+.tb-card { transition: border-color .35s ease, box-shadow .35s ease; }
 
-.tb-card {
-    transform-origin: center left;
-    transition:
-        transform .75s cubic-bezier(.22, .68, .32, 1.02),
-        box-shadow .75s ease,
-        border-color .4s ease;
-}
-
-.tb-card-destacada {
-    transform: translateZ(60px) scale(1.045);
-    z-index: 6;
+.tb-card-activa {
     border-color: var(--temp);
-    box-shadow:
-        0 18px 44px rgba(0, 0, 0, .58),
-        0 0 0 1px var(--temp);
+    box-shadow: 0 0 0 1px var(--temp), 0 4px 16px rgba(0, 0, 0, .35);
 }
-/* Halo que respira mientras la tarjeta está al frente */
-.tb-card-destacada::before {
-    content: '';
-    position: absolute;
-    inset: -3px;
-    border-radius: 10px;
-    pointer-events: none;
-    background: radial-gradient(120% 100% at 0% 50%, var(--temp-fondo), transparent 70%);
-    animation: tb-halo 2.4s ease-in-out infinite;
-}
-@keyframes tb-halo { 50% { opacity: .35; } }
+.tb-card-activa .tb-temp-barra { animation: tb-activa 1.6s ease-in-out infinite; }
+@keyframes tb-activa { 50% { opacity: .4; } }
 
-/* Detalle ampliado: se despliega en altura al pasar al frente */
-.tb-detalle {
+/* Vista destacada, centrada sobre el tablero */
+.tb-dest-fondo {
+    position: absolute;
+    inset: 0;
+    z-index: 25;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;          /* es informativa: no bloquea el tablero */
+    background: rgba(7, 14, 26, .55);
+    backdrop-filter: blur(2px);
+    animation: tb-fundido .45s ease-out;
+}
+@keyframes tb-fundido { from { opacity: 0; } to { opacity: 1; } }
+
+.tb-dest {
+    position: relative;
+    width: min(620px, 54vw);
+    max-height: 82vh;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
-    gap: 7px;
-    padding-top: 7px;
-    border-top: 1px solid var(--tb-borde);
-    animation: tb-detalle-abre .5s ease-out;
-    overflow: hidden;
+    gap: 14px;
+    padding: 26px 30px 30px;
+    border-radius: 16px;
+    background: linear-gradient(150deg, var(--temp-fondo), var(--tb-panel) 55%);
+    border: 1px solid var(--tb-borde);
+    box-shadow: 0 30px 80px rgba(0, 0, 0, .68);
+    animation: tb-dest-entra .55s cubic-bezier(.22, .72, .3, 1.05);
 }
-@keyframes tb-detalle-abre {
-    from { opacity: 0; max-height: 0; transform: translateY(-6px); }
-    to   { opacity: 1; max-height: 260px; transform: none; }
+@keyframes tb-dest-entra {
+    from { opacity: 0; transform: translateY(26px) scale(.94); }
+    to   { opacity: 1; transform: none; }
 }
-.tb-detalle-desc {
-    margin: 0;
+
+.tb-dest-barra {
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 5px;
+    background: var(--temp);
+}
+
+.tb-dest-head { display: flex; align-items: center; gap: 10px; }
+.tb-dest-etiqueta {
     font-size: 11px;
-    line-height: 1.45;
-    color: var(--tb-txt);
-    opacity: .88;
+    font-weight: 800;
+    letter-spacing: .12em;
+    color: var(--tb-azul);
 }
-.tb-detalle-datos {
+.tb-dest-prio {
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .08em;
+    color: #0B1220;
+    background: var(--tb-rojo);
+    padding: 2px 9px;
+    border-radius: 5px;
+}
+
+.tb-dest-titulo {
+    margin: 0;
+    font-size: clamp(20px, 1.8vw, 30px);
+    font-weight: 700;
+    line-height: 1.22;
+    letter-spacing: -.01em;
+}
+.tb-dest-desc {
+    margin: 0;
+    font-size: clamp(12px, .95vw, 16px);
+    line-height: 1.55;
+    color: var(--tb-txt);
+    opacity: .85;
+}
+
+.tb-dest-persona { display: flex; align-items: center; gap: 12px; }
+.tb-dest-avatar {
+    width: 46px; height: 46px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+    border: 2px solid var(--temp);
+}
+.tb-dest-nombre {
+    display: block;
+    font-size: clamp(13px, 1vw, 17px);
+    font-weight: 650;
+}
+.tb-dest-cargo {
+    display: block;
+    font-size: clamp(10px, .75vw, 13px);
+    color: var(--tb-txt-tenue);
+}
+
+.tb-dest-avance { display: flex; flex-direction: column; gap: 6px; }
+.tb-dest-avance-top {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .07em;
+    color: var(--tb-txt-tenue);
+}
+.tb-dest .tb-avance-barra { height: 7px; }
+
+.tb-dest-datos {
     margin: 0;
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 5px 10px;
+    gap: 12px 20px;
+    padding-top: 12px;
+    border-top: 1px solid var(--tb-borde);
 }
-.tb-detalle-datos div { min-width: 0; }
-.tb-detalle-datos dt {
-    font-size: 8.5px;
-    letter-spacing: .09em;
+.tb-dest-datos div { min-width: 0; }
+.tb-dest-ancho { grid-column: 1 / -1; }
+.tb-dest-datos dt {
+    font-size: 9.5px;
+    letter-spacing: .1em;
     text-transform: uppercase;
     color: var(--tb-txt-tenue);
 }
-.tb-detalle-datos dd {
-    margin: 1px 0 0;
-    font-size: 10.5px;
+.tb-dest-datos dd {
+    margin: 3px 0 0;
+    font-size: clamp(12px, .85vw, 15px);
     font-weight: 600;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
 }
+.tb-dest-retraso { color: var(--temp); }
 
-/* En TV todo escala con la altura de pantalla */
-.tb-tv .tb-card-destacada { transform: translateZ(70px) scale(1.05); }
-.tb-tv .tb-detalle-desc { font-size: 1.35vh; }
-.tb-tv .tb-detalle-datos dt { font-size: 1vh; }
-.tb-tv .tb-detalle-datos dd { font-size: 1.25vh; }
+/* Barra que agota los cinco segundos del destaque */
+.tb-dest-tiempo {
+    position: absolute;
+    left: 0; bottom: 0;
+    height: 3px;
+    background: var(--temp);
+    animation: tb-dest-cuenta 5s linear forwards;
+}
+@keyframes tb-dest-cuenta { from { width: 100%; } to { width: 0%; } }
 
-/* Sin animación cuando el sistema pide reducir movimiento: la tarjeta
-   destacada se marca con el borde, sin desplazarse. */
+/* En TV la ficha ocupa algo más y escala con la altura */
+.tb-tv .tb-dest { width: 52vw; padding: 3vh 3.2vh 3.4vh; gap: 1.6vh; }
+.tb-tv .tb-dest-titulo { font-size: 3.4vh; }
+.tb-tv .tb-dest-desc { font-size: 1.9vh; }
+.tb-tv .tb-dest-nombre { font-size: 2vh; }
+.tb-tv .tb-dest-cargo { font-size: 1.5vh; }
+.tb-tv .tb-dest-avatar { width: 6.4vh; height: 6.4vh; }
+.tb-tv .tb-dest-datos dd { font-size: 1.8vh; }
+.tb-tv .tb-dest-datos dt { font-size: 1.15vh; }
+.tb-tv .tb-dest-etiqueta { font-size: 1.4vh; }
+
 @media (prefers-reduced-motion: reduce) {
-    .tb-card-destacada { transform: none; }
-    .tb-card-destacada::before { animation: none; }
+    .tb-dest { animation: none; }
+    .tb-dest-tiempo { animation: none; width: 100%; }
+    .tb-card-activa .tb-temp-barra { animation: none; }
 }
 
 /* ---------- Avisos temporales ---------- */

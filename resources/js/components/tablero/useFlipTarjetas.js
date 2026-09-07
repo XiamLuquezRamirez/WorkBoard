@@ -58,11 +58,6 @@ export default function useFlipTarjetas(firma, { activo = true } = {}) {
                 // Una tarjeta oculta (columna fuera de pantalla) mide 0: no se anima.
                 if (actual.width === 0 && actual.height === 0) return;
 
-                // La tarjeta destacada por el carrusel ya usa transform para
-                // adelantarse: escribir aquí el del FLIP la devolvería de golpe
-                // a su sitio a mitad de la animación.
-                if (nodo.classList.contains('tb-card-destacada')) return;
-
                 const dx = previa.left - actual.left;
                 const dy = previa.top - actual.top;
 
