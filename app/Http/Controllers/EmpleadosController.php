@@ -196,7 +196,13 @@ class EmpleadosController extends Controller
 
     function cargarDepartamentos()
     {
-        $departamentos = DB::connection('mysql2')->table('departamentos')->get();
+        // Se excluyen los inactivos. El estado admite NULL en los registros
+        // anteriores a esta columna, y esos cuentan como activos.
+        $departamentos = DB::connection('mysql2')->table('departamentos')
+            ->where(function ($q) {
+                $q->whereNull('estado')->orWhere('estado', '<>', 'Inactivo');
+            })
+            ->get();
         return response()->json($departamentos);
     }
 
@@ -2639,6 +2645,9 @@ class EmpleadosController extends Controller
                 'u.independencia as lider_independencia',
                 DB::raw("(SELECT COUNT(*) FROM empleados WHERE departamento = departamentos.id AND estado_registro = 'Activo' AND estado = 'Activo') as total_empleados")
             )
+            ->where(function ($q) {
+                $q->whereNull('departamentos.estado')->orWhere('departamentos.estado', '<>', 'Inactivo');
+            })
             ->get();
         return response()->json($departamentos);
     }
@@ -2670,8 +2679,17 @@ class EmpleadosController extends Controller
         if ($count > 0) {
             return response()->json(['message' => 'No se puede eliminar: tiene empleados activos asignados'], 422);
         }
-        DB::connection('mysql2')->table('departamentos')->where('id', $id)->delete();
-        return response()->json(['message' => 'Departamento eliminado']);
+
+        // Baja lógica en vez de borrado físico. La guarda anterior sólo cuenta
+        // empleados activos, de modo que un departamento con empleados dados de
+        // baja seguía siendo borrable: al desaparecer la fila, sus fichas y el
+        // historial de tareas se quedaban apuntando a un departamento inexistente
+        // y los informes perdían esa trazabilidad. Los ocho departamentos tienen
+        // tareas asociadas, así que conservarlos importa.
+        DB::connection('mysql2')->table('departamentos')->where('id', $id)
+            ->update(['estado' => 'Inactivo']);
+
+        return response()->json(['message' => 'Departamento inactivado']);
     }
 
     function asignarLiderDepartamento(Request $request, $id)
@@ -2708,10 +2726,15 @@ class EmpleadosController extends Controller
 
     function cargarCargos()
     {
+        // Se excluyen los inactivos; NULL cuenta como activo por compatibilidad
+        // con los registros anteriores a esta columna.
         $cargos = DB::connection('mysql2')->table('cargos')
             ->select('cargos.*',
                 DB::raw("(SELECT COUNT(*) FROM empleados WHERE empleados.cargo = cargos.id AND empleados.estado_registro = 'Activo') as total_empleados")
             )
+            ->where(function ($q) {
+                $q->whereNull('estado')->orWhere('estado', '<>', 'Inactivo');
+            })
             ->orderBy('nombre')
             ->get();
         return response()->json($cargos);
@@ -2722,9 +2745,21 @@ class EmpleadosController extends Controller
         $nombre = trim($request->nombre ?? '');
         if (!$nombre) return response()->json(['message' => 'El nombre es obligatorio'], 422);
 
+        // Con la baja lógica un nombre puede seguir ocupado por un cargo
+        // inactivo. En ese caso se reactiva en lugar de rechazar la creación:
+        // de otro modo el nombre quedaría bloqueado para siempre sin que el
+        // usuario vea el registro que lo retiene.
         $existe = DB::connection('mysql2')->table('cargos')
-            ->whereRaw('LOWER(nombre) = ?', [strtolower($nombre)])->exists();
-        if ($existe) return response()->json(['message' => 'Ya existe un cargo con ese nombre'], 422);
+            ->whereRaw('LOWER(nombre) = ?', [strtolower($nombre)])->first();
+
+        if ($existe) {
+            if (strcasecmp(trim($existe->estado ?? 'Activo'), 'Inactivo') === 0) {
+                DB::connection('mysql2')->table('cargos')->where('id', $existe->id)
+                    ->update(['estado' => 'Activo']);
+                return response()->json(['id' => $existe->id, 'message' => 'Cargo reactivado']);
+            }
+            return response()->json(['message' => 'Ya existe un cargo con ese nombre'], 422);
+        }
 
         $id = DB::connection('mysql2')->table('cargos')->insertGetId([
             'nombre' => strtoupper($nombre),
@@ -2757,8 +2792,14 @@ class EmpleadosController extends Controller
         if ($count > 0) {
             return response()->json(['message' => "No se puede eliminar: tiene $count empleado(s) activo(s) asignado(s)"], 422);
         }
-        DB::connection('mysql2')->table('cargos')->where('id', $id)->delete();
-        return response()->json(['message' => 'Cargo eliminado']);
+
+        // Baja lógica, por el mismo motivo que en departamentos: la guarda sólo
+        // mira empleados activos y el cargo aparece en fichas e informes de
+        // personas ya dadas de baja.
+        DB::connection('mysql2')->table('cargos')->where('id', $id)
+            ->update(['estado' => 'Inactivo']);
+
+        return response()->json(['message' => 'Cargo inactivado']);
     }
 
     function empleadosDepartamento($id)
