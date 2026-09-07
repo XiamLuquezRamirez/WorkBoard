@@ -5,8 +5,9 @@ const CLAVE_SELECCION = 'tableroAmbienteSeleccion';
 
 /**
  * Panel ambiental del tablero. Vive al pie del lateral, bajo "Próximas
- * entregas", y ocupa el espacio que queda libre ahí: plegado es un botón de una
- * línea y desplegado llena el hueco restante, sin superponerse al kanban.
+ * entregas", como un panel plegable más: desplegado absorbe el espacio libre y
+ * plegado queda reducido a su cabecera. Se comporta igual en modo TV, donde
+ * plegar alertas o equipo es lo que le deja sitio.
  *
  * Los vídeos se administran desde el menú del líder (Vídeos del Tablero), no
  * aquí: delante de una pantalla proyectada nadie escribe una URL.
@@ -14,10 +15,9 @@ const CLAVE_SELECCION = 'tableroAmbienteSeleccion';
  * Sólo YouTube: es de los pocos servicios que permiten ser embebidos; la
  * mayoría de sitios envían cabeceras que lo impiden y el panel quedaría vacío.
  */
-export default function TableroAmbiente({ modoTv }) {
+export default function TableroAmbiente({ plegado, onAlternar }) {
     const [videos, setVideos] = useState([]);
     const [indice, setIndice] = useState(0);
-    const [abierto, setAbierto] = useState(false);
     const [cargando, setCargando] = useState(true);
     const montado = useRef(true);
 
@@ -45,19 +45,6 @@ export default function TableroAmbiente({ modoTv }) {
         return () => { montado.current = false; };
     }, []);
 
-    // Cerrar con Escape sin interferir con el resto de atajos del tablero.
-    useEffect(() => {
-        if (!abierto) return undefined;
-        const onKey = (ev) => {
-            if (ev.key === 'Escape') {
-                ev.stopPropagation();
-                setAbierto(false);
-            }
-        };
-        window.addEventListener('keydown', onKey, true);
-        return () => window.removeEventListener('keydown', onKey, true);
-    }, [abierto]);
-
     const elegir = (pos) => {
         setIndice(pos);
         try {
@@ -73,32 +60,26 @@ export default function TableroAmbiente({ modoTv }) {
     const src = `https://www.youtube-nocookie.com/embed/${actual.video_id}`
         + `?autoplay=1&mute=1&rel=0&modestbranding=1&loop=1&playlist=${actual.video_id}`;
 
-    if (!abierto) {
-        return (
-            <button
-                className="tb-amb-fab"
-                onClick={() => setAbierto(true)}
-                title="Vídeos ambientales"
-                aria-label="Abrir vídeos ambientales"
-            >
-                ▶ AMBIENTE
-                {videos.length > 1 && <span className="tb-amb-fab-n">{videos.length}</span>}
-            </button>
-        );
-    }
-
     return (
-        <section className="tb-amb-panel" aria-label="Vídeos ambientales">
-            <header className="tb-amb-head">
-                <h3>{actual.titulo}</h3>
-                <button
-                    className="tb-amb-cerrar"
-                    onClick={() => setAbierto(false)}
-                    title="Cerrar (Esc)"
-                >
-                    ✕
-                </button>
-            </header>
+        <section
+            className={`tb-panel tb-amb-panel ${plegado ? 'es-plegado' : ''}`}
+            aria-label="Vídeos ambientales"
+        >
+            <button
+                className="tb-panel-cab"
+                onClick={onAlternar}
+                aria-expanded={!plegado}
+                title={plegado ? 'Desplegar' : 'Plegar'}
+            >
+                <span className="tb-panel-titulo">▶ {actual.titulo}</span>
+                {plegado && videos.length > 1 && (
+                    <span className="tb-panel-resumen">{videos.length}</span>
+                )}
+                <span className="tb-panel-chevron">{plegado ? '▸' : '▾'}</span>
+            </button>
+
+            {plegado ? null : (
+              <>
 
             <div className="tb-ambiente-video">
                 <iframe
@@ -125,6 +106,8 @@ export default function TableroAmbiente({ modoTv }) {
                         </button>
                     ))}
                 </div>
+            )}
+              </>
             )}
         </section>
     );

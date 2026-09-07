@@ -640,75 +640,13 @@ a.tb-btn-sec, a.tb-btn-sec:visited { color: var(--tb-txt); }
 }
 
 /* ---------- Botón flotante de ambiente ---------- */
-.tb-amb-fab {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    width: 100%;
-    padding: 10px 12px;
-    border-radius: 10px;
-    border: 1px dashed var(--tb-borde);
-    background: var(--tb-panel);
-    color: var(--tb-txt-tenue);
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: .06em;
-    cursor: pointer;
-    flex-shrink: 0;
-    transition: color .2s ease, border-color .2s ease;
-}
-.tb-amb-fab:hover { color: var(--tb-azul); border-color: var(--tb-azul); }
-.tb-amb-fab-n {
-    min-width: 18px;
-    padding: 0 6px;
-    border-radius: 999px;
-    background: var(--tb-azul);
-    color: #06121F;
-    font-size: 10px;
-    font-weight: 800;
-    line-height: 18px;
-}
 
 .tb-amb-panel {
-    /* Ocupa el espacio libre bajo "Próximas entregas", dentro del lateral: no
-       flota sobre el kanban ni tapa la columna de completadas. */
-    background: var(--tb-panel);
-    border: 1px solid var(--tb-borde);
-    border-radius: 10px;
-    padding: 11px 13px;
     display: flex;
     flex-direction: column;
     gap: 9px;
-    flex: 1 1 auto;
-    min-height: 0;
     animation: tb-entra .28s ease-out;
 }
-.tb-amb-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-}
-.tb-amb-head h3 {
-    margin: 0;
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: .05em;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-.tb-amb-cerrar {
-    background: transparent;
-    border: 1px solid var(--tb-borde);
-    color: var(--tb-txt-tenue);
-    border-radius: 6px;
-    width: 24px; height: 24px;
-    cursor: pointer;
-    flex-shrink: 0;
-}
-.tb-amb-cerrar:hover { color: var(--tb-txt); border-color: var(--tb-azul); }
 
 .tb-amb-lista { display: flex; flex-wrap: wrap; gap: 6px; }
 .tb-amb-pista {
@@ -733,9 +671,7 @@ a.tb-btn-sec, a.tb-btn-sec:visited { color: var(--tb-txt); }
 }
 
 /* En TV el panel de vídeo es algo mayor, para verse a distancia */
-.tb-tv .tb-amb-fab { padding: 1.1vh; font-size: 1.3vh; }
 .tb-tv .tb-amb-panel { padding: 1vh 1.1vh; }
-.tb-tv .tb-amb-head h3 { font-size: 1.4vh; }
 
 /* ---------- Termómetro de antigüedad ----------
    Casi todas las tareas están vencidas y en prioridad Alta, así que marcar eso
@@ -979,6 +915,37 @@ a.tb-btn-sec, a.tb-btn-sec:visited { color: var(--tb-txt); }
     .tb-card-activa .tb-temp-barra { animation: none; }
 }
 
+/* ---------- Paneles plegables del lateral ---------- */
+.tb-panel-cab {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 0;
+    background: none;
+    border: none;
+    color: inherit;
+    cursor: pointer;
+    text-align: left;
+}
+.tb-panel-cab .tb-panel-titulo { margin: 0; flex: 1; min-width: 0; }
+.tb-panel-resumen {
+    background: var(--tb-panel-2);
+    border-radius: 999px;
+    padding: 1px 8px;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--tb-txt);
+}
+.tb-panel-chevron { font-size: 10px; color: var(--tb-txt-tenue); }
+.tb-panel-cab:hover .tb-panel-chevron { color: var(--tb-azul); }
+.tb-panel-cuerpo { margin-top: 9px; }
+.tb-panel.es-plegado { flex: 0 0 auto; }
+
+/* El vídeo es el único que absorbe el espacio sobrante; plegado se comporta
+   como los demás. */
+.tb-amb-panel:not(.es-plegado) { flex: 1 1 auto; min-height: 0; }
+
 /* ---------- Avisos temporales ---------- */
 .tb-avisos {
     position: absolute;
@@ -1062,6 +1029,8 @@ a.tb-btn-sec, a.tb-btn-sec:visited { color: var(--tb-txt); }
 
 /* Lateral: no scrollea; la lista de entregas cede antes que el vídeo */
 .tb-tv .tb-lateral { overflow: hidden; gap: 1vh; }
+.tb-tv .tb-panel-cab { font-size: 1.15vh; }
+.tb-tv .tb-panel-resumen { font-size: 1vh; }
 .tb-tv .tb-panel { padding: 1vh 1.1vh; border-radius: .8vh; }
 .tb-tv .tb-panel-titulo { font-size: 1.15vh; margin-bottom: .8vh; }
 .tb-tv .tb-alerta { font-size: 1.3vh; padding: .6vh 1vh; }

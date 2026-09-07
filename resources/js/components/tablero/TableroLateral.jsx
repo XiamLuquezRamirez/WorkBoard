@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAvatar } from './AvataresContext';
 import TableroAmbiente from './TableroAmbiente';
 
 const MESES = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC'];
+const CLAVE_PLEGADOS = 'tableroPanelesPlegados';
 
 function fechaCorta(iso) {
     if (!iso) return '—';
@@ -13,6 +14,31 @@ function fechaCorta(iso) {
 
 const iniciales = (nombre) => String(nombre || '?')
     .trim().split(/\s+/).slice(0, 2).map((p) => p[0]).join('').toUpperCase();
+
+/**
+ * Panel plegable del lateral.
+ *
+ * El estado se recuerda en la pantalla: en modo TV el lateral no scrollea, así
+ * que poder cerrar alertas o equipo es lo que deja sitio al vídeo. Plegado
+ * muestra un resumen para no perder el dato de un vistazo.
+ */
+function Panel({ id, titulo, resumen, plegado, onAlternar, children }) {
+    return (
+        <section className={`tb-panel ${plegado ? 'es-plegado' : ''}`} aria-label={titulo}>
+            <button
+                className="tb-panel-cab"
+                onClick={() => onAlternar(id)}
+                aria-expanded={!plegado}
+                title={plegado ? 'Desplegar' : 'Plegar'}
+            >
+                <span className="tb-panel-titulo">{titulo}</span>
+                {plegado && resumen != null && <span className="tb-panel-resumen">{resumen}</span>}
+                <span className="tb-panel-chevron">{plegado ? '▸' : '▾'}</span>
+            </button>
+            {!plegado && <div className="tb-panel-cuerpo">{children}</div>}
+        </section>
+    );
+}
 
 function Persona({ p }) {
     const fotoOriginal = useAvatar(p.id);
@@ -35,75 +61,96 @@ function Persona({ p }) {
     );
 }
 
-function Equipo({ equipo }) {
-    return (
-        <section className="tb-panel" aria-label="Equipo">
-            <h3 className="tb-panel-titulo">EQUIPO</h3>
-            <ul className="tb-equipo">
-                {equipo.map((p) => <Persona key={p.id} p={p} />)}
-                {equipo.length === 0 && <li className="tb-col-vacia">Sin integrantes</li>}
-            </ul>
-        </section>
-    );
-}
+export default function TableroLateral({ datos }) {
+    const [plegados, setPlegados] = useState(() => {
+        try {
+            return JSON.parse(localStorage.getItem(CLAVE_PLEGADOS)) || {};
+        } catch {
+            return {};
+        }
+    });
 
-function Alertas({ alertas }) {
-    const filas = [
-        { n: alertas.vencidas, texto: 'tareas vencidas', clase: 'al-roja' },
-        { n: alertas.vencen_hoy, texto: 'vencen hoy', clase: 'al-naranja' },
-        { n: alertas.proximas, texto: 'vencen esta semana', clase: 'al-amarilla' },
-        { n: alertas.pausadas, texto: 'tareas en pausa', clase: 'al-azul' },
+    useEffect(() => {
+        try {
+            localStorage.setItem(CLAVE_PLEGADOS, JSON.stringify(plegados));
+        } catch {
+            /* sin persistencia si el navegador la bloquea */
+        }
+    }, [plegados]);
+
+    const alternar = (id) => setPlegados((p) => ({ ...p, [id]: !p[id] }));
+
+    const filasAlerta = [
+        { n: datos.alertas.vencidas, texto: 'tareas vencidas', clase: 'al-roja' },
+        { n: datos.alertas.vencen_hoy, texto: 'vencen hoy', clase: 'al-naranja' },
+        { n: datos.alertas.proximas, texto: 'vencen esta semana', clase: 'al-amarilla' },
+        { n: datos.alertas.pausadas, texto: 'tareas en pausa', clase: 'al-azul' },
     ].filter((f) => f.n > 0);
 
     return (
-        <section className="tb-panel" aria-label="Alertas">
-            <h3 className="tb-panel-titulo">ALERTAS</h3>
-            {filas.length === 0
-                ? <p className="tb-sin-alertas">✓ Sin alertas</p>
-                : (
-                    <ul className="tb-alertas">
-                        {filas.map((f) => (
-                            <li key={f.texto} className={`tb-alerta ${f.clase}`}>
-                                <strong>{f.n}</strong> {f.texto}
-                            </li>
-                        ))}
-                    </ul>
-                )}
-        </section>
-    );
-}
-
-function Entregas({ entregas }) {
-    return (
-        <section className="tb-panel" aria-label="Próximas entregas">
-            <h3 className="tb-panel-titulo">PRÓXIMAS ENTREGAS</h3>
-            <ul className="tb-entregas">
-                {entregas.map((e) => (
-                    <li key={e.id} className="tb-entrega">
-                        <span className={`tb-entrega-fecha ${e.dias_restantes < 0 ? 'es-vencida' : ''}`}>
-                            {fechaCorta(e.fecha_pactada)}
-                        </span>
-                        <span className="tb-entrega-info">
-                            <span className="tb-entrega-titulo" title={e.titulo}>{e.titulo}</span>
-                            <span className="tb-entrega-persona">{e.empleado}</span>
-                        </span>
-                    </li>
-                ))}
-                {entregas.length === 0 && <li className="tb-col-vacia">Sin entregas programadas</li>}
-            </ul>
-        </section>
-    );
-}
-
-export default function TableroLateral({ datos, modoTv }) {
-    return (
         <aside className="tb-lateral">
-            <Alertas alertas={datos.alertas} />
-            <Equipo equipo={datos.equipo} />
-            <Entregas entregas={datos.entregas} />
+            <Panel
+                id="alertas"
+                titulo="ALERTAS"
+                resumen={filasAlerta.length || '✓'}
+                plegado={plegados.alertas}
+                onAlternar={alternar}
+            >
+                {filasAlerta.length === 0
+                    ? <p className="tb-sin-alertas">✓ Sin alertas</p>
+                    : (
+                        <ul className="tb-alertas">
+                            {filasAlerta.map((f) => (
+                                <li key={f.texto} className={`tb-alerta ${f.clase}`}>
+                                    <strong>{f.n}</strong> {f.texto}
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+            </Panel>
+
+            <Panel
+                id="equipo"
+                titulo="EQUIPO"
+                resumen={datos.equipo.length}
+                plegado={plegados.equipo}
+                onAlternar={alternar}
+            >
+                <ul className="tb-equipo">
+                    {datos.equipo.map((p) => <Persona key={p.id} p={p} />)}
+                    {datos.equipo.length === 0 && <li className="tb-col-vacia">Sin integrantes</li>}
+                </ul>
+            </Panel>
+
+            <Panel
+                id="entregas"
+                titulo="PRÓXIMAS ENTREGAS"
+                resumen={datos.entregas.length}
+                plegado={plegados.entregas}
+                onAlternar={alternar}
+            >
+                <ul className="tb-entregas">
+                    {datos.entregas.map((e) => (
+                        <li key={e.id} className="tb-entrega">
+                            <span className={`tb-entrega-fecha ${e.dias_restantes < 0 ? 'es-vencida' : ''}`}>
+                                {fechaCorta(e.fecha_pactada)}
+                            </span>
+                            <span className="tb-entrega-info">
+                                <span className="tb-entrega-titulo" title={e.titulo}>{e.titulo}</span>
+                                <span className="tb-entrega-persona">{e.empleado}</span>
+                            </span>
+                        </li>
+                    ))}
+                    {datos.entregas.length === 0 && <li className="tb-col-vacia">Sin entregas programadas</li>}
+                </ul>
+            </Panel>
+
             {/* El vídeo ocupa el hueco libre bajo las entregas, dentro del
                 lateral: así no se superpone al kanban ni le resta espacio. */}
-            <TableroAmbiente modoTv={modoTv} />
+            <TableroAmbiente
+                plegado={plegados.ambiente}
+                onAlternar={() => alternar('ambiente')}
+            />
         </aside>
     );
 }
