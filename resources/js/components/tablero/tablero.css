@@ -200,7 +200,7 @@ a.tb-btn-sec, a.tb-btn-sec:visited { color: var(--tb-txt); }
 .tb-kanban {
     position: relative;   /* contexto de apilado para la tarjeta en tránsito */
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 12px;
     min-height: 0;
 }
@@ -216,7 +216,6 @@ a.tb-btn-sec, a.tb-btn-sec:visited { color: var(--tb-txt); }
 }
 .col-pendiente { border-top-color: var(--tb-amarillo); }
 .col-proceso { border-top-color: var(--tb-azul); }
-.col-pausa { border-top-color: var(--tb-naranja); }
 .col-completadas { border-top-color: var(--tb-morado); }
 
 .tb-col-head {
@@ -591,53 +590,8 @@ a.tb-btn-sec, a.tb-btn-sec:visited { color: var(--tb-txt); }
 .tb-entrega-persona { font-size: 9px; color: var(--tb-txt-tenue); }
 
 /* ---------- Panel ambiental (vídeo) ---------- */
-.tb-ambiente-abrir {
-    background: var(--tb-panel);
-    border: 1px dashed var(--tb-borde);
-    color: var(--tb-txt-tenue);
-    border-radius: 10px;
-    padding: 9px 12px;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: .07em;
-    cursor: pointer;
-    transition: color .2s ease, border-color .2s ease;
-}
-.tb-ambiente-abrir:hover {
-    color: var(--tb-azul);
-    border-color: var(--tb-azul);
-}
 
-.tb-ambiente { display: flex; flex-direction: column; gap: 8px; }
-.tb-ambiente-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-}
-.tb-ambiente-head .tb-panel-titulo { margin: 0; }
-.tb-ambiente-acciones { display: flex; gap: 5px; }
 
-.tb-ambiente-btn {
-    background: var(--tb-panel-2);
-    border: 1px solid var(--tb-borde);
-    color: var(--tb-txt-tenue);
-    border-radius: 6px;
-    padding: 3px 8px;
-    font-size: 10px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: color .2s ease, border-color .2s ease;
-}
-.tb-ambiente-btn:hover { color: var(--tb-txt); border-color: var(--tb-azul); }
-.tb-ambiente-btn-ok {
-    background: var(--tb-azul);
-    border-color: var(--tb-azul);
-    color: #fff;
-    padding: 5px 10px;
-    font-size: 11px;
-}
-.tb-ambiente-btn-ok:hover { color: #fff; filter: brightness(1.12); }
 
 /* Marco 16:9 para que el reproductor conserve su proporción */
 .tb-ambiente-video {
@@ -657,31 +611,185 @@ a.tb-btn-sec, a.tb-btn-sec:visited { color: var(--tb-txt); }
     border: 0;
 }
 
-.tb-ambiente-select {
-    background: var(--tb-bg);
-    border: 1px solid var(--tb-borde);
-    border-radius: 6px;
-    padding: 6px 8px;
-    color: var(--tb-txt);
-    font-size: 11px;
-    width: 100%;
-    cursor: pointer;
-}
-.tb-ambiente-select:focus { outline: none; border-color: var(--tb-azul); }
-.tb-ambiente-nota { margin: 0; font-size: 9px; color: var(--tb-txt-tenue); line-height: 1.4; }
-.tb-ambiente-vacio {
-    margin: 0;
-    padding: 9px 12px;
-    font-size: 10px;
-    line-height: 1.5;
-    color: var(--tb-txt-tenue);
-    background: var(--tb-panel);
-    border: 1px dashed var(--tb-borde);
-    border-radius: 10px;
-}
 
 /* En modo TV el componente ya se renderiza sin controles; el panel sólo
    reproduce lo configurado previamente desde la vista de escritorio. */
+
+/* ---------- KPI accionable (acceso a pausadas) ---------- */
+.tb-kpi-accion {
+    cursor: pointer;
+    text-align: left;
+    font: inherit;
+    color: inherit;
+}
+.tb-kpi-accion:hover {
+    border-color: var(--tb-naranja);
+    box-shadow: 0 0 0 2px rgba(240, 138, 0, .35);
+}
+.tb-kpi-lupa { color: var(--tb-naranja); font-weight: 800; }
+
+/* ---------- Panel de tareas en pausa ---------- */
+.tb-modal-fondo {
+    position: absolute;
+    inset: 0;
+    z-index: 40;
+    background: rgba(7, 14, 26, .74);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4vh 4vw;
+    animation: tb-entra .25s ease-out;
+}
+.tb-modal {
+    background: var(--tb-panel);
+    border: 1px solid var(--tb-borde);
+    border-top: 3px solid var(--tb-naranja);
+    border-radius: 12px;
+    width: min(760px, 92vw);
+    max-height: 84vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, .6);
+}
+.tb-modal-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--tb-borde);
+}
+.tb-modal-head h2 {
+    margin: 0;
+    font-size: clamp(13px, 1vw, 18px);
+    letter-spacing: .07em;
+    font-weight: 700;
+}
+.tb-modal-n {
+    background: var(--tb-naranja);
+    color: #06121F;
+    border-radius: 999px;
+    padding: 1px 10px;
+    margin-left: 8px;
+    font-size: .85em;
+}
+.tb-modal-cerrar {
+    background: transparent;
+    border: 1px solid var(--tb-borde);
+    color: var(--tb-txt-tenue);
+    border-radius: 6px;
+    width: 28px; height: 28px;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+.tb-modal-cerrar:hover { color: var(--tb-txt); border-color: var(--tb-naranja); }
+.tb-modal-body {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: 10px;
+    padding: 16px 18px;
+    overflow-y: auto;
+}
+
+/* ---------- Botón flotante de ambiente ---------- */
+.tb-amb-fab {
+    position: absolute;
+    right: 22px;
+    bottom: 20px;
+    z-index: 30;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    border: 1px solid var(--tb-borde);
+    background: var(--tb-panel);
+    color: var(--tb-azul);
+    font-size: 19px;
+    cursor: pointer;
+    box-shadow: 0 8px 22px rgba(0, 0, 0, .45);
+    transition: transform .2s ease, border-color .2s ease;
+}
+.tb-amb-fab:hover { transform: scale(1.06); border-color: var(--tb-azul); }
+.tb-amb-fab-n {
+    position: absolute;
+    top: -3px; right: -3px;
+    min-width: 18px;
+    padding: 0 5px;
+    border-radius: 999px;
+    background: var(--tb-azul);
+    color: #06121F;
+    font-size: 10px;
+    font-weight: 800;
+    line-height: 18px;
+}
+
+.tb-amb-panel {
+    position: absolute;
+    right: 22px;
+    bottom: 20px;
+    z-index: 32;
+    width: min(420px, 34vw);
+    background: var(--tb-panel);
+    border: 1px solid var(--tb-borde);
+    border-radius: 12px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+    box-shadow: 0 18px 46px rgba(0, 0, 0, .58);
+    animation: tb-entra .28s ease-out;
+}
+.tb-amb-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+.tb-amb-head h3 {
+    margin: 0;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .05em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.tb-amb-cerrar {
+    background: transparent;
+    border: 1px solid var(--tb-borde);
+    color: var(--tb-txt-tenue);
+    border-radius: 6px;
+    width: 24px; height: 24px;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+.tb-amb-cerrar:hover { color: var(--tb-txt); border-color: var(--tb-azul); }
+
+.tb-amb-lista { display: flex; flex-wrap: wrap; gap: 6px; }
+.tb-amb-pista {
+    background: var(--tb-panel-2);
+    border: 1px solid var(--tb-borde);
+    color: var(--tb-txt-tenue);
+    border-radius: 999px;
+    padding: 4px 11px;
+    font-size: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    max-width: 160px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.tb-amb-pista:hover { color: var(--tb-txt); border-color: var(--tb-azul); }
+.tb-amb-pista.es-actual {
+    background: var(--tb-azul);
+    border-color: var(--tb-azul);
+    color: #06121F;
+}
+
+/* En TV el panel de vídeo es algo mayor, para verse a distancia */
+.tb-tv .tb-amb-fab { width: 6vh; height: 6vh; font-size: 2.2vh; right: 1.6vw; bottom: 2vh; }
+.tb-tv .tb-amb-panel { width: 30vw; right: 1.6vw; bottom: 2vh; }
+.tb-tv .tb-amb-head h3 { font-size: 1.4vh; }
 
 /* ---------- Avisos temporales ---------- */
 .tb-avisos {
@@ -736,7 +844,7 @@ a.tb-btn-sec, a.tb-btn-sec:visited { color: var(--tb-txt); }
     gap: 1.2vh;
 }
 .tb-tv .tb-cuerpo { grid-template-columns: 1fr 17vw; gap: 1vw; }
-.tb-tv .tb-kanban { grid-template-columns: repeat(4, 1fr); gap: .7vw; }
+.tb-tv .tb-kanban { grid-template-columns: repeat(3, 1fr); gap: .8vw; }
 
 .tb-tv .tb-logo { height: 5.2vh; padding: .6vh 1vh; }
 .tb-tv .tb-header h1 { font-size: 2.2vh; }
@@ -781,7 +889,6 @@ a.tb-btn-sec, a.tb-btn-sec:visited { color: var(--tb-txt); }
 .tb-tv .tb-entrega-persona,
 .tb-tv .tb-entrega-fecha { font-size: 1vh; }
 .tb-tv .tb-lateral .tb-entregas { overflow: hidden; }
-.tb-tv .tb-ambiente { flex-shrink: 0; }
 
 .tb-salir-tv {
     position: absolute;

@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useAvatar } from './AvataresContext';
-import TableroAmbiente from './TableroAmbiente';
 
 const MESES = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC'];
 
@@ -95,13 +94,12 @@ function Entregas({ entregas }) {
     );
 }
 
-export default function TableroLateral({ datos, modoTv }) {
+export default function TableroLateral({ datos }) {
     return (
         <aside className="tb-lateral">
             <Alertas alertas={datos.alertas} />
             <Equipo equipo={datos.equipo} />
             <Entregas entregas={datos.entregas} />
-            <TableroAmbiente modoTv={modoTv} />
         </aside>
     );
 }

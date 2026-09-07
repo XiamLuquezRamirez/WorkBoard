@@ -4,11 +4,12 @@ import axiosInstance from '../../axiosConfig';
 const CLAVE_SELECCION = 'tableroAmbienteSeleccion';
 
 /**
- * Panel ambiental del tablero.
+ * Panel ambiental del tablero, como botón flotante en la esquina inferior
+ * derecha: así no compite por espacio con el kanban ni con el lateral, y sólo
+ * ocupa pantalla mientras se está usando.
  *
- * Los vídeos se administran desde Parámetros > Vídeos del Tablero, no aquí:
- * delante de una pantalla proyectada nadie escribe una URL. Este panel se
- * limita a reproducir lo configurado y a permitir cambiar de pista.
+ * Los vídeos se administran desde el menú del líder (Vídeos del Tablero), no
+ * aquí: delante de una pantalla proyectada nadie escribe una URL.
  *
  * Sólo YouTube: es de los pocos servicios que permiten ser embebidos; la
  * mayoría de sitios envían cabeceras que lo impiden y el panel quedaría vacío.
@@ -44,6 +45,19 @@ export default function TableroAmbiente({ modoTv }) {
         return () => { montado.current = false; };
     }, []);
 
+    // Cerrar con Escape sin interferir con el resto de atajos del tablero.
+    useEffect(() => {
+        if (!abierto) return undefined;
+        const onKey = (ev) => {
+            if (ev.key === 'Escape') {
+                ev.stopPropagation();
+                setAbierto(false);
+            }
+        };
+        window.addEventListener('keydown', onKey, true);
+        return () => window.removeEventListener('keydown', onKey, true);
+    }, [abierto]);
+
     const elegir = (pos) => {
         setIndice(pos);
         try {
@@ -53,90 +67,65 @@ export default function TableroAmbiente({ modoTv }) {
         }
     };
 
-    if (cargando) return null;
-
-    // Sin vídeos configurados el panel no ocupa espacio. En escritorio se deja
-    // una pista de dónde se configuran; en TV no se muestra nada.
-    if (videos.length === 0) {
-        if (modoTv) return null;
-        return (
-            <p className="tb-ambiente-vacio">
-                Sin vídeos. Se configuran en Parámetros → Vídeos del Tablero.
-            </p>
-        );
-    }
+    if (cargando || videos.length === 0) return null;
 
     const actual = videos[Math.min(indice, videos.length - 1)];
     const src = `https://www.youtube-nocookie.com/embed/${actual.video_id}`
         + `?autoplay=1&mute=1&rel=0&modestbranding=1&loop=1&playlist=${actual.video_id}`;
 
-    const reproductor = (
-        <div className="tb-ambiente-video">
-            <iframe
-                key={actual.video_id}
-                src={src}
-                title={actual.titulo}
-                frameBorder="0"
-                allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-                referrerPolicy="strict-origin-when-cross-origin"
-            />
-        </div>
-    );
-
-    // En modo TV el panel es sólo de visualización: sin controles.
-    if (modoTv) {
-        return (
-            <section className="tb-panel tb-ambiente" aria-label="Panel de vídeo">
-                <h3 className="tb-panel-titulo">{actual.titulo.toUpperCase()}</h3>
-                {reproductor}
-            </section>
-        );
-    }
-
     if (!abierto) {
         return (
             <button
-                className="tb-ambiente-abrir"
+                className="tb-amb-fab"
                 onClick={() => setAbierto(true)}
-                title="Abrir panel de vídeo"
+                title="Vídeos ambientales"
+                aria-label="Abrir vídeos ambientales"
             >
-                ▶ Ambiente ({videos.length})
+                ▶
+                {videos.length > 1 && <span className="tb-amb-fab-n">{videos.length}</span>}
             </button>
         );
     }
 
     return (
-        <section className="tb-panel tb-ambiente" aria-label="Panel de vídeo">
-            <header className="tb-ambiente-head">
-                <h3 className="tb-panel-titulo">AMBIENTE</h3>
+        <section className="tb-amb-panel" aria-label="Vídeos ambientales">
+            <header className="tb-amb-head">
+                <h3>{actual.titulo}</h3>
                 <button
-                    className="tb-ambiente-btn"
+                    className="tb-amb-cerrar"
                     onClick={() => setAbierto(false)}
-                    title="Plegar el panel"
+                    title="Cerrar (Esc)"
                 >
-                    ▾
+                    ✕
                 </button>
             </header>
 
-            {reproductor}
+            <div className="tb-ambiente-video">
+                <iframe
+                    key={actual.video_id}
+                    src={src}
+                    title={actual.titulo}
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    referrerPolicy="strict-origin-when-cross-origin"
+                />
+            </div>
 
             {videos.length > 1 && (
-                <select
-                    className="tb-ambiente-select"
-                    value={indice}
-                    onChange={(e) => elegir(Number(e.target.value))}
-                    aria-label="Elegir vídeo"
-                >
+                <div className="tb-amb-lista">
                     {videos.map((v, i) => (
-                        <option key={v.id} value={i}>{v.titulo}</option>
+                        <button
+                            key={v.id}
+                            className={`tb-amb-pista ${i === indice ? 'es-actual' : ''}`}
+                            onClick={() => elegir(i)}
+                            title={v.titulo}
+                        >
+                            {v.titulo}
+                        </button>
                     ))}
-                </select>
+                </div>
             )}
-
-            <p className="tb-ambiente-nota">
-                Empieza sin sonido. Actívalo desde el reproductor.
-            </p>
         </section>
     );
 }

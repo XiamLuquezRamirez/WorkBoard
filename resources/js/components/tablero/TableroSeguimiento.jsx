@@ -3,6 +3,8 @@ import useTableroEstado from './useTableroEstado';
 import TableroKPIs from './TableroKPIs';
 import TableroKanban from './TableroKanban';
 import TableroLateral from './TableroLateral';
+import TableroCard from './TableroCard';
+import TableroAmbiente from './TableroAmbiente';
 import { AvataresProvider } from './AvataresContext';
 import { getImageUrl } from '../../utils/assetHelper';
 import './tablero.css';
@@ -75,6 +77,35 @@ function Avisos({ eventos }) {
     );
 }
 
+/**
+ * Tareas en pausa. No ocupan columna propia porque suelen ser muy pocas y
+ * dejaban una cuarta parte del kanban desaprovechada; se consultan desde su
+ * indicador, que abre este panel.
+ */
+function PanelPausadas({ tareas, onCerrar }) {
+    return (
+        <div className="tb-modal-fondo" onClick={onCerrar}>
+            <section
+                className="tb-modal"
+                onClick={(e) => e.stopPropagation()}
+                role="dialog"
+                aria-label="Tareas en pausa"
+            >
+                <header className="tb-modal-head">
+                    <h2>⏸ TAREAS EN PAUSA <span className="tb-modal-n">{tareas.length}</span></h2>
+                    <button className="tb-modal-cerrar" onClick={onCerrar} title="Cerrar (Esc)">✕</button>
+                </header>
+
+                <div className="tb-modal-body">
+                    {tareas.length === 0
+                        ? <p className="tb-col-vacia">No hay tareas en pausa.</p>
+                        : tareas.map((t) => <TableroCard key={t.id} tarea={t} />)}
+                </div>
+            </section>
+        </div>
+    );
+}
+
 export default function TableroSeguimiento(props) {
     return (
         <AvataresProvider>
@@ -85,6 +116,7 @@ export default function TableroSeguimiento(props) {
 
 function TableroContenido({ onCerrar, tvInicial = false }) {
     const [modoTv, setModoTv] = useState(tvInicial);
+    const [verPausadas, setVerPausadas] = useState(false);
     // Sin onCerrar el tablero vive en su propia pestaña: no hay a dónde "volver",
     // así que se ofrece cerrarla en lugar de regresar a la vista anterior.
     const enPestanaPropia = !onCerrar;
@@ -101,6 +133,7 @@ function TableroContenido({ onCerrar, tvInicial = false }) {
     useEffect(() => {
         const onKey = (ev) => {
             if (ev.key !== 'Escape') return;
+            if (verPausadas) { setVerPausadas(false); return; }
             // En pestaña propia Escape sólo sale del modo TV: cerrar la pestaña
             // desde el script no es fiable y sería un salto brusco para el usuario.
             if (modoTv) setModoTv(false);
@@ -108,7 +141,7 @@ function TableroContenido({ onCerrar, tvInicial = false }) {
         };
         window.addEventListener('keydown', onKey);
         return () => window.removeEventListener('keydown', onKey);
-    }, [modoTv, onCerrar]);
+    }, [modoTv, onCerrar, verPausadas]);
 
     const eventos = useMemo(() => detectarEventos(datos, previo), [datos, previo]);
 
@@ -170,12 +203,25 @@ function TableroContenido({ onCerrar, tvInicial = false }) {
                 </div>
             </header>
 
-            <TableroKPIs kpis={datos.kpis} previo={previo} />
+            <TableroKPIs
+                kpis={datos.kpis}
+                previo={previo}
+                onVerPausadas={() => setVerPausadas(true)}
+            />
 
             <div className="tb-cuerpo">
                 <TableroKanban datos={datos} previo={previo} modoTv={modoTv} />
-                <TableroLateral datos={datos} modoTv={modoTv} />
+                <TableroLateral datos={datos} />
             </div>
+
+            {verPausadas && (
+                <PanelPausadas
+                    tareas={datos.columnas.pausa || []}
+                    onCerrar={() => setVerPausadas(false)}
+                />
+            )}
+
+            <TableroAmbiente modoTv={modoTv} />
 
             <Avisos eventos={eventos} />
 

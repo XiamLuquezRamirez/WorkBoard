@@ -31,7 +31,7 @@ function Numero({ valor, sufijo = '' }) {
     return <span className="tb-kpi-num">{mostrado}{sufijo}</span>;
 }
 
-export default function TableroKPIs({ kpis, previo }) {
+export default function TableroKPIs({ kpis, previo, onVerPausadas }) {
     const cambio = (clave) => previo && previo.kpis && previo.kpis[clave] !== kpis[clave];
 
     const tarjetas = [
@@ -45,12 +45,26 @@ export default function TableroKPIs({ kpis, previo }) {
 
     return (
         <div className="tb-kpis">
-            {tarjetas.map(({ clave, etiqueta, clase, sufijo }) => (
-                <div key={clave} className={`tb-kpi ${clase} ${cambio(clave) ? 'tb-kpi-cambio' : ''}`}>
-                    <Numero valor={kpis[clave] ?? 0} sufijo={sufijo || ''} />
-                    <span className="tb-kpi-label">{etiqueta}</span>
-                </div>
-            ))}
+            {tarjetas.map(({ clave, etiqueta, clase, sufijo }) => {
+                // Las pausadas ya no tienen columna: su indicador es el acceso a
+                // la lista, así que se muestra como botón cuando hay alguna.
+                const esAcceso = clave === 'pausa' && onVerPausadas && (kpis.pausa ?? 0) > 0;
+                const Elemento = esAcceso ? 'button' : 'div';
+
+                return (
+                    <Elemento
+                        key={clave}
+                        className={`tb-kpi ${clase} ${cambio(clave) ? 'tb-kpi-cambio' : ''} ${esAcceso ? 'tb-kpi-accion' : ''}`}
+                        onClick={esAcceso ? onVerPausadas : undefined}
+                        title={esAcceso ? 'Ver las tareas en pausa' : undefined}
+                    >
+                        <Numero valor={kpis[clave] ?? 0} sufijo={sufijo || ''} />
+                        <span className="tb-kpi-label">
+                            {etiqueta}{esAcceso && <span className="tb-kpi-lupa"> ›</span>}
+                        </span>
+                    </Elemento>
+                );
+            })}
         </div>
     );
 }

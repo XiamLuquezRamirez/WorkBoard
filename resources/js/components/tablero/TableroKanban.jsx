@@ -2,12 +2,18 @@ import React, { useMemo } from 'react';
 import TableroCard from './TableroCard';
 import useFlipTarjetas from './useFlipTarjetas';
 
+/* Las pausadas no tienen columna propia: son pocas de forma habitual y una
+   columna casi vacía desperdiciaba una cuarta parte del ancho. Se consultan
+   desde el indicador "EN PAUSA", que abre su propio panel. */
 const COLUMNAS = [
     { clave: 'pendiente', titulo: 'POR HACER', color: 'col-pendiente' },
     { clave: 'proceso', titulo: 'EN PROCESO', color: 'col-proceso' },
-    { clave: 'pausa', titulo: 'EN PAUSA', color: 'col-pausa' },
     { clave: 'completadas', titulo: 'COMPLETADAS', color: 'col-completadas' },
 ];
+
+/* Para el cálculo de movimientos sí hay que mirar las cuatro ubicaciones:
+   una tarjeta que pasa a pausa desaparece del kanban y debe detectarse. */
+const UBICACIONES = ['pendiente', 'proceso', 'pausa', 'completadas'];
 
 const items = (columnas, clave) =>
     clave === 'completadas' ? (columnas.completadas?.items || []) : (columnas[clave] || []);
@@ -20,7 +26,7 @@ function calcularCambios(datos, previo) {
     if (!previo || !datos) return {};
     const columnaDe = (estado) => {
         const mapa = {};
-        COLUMNAS.forEach(({ clave }) => {
+        UBICACIONES.forEach((clave) => {
             items(estado.columnas, clave).forEach((t) => { mapa[t.id] = clave; });
         });
         return mapa;
@@ -48,8 +54,8 @@ export default function TableroKanban({ datos, previo, modoTv }) {
     // FLIP sólo debe recalcularse cuando esto cambia. Usar servidor_ts haría que
     // el efecto se disparase en cada sondeo, remidiendo todas las tarjetas cada
     // pocos segundos aunque el tablero estuviera idéntico.
-    const firma = useMemo(() => COLUMNAS
-        .map(({ clave }) => `${clave}:${items(datos.columnas, clave).map((t) => t.id).join(',')}`)
+    const firma = useMemo(() => UBICACIONES
+        .map((clave) => `${clave}:${items(datos.columnas, clave).map((t) => t.id).join(',')}`)
         .join('|'), [datos]);
 
     // El desplazamiento entre columnas se anima midiendo posiciones reales, de
