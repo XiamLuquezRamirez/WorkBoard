@@ -459,6 +459,7 @@ a.tb-btn-sec, a.tb-btn-sec:visited { color: var(--tb-txt); }
     min-height: 0;
     overflow-y: auto;
 }
+.tb-lateral > .tb-panel { flex-shrink: 0; }
 .tb-panel {
     background: var(--tb-panel);
     border: 1px solid var(--tb-borde);
@@ -641,27 +642,27 @@ a.tb-btn-sec, a.tb-btn-sec:visited { color: var(--tb-txt); }
 
 /* ---------- Botón flotante de ambiente ---------- */
 .tb-amb-fab {
-    position: absolute;
-    right: 22px;
-    bottom: 20px;
-    z-index: 30;
-    width: 52px;
-    height: 52px;
-    border-radius: 50%;
-    border: 1px solid var(--tb-borde);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px dashed var(--tb-borde);
     background: var(--tb-panel);
-    color: var(--tb-azul);
-    font-size: 19px;
+    color: var(--tb-txt-tenue);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .06em;
     cursor: pointer;
-    box-shadow: 0 8px 22px rgba(0, 0, 0, .45);
-    transition: transform .2s ease, border-color .2s ease;
+    flex-shrink: 0;
+    transition: color .2s ease, border-color .2s ease;
 }
-.tb-amb-fab:hover { transform: scale(1.06); border-color: var(--tb-azul); }
+.tb-amb-fab:hover { color: var(--tb-azul); border-color: var(--tb-azul); }
 .tb-amb-fab-n {
-    position: absolute;
-    top: -3px; right: -3px;
     min-width: 18px;
-    padding: 0 5px;
+    padding: 0 6px;
     border-radius: 999px;
     background: var(--tb-azul);
     color: #06121F;
@@ -671,19 +672,17 @@ a.tb-btn-sec, a.tb-btn-sec:visited { color: var(--tb-txt); }
 }
 
 .tb-amb-panel {
-    position: absolute;
-    right: 22px;
-    bottom: 20px;
-    z-index: 32;
-    width: min(420px, 34vw);
+    /* Ocupa el espacio libre bajo "Próximas entregas", dentro del lateral: no
+       flota sobre el kanban ni tapa la columna de completadas. */
     background: var(--tb-panel);
     border: 1px solid var(--tb-borde);
-    border-radius: 12px;
-    padding: 12px;
+    border-radius: 10px;
+    padding: 11px 13px;
     display: flex;
     flex-direction: column;
     gap: 9px;
-    box-shadow: 0 18px 46px rgba(0, 0, 0, .58);
+    flex: 1 1 auto;
+    min-height: 0;
     animation: tb-entra .28s ease-out;
 }
 .tb-amb-head {
@@ -735,8 +734,8 @@ a.tb-btn-sec, a.tb-btn-sec:visited { color: var(--tb-txt); }
 }
 
 /* En TV el panel de vídeo es algo mayor, para verse a distancia */
-.tb-tv .tb-amb-fab { width: 6vh; height: 6vh; font-size: 2.2vh; right: 1.6vw; bottom: 2vh; }
-.tb-tv .tb-amb-panel { width: 30vw; right: 1.6vw; bottom: 2vh; }
+.tb-tv .tb-amb-fab { padding: 1.1vh; font-size: 1.3vh; }
+.tb-tv .tb-amb-panel { padding: 1vh 1.1vh; }
 .tb-tv .tb-amb-head h3 { font-size: 1.4vh; }
 
 /* ---------- Termómetro de antigüedad ----------

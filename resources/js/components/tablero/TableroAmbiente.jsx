@@ -4,9 +4,9 @@ import axiosInstance from '../../axiosConfig';
 const CLAVE_SELECCION = 'tableroAmbienteSeleccion';
 
 /**
- * Panel ambiental del tablero, como botón flotante en la esquina inferior
- * derecha: así no compite por espacio con el kanban ni con el lateral, y sólo
- * ocupa pantalla mientras se está usando.
+ * Panel ambiental del tablero. Vive al pie del lateral, bajo "Próximas
+ * entregas", y ocupa el espacio que queda libre ahí: plegado es un botón de una
+ * línea y desplegado llena el hueco restante, sin superponerse al kanban.
  *
  * Los vídeos se administran desde el menú del líder (Vídeos del Tablero), no
  * aquí: delante de una pantalla proyectada nadie escribe una URL.
@@ -81,7 +81,7 @@ export default function TableroAmbiente({ modoTv }) {
                 title="Vídeos ambientales"
                 aria-label="Abrir vídeos ambientales"
             >
-                ▶
+                ▶ AMBIENTE
                 {videos.length > 1 && <span className="tb-amb-fab-n">{videos.length}</span>}
             </button>
         );

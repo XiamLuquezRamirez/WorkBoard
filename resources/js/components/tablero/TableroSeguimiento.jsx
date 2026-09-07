@@ -4,7 +4,6 @@ import TableroKPIs from './TableroKPIs';
 import TableroKanban from './TableroKanban';
 import TableroLateral from './TableroLateral';
 import TableroCard from './TableroCard';
-import TableroAmbiente from './TableroAmbiente';
 import { AvataresProvider } from './AvataresContext';
 import { getImageUrl } from '../../utils/assetHelper';
 import './tablero.css';
@@ -211,7 +210,7 @@ function TableroContenido({ onCerrar, tvInicial = false }) {
 
             <div className="tb-cuerpo">
                 <TableroKanban datos={datos} previo={previo} modoTv={modoTv} />
-                <TableroLateral datos={datos} />
+                <TableroLateral datos={datos} modoTv={modoTv} />
             </div>
 
             {verPausadas && (
@@ -220,8 +219,6 @@ function TableroContenido({ onCerrar, tvInicial = false }) {
                     onCerrar={() => setVerPausadas(false)}
                 />
             )}
-
-            <TableroAmbiente modoTv={modoTv} />
 
             <Avisos eventos={eventos} />
 
