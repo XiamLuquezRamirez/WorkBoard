@@ -20,6 +20,8 @@ export default function TableroAmbiente({ plegado, onAlternar }) {
     const [indice, setIndice] = useState(0);
     const [cargando, setCargando] = useState(true);
     const montado = useRef(true);
+    const iframeRef = useRef(null);
+    const [conSonido, setConSonido] = useState(false);
 
     useEffect(() => {
         montado.current = true;
@@ -45,8 +47,25 @@ export default function TableroAmbiente({ plegado, onAlternar }) {
         return () => { montado.current = false; };
     }, []);
 
+    // Los navegadores sólo permiten arrancar un vídeo automáticamente si está
+    // silenciado; el audio requiere un gesto del usuario. Al pulsar el botón se
+    // ordena al reproductor que se active, sin recargar el iframe para no
+    // reiniciar la reproducción.
+    const activarSonido = () => {
+        const marco = iframeRef.current;
+        if (!marco || !marco.contentWindow) return;
+        const orden = (func) => marco.contentWindow.postMessage(
+            JSON.stringify({ event: 'command', func, args: [] }),
+            'https://www.youtube-nocookie.com'
+        );
+        orden('unMute');
+        orden('playVideo');
+        setConSonido(true);
+    };
+
     const elegir = (pos) => {
         setIndice(pos);
+        setConSonido(false);   // el iframe se recrea y vuelve silenciado
         try {
             if (videos[pos]) localStorage.setItem(CLAVE_SELECCION, String(videos[pos].id));
         } catch {
@@ -58,7 +77,8 @@ export default function TableroAmbiente({ plegado, onAlternar }) {
 
     const actual = videos[Math.min(indice, videos.length - 1)];
     const src = `https://www.youtube-nocookie.com/embed/${actual.video_id}`
-        + `?autoplay=1&mute=1&rel=0&modestbranding=1&loop=1&playlist=${actual.video_id}`;
+        + `?autoplay=1&mute=1&rel=0&modestbranding=1&loop=1&playlist=${actual.video_id}`
+        + '&enablejsapi=1';
 
     return (
         <section
@@ -82,7 +102,17 @@ export default function TableroAmbiente({ plegado, onAlternar }) {
               <>
 
             <div className="tb-ambiente-video">
+                {!conSonido && (
+                    <button
+                        className="tb-amb-sonido"
+                        onClick={activarSonido}
+                        title="Activar el sonido"
+                    >
+                        🔊 Activar sonido
+                    </button>
+                )}
                 <iframe
+                    ref={iframeRef}
                     key={actual.video_id}
                     src={src}
                     title={actual.titulo}
