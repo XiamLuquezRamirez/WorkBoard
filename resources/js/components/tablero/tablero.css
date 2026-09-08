@@ -516,6 +516,12 @@ a.tb-btn-sec, a.tb-btn-sec:visited { color: var(--tb-txt); }
     flex-shrink: 0;
 }
 
+.tb-nota-entregas {
+    border-bottom: none;
+    padding: 0 0 7px;
+    font-size: 9.5px;
+}
+.tb-tv .tb-nota-entregas { font-size: 1.05vh; }
 .tb-entregas { display: flex; flex-direction: column; gap: 8px; }
 .tb-entrega { display: flex; gap: 9px; align-items: flex-start; }
 .tb-entrega-fecha {

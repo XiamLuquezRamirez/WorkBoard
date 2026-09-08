@@ -2142,9 +2142,25 @@ class EmpleadosController extends Controller
             'pausadas'   => $pausa->count(),
         ];
 
-        $entregas = $sinCompletar
-            ->filter(fn ($t) => $t['fecha_pactada'] !== null)
-            ->sortBy('fecha_pactada')
+        // El panel priorizaba la fecha más antigua, de modo que bajo el título
+        // "Próximas entregas" aparecían siempre las más atrasadas. Se separan
+        // los dos casos: primero lo que aún está en plazo, ordenado por
+        // proximidad, y sólo si no hay nada por vencer se recurre a lo vencido,
+        // empezando por lo más reciente. 'modo' indica cuál de los dos se
+        // devuelve para que el tablero pueda titularlo con propiedad.
+        $conFecha = $sinCompletar->filter(fn ($t) => $t['fecha_pactada'] !== null);
+
+        $porVencer = $conFecha
+            ->filter(fn ($t) => $t['dias_restantes'] !== null && $t['dias_restantes'] >= 0)
+            ->sortBy('dias_restantes');
+
+        $modoEntregas = $porVencer->isNotEmpty() ? 'proximas' : 'vencidas';
+
+        $seleccion = $porVencer->isNotEmpty()
+            ? $porVencer
+            : $conFecha->sortByDesc('fecha_pactada');
+
+        $entregas = $seleccion
             ->take(6)
             ->map(fn ($t) => [
                 'id'            => $t['id'],
@@ -2187,6 +2203,7 @@ class EmpleadosController extends Controller
             'equipo'   => $equipo,
             'alertas'  => $alertas,
             'entregas' => $entregas,
+            'entregas_modo' => $modoEntregas,
         ]);
     }
 

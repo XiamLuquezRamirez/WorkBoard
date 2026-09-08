@@ -138,11 +138,18 @@ export default function TableroLateral({ datos, interactivo, onVerAlerta }) {
 
             <Panel
                 id="entregas"
-                titulo="PRÓXIMAS ENTREGAS"
+                titulo={datos.entregas_modo === 'vencidas'
+                    ? 'ENTREGAS PENDIENTES'
+                    : 'PRÓXIMAS ENTREGAS'}
                 resumen={datos.entregas.length}
                 plegado={plegados.entregas}
                 onAlternar={alternar}
             >
+                {datos.entregas_modo === 'vencidas' && datos.entregas.length > 0 && (
+                    <p className="tb-col-nota tb-nota-entregas">
+                        Sin entregas en plazo · las más recientes vencidas
+                    </p>
+                )}
                 <ul className="tb-entregas">
                     {datos.entregas.map((e) => (
                         <li key={e.id} className="tb-entrega">
