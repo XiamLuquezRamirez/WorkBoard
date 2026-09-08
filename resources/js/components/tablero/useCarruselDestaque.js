@@ -1,22 +1,21 @@
 import { useEffect, useRef, useState } from 'react';
 
-const ZOOM = 10000;      // tiempo de zoom sobre cada elemento
+const BLOQUE = 12000;    // tiempo que permanece visible cada bloque
 const GIRO = 1100;       // transición entre una sección y la siguiente
-const RESPIRO = 900;     // pausa entre un elemento y el siguiente
-const MAX_POR_SECCION = 6;
+const RESPIRO = 700;     // pausa entre bloques de la misma sección
+export const POR_BLOQUE = 5;
 
 /**
- * Recorre el tablero por secciones —las tres columnas y las alertas— y, dentro
- * de cada una, hace zoom sobre sus elementos uno a uno antes de girar a la
- * siguiente.
+ * Recorre el tablero por secciones —las tres columnas y las alertas— mostrando
+ * cada una completa. Si sus elementos no caben en una sola vista, la sección
+ * pasa por varios bloques antes de girar a la siguiente.
  *
- * Devuelve { seccion, indice, girando }: la sección visible, qué elemento tiene
- * el foco dentro de ella y si está en plena transición entre secciones. El
- * recorrido se detiene con la pestaña oculta para no acumular temporizadores en
- * una pantalla encendida toda la jornada.
+ * Devuelve { seccion, bloque, girando }: qué sección se ve, qué bloque de ella
+ * y si está en plena transición. El recorrido se detiene con la pestaña oculta
+ * para no acumular temporizadores en una pantalla encendida toda la jornada.
  */
 export default function useCarruselDestaque(secciones, { activo = true } = {}) {
-    const [estado, setEstado] = useState({ seccion: 0, indice: -1, girando: false });
+    const [estado, setEstado] = useState({ seccion: 0, bloque: 0, girando: false });
     const timerRef = useRef(null);
 
     // Firma estable: sin esto el efecto se reiniciaría en cada sondeo, porque
@@ -30,48 +29,47 @@ export default function useCarruselDestaque(secciones, { activo = true } = {}) {
 
         const vivas = secciones.filter((s) => s.elementos.length > 0);
         if (!activo || vivas.length === 0) {
-            setEstado({ seccion: 0, indice: -1, girando: false });
+            setEstado({ seccion: 0, bloque: 0, girando: false });
             return undefined;
         }
 
         let seccion = 0;
-        let indice = 0;
+        let bloque = 0;
 
         const paso = () => {
             if (document.hidden) {
-                timerRef.current = setTimeout(paso, ZOOM);
+                timerRef.current = setTimeout(paso, BLOQUE);
                 return;
             }
 
             const actual = vivas[seccion];
-            const total = Math.min(actual.elementos.length, MAX_POR_SECCION);
+            const bloques = Math.max(1, Math.ceil(actual.elementos.length / POR_BLOQUE));
 
-            setEstado({ seccion: actual.orden, indice, girando: false });
+            setEstado({ seccion: actual.orden, bloque, girando: false });
 
             timerRef.current = setTimeout(() => {
-                indice += 1;
+                bloque += 1;
 
-                if (indice < total) {
-                    // Siguiente elemento de la misma sección: sólo un respiro.
-                    setEstado({ seccion: actual.orden, indice: -1, girando: false });
+                if (bloque < bloques) {
+                    // Quedan elementos de esta sección: se pasa al siguiente
+                    // bloque sin girar, porque seguimos en la misma columna.
                     timerRef.current = setTimeout(paso, RESPIRO);
                     return;
                 }
 
                 // Sección agotada: gira a la siguiente. La salida se anima sobre
-                // la sección actual y sólo después se cambia de contenido; si se
-                // hicieran a la vez, el slide se remontaría —lleva key por
-                // sección— y se encadenarían la animación de giro y la de
-                // entrada, que es lo que producía el doble movimiento.
-                indice = 0;
-                setEstado({ seccion: vivas[seccion].orden, indice: -1, girando: true });
+                // la sección actual y el contenido cambia después; hacerlo a la
+                // vez remontaría el slide —lleva key por sección— y encadenaría
+                // la animación de giro con la de entrada.
+                bloque = 0;
+                setEstado({ seccion: actual.orden, bloque: -1, girando: true });
 
                 timerRef.current = setTimeout(() => {
                     seccion = (seccion + 1) % vivas.length;
-                    setEstado({ seccion: vivas[seccion].orden, indice: -1, girando: false });
+                    setEstado({ seccion: vivas[seccion].orden, bloque: 0, girando: false });
                     timerRef.current = setTimeout(paso, RESPIRO);
                 }, GIRO);
-            }, ZOOM);
+            }, BLOQUE);
         };
 
         timerRef.current = setTimeout(paso, RESPIRO);

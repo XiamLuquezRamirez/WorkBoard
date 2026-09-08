@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import axiosInstance from '../../axiosConfig';
+import { POR_BLOQUE } from './useCarruselDestaque';
 import { useAvatar } from './AvataresContext';
 
 const MESES = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC'];
@@ -155,31 +156,20 @@ export function DetalleTarea({ tarea, cortes, onCerrar }) {
 }
 
 /** Ficha de una tarea dentro de la columna destacada. */
-function FichaTarea({ tarea, cortes, enfocada }) {
-    const ref = useRef(null);
+function FichaTarea({ tarea, cortes }) {
     const foto = useAvatar(tarea.empleado_id);
 
-    // Al desplegar su detalle la ficha crece; si queda fuera del área visible
-    // del slide, se trae a la vista en lugar de dejarla cortada.
-    useEffect(() => {
-        if (enfocada && ref.current) {
-            ref.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        }
-    }, [enfocada]);
     const nivel = nivelTemperatura(tarea.dias_restantes, tarea.fecha_entregada, cortes);
     const retraso = textoRetraso(tarea.dias_restantes);
     const chk = tarea.checklist;
 
     return (
-        <article
-            ref={ref}
-            className={`tb-slide-ficha tb-temp-${nivel} ${enfocada ? 'es-enfocada' : ''}`}
-        >
+        <article className={`tb-slide-ficha tb-temp-${nivel}`}>
             <span className="tb-dest-barra" />
 
             <h3 className="tb-slide-titulo">{tarea.titulo}</h3>
 
-            {enfocada && tarea.descripcion && (
+            {tarea.descripcion && (
                 <p className="tb-slide-desc">{tarea.descripcion}</p>
             )}
 
@@ -189,12 +179,12 @@ function FichaTarea({ tarea, cortes, enfocada }) {
                     : <span className="tb-slide-avatar tb-avatar-vacio">{iniciales(tarea.empleado)}</span>}
                 <div className="tb-slide-quien">
                     <span className="tb-slide-nombre">{tarea.empleado}</span>
-                    {enfocada && tarea.cargo && <span className="tb-slide-cargo">{tarea.cargo}</span>}
+                    {tarea.cargo && <span className="tb-slide-cargo">{tarea.cargo}</span>}
                 </div>
                 {retraso && <span className="tb-slide-plazo">{retraso}</span>}
             </div>
 
-            {enfocada && chk && (
+            {chk && (
                 <div className="tb-dest-avance">
                     <div className="tb-dest-avance-top">
                         <span>CHECKLIST</span>
@@ -209,8 +199,7 @@ function FichaTarea({ tarea, cortes, enfocada }) {
                 </div>
             )}
 
-            {enfocada && (
-                <dl className="tb-slide-datos">
+            <dl className="tb-slide-datos">
                     <div>
                         <dt>Fecha pactada</dt>
                         <dd>{fechaLarga(tarea.fecha_pactada)}</dd>
@@ -224,34 +213,22 @@ function FichaTarea({ tarea, cortes, enfocada }) {
                             <dt>Proyecto</dt>
                             <dd>{tarea.proyecto}</dd>
                         </div>
-                    )}
-                </dl>
-            )}
+                )}
+            </dl>
         </article>
     );
 }
 
 /** Ficha de una alerta dentro de la sección de alertas. */
-function FichaAlerta({ alerta, enfocada }) {
-    const ref = useRef(null);
-
-    useEffect(() => {
-        if (enfocada && ref.current) {
-            ref.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        }
-    }, [enfocada]);
-
+function FichaAlerta({ alerta }) {
     return (
-        <article
-            ref={ref}
-            className={`tb-slide-ficha tb-slide-al ${alerta.tono} ${enfocada ? 'es-enfocada' : ''}`}
-        >
+        <article className={`tb-slide-ficha tb-slide-al ${alerta.tono}`}>
             <span className="tb-dest-barra" />
             <div className="tb-slide-alerta">
                 <span className="tb-slide-alerta-n">{alerta.n}</span>
                 <div>
                     <h3 className="tb-slide-titulo">{alerta.texto}</h3>
-                    {enfocada && <p className="tb-slide-desc">{alerta.detalle}</p>}
+                    <p className="tb-slide-desc">{alerta.detalle}</p>
                 </div>
             </div>
         </article>
@@ -260,13 +237,21 @@ function FichaAlerta({ alerta, enfocada }) {
 
 /**
  * Slider del carrusel: muestra una sección completa —una columna del kanban o
- * las alertas— y hace zoom sobre sus elementos uno a uno.
+ * las alertas— con todas sus fichas a la vez.
  *
- * Las secciones giran en 3D sobre el eje vertical, de modo que el paso de una a
- * otra se percibe como un carrusel y no como un reemplazo brusco.
+ * Cuando los elementos no caben en una sola vista, la sección se recorre por
+ * bloques antes de girar a la siguiente, de modo que no se pierde ninguno.
+ * Las secciones giran en 3D sobre el eje vertical.
  */
-export default function ModalDestaque({ seccion, indice, girando, cortes }) {
+export default function ModalDestaque({ seccion, bloque, girando, cortes }) {
     if (!seccion) return null;
+
+    const bloques = Math.max(1, Math.ceil(seccion.elementos.length / POR_BLOQUE));
+    const indiceBloque = Math.max(0, Math.min(bloque, bloques - 1));
+    const visibles = seccion.elementos.slice(
+        indiceBloque * POR_BLOQUE,
+        indiceBloque * POR_BLOQUE + POR_BLOQUE
+    );
 
     return (
         <div className="tb-dest-fondo" aria-hidden="true">
@@ -280,20 +265,39 @@ export default function ModalDestaque({ seccion, indice, girando, cortes }) {
                         <span className="tb-slide-n">{seccion.total}</span>
                     </header>
 
-                    <div className="tb-slide-cuerpo">
-                        {seccion.elementos.map((el, i) => (
+                    {/* Un bloque por vista: se indica cuál se está viendo para
+                        que se entienda que la columna continúa. */}
+                    {bloques > 1 && (
+                        <div className="tb-slide-bloques">
+                            {Array.from({ length: bloques }, (_, i) => (
+                                <span
+                                    key={i}
+                                    className={`tb-slide-punto ${i === indiceBloque ? 'es-actual' : ''}`}
+                                />
+                            ))}
+                            <span className="tb-slide-bloque-txt">
+                                {indiceBloque + 1} de {bloques}
+                            </span>
+                        </div>
+                    )}
+
+                    <div className="tb-slide-cuerpo" key={`b-${indiceBloque}`}>
+                        {visibles.map((el) => (
                             seccion.clave === 'alertas'
-                                ? <FichaAlerta key={el.id} alerta={el} enfocada={i === indice} />
-                                : <FichaTarea key={el.id} tarea={el} cortes={cortes} enfocada={i === indice} />
+                                ? <FichaAlerta key={el.id} alerta={el} />
+                                : <FichaTarea key={el.id} tarea={el} cortes={cortes} />
                         ))}
                     </div>
 
-                    {seccion.restantes > 0 && (
+                    {seccion.restantes > 0 && indiceBloque === bloques - 1 && (
                         <p className="tb-slide-mas">+{seccion.restantes} más en esta columna</p>
                     )}
 
-                    {indice >= 0 && (
-                        <span className="tb-dest-tiempo" key={`t-${seccion.clave}-${indice}`} />
+                    {!girando && (
+                        <span
+                            className="tb-dest-tiempo"
+                            key={`t-${seccion.clave}-${indiceBloque}`}
+                        />
                     )}
                 </section>
             </div>

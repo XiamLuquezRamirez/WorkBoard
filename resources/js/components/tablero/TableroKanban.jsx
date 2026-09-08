@@ -94,8 +94,10 @@ export default function TableroKanban({ datos, previo, modoTv, interactivo }) {
             return {
                 clave, titulo, color, orden,
                 total: lista.length,
-                elementos: lista.slice(0, 6),
-                restantes: Math.max(0, lista.length - 6),
+                // Se muestran hasta 20 por columna, repartidas en bloques: más
+                // que eso alargaría demasiado la vuelta del carrusel.
+                elementos: lista.slice(0, 20),
+                restantes: Math.max(0, lista.length - 20),
             };
         };
 
@@ -126,7 +128,7 @@ export default function TableroKanban({ datos, previo, modoTv, interactivo }) {
         ];
     }, [datos]);
 
-    const { seccion: seccionActiva, indice, girando } =
+    const { seccion: seccionActiva, bloque, girando } =
         useCarruselDestaque(secciones, { activo: !interactivo });
     // En modo interactivo el carrusel se detiene y su ficha se retira: si
     // permaneciera, taparía las tarjetas que el líder quiere pulsar.
@@ -182,7 +184,7 @@ export default function TableroKanban({ datos, previo, modoTv, interactivo }) {
 
             <ModalDestaque
                 seccion={seccionEnPantalla}
-                indice={indice}
+                bloque={bloque}
                 girando={girando}
                 cortes={cortes}
             />
