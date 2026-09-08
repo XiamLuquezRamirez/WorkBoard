@@ -108,7 +108,7 @@ export default function TableroAmbiente({ plegado, onAlternar }) {
                         onClick={activarSonido}
                         title="Activar el sonido"
                     >
-                        🔊 Activar sonido
+                        🔊<span className="tb-amb-sonido-txt">Activar sonido</span>
                     </button>
                 )}
                 <iframe

@@ -679,30 +679,52 @@ a.tb-btn-sec, a.tb-btn-sec:visited { color: var(--tb-txt); }
 /* Botón de sonido: el navegador sólo permite el audio tras un gesto del
    usuario, así que se ofrece sobre el propio reproductor. */
 .tb-amb-sonido {
+    /* Icono compacto en la esquina: con texto y relleno fijos ocupaba casi todo
+       el ancho cuando el panel es pequeño y tapaba el vídeo. */
     position: absolute;
-    left: 50%;
-    bottom: 10px;
-    transform: translateX(-50%);
+    right: 7px;
+    bottom: 7px;
     z-index: 3;
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    padding: 7px 14px;
+    justify-content: center;
+    gap: 5px;
+    width: 30px;
+    height: 30px;
+    padding: 0;
     border: none;
     border-radius: 999px;
-    background: rgba(15, 23, 42, .86);
+    background: rgba(15, 23, 42, .82);
     color: var(--tb-txt);
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: .04em;
+    font-size: 13px;
+    line-height: 1;
     cursor: pointer;
+    overflow: hidden;
+    white-space: nowrap;
     backdrop-filter: blur(4px);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, .5);
-    transition: background .2s ease, color .2s ease;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, .5);
+    transition: width .28s ease, padding .28s ease,
+                background .2s ease, color .2s ease;
     animation: tb-entra .4s ease-out;
 }
+/* Al pasar por encima se despliega la etiqueta, sin robar sitio el resto
+   del tiempo. */
+.tb-amb-sonido .tb-amb-sonido-txt {
+    max-width: 0;
+    opacity: 0;
+    font-size: 11px;
+    font-weight: 700;
+    transition: max-width .28s ease, opacity .2s ease;
+}
+.tb-amb-sonido:hover {
+    width: auto;
+    padding: 0 12px 0 10px;
+    background: var(--tb-azul);
+    color: #06121F;
+}
+.tb-amb-sonido:hover .tb-amb-sonido-txt { max-width: 120px; opacity: 1; }
 .tb-amb-sonido:hover { background: var(--tb-azul); color: #06121F; }
-.tb-tv .tb-amb-sonido { font-size: 1.3vh; padding: 1vh 1.8vh; bottom: 1.2vh; }
+.tb-tv .tb-amb-sonido { width: 3.6vh; height: 3.6vh; font-size: 1.7vh; right: 1vh; bottom: 1vh; }
 
 /* El cuerpo cede altura al vídeo y la lista de pistas conserva la suya */
 .tb-amb-panel > .tb-ambiente-video { flex: 1 1 auto; }
