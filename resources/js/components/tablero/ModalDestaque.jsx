@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useAvatar } from './AvataresContext';
 
 const MESES = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC'];
@@ -48,13 +48,25 @@ function textoRetraso(dias) {
 
 /** Ficha de una tarea dentro de la columna destacada. */
 function FichaTarea({ tarea, cortes, enfocada }) {
+    const ref = useRef(null);
     const foto = useAvatar(tarea.empleado_id);
+
+    // Al desplegar su detalle la ficha crece; si queda fuera del área visible
+    // del slide, se trae a la vista en lugar de dejarla cortada.
+    useEffect(() => {
+        if (enfocada && ref.current) {
+            ref.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+    }, [enfocada]);
     const nivel = nivelTemperatura(tarea.dias_restantes, tarea.fecha_entregada, cortes);
     const retraso = textoRetraso(tarea.dias_restantes);
     const chk = tarea.checklist;
 
     return (
-        <article className={`tb-slide-ficha tb-temp-${nivel} ${enfocada ? 'es-enfocada' : ''}`}>
+        <article
+            ref={ref}
+            className={`tb-slide-ficha tb-temp-${nivel} ${enfocada ? 'es-enfocada' : ''}`}
+        >
             <span className="tb-dest-barra" />
 
             <h3 className="tb-slide-titulo">{tarea.titulo}</h3>
@@ -113,8 +125,19 @@ function FichaTarea({ tarea, cortes, enfocada }) {
 
 /** Ficha de una alerta dentro de la sección de alertas. */
 function FichaAlerta({ alerta, enfocada }) {
+    const ref = useRef(null);
+
+    useEffect(() => {
+        if (enfocada && ref.current) {
+            ref.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+    }, [enfocada]);
+
     return (
-        <article className={`tb-slide-ficha tb-slide-al ${alerta.tono} ${enfocada ? 'es-enfocada' : ''}`}>
+        <article
+            ref={ref}
+            className={`tb-slide-ficha tb-slide-al ${alerta.tono} ${enfocada ? 'es-enfocada' : ''}`}
+        >
             <span className="tb-dest-barra" />
             <div className="tb-slide-alerta">
                 <span className="tb-slide-alerta-n">{alerta.n}</span>
