@@ -117,7 +117,9 @@ export default function TableroKanban({ datos, previo, modoTv, interactivo }) {
             desdeColumna('completadas', 'COMPLETADAS', 'col-completadas', 2),
             {
                 clave: 'alertas', titulo: 'ALERTAS', color: 'col-alertas', orden: 3,
-                total: filasAlerta.length,
+                // Cuenta las tareas afectadas, no los tipos de alerta: "2" no
+                // decía nada, mientras que el total sí informa de la magnitud.
+                total: filasAlerta.reduce((suma, f) => suma + f.n, 0),
                 elementos: filasAlerta,
                 restantes: 0,
             },
@@ -126,7 +128,11 @@ export default function TableroKanban({ datos, previo, modoTv, interactivo }) {
 
     const { seccion: seccionActiva, indice, girando } =
         useCarruselDestaque(secciones, { activo: !interactivo });
-    const seccionEnPantalla = secciones.find((s) => s.orden === seccionActiva) || null;
+    // En modo interactivo el carrusel se detiene y su ficha se retira: si
+    // permaneciera, taparía las tarjetas que el líder quiere pulsar.
+    const seccionEnPantalla = interactivo
+        ? null
+        : (secciones.find((s) => s.orden === seccionActiva) || null);
 
     const [tareaAbierta, setTareaAbierta] = useState(null);
 

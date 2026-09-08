@@ -1047,6 +1047,11 @@ a.tb-btn-sec, a.tb-btn-sec:visited { color: var(--tb-txt); }
 .tb-amb-panel:not(.es-plegado) { flex: 1 1 auto; min-height: 0; }
 
 /* ---------- Modo interactivo ---------- */
+/* Con la rotación detenida, las columnas se realzan para que se note que el
+   tablero está a disposición del usuario. */
+.tb-kanban.es-interactivo .tb-col { border-color: var(--tb-borde); }
+.tb-kanban.es-interactivo .tb-card { opacity: 1; }
+
 .tb-card.es-pulsable { cursor: pointer; }
 .tb-card.es-pulsable:hover {
     border-color: var(--temp);
