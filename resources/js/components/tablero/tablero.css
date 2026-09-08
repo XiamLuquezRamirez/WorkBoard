@@ -829,12 +829,12 @@ a.tb-btn-sec, a.tb-btn-sec:visited { color: var(--tb-txt); }
     from { opacity: 0; transform: rotateY(52deg) translateX(24%) scale(.9); }
     to   { opacity: 1; transform: none; }
 }
-.tb-slide.es-girando { animation: tb-slide-gira 1.1s cubic-bezier(.4, 0, .2, 1); }
-@keyframes tb-slide-gira {
-    0%   { opacity: 1; transform: none; }
-    45%  { opacity: .25; transform: rotateY(-46deg) translateX(-18%) scale(.9); }
-    55%  { opacity: .25; transform: rotateY(46deg) translateX(18%) scale(.9); }
-    100% { opacity: 1; transform: none; }
+.tb-slide.es-girando { animation: tb-slide-sale 1.1s cubic-bezier(.4, 0, .25, 1) forwards; }
+/* Sólo la salida: la entrada de la sección siguiente la aporta su propio
+   montaje, así el giro se ve una vez y no dos encadenadas. */
+@keyframes tb-slide-sale {
+    from { opacity: 1; transform: none; }
+    to   { opacity: 0; transform: rotateY(-58deg) translateX(-26%) scale(.86); }
 }
 
 .tb-slide-head {
@@ -1045,6 +1045,68 @@ a.tb-btn-sec, a.tb-btn-sec:visited { color: var(--tb-txt); }
 /* El vídeo es el único que absorbe el espacio sobrante; plegado se comporta
    como los demás. */
 .tb-amb-panel:not(.es-plegado) { flex: 1 1 auto; min-height: 0; }
+
+/* ---------- Modo interactivo ---------- */
+.tb-card.es-pulsable { cursor: pointer; }
+.tb-card.es-pulsable:hover {
+    border-color: var(--temp);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, .45);
+}
+.tb-card.es-pulsable:focus-visible {
+    outline: 2px solid var(--tb-azul);
+    outline-offset: 2px;
+}
+
+/* Detalle de tarea con su checklist */
+.tb-detalle-body { display: flex; flex-direction: column; gap: 14px; }
+.tb-modal-body.tb-detalle-body { grid-template-columns: none; display: flex; }
+
+.tb-items { border-top: 1px solid var(--tb-borde); padding-top: 12px; }
+.tb-items-titulo {
+    margin: 0 0 9px;
+    font-size: 10px;
+    letter-spacing: .1em;
+    color: var(--tb-txt-tenue);
+    display: flex;
+    align-items: center;
+    gap: 9px;
+}
+.tb-items-n {
+    background: var(--tb-panel-2);
+    border-radius: 999px;
+    padding: 1px 9px;
+    font-size: 10px;
+    color: var(--tb-txt);
+}
+.tb-items-lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.tb-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 10px;
+    border-radius: 7px;
+    background: var(--tb-panel-2);
+    font-size: 12px;
+}
+.tb-item-marca {
+    width: 17px; height: 17px;
+    border-radius: 5px;
+    border: 1px solid var(--tb-borde);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 800;
+    flex-shrink: 0;
+}
+.tb-item.es-hecho .tb-item-marca {
+    background: var(--tb-verde);
+    border-color: var(--tb-verde);
+    color: #06121F;
+}
+.tb-item.es-hecho .tb-item-txt { text-decoration: line-through; opacity: .6; }
+.tb-item-txt { flex: 1; min-width: 0; }
+.tb-item-fecha { font-size: 10px; color: var(--tb-txt-tenue); white-space: nowrap; }
 
 /* ---------- Avisos temporales ---------- */
 .tb-avisos {

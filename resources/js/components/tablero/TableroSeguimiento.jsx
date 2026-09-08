@@ -116,6 +116,9 @@ export default function TableroSeguimiento(props) {
 function TableroContenido({ onCerrar, tvInicial = false }) {
     const [modoTv, setModoTv] = useState(tvInicial);
     const [verPausadas, setVerPausadas] = useState(false);
+    // Modo interactivo: detiene el carrusel para que el líder pueda revisar el
+    // tablero a su ritmo y abrir el detalle de cualquier tarea.
+    const [interactivo, setInteractivo] = useState(false);
     // Sin onCerrar el tablero vive en su propia pestaña: no hay a dónde "volver",
     // así que se ofrece cerrarla en lugar de regresar a la vista anterior.
     const enPestanaPropia = !onCerrar;
@@ -192,6 +195,15 @@ function TableroContenido({ onCerrar, tvInicial = false }) {
                     </span>
                     {!modoTv && (
                         <>
+                            <button
+                                className={`tb-btn ${interactivo ? '' : 'tb-btn-sec'}`}
+                                onClick={() => setInteractivo((v) => !v)}
+                                title={interactivo
+                                    ? 'Volver a la rotación automática'
+                                    : 'Detener la rotación y explorar el tablero'}
+                            >
+                                {interactivo ? '⏸ Explorando' : '☝ Interactuar'}
+                            </button>
                             <button className="tb-btn" onClick={() => setModoTv(true)}>Modo TV</button>
                             {onCerrar && <button className="tb-btn tb-btn-sec" onClick={onCerrar}>Salir</button>}
                             {enPestanaPropia && (
@@ -209,7 +221,12 @@ function TableroContenido({ onCerrar, tvInicial = false }) {
             />
 
             <div className="tb-cuerpo">
-                <TableroKanban datos={datos} previo={previo} modoTv={modoTv} />
+                <TableroKanban
+                    datos={datos}
+                    previo={previo}
+                    modoTv={modoTv}
+                    interactivo={interactivo}
+                />
                 <TableroLateral datos={datos} />
             </div>
 

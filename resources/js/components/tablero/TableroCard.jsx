@@ -68,7 +68,7 @@ const SELLO = {
 const iniciales = (nombre) => String(nombre || '?')
     .trim().split(/\s+/).slice(0, 2).map((p) => p[0]).join('').toUpperCase();
 
-export default function TableroCard({ tarea, estadoVisual, innerRef, cortes }) {
+export default function TableroCard({ tarea, estadoVisual, innerRef, cortes, onAbrir }) {
     const fotoOriginal = useAvatar(tarea.empleado_id);
     const [fotoFallida, setFotoFallida] = useState(false);
     const foto = fotoFallida ? null : fotoOriginal;
@@ -89,10 +89,17 @@ export default function TableroCard({ tarea, estadoVisual, innerRef, cortes }) {
             className={[
                 'tb-card',
                 `tb-temp-${temp.nivel}`,
+                onAbrir ? 'es-pulsable' : '',
                 estadoVisual ? `tb-anim-${estadoVisual}` : '',
                 tarea.pausada ? 'tb-card-pausada' : '',
             ].filter(Boolean).join(' ')}
             aria-label={`Tarea ${tarea.titulo}`}
+            onClick={onAbrir}
+            role={onAbrir ? 'button' : undefined}
+            tabIndex={onAbrir ? 0 : undefined}
+            onKeyDown={onAbrir ? (e) => {
+                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onAbrir(); }
+            } : undefined}
         >
             {sello && (
                 <span className={`tb-sello tb-sello-${estadoVisual}`} aria-hidden="true">

@@ -58,11 +58,16 @@ export default function useCarruselDestaque(secciones, { activo = true } = {}) {
                     return;
                 }
 
-                // Sección agotada: gira a la siguiente.
+                // Sección agotada: gira a la siguiente. La salida se anima sobre
+                // la sección actual y sólo después se cambia de contenido; si se
+                // hicieran a la vez, el slide se remontaría —lleva key por
+                // sección— y se encadenarían la animación de giro y la de
+                // entrada, que es lo que producía el doble movimiento.
                 indice = 0;
-                seccion = (seccion + 1) % vivas.length;
                 setEstado({ seccion: vivas[seccion].orden, indice: -1, girando: true });
+
                 timerRef.current = setTimeout(() => {
+                    seccion = (seccion + 1) % vivas.length;
                     setEstado({ seccion: vivas[seccion].orden, indice: -1, girando: false });
                     timerRef.current = setTimeout(paso, RESPIRO);
                 }, GIRO);

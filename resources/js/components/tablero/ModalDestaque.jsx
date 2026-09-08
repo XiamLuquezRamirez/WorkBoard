@@ -1,4 +1,5 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import axiosInstance from '../../axiosConfig';
 import { useAvatar } from './AvataresContext';
 
 const MESES = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC'];
@@ -44,6 +45,113 @@ function textoRetraso(dias) {
     if (r < 365) return `Vencida hace ${Math.round(r / 30)} meses`;
     const a = Math.floor(r / 365);
     return `Vencida hace ${a} año${a === 1 ? '' : 's'}`;
+}
+
+
+/**
+ * Detalle de una tarea, abierto desde el tablero en modo interactivo.
+ *
+ * Las subtareas no viajan en el sondeo —sólo interesan al abrir una tarea—
+ * así que se piden en ese momento a /subtareas/{id}.
+ */
+export function DetalleTarea({ tarea, cortes, onCerrar }) {
+    const foto = useAvatar(tarea.empleado_id);
+    const [items, setItems] = useState(null);
+    const nivel = nivelTemperatura(tarea.dias_restantes, tarea.fecha_entregada, cortes);
+    const retraso = textoRetraso(tarea.dias_restantes);
+
+    useEffect(() => {
+        let vivo = true;
+        axiosInstance.get(`/subtareas/${tarea.id}`)
+            .then((r) => vivo && setItems(Array.isArray(r.data) ? r.data : []))
+            .catch(() => vivo && setItems([]));
+        return () => { vivo = false; };
+    }, [tarea.id]);
+
+    useEffect(() => {
+        const onKey = (ev) => { if (ev.key === 'Escape') { ev.stopPropagation(); onCerrar(); } };
+        window.addEventListener('keydown', onKey, true);
+        return () => window.removeEventListener('keydown', onKey, true);
+    }, [onCerrar]);
+
+    return (
+        <div className="tb-modal-fondo" onClick={onCerrar}>
+            <section
+                className={`tb-modal tb-temp-${nivel}`}
+                onClick={(e) => e.stopPropagation()}
+                role="dialog"
+                aria-label={`Detalle de ${tarea.titulo}`}
+            >
+                <header className="tb-modal-head">
+                    <h2>{tarea.titulo}</h2>
+                    <button className="tb-modal-cerrar" onClick={onCerrar} title="Cerrar (Esc)">✕</button>
+                </header>
+
+                <div className="tb-modal-body tb-detalle-body">
+                    {tarea.descripcion && <p className="tb-slide-desc">{tarea.descripcion}</p>}
+
+                    <div className="tb-slide-persona">
+                        {foto
+                            ? <img src={foto} alt="" className="tb-slide-avatar" />
+                            : <span className="tb-slide-avatar tb-avatar-vacio">{iniciales(tarea.empleado)}</span>}
+                        <div className="tb-slide-quien">
+                            <span className="tb-slide-nombre">{tarea.empleado}</span>
+                            {tarea.cargo && <span className="tb-slide-cargo">{tarea.cargo}</span>}
+                        </div>
+                        {retraso && <span className="tb-slide-plazo">{retraso}</span>}
+                    </div>
+
+                    <dl className="tb-slide-datos">
+                        <div><dt>Estado</dt><dd>{tarea.estado}</dd></div>
+                        <div><dt>Prioridad</dt><dd>{tarea.prioridad || '—'}</dd></div>
+                        <div><dt>Fecha pactada</dt><dd>{fechaLarga(tarea.fecha_pactada)}</dd></div>
+                        {tarea.fecha_entregada && (
+                            <div><dt>Entregada</dt><dd>{fechaLarga(tarea.fecha_entregada)}</dd></div>
+                        )}
+                        {tarea.proyecto && (
+                            <div className="tb-dest-ancho"><dt>Proyecto</dt><dd>{tarea.proyecto}</dd></div>
+                        )}
+                    </dl>
+
+                    <div className="tb-items">
+                        <h3 className="tb-items-titulo">
+                            CHECKLIST
+                            {items && items.length > 0 && (
+                                <span className="tb-items-n">
+                                    {items.filter((i) => Number(i.completada) === 1).length}/{items.length}
+                                </span>
+                            )}
+                        </h3>
+
+                        {items === null && <p className="tb-col-vacia">Cargando…</p>}
+                        {items && items.length === 0 && (
+                            <p className="tb-col-vacia">Esta tarea no tiene checklist.</p>
+                        )}
+                        {items && items.length > 0 && (
+                            <ul className="tb-items-lista">
+                                {items.map((it) => (
+                                    <li
+                                        key={it.id}
+                                        className={`tb-item ${Number(it.completada) === 1 ? 'es-hecho' : ''}`}
+                                    >
+                                        <span className="tb-item-marca">
+                                            {Number(it.completada) === 1 ? '✓' : ''}
+                                        </span>
+                                        <span className="tb-item-txt">{it.titulo}</span>
+                                        {it.fecha_vencimiento && (
+                                            <span className="tb-item-fecha">
+                                                {fechaLarga(it.fecha_vencimiento)}
+                                            </span>
+                                        )}
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                    </div>
+                </div>
+            </section>
+        </div>
+    );
 }
 
 /** Ficha de una tarea dentro de la columna destacada. */

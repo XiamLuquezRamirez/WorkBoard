@@ -1,8 +1,8 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import TableroCard from './TableroCard';
 import useFlipTarjetas from './useFlipTarjetas';
 import useCarruselDestaque from './useCarruselDestaque';
-import ModalDestaque from './ModalDestaque';
+import ModalDestaque, { DetalleTarea } from './ModalDestaque';
 
 /* Las pausadas no tienen columna propia: son pocas de forma habitual y una
    columna casi vacía desperdiciaba una cuarta parte del ancho. Se consultan
@@ -48,7 +48,7 @@ function calcularCambios(datos, previo) {
     return cambios;
 }
 
-export default function TableroKanban({ datos, previo, modoTv }) {
+export default function TableroKanban({ datos, previo, modoTv, interactivo }) {
     const cambios = useMemo(() => calcularCambios(datos, previo), [datos, previo]);
     const modoCompletadas = datos.columnas.completadas?.modo;
 
@@ -124,11 +124,14 @@ export default function TableroKanban({ datos, previo, modoTv }) {
         ];
     }, [datos]);
 
-    const { seccion: seccionActiva, indice, girando } = useCarruselDestaque(secciones);
+    const { seccion: seccionActiva, indice, girando } =
+        useCarruselDestaque(secciones, { activo: !interactivo });
     const seccionEnPantalla = secciones.find((s) => s.orden === seccionActiva) || null;
 
+    const [tareaAbierta, setTareaAbierta] = useState(null);
+
     return (
-        <div className="tb-kanban">
+        <div className={`tb-kanban ${interactivo ? 'es-interactivo' : ''}`}>
             {COLUMNAS.map(({ clave, titulo, color }) => {
                 const lista = items(datos.columnas, clave);
                 const visibles = lista.slice(0, tope);
@@ -153,6 +156,7 @@ export default function TableroKanban({ datos, previo, modoTv }) {
                                     estadoVisual={cambios[t.id]}
                                     innerRef={registrarTarjeta(t.id)}
                                     cortes={cortes}
+                                    onAbrir={interactivo ? () => setTareaAbierta(t) : undefined}
                                 />
                             ))}
                             {lista.length === 0 && <p className="tb-col-vacia">Sin tareas</p>}
@@ -161,6 +165,14 @@ export default function TableroKanban({ datos, previo, modoTv }) {
                     </section>
                 );
             })}
+
+            {tareaAbierta && (
+                <DetalleTarea
+                    tarea={tareaAbierta}
+                    cortes={cortes}
+                    onCerrar={() => setTareaAbierta(null)}
+                />
+            )}
 
             <ModalDestaque
                 seccion={seccionEnPantalla}
