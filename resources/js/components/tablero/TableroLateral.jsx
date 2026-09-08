@@ -61,7 +61,7 @@ function Persona({ p }) {
     );
 }
 
-export default function TableroLateral({ datos, interactivo, onVerAlerta }) {
+export default function TableroLateral({ datos, interactivo, onVerAlerta, onVerTarea }) {
     const [plegados, setPlegados] = useState(() => {
         try {
             return JSON.parse(localStorage.getItem(CLAVE_PLEGADOS)) || {};
@@ -79,6 +79,16 @@ export default function TableroLateral({ datos, interactivo, onVerAlerta }) {
     }, [plegados]);
 
     const alternar = (id) => setPlegados((p) => ({ ...p, [id]: !p[id] }));
+
+    // Las entregas llevan sólo lo justo para el listado; la tarea completa ya
+    // viaja en las columnas, así que se resuelve aquí en lugar de engordar el
+    // sondeo repitiendo los mismos campos.
+    const tareaCompleta = (id) => [
+        ...(datos.columnas.pendiente || []),
+        ...(datos.columnas.proceso || []),
+        ...(datos.columnas.pausa || []),
+        ...(datos.columnas.completadas?.items || []),
+    ].find((t) => t.id === id) || null;
 
     const filasAlerta = [
         { id: 'vencidas', n: datos.alertas.vencidas, texto: 'tareas vencidas', clase: 'al-roja' },
@@ -151,17 +161,37 @@ export default function TableroLateral({ datos, interactivo, onVerAlerta }) {
                     </p>
                 )}
                 <ul className="tb-entregas">
-                    {datos.entregas.map((e) => (
-                        <li key={e.id} className="tb-entrega">
-                            <span className={`tb-entrega-fecha ${e.dias_restantes < 0 ? 'es-vencida' : ''}`}>
-                                {fechaCorta(e.fecha_pactada)}
-                            </span>
-                            <span className="tb-entrega-info">
-                                <span className="tb-entrega-titulo" title={e.titulo}>{e.titulo}</span>
-                                <span className="tb-entrega-persona">{e.empleado}</span>
-                            </span>
-                        </li>
-                    ))}
+                    {datos.entregas.map((e) => {
+                        const contenido = (
+                            <>
+                                <span className={`tb-entrega-fecha ${e.dias_restantes < 0 ? 'es-vencida' : ''}`}>
+                                    {fechaCorta(e.fecha_pactada)}
+                                </span>
+                                <span className="tb-entrega-info">
+                                    <span className="tb-entrega-titulo" title={e.titulo}>{e.titulo}</span>
+                                    <span className="tb-entrega-persona">{e.empleado}</span>
+                                </span>
+                            </>
+                        );
+
+                        return (
+                            <li key={e.id} className="tb-entrega">
+                                {interactivo ? (
+                                    <button
+                                        className="tb-entrega-btn"
+                                        onClick={() => {
+                                            const t = tareaCompleta(e.id);
+                                            if (t) onVerTarea(t);
+                                        }}
+                                        title={`Ver ${e.titulo}`}
+                                    >
+                                        {contenido}
+                                        <span className="tb-alerta-mas">›</span>
+                                    </button>
+                                ) : contenido}
+                            </li>
+                        );
+                    })}
                     {datos.entregas.length === 0 && <li className="tb-col-vacia">Sin entregas programadas</li>}
                 </ul>
             </Panel>

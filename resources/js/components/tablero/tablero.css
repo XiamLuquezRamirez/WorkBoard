@@ -1126,6 +1126,28 @@ a.tb-btn-sec, a.tb-btn-sec:visited { color: var(--tb-txt); }
     cursor: pointer;
 }
 .tb-alerta-mas { margin-left: auto; font-weight: 800; opacity: .7; }
+
+/* Entrega pulsable: abre el detalle de su tarea */
+.tb-entrega-btn {
+    display: flex;
+    align-items: flex-start;
+    gap: 9px;
+    width: 100%;
+    padding: 0;
+    background: none;
+    border: none;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+.tb-entrega-btn .tb-alerta-mas { align-self: center; }
+.tb-entrega-btn:hover .tb-entrega-titulo { color: var(--tb-azul); }
+.tb-entrega-btn:focus-visible {
+    outline: 2px solid var(--tb-azul);
+    outline-offset: 2px;
+    border-radius: 5px;
+}
 .tb-alerta-btn:hover .tb-alerta-mas { opacity: 1; }
 .tb-tv .tb-alerta-btn { font-size: inherit; }
 

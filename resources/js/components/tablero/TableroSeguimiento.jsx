@@ -4,6 +4,7 @@ import TableroKPIs from './TableroKPIs';
 import TableroKanban from './TableroKanban';
 import TableroLateral from './TableroLateral';
 import TableroCard from './TableroCard';
+import { DetalleTarea } from './ModalDestaque';
 import { AvataresProvider } from './AvataresContext';
 import { getImageUrl } from '../../utils/assetHelper';
 import './tablero.css';
@@ -171,6 +172,7 @@ function TableroContenido({ onCerrar, tvInicial = false }) {
     // tablero a su ritmo y abrir el detalle de cualquier tarea.
     const [interactivo, setInteractivo] = useState(false);
     const [alertaAbierta, setAlertaAbierta] = useState(null);
+    const [tareaAbierta, setTareaAbierta] = useState(null);
     // Sin onCerrar el tablero vive en su propia pestaña: no hay a dónde "volver",
     // así que se ofrece cerrarla en lugar de regresar a la vista anterior.
     const enPestanaPropia = !onCerrar;
@@ -187,6 +189,7 @@ function TableroContenido({ onCerrar, tvInicial = false }) {
     useEffect(() => {
         const onKey = (ev) => {
             if (ev.key !== 'Escape') return;
+            if (tareaAbierta) { setTareaAbierta(null); return; }
             if (alertaAbierta) { setAlertaAbierta(null); return; }
             if (verPausadas) { setVerPausadas(false); return; }
             // En pestaña propia Escape sólo sale del modo TV: cerrar la pestaña
@@ -196,7 +199,7 @@ function TableroContenido({ onCerrar, tvInicial = false }) {
         };
         window.addEventListener('keydown', onKey);
         return () => window.removeEventListener('keydown', onKey);
-    }, [modoTv, onCerrar, verPausadas, alertaAbierta]);
+    }, [modoTv, onCerrar, verPausadas, alertaAbierta, tareaAbierta]);
 
     const eventos = useMemo(() => detectarEventos(datos, previo), [datos, previo]);
 
@@ -288,8 +291,17 @@ function TableroContenido({ onCerrar, tvInicial = false }) {
                     datos={datos}
                     interactivo={interactivo}
                     onVerAlerta={setAlertaAbierta}
+                    onVerTarea={setTareaAbierta}
                 />
             </div>
+
+            {tareaAbierta && (
+                <DetalleTarea
+                    tarea={tareaAbierta}
+                    cortes={null}
+                    onCerrar={() => setTareaAbierta(null)}
+                />
+            )}
 
             {alertaAbierta && (
                 <PanelAlerta
