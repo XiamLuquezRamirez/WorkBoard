@@ -61,7 +61,7 @@ function Persona({ p }) {
     );
 }
 
-export default function TableroLateral({ datos }) {
+export default function TableroLateral({ datos, interactivo, onVerAlerta }) {
     const [plegados, setPlegados] = useState(() => {
         try {
             return JSON.parse(localStorage.getItem(CLAVE_PLEGADOS)) || {};
@@ -81,10 +81,10 @@ export default function TableroLateral({ datos }) {
     const alternar = (id) => setPlegados((p) => ({ ...p, [id]: !p[id] }));
 
     const filasAlerta = [
-        { n: datos.alertas.vencidas, texto: 'tareas vencidas', clase: 'al-roja' },
-        { n: datos.alertas.vencen_hoy, texto: 'vencen hoy', clase: 'al-naranja' },
-        { n: datos.alertas.proximas, texto: 'vencen esta semana', clase: 'al-amarilla' },
-        { n: datos.alertas.pausadas, texto: 'tareas en pausa', clase: 'al-azul' },
+        { id: 'vencidas', n: datos.alertas.vencidas, texto: 'tareas vencidas', clase: 'al-roja' },
+        { id: 'hoy', n: datos.alertas.vencen_hoy, texto: 'vencen hoy', clase: 'al-naranja' },
+        { id: 'semana', n: datos.alertas.proximas, texto: 'vencen esta semana', clase: 'al-amarilla' },
+        { id: 'pausa', n: datos.alertas.pausadas, texto: 'tareas en pausa', clase: 'al-azul' },
     ].filter((f) => f.n > 0);
 
     return (
@@ -101,8 +101,22 @@ export default function TableroLateral({ datos }) {
                     : (
                         <ul className="tb-alertas">
                             {filasAlerta.map((f) => (
-                                <li key={f.texto} className={`tb-alerta ${f.clase}`}>
-                                    <strong>{f.n}</strong> {f.texto}
+                                <li key={f.id} className={`tb-alerta ${f.clase}`}>
+                                    {/* En modo interactivo la alerta abre la lista de
+                                        tareas que la provocan; fuera de él es sólo
+                                        informativa. */}
+                                    {interactivo ? (
+                                        <button
+                                            className="tb-alerta-btn"
+                                            onClick={() => onVerAlerta(f)}
+                                            title={`Ver las ${f.texto}`}
+                                        >
+                                            <strong>{f.n}</strong> {f.texto}
+                                            <span className="tb-alerta-mas">›</span>
+                                        </button>
+                                    ) : (
+                                        <><strong>{f.n}</strong> {f.texto}</>
+                                    )}
                                 </li>
                             ))}
                         </ul>

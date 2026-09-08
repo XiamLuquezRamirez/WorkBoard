@@ -105,6 +105,57 @@ function PanelPausadas({ tareas, onCerrar }) {
     );
 }
 
+/**
+ * Tareas que provocan una alerta concreta.
+ *
+ * Las alertas del servidor son sólo contadores, pero las tareas ya vienen en
+ * las columnas: basta con filtrarlas aquí con el mismo criterio, sin pedir
+ * nada más.
+ */
+function PanelAlerta({ alerta, datos, onCerrar }) {
+    const activas = [
+        ...(datos.columnas.pendiente || []),
+        ...(datos.columnas.proceso || []),
+        ...(datos.columnas.pausa || []),
+    ];
+
+    const criterios = {
+        vencidas: (t) => t.dias_restantes !== null && t.dias_restantes < 0,
+        hoy: (t) => t.dias_restantes === 0,
+        semana: (t) => t.dias_restantes !== null && t.dias_restantes > 0 && t.dias_restantes <= 7,
+        pausa: (t) => t.pausada,
+    };
+
+    const tareas = activas
+        .filter(criterios[alerta.id] || (() => false))
+        .sort((a, b) => (a.dias_restantes ?? 0) - (b.dias_restantes ?? 0));
+
+    return (
+        <div className="tb-modal-fondo" onClick={onCerrar}>
+            <section
+                className="tb-modal"
+                onClick={(e) => e.stopPropagation()}
+                role="dialog"
+                aria-label={alerta.texto}
+            >
+                <header className="tb-modal-head">
+                    <h2>
+                        {alerta.texto.toUpperCase()}
+                        <span className="tb-modal-n">{tareas.length}</span>
+                    </h2>
+                    <button className="tb-modal-cerrar" onClick={onCerrar} title="Cerrar (Esc)">✕</button>
+                </header>
+
+                <div className="tb-modal-body">
+                    {tareas.length === 0
+                        ? <p className="tb-col-vacia">No hay tareas en esta situación.</p>
+                        : tareas.map((t) => <TableroCard key={t.id} tarea={t} />)}
+                </div>
+            </section>
+        </div>
+    );
+}
+
 export default function TableroSeguimiento(props) {
     return (
         <AvataresProvider>
@@ -119,6 +170,7 @@ function TableroContenido({ onCerrar, tvInicial = false }) {
     // Modo interactivo: detiene el carrusel para que el líder pueda revisar el
     // tablero a su ritmo y abrir el detalle de cualquier tarea.
     const [interactivo, setInteractivo] = useState(false);
+    const [alertaAbierta, setAlertaAbierta] = useState(null);
     // Sin onCerrar el tablero vive en su propia pestaña: no hay a dónde "volver",
     // así que se ofrece cerrarla en lugar de regresar a la vista anterior.
     const enPestanaPropia = !onCerrar;
@@ -135,6 +187,7 @@ function TableroContenido({ onCerrar, tvInicial = false }) {
     useEffect(() => {
         const onKey = (ev) => {
             if (ev.key !== 'Escape') return;
+            if (alertaAbierta) { setAlertaAbierta(null); return; }
             if (verPausadas) { setVerPausadas(false); return; }
             // En pestaña propia Escape sólo sale del modo TV: cerrar la pestaña
             // desde el script no es fiable y sería un salto brusco para el usuario.
@@ -143,7 +196,7 @@ function TableroContenido({ onCerrar, tvInicial = false }) {
         };
         window.addEventListener('keydown', onKey);
         return () => window.removeEventListener('keydown', onKey);
-    }, [modoTv, onCerrar, verPausadas]);
+    }, [modoTv, onCerrar, verPausadas, alertaAbierta]);
 
     const eventos = useMemo(() => detectarEventos(datos, previo), [datos, previo]);
 
@@ -197,7 +250,7 @@ function TableroContenido({ onCerrar, tvInicial = false }) {
                         <>
                             <button
                                 className={`tb-btn ${interactivo ? '' : 'tb-btn-sec'}`}
-                                onClick={() => setInteractivo((v) => !v)}
+                                onClick={() => { setInteractivo((v) => !v); setAlertaAbierta(null); }}
                                 title={interactivo
                                     ? 'Volver a la rotación automática'
                                     : 'Detener la rotación y explorar el tablero'}
@@ -227,8 +280,20 @@ function TableroContenido({ onCerrar, tvInicial = false }) {
                     modoTv={modoTv}
                     interactivo={interactivo}
                 />
-                <TableroLateral datos={datos} />
+                <TableroLateral
+                    datos={datos}
+                    interactivo={interactivo}
+                    onVerAlerta={setAlertaAbierta}
+                />
             </div>
+
+            {alertaAbierta && (
+                <PanelAlerta
+                    alerta={alertaAbierta}
+                    datos={datos}
+                    onCerrar={() => setAlertaAbierta(null)}
+                />
+            )}
 
             {verPausadas && (
                 <PanelPausadas

@@ -1052,6 +1052,24 @@ a.tb-btn-sec, a.tb-btn-sec:visited { color: var(--tb-txt); }
 .tb-kanban.es-interactivo .tb-col { border-color: var(--tb-borde); }
 .tb-kanban.es-interactivo .tb-card { opacity: 1; }
 
+/* Alerta pulsable: abre la lista de tareas que la provocan */
+.tb-alerta-btn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    width: 100%;
+    padding: 0;
+    background: none;
+    border: none;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+.tb-alerta-mas { margin-left: auto; font-weight: 800; opacity: .7; }
+.tb-alerta-btn:hover .tb-alerta-mas { opacity: 1; }
+.tb-tv .tb-alerta-btn { font-size: inherit; }
+
 .tb-card.es-pulsable { cursor: pointer; }
 .tb-card.es-pulsable:hover {
     border-color: var(--temp);
