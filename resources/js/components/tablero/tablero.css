@@ -629,15 +629,36 @@ a.tb-btn-sec, a.tb-btn-sec:visited { color: var(--tb-txt); }
     font-size: .85em;
 }
 .tb-modal-cerrar {
-    background: transparent;
-    border: 1px solid var(--tb-borde);
-    color: var(--tb-txt-tenue);
-    border-radius: 6px;
-    width: 28px; height: 28px;
-    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
     flex-shrink: 0;
+    border-radius: 50%;
+    border: 1px solid var(--tb-borde);
+    background: var(--tb-panel-2);
+    color: var(--tb-txt-tenue);
+    font-size: 15px;
+    line-height: 1;
+    cursor: pointer;
+    transition: background .2s ease, color .2s ease,
+                border-color .2s ease, transform .2s ease;
 }
-.tb-modal-cerrar:hover { color: var(--tb-txt); border-color: var(--tb-naranja); }
+.tb-modal-cerrar:hover {
+    background: var(--tb-rojo);
+    border-color: var(--tb-rojo);
+    color: #fff;
+    transform: rotate(90deg);
+}
+.tb-modal-cerrar:focus-visible {
+    outline: 2px solid var(--tb-azul);
+    outline-offset: 2px;
+}
+
+/* En TV el botón crece con la pantalla, para poder pulsarlo de cerca */
+.tb-tv .tb-modal-cerrar { width: 4.4vh; height: 4.4vh; font-size: 1.9vh; }
+.tb-tv .tb-btn { font-size: 1.4vh; padding: .9vh 1.8vh; border-radius: .9vh; }
 .tb-modal-body {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));

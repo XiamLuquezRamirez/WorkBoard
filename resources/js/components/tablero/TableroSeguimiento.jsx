@@ -246,17 +246,21 @@ function TableroContenido({ onCerrar, tvInicial = false }) {
                     <span className="tb-hora">
                         {hora.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })}
                     </span>
+                    {/* Interactuar sigue disponible en modo TV: si alguien se
+                        acerca a la pantalla, debe poder detener la rotación y
+                        consultar sin salir de la vista. */}
+                    <button
+                        className={`tb-btn ${interactivo ? '' : 'tb-btn-sec'}`}
+                        onClick={() => { setInteractivo((v) => !v); setAlertaAbierta(null); }}
+                        title={interactivo
+                            ? 'Volver a la rotación automática'
+                            : 'Detener la rotación y explorar el tablero'}
+                    >
+                        {interactivo ? '⏸ Explorando' : '☝ Interactuar'}
+                    </button>
+
                     {!modoTv && (
                         <>
-                            <button
-                                className={`tb-btn ${interactivo ? '' : 'tb-btn-sec'}`}
-                                onClick={() => { setInteractivo((v) => !v); setAlertaAbierta(null); }}
-                                title={interactivo
-                                    ? 'Volver a la rotación automática'
-                                    : 'Detener la rotación y explorar el tablero'}
-                            >
-                                {interactivo ? '⏸ Explorando' : '☝ Interactuar'}
-                            </button>
                             <button className="tb-btn" onClick={() => setModoTv(true)}>Modo TV</button>
                             {onCerrar && <button className="tb-btn tb-btn-sec" onClick={onCerrar}>Salir</button>}
                             {enPestanaPropia && (
