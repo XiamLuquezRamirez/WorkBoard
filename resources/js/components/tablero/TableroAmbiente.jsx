@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import axiosInstance from '../../axiosConfig';
 
 const CLAVE_SELECCION = 'tableroAmbienteSeleccion';
+const REVISION = 60000;   // cada cuánto se relee la lista de vídeos
 
 /**
  * Panel ambiental del tablero. Vive al pie del lateral, bajo "Próximas
@@ -21,30 +22,67 @@ export default function TableroAmbiente({ plegado, onAlternar }) {
     const [cargando, setCargando] = useState(true);
     const montado = useRef(true);
     const iframeRef = useRef(null);
+    const primeraRef = useRef(true);
     const [conSonido, setConSonido] = useState(false);
 
+    // La lista se relee cada cierto tiempo. El tablero vive en una pestaña
+    // aparte —a menudo en un TV que nadie recarga—, así que si sólo se pidiera
+    // al montar, un vídeo agregado desde el menú del líder no aparecería nunca.
     useEffect(() => {
         montado.current = true;
-        axiosInstance.get('/tablero/videos')
-            .then((r) => {
-                if (!montado.current) return;
-                const lista = Array.isArray(r.data) ? r.data : [];
-                setVideos(lista);
+        let temporizador = null;
 
-                // Se recuerda la última pista elegida en esta pantalla, para que
-                // un TV recupere lo que estaba reproduciendo tras un reinicio.
-                try {
-                    const guardado = localStorage.getItem(CLAVE_SELECCION);
-                    const pos = lista.findIndex((v) => String(v.id) === guardado);
-                    if (pos >= 0) setIndice(pos);
-                } catch {
-                    /* sin persistencia si el navegador la bloquea */
-                }
-            })
-            .catch(() => montado.current && setVideos([]))
-            .finally(() => montado.current && setCargando(false));
+        const revisar = () => {
+            axiosInstance.get('/tablero/videos')
+                .then((r) => {
+                    if (!montado.current) return;
+                    const lista = Array.isArray(r.data) ? r.data : [];
 
-        return () => { montado.current = false; };
+                    setVideos((previos) => {
+                        // Sólo se reemplaza si la lista cambió de verdad: asignar
+                        // un array nuevo en cada revisión remontaría el iframe y
+                        // el vídeo volvería a empezar cada minuto.
+                        const firma = (l) => l.map((v) => `${v.id}:${v.video_id}:${v.titulo}`).join('|');
+                        if (firma(previos) === firma(lista)) return previos;
+
+                        // La pista en reproducción se conserva si sigue viva; si
+                        // se eliminó, se pasa a la primera disponible.
+                        setIndice((i) => {
+                            const actual = previos[i];
+                            if (!actual) return 0;
+                            const pos = lista.findIndex((v) => v.id === actual.id);
+                            return pos >= 0 ? pos : 0;
+                        });
+                        return lista;
+                    });
+
+                    // Se recuerda la última pista elegida en esta pantalla, para
+                    // que un TV recupere lo que reproducía tras un reinicio.
+                    if (primeraRef.current) {
+                        primeraRef.current = false;
+                        try {
+                            const guardado = localStorage.getItem(CLAVE_SELECCION);
+                            const pos = lista.findIndex((v) => String(v.id) === guardado);
+                            if (pos >= 0) setIndice(pos);
+                        } catch {
+                            /* sin persistencia si el navegador la bloquea */
+                        }
+                    }
+                })
+                .catch(() => { /* se reintenta en la siguiente revisión */ })
+                .finally(() => {
+                    if (!montado.current) return;
+                    setCargando(false);
+                    temporizador = setTimeout(revisar, REVISION);
+                });
+        };
+
+        revisar();
+
+        return () => {
+            montado.current = false;
+            clearTimeout(temporizador);
+        };
     }, []);
 
     // Los navegadores sólo permiten arrancar un vídeo automáticamente si está
