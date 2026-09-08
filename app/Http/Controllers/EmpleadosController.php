@@ -2260,9 +2260,19 @@ class EmpleadosController extends Controller
     function tableroVideos(Request $request)
     {
         $todos = filter_var($request->query('todos', false), FILTER_VALIDATE_BOOLEAN);
+        $usuario = $this->usuarioAutenticado();
+        if (!$usuario) {
+            return response()->json([]);
+        }
 
         $videos = DB::connection('mysql2')->table('tablero_videos')
             ->when(!$todos, fn ($q) => $q->where('estado', 'Activo'))
+            ->where(fn ($q) => $q
+                ->where('usuario', $usuario->id)
+                // Los vídeos anteriores a que existiera el dueño no tienen
+                // ninguno: se muestran a todos para no dejar en blanco un
+                // tablero que ya venía funcionando.
+                ->orWhereNull('usuario'))
             ->orderBy('orden')
             ->orderBy('id')
             ->get();
@@ -2280,6 +2290,11 @@ class EmpleadosController extends Controller
             'estado' => 'nullable|in:Activo,Inactivo',
         ]);
 
+        $usuario = $this->usuarioAutenticado();
+        if (!$usuario) {
+            return response()->json(['message' => 'No autorizado.'], 403);
+        }
+
         $videoId = $this->idYoutube($data['url']);
         if (!$videoId) {
             return response()->json([
@@ -2296,11 +2311,24 @@ class EmpleadosController extends Controller
         ];
 
         if (!empty($data['id'])) {
-            DB::connection('mysql2')->table('tablero_videos')
-                ->where('id', $data['id'])->update($fila);
+            // El dueño se comprueba en el update: filtrar sólo en el listado
+            // dejaría que un líder editara el vídeo de otro llamando al
+            // endpoint con un id ajeno.
+            $afectadas = DB::connection('mysql2')->table('tablero_videos')
+                ->where('id', $data['id'])
+                ->where(fn ($q) => $this->condicionDuenoVideo($q, $usuario))
+                ->update($fila);
+
+            if ($afectadas === 0) {
+                return response()->json([
+                    'message' => 'No tienes permiso para modificar este vídeo.',
+                ], 403);
+            }
+
             return response()->json(['id' => (int) $data['id'], 'message' => 'Vídeo actualizado']);
         }
 
+        $fila['usuario']    = $usuario->id;
         $fila['created_at'] = now();
         $id = DB::connection('mysql2')->table('tablero_videos')->insertGetId($fila);
 
@@ -2309,8 +2337,52 @@ class EmpleadosController extends Controller
 
     function eliminarTableroVideo($id)
     {
-        DB::connection('mysql2')->table('tablero_videos')->where('id', $id)->delete();
+        $usuario = $this->usuarioAutenticado();
+        if (!$usuario) {
+            return response()->json(['message' => 'No autorizado.'], 403);
+        }
+
+        $borradas = DB::connection('mysql2')->table('tablero_videos')
+            ->where('id', $id)
+            ->where(fn ($q) => $this->condicionDuenoVideo($q, $usuario))
+            ->delete();
+
+        if ($borradas === 0) {
+            return response()->json([
+                'message' => 'No tienes permiso para eliminar este vídeo.',
+            ], 403);
+        }
+
         return response()->json(['success' => true, 'message' => 'Vídeo eliminado']);
+    }
+
+    /**
+     * Restringe una consulta de tablero_videos a los que el usuario puede tocar.
+     *
+     * Cada líder gestiona únicamente los suyos. Los vídeos heredados —sin dueño,
+     * cargados antes de que la columna existiera— sólo los administra un
+     * Administrador, para que nadie retire el fondo que ya usaban otros.
+     */
+    private function condicionDuenoVideo($q, $usuario)
+    {
+        $q->where('usuario', $usuario->id);
+
+        if (strcasecmp($usuario->tipo_usuario ?? '', 'Administrador') === 0) {
+            $q->orWhereNull('usuario');
+        }
+
+        return $q;
+    }
+
+    /** Fila de users (mysql2) del usuario autenticado, o null si no hay sesión. */
+    private function usuarioAutenticado(): ?object
+    {
+        $email = Auth::user()->email ?? null;
+        if (!$email) {
+            return null;
+        }
+
+        return DB::connection('mysql2')->table('users')->where('email', $email)->first();
     }
 
     /**
