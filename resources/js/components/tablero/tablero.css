@@ -781,20 +781,13 @@ a.tb-btn-sec, a.tb-btn-sec:visited { color: var(--tb-txt); }
 }
 .tb-card-señales { display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
 
-/* ---------- Carrusel de destaque ----------
-   La tarjeta destacada no crece dentro de su columna: ampliarla ahí desplazaba
-   al resto y el detalle no cabía en el ancho disponible. En la columna sólo
-   queda marcada, y el contenido ampliado se muestra centrado sobre el tablero. */
+/* ---------- Carrusel de secciones ----------
+   El carrusel ya no destaca tarjetas sueltas: muestra una columna entera sobre
+   el tablero y hace zoom dentro de ella, así que las tarjetas del kanban no
+   cambian de aspecto mientras tanto. */
 .tb-card { transition: border-color .35s ease, box-shadow .35s ease; }
 
-.tb-card-activa {
-    border-color: var(--temp);
-    box-shadow: 0 0 0 1px var(--temp), 0 4px 16px rgba(0, 0, 0, .35);
-}
-.tb-card-activa .tb-temp-barra { animation: tb-activa 1.6s ease-in-out infinite; }
-@keyframes tb-activa { 50% { opacity: .4; } }
-
-/* Vista destacada, centrada sobre el tablero */
+/* Fondo del carrusel, centrado sobre el tablero */
 .tb-dest-fondo {
     position: absolute;
     inset: 0;
@@ -809,123 +802,192 @@ a.tb-btn-sec, a.tb-btn-sec:visited { color: var(--tb-txt); }
 }
 @keyframes tb-fundido { from { opacity: 0; } to { opacity: 1; } }
 
-.tb-dest {
+/* Slider de secciones: cada columna gira en 3D hacia la siguiente */
+.tb-slider {
+    perspective: 2000px;
+    width: min(760px, 62vw);
+    max-height: 84vh;
+    display: flex;
+}
+.tb-slide {
     position: relative;
-    width: min(620px, 54vw);
-    max-height: 82vh;
-    overflow: hidden;
+    flex: 1;
     display: flex;
     flex-direction: column;
-    gap: 14px;
-    padding: 26px 30px 30px;
+    gap: 12px;
+    padding: 22px 26px 26px;
     border-radius: 16px;
-    background: linear-gradient(150deg, var(--temp-fondo), var(--tb-panel) 55%);
+    background: var(--tb-panel);
     border: 1px solid var(--tb-borde);
     box-shadow: 0 30px 80px rgba(0, 0, 0, .68);
-    transform-origin: center;
-    /* Respaldo cuando no se conoce la tarjeta de origen (por ejemplo si está
-       fuera del recorte de la columna): entra con una elevación simple. */
-    animation: tb-dest-entra .55s cubic-bezier(.22, .72, .3, 1.05);
+    transform-style: preserve-3d;
+    animation: tb-slide-entra .9s cubic-bezier(.2, .74, .28, 1.02);
+    overflow: hidden;
 }
-/* Mientras el JS anima desde la tarjeta, la animación CSS no debe competir:
-   ambas escriben transform. */
-.tb-dest.es-entrando { animation: none; }
-@keyframes tb-dest-entra {
-    from { opacity: 0; transform: translateY(26px) scale(.94); }
+/* Entra rotando desde el lateral, como una cara del carrusel */
+@keyframes tb-slide-entra {
+    from { opacity: 0; transform: rotateY(52deg) translateX(24%) scale(.9); }
     to   { opacity: 1; transform: none; }
 }
-
-.tb-dest-barra {
-    position: absolute;
-    left: 0; top: 0; bottom: 0;
-    width: 5px;
-    background: var(--temp);
+.tb-slide.es-girando { animation: tb-slide-gira 1.1s cubic-bezier(.4, 0, .2, 1); }
+@keyframes tb-slide-gira {
+    0%   { opacity: 1; transform: none; }
+    45%  { opacity: .25; transform: rotateY(-46deg) translateX(-18%) scale(.9); }
+    55%  { opacity: .25; transform: rotateY(46deg) translateX(18%) scale(.9); }
+    100% { opacity: 1; transform: none; }
 }
 
-.tb-dest-head { display: flex; align-items: center; gap: 10px; }
-.tb-dest-etiqueta {
-    font-size: 11px;
+.tb-slide-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding-bottom: 11px;
+    border-bottom: 3px solid var(--tb-txt-tenue);
+}
+.tb-slide-head.col-pendiente { border-bottom-color: var(--tb-amarillo); }
+.tb-slide-head.col-proceso { border-bottom-color: var(--tb-azul); }
+.tb-slide-head.col-completadas { border-bottom-color: var(--tb-morado); }
+.tb-slide-head.col-alertas { border-bottom-color: var(--tb-rojo); }
+.tb-slide-etiqueta {
+    font-size: clamp(15px, 1.3vw, 24px);
     font-weight: 800;
-    letter-spacing: .12em;
-    color: var(--tb-azul);
+    letter-spacing: .1em;
 }
-.tb-dest-prio {
-    font-size: 10px;
+.tb-slide-n {
+    font-size: clamp(18px, 1.6vw, 30px);
     font-weight: 800;
-    letter-spacing: .08em;
-    color: #0B1220;
-    background: var(--tb-rojo);
-    padding: 2px 9px;
-    border-radius: 5px;
+    font-variant-numeric: tabular-nums;
+    color: var(--tb-txt-tenue);
 }
 
-.tb-dest-titulo {
-    margin: 0;
-    font-size: clamp(20px, 1.8vw, 30px);
-    font-weight: 700;
-    line-height: 1.22;
-    letter-spacing: -.01em;
+.tb-slide-cuerpo {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+    overflow: hidden;
+    min-height: 0;
 }
-.tb-dest-desc {
+
+/* Ficha de la sección: encogida por defecto, ampliada al recibir el zoom */
+.tb-slide-ficha {
+    position: relative;
+    padding: 9px 12px 9px 15px;
+    border-radius: 9px;
+    background: var(--tb-panel-2);
+    border: 1px solid var(--tb-borde);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    opacity: .42;
+    transform: scale(.97);
+    transform-origin: left center;
+    transition: opacity .55s ease, transform .55s cubic-bezier(.2, .7, .3, 1.02),
+                box-shadow .55s ease, border-color .4s ease;
+}
+.tb-slide-ficha.es-enfocada {
+    opacity: 1;
+    transform: scale(1.035);
+    border-color: var(--temp, var(--tb-azul));
+    box-shadow: 0 12px 30px rgba(0, 0, 0, .5);
+    z-index: 2;
+}
+
+.tb-slide-titulo {
     margin: 0;
-    font-size: clamp(12px, .95vw, 16px);
-    line-height: 1.55;
-    color: var(--tb-txt);
+    font-size: clamp(12px, 1vw, 18px);
+    font-weight: 650;
+    line-height: 1.3;
+}
+.tb-slide-desc {
+    margin: 0;
+    font-size: clamp(10px, .78vw, 14px);
+    line-height: 1.5;
     opacity: .85;
+    animation: tb-entra .45s ease-out;
 }
 
-.tb-dest-persona { display: flex; align-items: center; gap: 12px; }
-.tb-dest-avatar {
-    width: 46px; height: 46px;
+.tb-slide-persona { display: flex; align-items: center; gap: 9px; }
+.tb-slide-avatar {
+    width: 26px; height: 26px;
     border-radius: 50%;
     object-fit: cover;
     flex-shrink: 0;
-    border: 2px solid var(--temp);
 }
-.tb-dest-nombre {
-    display: block;
-    font-size: clamp(13px, 1vw, 17px);
-    font-weight: 650;
+.tb-slide-quien { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.tb-slide-nombre {
+    font-size: clamp(10px, .72vw, 13px);
+    font-weight: 600;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.tb-dest-cargo {
-    display: block;
-    font-size: clamp(10px, .75vw, 13px);
-    color: var(--tb-txt-tenue);
-}
-
-.tb-dest-avance { display: flex; flex-direction: column; gap: 6px; }
-.tb-dest-avance-top {
-    display: flex;
-    justify-content: space-between;
-    font-size: 10px;
+.tb-slide-cargo { font-size: clamp(9px, .62vw, 11px); color: var(--tb-txt-tenue); }
+.tb-slide-plazo {
+    font-size: clamp(9px, .65vw, 12px);
     font-weight: 700;
-    letter-spacing: .07em;
-    color: var(--tb-txt-tenue);
+    color: var(--temp, var(--tb-txt-tenue));
+    white-space: nowrap;
+    flex-shrink: 0;
 }
-.tb-dest .tb-avance-barra { height: 7px; }
 
-.tb-dest-datos {
+.tb-slide-datos {
     margin: 0;
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 12px 20px;
-    padding-top: 12px;
+    gap: 8px 16px;
+    padding-top: 8px;
     border-top: 1px solid var(--tb-borde);
+    animation: tb-entra .45s ease-out;
 }
-.tb-dest-datos div { min-width: 0; }
-.tb-dest-ancho { grid-column: 1 / -1; }
-.tb-dest-datos dt {
-    font-size: 9.5px;
-    letter-spacing: .1em;
+.tb-slide-datos div { min-width: 0; }
+.tb-slide-datos dt {
+    font-size: 9px;
+    letter-spacing: .09em;
     text-transform: uppercase;
     color: var(--tb-txt-tenue);
 }
-.tb-dest-datos dd {
-    margin: 3px 0 0;
-    font-size: clamp(12px, .85vw, 15px);
+.tb-slide-datos dd {
+    margin: 2px 0 0;
+    font-size: clamp(11px, .78vw, 14px);
     font-weight: 600;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.tb-dest-retraso { color: var(--temp); }
+
+/* Alertas: el número manda */
+.tb-slide-alerta { display: flex; align-items: center; gap: 14px; }
+.tb-slide-alerta-n {
+    font-size: clamp(26px, 2.6vw, 46px);
+    font-weight: 800;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    color: var(--temp);
+}
+.tb-slide-al.al-roja { --temp: var(--tb-rojo); }
+.tb-slide-al.al-naranja { --temp: var(--tb-naranja); }
+.tb-slide-al.al-amarilla { --temp: var(--tb-amarillo); }
+.tb-slide-al.al-azul { --temp: var(--tb-azul); }
+
+.tb-slide-mas {
+    margin: 0;
+    text-align: center;
+    font-size: 10px;
+    color: var(--tb-txt-tenue);
+    font-style: italic;
+}
+
+/* En TV todo escala con la altura de pantalla */
+.tb-tv .tb-slider { width: 58vw; }
+.tb-tv .tb-slide { padding: 2.6vh 3vh 3vh; gap: 1.4vh; }
+.tb-tv .tb-slide-etiqueta { font-size: 2.6vh; }
+.tb-tv .tb-slide-n { font-size: 3vh; }
+.tb-tv .tb-slide-titulo { font-size: 2vh; }
+.tb-tv .tb-slide-desc { font-size: 1.6vh; }
+.tb-tv .tb-slide-nombre { font-size: 1.5vh; }
+.tb-tv .tb-slide-cargo { font-size: 1.25vh; }
+.tb-tv .tb-slide-plazo { font-size: 1.35vh; }
+.tb-tv .tb-slide-avatar { width: 3.4vh; height: 3.4vh; }
+.tb-tv .tb-slide-datos dd { font-size: 1.5vh; }
+.tb-tv .tb-slide-datos dt { font-size: 1.1vh; }
+.tb-tv .tb-slide-alerta-n { font-size: 5.4vh; }
 
 /* Barra que agota el tiempo del destaque */
 .tb-dest-tiempo {
@@ -938,20 +1000,11 @@ a.tb-btn-sec, a.tb-btn-sec:visited { color: var(--tb-txt); }
 @keyframes tb-dest-cuenta { from { width: 100%; } to { width: 0%; } }
 
 /* En TV la ficha ocupa algo más y escala con la altura */
-.tb-tv .tb-dest { width: 52vw; padding: 3vh 3.2vh 3.4vh; gap: 1.6vh; }
-.tb-tv .tb-dest-titulo { font-size: 3.4vh; }
-.tb-tv .tb-dest-desc { font-size: 1.9vh; }
-.tb-tv .tb-dest-nombre { font-size: 2vh; }
-.tb-tv .tb-dest-cargo { font-size: 1.5vh; }
-.tb-tv .tb-dest-avatar { width: 6.4vh; height: 6.4vh; }
-.tb-tv .tb-dest-datos dd { font-size: 1.8vh; }
-.tb-tv .tb-dest-datos dt { font-size: 1.15vh; }
-.tb-tv .tb-dest-etiqueta { font-size: 1.4vh; }
 
 @media (prefers-reduced-motion: reduce) {
-    .tb-dest { animation: none; }
+    .tb-slide, .tb-slide.es-girando { animation: none; }
+    .tb-slide-ficha { transition: none; }
     .tb-dest-tiempo { animation: none; width: 100%; }
-    .tb-card-activa .tb-temp-barra { animation: none; }
 }
 
 /* ---------- Paneles plegables del lateral ---------- */

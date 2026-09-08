@@ -68,7 +68,7 @@ const SELLO = {
 const iniciales = (nombre) => String(nombre || '?')
     .trim().split(/\s+/).slice(0, 2).map((p) => p[0]).join('').toUpperCase();
 
-export default function TableroCard({ tarea, estadoVisual, innerRef, cortes, activa }) {
+export default function TableroCard({ tarea, estadoVisual, innerRef, cortes }) {
     const fotoOriginal = useAvatar(tarea.empleado_id);
     const [fotoFallida, setFotoFallida] = useState(false);
     const foto = fotoFallida ? null : fotoOriginal;
@@ -89,7 +89,6 @@ export default function TableroCard({ tarea, estadoVisual, innerRef, cortes, act
             className={[
                 'tb-card',
                 `tb-temp-${temp.nivel}`,
-                activa ? 'tb-card-activa' : '',
                 estadoVisual ? `tb-anim-${estadoVisual}` : '',
                 tarea.pausada ? 'tb-card-pausada' : '',
             ].filter(Boolean).join(' ')}

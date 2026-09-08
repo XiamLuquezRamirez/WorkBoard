@@ -1,4 +1,4 @@
-import React, { useLayoutEffect, useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import TableroCard from './TableroCard';
 import useFlipTarjetas from './useFlipTarjetas';
 import useCarruselDestaque from './useCarruselDestaque';
@@ -86,28 +86,46 @@ export default function TableroKanban({ datos, previo, modoTv }) {
     // resto se resume en el contador "+N más" al pie de la columna.
     const tope = modoTv ? 12 : 40;
 
-    // Carrusel de destaque: sólo sobre las tareas en proceso, que son las que
-    // se están trabajando ahora y por tanto las que interesa repasar en pantalla.
-    const idsProceso = useMemo(
-        () => items(datos.columnas, 'proceso').slice(0, tope).map((t) => String(t.id)),
-        [datos, tope]
-    );
-    const destacado = useCarruselDestaque(idsProceso);
+    // Secciones que recorre el carrusel: las tres columnas y las alertas. Cada
+    // una se muestra entera y se hace zoom sobre sus elementos uno a uno.
+    const secciones = useMemo(() => {
+        const desdeColumna = (clave, titulo, color, orden) => {
+            const lista = items(datos.columnas, clave);
+            return {
+                clave, titulo, color, orden,
+                total: lista.length,
+                elementos: lista.slice(0, 6),
+                restantes: Math.max(0, lista.length - 6),
+            };
+        };
 
-    const tareaDestacada = useMemo(
-        () => items(datos.columnas, 'proceso').find((t) => String(t.id) === destacado) || null,
-        [datos, destacado]
-    );
+        const a = datos.alertas || {};
+        const filasAlerta = [
+            { id: 'vencidas', n: a.vencidas, texto: 'tareas vencidas', tono: 'al-roja',
+              detalle: 'Pasaron su fecha pactada y siguen sin entregarse.' },
+            { id: 'hoy', n: a.vencen_hoy, texto: 'vencen hoy', tono: 'al-naranja',
+              detalle: 'Su plazo termina hoy: conviene cerrarlas en la jornada.' },
+            { id: 'semana', n: a.proximas, texto: 'vencen esta semana', tono: 'al-amarilla',
+              detalle: 'Entran en plazo durante los próximos siete días.' },
+            { id: 'pausa', n: a.pausadas, texto: 'tareas en pausa', tono: 'al-azul',
+              detalle: 'Detenidas a la espera de reanudarse; no avanzan mientras tanto.' },
+        ].filter((f) => f.n > 0);
 
-    // Posición de la tarjeta que se destaca, para que la ficha ampliada salga
-    // desde ella y se vea de dónde procede. Se mide en useLayoutEffect, antes
-    // de pintar, de modo que la animación arranque ya con el origen correcto.
-    const [origen, setOrigen] = useState(null);
-    useLayoutEffect(() => {
-        if (!destacado) { setOrigen(null); return; }
-        const r = registrarTarjeta.rectDe(destacado);
-        setOrigen(r ? { x: r.left + r.width / 2, y: r.top + r.height / 2, w: r.width, h: r.height } : null);
-    }, [destacado, registrarTarjeta]);
+        return [
+            desdeColumna('pendiente', 'POR HACER', 'col-pendiente', 0),
+            desdeColumna('proceso', 'EN PROCESO', 'col-proceso', 1),
+            desdeColumna('completadas', 'COMPLETADAS', 'col-completadas', 2),
+            {
+                clave: 'alertas', titulo: 'ALERTAS', color: 'col-alertas', orden: 3,
+                total: filasAlerta.length,
+                elementos: filasAlerta,
+                restantes: 0,
+            },
+        ];
+    }, [datos]);
+
+    const { seccion: seccionActiva, indice, girando } = useCarruselDestaque(secciones);
+    const seccionEnPantalla = secciones.find((s) => s.orden === seccionActiva) || null;
 
     return (
         <div className="tb-kanban">
@@ -135,7 +153,6 @@ export default function TableroKanban({ datos, previo, modoTv }) {
                                     estadoVisual={cambios[t.id]}
                                     innerRef={registrarTarjeta(t.id)}
                                     cortes={cortes}
-                                    activa={String(t.id) === destacado}
                                 />
                             ))}
                             {lista.length === 0 && <p className="tb-col-vacia">Sin tareas</p>}
@@ -145,9 +162,12 @@ export default function TableroKanban({ datos, previo, modoTv }) {
                 );
             })}
 
-            {tareaDestacada && (
-                <ModalDestaque tarea={tareaDestacada} cortes={cortes} origen={origen} />
-            )}
+            <ModalDestaque
+                seccion={seccionEnPantalla}
+                indice={indice}
+                girando={girando}
+                cortes={cortes}
+            />
         </div>
     );
 }

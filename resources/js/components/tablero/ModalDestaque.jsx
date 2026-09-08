@@ -1,4 +1,4 @@
-import React, { useLayoutEffect, useRef, useState } from 'react';
+import React from 'react';
 import { useAvatar } from './AvataresContext';
 
 const MESES = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC'];
@@ -46,109 +46,59 @@ function textoRetraso(dias) {
     return `Vencida hace ${a} año${a === 1 ? '' : 's'}`;
 }
 
-/**
- * Vista destacada del carrusel.
- *
- * Se muestra centrada sobre el tablero en lugar de agrandar la tarjeta dentro
- * de su columna: ampliarla ahí desplazaba al resto y el detalle no cabía en el
- * ancho de una columna. Es sólo informativa —la rota el carrusel, no el
- * usuario— así que no captura el foco ni bloquea nada detrás.
- */
-export default function ModalDestaque({ tarea, cortes, origen }) {
-    const fichaRef = useRef(null);
-    const [entrando, setEntrando] = useState(Boolean(origen));
-
-    // La ficha nace encogida sobre la tarjeta de origen y se expande hasta su
-    // sitio: así se ve de qué tarjeta procede en lugar de aparecer sin más.
-    useLayoutEffect(() => {
-        const nodo = fichaRef.current;
-        if (!nodo || !origen) { setEntrando(false); return undefined; }
-
-        const destino = nodo.getBoundingClientRect();
-        const dx = origen.x - (destino.left + destino.width / 2);
-        const dy = origen.y - (destino.top + destino.height / 2);
-        const escala = Math.max(0.12, Math.min(origen.w / destino.width, 0.6));
-
-        nodo.style.transition = 'none';
-        nodo.style.transform = `translate(${dx}px, ${dy}px) scale(${escala})`;
-        nodo.style.opacity = '0.25';
-        setEntrando(true);
-
-        const id = requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-                nodo.style.transition =
-                    'transform .72s cubic-bezier(.2,.72,.28,1.02), opacity .45s ease-out';
-                nodo.style.transform = '';
-                nodo.style.opacity = '';
-                setEntrando(false);
-            });
-        });
-        return () => cancelAnimationFrame(id);
-    }, [origen, tarea.id]);
-
+/** Ficha de una tarea dentro de la columna destacada. */
+function FichaTarea({ tarea, cortes, enfocada }) {
     const foto = useAvatar(tarea.empleado_id);
     const nivel = nivelTemperatura(tarea.dias_restantes, tarea.fecha_entregada, cortes);
     const retraso = textoRetraso(tarea.dias_restantes);
     const chk = tarea.checklist;
 
     return (
-        <div className="tb-dest-fondo" aria-hidden="true">
-            <article
-                ref={fichaRef}
-                className={`tb-dest tb-temp-${nivel} ${entrando ? 'es-entrando' : ''}`}
-                key={tarea.id}
-            >
-                <span className="tb-dest-barra" />
+        <article className={`tb-slide-ficha tb-temp-${nivel} ${enfocada ? 'es-enfocada' : ''}`}>
+            <span className="tb-dest-barra" />
 
-                <header className="tb-dest-head">
-                    <span className="tb-dest-etiqueta">EN PROCESO</span>
-                    {tarea.prioridad === 'Alta' && (
-                        <span className="tb-dest-prio">PRIORIDAD ALTA</span>
-                    )}
-                </header>
+            <h3 className="tb-slide-titulo">{tarea.titulo}</h3>
 
-                <h2 className="tb-dest-titulo">{tarea.titulo}</h2>
+            {enfocada && tarea.descripcion && (
+                <p className="tb-slide-desc">{tarea.descripcion}</p>
+            )}
 
-                {tarea.descripcion && (
-                    <p className="tb-dest-desc">{tarea.descripcion}</p>
-                )}
+            <div className="tb-slide-persona">
+                {foto
+                    ? <img src={foto} alt="" className="tb-slide-avatar" />
+                    : <span className="tb-slide-avatar tb-avatar-vacio">{iniciales(tarea.empleado)}</span>}
+                <div className="tb-slide-quien">
+                    <span className="tb-slide-nombre">{tarea.empleado}</span>
+                    {enfocada && tarea.cargo && <span className="tb-slide-cargo">{tarea.cargo}</span>}
+                </div>
+                {retraso && <span className="tb-slide-plazo">{retraso}</span>}
+            </div>
 
-                <div className="tb-dest-persona">
-                    {foto
-                        ? <img src={foto} alt="" className="tb-dest-avatar" />
-                        : <span className="tb-dest-avatar tb-avatar-vacio">{iniciales(tarea.empleado)}</span>}
-                    <div>
-                        <span className="tb-dest-nombre">{tarea.empleado}</span>
-                        {tarea.cargo && <span className="tb-dest-cargo">{tarea.cargo}</span>}
+            {enfocada && chk && (
+                <div className="tb-dest-avance">
+                    <div className="tb-dest-avance-top">
+                        <span>CHECKLIST</span>
+                        <span>{chk.hechas}/{chk.total} · {chk.pct}%</span>
+                    </div>
+                    <div className="tb-avance-barra">
+                        <div
+                            className={`tb-avance-fill ${chk.pct === 100 ? 'es-completo' : ''}`}
+                            style={{ width: `${chk.pct}%` }}
+                        />
                     </div>
                 </div>
+            )}
 
-                {chk && (
-                    <div className="tb-dest-avance">
-                        <div className="tb-dest-avance-top">
-                            <span>CHECKLIST</span>
-                            <span>{chk.hechas}/{chk.total} · {chk.pct}%</span>
-                        </div>
-                        <div className="tb-avance-barra">
-                            <div
-                                className={`tb-avance-fill ${chk.pct === 100 ? 'es-completo' : ''}`}
-                                style={{ width: `${chk.pct}%` }}
-                            />
-                        </div>
-                    </div>
-                )}
-
-                <dl className="tb-dest-datos">
+            {enfocada && (
+                <dl className="tb-slide-datos">
                     <div>
                         <dt>Fecha pactada</dt>
                         <dd>{fechaLarga(tarea.fecha_pactada)}</dd>
                     </div>
-                    {retraso && (
-                        <div>
-                            <dt>Estado del plazo</dt>
-                            <dd className="tb-dest-retraso">{retraso}</dd>
-                        </div>
-                    )}
+                    <div>
+                        <dt>Prioridad</dt>
+                        <dd>{tarea.prioridad || '—'}</dd>
+                    </div>
                     {tarea.proyecto && (
                         <div className="tb-dest-ancho">
                             <dt>Proyecto</dt>
@@ -156,10 +106,66 @@ export default function ModalDestaque({ tarea, cortes, origen }) {
                         </div>
                     )}
                 </dl>
+            )}
+        </article>
+    );
+}
 
-                {/* Barra que agota el tiempo del destaque */}
-                <span className="tb-dest-tiempo" />
-            </article>
+/** Ficha de una alerta dentro de la sección de alertas. */
+function FichaAlerta({ alerta, enfocada }) {
+    return (
+        <article className={`tb-slide-ficha tb-slide-al ${alerta.tono} ${enfocada ? 'es-enfocada' : ''}`}>
+            <span className="tb-dest-barra" />
+            <div className="tb-slide-alerta">
+                <span className="tb-slide-alerta-n">{alerta.n}</span>
+                <div>
+                    <h3 className="tb-slide-titulo">{alerta.texto}</h3>
+                    {enfocada && <p className="tb-slide-desc">{alerta.detalle}</p>}
+                </div>
+            </div>
+        </article>
+    );
+}
+
+/**
+ * Slider del carrusel: muestra una sección completa —una columna del kanban o
+ * las alertas— y hace zoom sobre sus elementos uno a uno.
+ *
+ * Las secciones giran en 3D sobre el eje vertical, de modo que el paso de una a
+ * otra se percibe como un carrusel y no como un reemplazo brusco.
+ */
+export default function ModalDestaque({ seccion, indice, girando, cortes }) {
+    if (!seccion) return null;
+
+    return (
+        <div className="tb-dest-fondo" aria-hidden="true">
+            <div className="tb-slider">
+                <section
+                    className={`tb-slide ${girando ? 'es-girando' : ''}`}
+                    key={seccion.clave}
+                >
+                    <header className={`tb-slide-head ${seccion.color}`}>
+                        <span className="tb-slide-etiqueta">{seccion.titulo}</span>
+                        <span className="tb-slide-n">{seccion.total}</span>
+                    </header>
+
+                    <div className="tb-slide-cuerpo">
+                        {seccion.elementos.map((el, i) => (
+                            seccion.clave === 'alertas'
+                                ? <FichaAlerta key={el.id} alerta={el} enfocada={i === indice} />
+                                : <FichaTarea key={el.id} tarea={el} cortes={cortes} enfocada={i === indice} />
+                        ))}
+                    </div>
+
+                    {seccion.restantes > 0 && (
+                        <p className="tb-slide-mas">+{seccion.restantes} más en esta columna</p>
+                    )}
+
+                    {indice >= 0 && (
+                        <span className="tb-dest-tiempo" key={`t-${seccion.clave}-${indice}`} />
+                    )}
+                </section>
+            </div>
         </div>
     );
 }

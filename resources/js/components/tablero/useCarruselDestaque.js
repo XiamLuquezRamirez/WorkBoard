@@ -1,58 +1,81 @@
 import { useEffect, useRef, useState } from 'react';
 
-const DURACION = 10000;  // tiempo que cada tarjeta permanece al frente
-const RESPIRO = 10000;   // pausa entre una tarjeta y la siguiente
+const ZOOM = 10000;      // tiempo de zoom sobre cada elemento
+const GIRO = 1100;       // transición entre una sección y la siguiente
+const RESPIRO = 900;     // pausa entre un elemento y el siguiente
+const MAX_POR_SECCION = 6;
 
 /**
- * Rota el destaque entre las tareas en proceso: una tarjeta pasa al frente,
- * permanece diez segundos y regresa a su lugar; diez segundos después entra la
- * siguiente, de modo que el tablero queda despejado entre una y otra.
+ * Recorre el tablero por secciones —las tres columnas y las alertas— y, dentro
+ * de cada una, hace zoom sobre sus elementos uno a uno antes de girar a la
+ * siguiente.
  *
- * Devuelve el id destacado (o null durante el respiro). El recorrido se reinicia
- * si la lista cambia, y se detiene con la pestaña oculta para no acumular
- * temporizadores en una pantalla encendida toda la jornada.
+ * Devuelve { seccion, indice, girando }: la sección visible, qué elemento tiene
+ * el foco dentro de ella y si está en plena transición entre secciones. El
+ * recorrido se detiene con la pestaña oculta para no acumular temporizadores en
+ * una pantalla encendida toda la jornada.
  */
-export default function useCarruselDestaque(ids, { activo = true } = {}) {
-    const [destacado, setDestacado] = useState(null);
+export default function useCarruselDestaque(secciones, { activo = true } = {}) {
+    const [estado, setEstado] = useState({ seccion: 0, indice: -1, girando: false });
     const timerRef = useRef(null);
-    const posRef = useRef(0);
 
     // Firma estable: sin esto el efecto se reiniciaría en cada sondeo, porque
     // el array llega nuevo aunque su contenido sea idéntico.
-    const firma = ids.join(',');
+    const firma = secciones
+        .map((s) => `${s.clave}:${s.elementos.length}`)
+        .join('|');
 
     useEffect(() => {
         clearTimeout(timerRef.current);
-        setDestacado(null);
 
-        const lista = firma ? firma.split(',') : [];
-        if (!activo || lista.length === 0) return undefined;
-
-        // Con una sola tarea no hay rotación que mostrar.
-        if (lista.length === 1) {
-            setDestacado(lista[0]);
-            return () => clearTimeout(timerRef.current);
+        const vivas = secciones.filter((s) => s.elementos.length > 0);
+        if (!activo || vivas.length === 0) {
+            setEstado({ seccion: 0, indice: -1, girando: false });
+            return undefined;
         }
 
-        if (posRef.current >= lista.length) posRef.current = 0;
+        let seccion = 0;
+        let indice = 0;
 
-        const mostrar = () => {
+        const paso = () => {
             if (document.hidden) {
-                timerRef.current = setTimeout(mostrar, DURACION);
+                timerRef.current = setTimeout(paso, ZOOM);
                 return;
             }
-            setDestacado(lista[posRef.current]);
+
+            const actual = vivas[seccion];
+            const total = Math.min(actual.elementos.length, MAX_POR_SECCION);
+
+            setEstado({ seccion: actual.orden, indice, girando: false });
+
             timerRef.current = setTimeout(() => {
-                setDestacado(null);          // vuelve a su sitio
-                posRef.current = (posRef.current + 1) % lista.length;
-                timerRef.current = setTimeout(mostrar, RESPIRO);
-            }, DURACION);
+                indice += 1;
+
+                if (indice < total) {
+                    // Siguiente elemento de la misma sección: sólo un respiro.
+                    setEstado({ seccion: actual.orden, indice: -1, girando: false });
+                    timerRef.current = setTimeout(paso, RESPIRO);
+                    return;
+                }
+
+                // Sección agotada: gira a la siguiente.
+                indice = 0;
+                seccion = (seccion + 1) % vivas.length;
+                setEstado({ seccion: vivas[seccion].orden, indice: -1, girando: true });
+                timerRef.current = setTimeout(() => {
+                    setEstado({ seccion: vivas[seccion].orden, indice: -1, girando: false });
+                    timerRef.current = setTimeout(paso, RESPIRO);
+                }, GIRO);
+            }, ZOOM);
         };
 
-        timerRef.current = setTimeout(mostrar, RESPIRO);
+        timerRef.current = setTimeout(paso, RESPIRO);
 
         return () => clearTimeout(timerRef.current);
+        // `secciones` se reconstruye en cada render; la firma describe su
+        // contenido y es lo que debe disparar el reinicio.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [firma, activo]);
 
-    return destacado;
+    return estado;
 }
