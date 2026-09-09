@@ -18,6 +18,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Alcance
+    |--------------------------------------------------------------------------
+    | Correo del líder cuyo equipo se reporta. El resumen se limita a sus
+    | empleados asignados en lideres_empleados, más sus propias tareas: el mismo
+    | criterio con que el sistema filtra los informes.
+    |
+    | Vacío = toda la organización. Úsalo sólo para un destinatario que deba ver
+    | el tablero completo (Administrador o Supervisor).
+    */
+    'lider' => env('RESUMEN_TABLERO_LIDER', ''),
+
+    /*
+    |--------------------------------------------------------------------------
     | Reglas de clasificación
     |--------------------------------------------------------------------------
     */
@@ -47,6 +60,7 @@ return [
             'tareas'      => 'tareas_empleados',
             'empleados'   => 'empleados',
             'usuarios'    => 'users',
+            'lideres'     => 'lideres_empleados',
             'proyectos'   => 'proyectos',
             'movimientos' => 'notif_generales',
             'subtareas'   => 'subtareas',

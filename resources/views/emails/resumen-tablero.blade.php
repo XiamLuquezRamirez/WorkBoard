@@ -1,5 +1,6 @@
 RESUMEN TABLERO WORKBOARD | {{ $datos['fecha'] }}
 Generado: {{ $datos['generado'] }} ({{ $datos['zona'] }})
+Alcance: {{ $datos['alcance'] }}
 
 == INDICADORES ==
 Tareas abiertas: {{ $datos['metricas']['abiertas'] }}

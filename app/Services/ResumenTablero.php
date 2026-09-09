@@ -24,6 +24,9 @@ class ResumenTablero
     private array $movimiento;
     private string $conexion;
     private CarbonImmutable $hoy;
+    private ?array $alcance = null;
+    private bool $alcanceResuelto = false;
+    private string $nombreLider = '';
 
     public function __construct(private array $config)
     {
@@ -32,6 +35,73 @@ class ResumenTablero
         $this->movimiento = $config['mapeo']['movimiento'];
         $this->conexion   = $config['mapeo']['conexion'];
         $this->hoy        = CarbonImmutable::now($config['zona_horaria'])->startOfDay();
+    }
+
+    /**
+     * Empleados que abarca el resumen, o null si no hay restricción.
+     *
+     * Replica el criterio de alcanceEmpleadosInformes() del controlador, para
+     * que el correo muestre exactamente lo mismo que el líder ve en el sistema.
+     *
+     * A diferencia de aquél, no exige que el asignado tenga ficha en empleados:
+     * al borrarse físicamente un empleado su fila desaparece pero las tareas
+     * siguen ahí, y descartarlo escondería tareas vivas del equipo —hoy hasta
+     * 37 en un solo líder—, justo las que más urge revisar.
+     */
+    private function alcanceEmpleados(): ?array
+    {
+        // Resuelto una sola vez: generar() lo consulta y la cabecera del correo
+        // también, y no tiene sentido repetir las consultas.
+        if ($this->alcanceResuelto) {
+            return $this->alcance;
+        }
+
+        $this->alcanceResuelto = true;
+
+        $correo = trim((string) ($this->config['lider'] ?? ''));
+
+        if ($correo === '') {
+            return $this->alcance = null;
+        }
+
+        $usuario = DB::connection($this->conexion)->table($this->tablas['usuarios'])
+            ->where('email', $correo)
+            ->first();
+
+        if (!$usuario || !$usuario->empleado) {
+            throw new \RuntimeException(
+                "El líder configurado ({$correo}) no existe o no tiene empleado asociado."
+            );
+        }
+
+        $this->nombreLider = $usuario->name ?: $correo;
+
+        $ids = [(int) $usuario->empleado];
+
+        $asignados = DB::connection($this->conexion)->table($this->tablas['lideres'])
+            ->where('lider', $usuario->empleado)
+            ->pluck('empleado')
+            ->all();
+
+        return $this->alcance = array_values(array_unique(
+            array_merge($ids, array_map('intval', $asignados))
+        ));
+    }
+
+    /** Texto que encabeza el correo indicando a quién cubre el resumen. */
+    private function descripcionAlcance(): string
+    {
+        $alcance = $this->alcanceEmpleados();
+
+        if ($alcance === null) {
+            return 'Toda la organización';
+        }
+
+        return sprintf(
+            'Equipo de %s (%d personas, incluido el líder)',
+            $this->nombreLider,
+            count($alcance)
+        );
     }
 
     public function generar(): array
@@ -49,6 +119,9 @@ class ResumenTablero
             'fecha'    => $this->hoy->toDateString(),
             'generado' => CarbonImmutable::now($this->config['zona_horaria'])->format('Y-m-d H:i'),
             'zona'     => $this->config['zona_horaria'],
+            // Se declara explícitamente a quién cubre: sin esto, un resumen de
+            // 7 tareas se leería como si fuera el de toda la organización.
+            'alcance'  => $this->descripcionAlcance(),
             'metricas' => [
                 'abiertas'        => $abiertas->count(),
                 'vencidas'        => $vencidas->count(),
@@ -113,6 +186,12 @@ class ResumenTablero
                 DB::raw('CASE WHEN emp.id IS NULL AND usu.id IS NOT NULL THEN 1 ELSE 0 END as responsable_huerfano'),
                 'pro.nombre as proyecto',
             ]);
+
+        $alcance = $this->alcanceEmpleados();
+
+        if ($alcance !== null) {
+            $consulta->whereIn($t.'.'.$c['responsable'], $alcance);
+        }
 
         $proyectos = $this->config['mapeo']['proyectos_incluidos'];
 
