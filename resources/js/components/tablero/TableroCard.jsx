@@ -78,7 +78,7 @@ export default function TableroCard({ tarea, estadoVisual, innerRef, cortes, onA
 
     // El avance sólo aporta información mientras la tarea se está trabajando.
     const mostrarAvance = Boolean(tarea.checklist)
-        && (tarea.estado === 'En Proceso' || tarea.pausada);
+        && (tarea.estado === 'En Proceso' || tarea.pausada || tarea.bloqueada);
 
     const sello = estadoVisual ? SELLO[estadoVisual] : null;
     const esAlta = tarea.prioridad === 'Alta';
@@ -92,6 +92,7 @@ export default function TableroCard({ tarea, estadoVisual, innerRef, cortes, onA
                 onAbrir ? 'es-pulsable' : '',
                 estadoVisual ? `tb-anim-${estadoVisual}` : '',
                 tarea.pausada ? 'tb-card-pausada' : '',
+                tarea.bloqueada ? 'tb-card-bloqueada' : '',
             ].filter(Boolean).join(' ')}
             aria-label={`Tarea ${tarea.titulo}`}
             onClick={onAbrir}
@@ -128,6 +129,14 @@ export default function TableroCard({ tarea, estadoVisual, innerRef, cortes, onA
                         <span className="tb-punto-alta" title="Prioridad alta" aria-label="Prioridad alta" />
                     )}
                     {tarea.pausada && <span className="tb-mini-pausa">⏸</span>}
+                    {tarea.bloqueada && (
+                        <span
+                            className="tb-mini-bloqueo"
+                            title={tarea.motivo_bloqueo || 'Tarea bloqueada'}
+                        >
+                            ⛔
+                        </span>
+                    )}
                     {temp.etiqueta && (
                         <span className="tb-temp-chip" title={
                             dias < 0 ? `Vencida hace ${Math.abs(dias)} días` : `Vence en ${dias} días`

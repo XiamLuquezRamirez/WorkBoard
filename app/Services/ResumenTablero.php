@@ -114,6 +114,9 @@ class ResumenTablero
         $vencenPronto   = $this->vencenPronto($abiertas);
         $sinFecha       = $this->sinFecha($abiertas);
         $huerfanas      = $this->responsableHuerfano($abiertas);
+        $bloqueadas     = $this->bloqueadas($abiertas);
+        $porVerificar   = $this->porVerificar($abiertas);
+        $sinCriterio    = $this->sinCriterio($abiertas);
 
         return [
             'fecha'    => $this->hoy->toDateString(),
@@ -131,6 +134,9 @@ class ResumenTablero
                 'sin_fecha'       => $sinFecha->count(),
                 'pausadas'        => $abiertas->where('pausada', 1)->count(),
                 'ficha_faltante'  => $huerfanas->count(),
+                'bloqueadas'      => $bloqueadas->count(),
+                'por_verificar'   => $porVerificar->count(),
+                'sin_criterio'    => $sinCriterio->count(),
             ],
             'secciones' => [
                 'vencidas'        => $this->filas($vencidas),
@@ -139,6 +145,9 @@ class ResumenTablero
                 'vencen_pronto'   => $this->filas($vencenPronto),
                 'sin_fecha'       => $this->filas($sinFecha),
                 'ficha_faltante'  => $this->filas($huerfanas),
+                'bloqueadas'      => $this->filas($bloqueadas),
+                'por_verificar'   => $this->filas($porVerificar),
+                'sin_criterio'    => $this->filas($sinCriterio),
             ],
             'por_responsable' => $this->porResponsable($vencidas, $estancadas, $vencenPronto),
         ];
@@ -181,6 +190,10 @@ class ResumenTablero
                 $t.'.'.$c['responsable'].' as responsable_id',
                 $t.'.prioridad',
                 $t.'.pausada',
+                $t.'.bloqueada',
+                $t.'.motivo_bloqueo',
+                $t.'.criterio',
+                $t.'.criterio_cumplido',
                 DB::raw("NULLIF(TRIM(CONCAT(COALESCE(emp.nombres,''),' ',COALESCE(emp.apellidos,''))),'') as responsable_emp"),
                 DB::raw('usu.name as responsable_usu'),
                 DB::raw('CASE WHEN emp.id IS NULL AND usu.id IS NOT NULL THEN 1 ELSE 0 END as responsable_huerfano'),
@@ -328,6 +341,43 @@ class ResumenTablero
             ->values();
     }
 
+    /**
+     * Tareas con un impedimento declarado.
+     *
+     * Encabezan el correo: a diferencia de una vencida, que avisa, un bloqueo
+     * no se resuelve con tiempo —alguien tiene que destrabarlo— y normalmente
+     * esa persona es quien lee este resumen.
+     */
+    private function bloqueadas(Collection $tareas): Collection
+    {
+        return $tareas
+            ->filter(fn ($t) => (int) ($t->bloqueada ?? 0) === 1)
+            ->sortBy(fn ($t) => $this->fecha($t->vencimiento)?->timestamp)
+            ->values();
+    }
+
+    /** Entregadas y a la espera de que el líder verifique su criterio. */
+    private function porVerificar(Collection $tareas): Collection
+    {
+        return $tareas
+            ->filter(fn ($t) => trim((string) $t->estado) === 'En Revisión')
+            ->sortBy(fn ($t) => $this->fecha($t->vencimiento)?->timestamp)
+            ->values();
+    }
+
+    /**
+     * Tareas sin criterio de cumplimiento pactado.
+     *
+     * Mide cuánto del fondo heredado falta por incorporar al método. No es un
+     * riesgo de plazo, así que va al final del correo.
+     */
+    private function sinCriterio(Collection $tareas): Collection
+    {
+        return $tareas
+            ->filter(fn ($t) => trim((string) ($t->criterio ?? '')) === '')
+            ->values();
+    }
+
     // ------------------------------------------------------------------
     // Presentación
     // ------------------------------------------------------------------
@@ -346,6 +396,8 @@ class ResumenTablero
                 'estado'      => (string) $tarea->estado,
                 'prioridad'   => $tarea->prioridad ?: null,
                 'pausada'     => (int) ($tarea->pausada ?? 0) === 1,
+                'bloqueada'   => (int) ($tarea->bloqueada ?? 0) === 1,
+                'motivo_bloqueo' => $tarea->motivo_bloqueo ?: null,
                 'proyecto'    => $tarea->proyecto ?: null,
                 'responsable' => $tarea->responsable ?: null,
                 'vencimiento' => $vence?->toDateString(),

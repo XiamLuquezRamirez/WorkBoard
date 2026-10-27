@@ -1851,6 +1851,69 @@ class EmpleadosController extends Controller
 
 
 
+    /**
+     * Declara o levanta un impedimento sobre una tarea.
+     *
+     * Distinto de pausar: la pausa requiere aprobación del líder y detiene el
+     * plazo, mientras que el bloqueo sólo deja constancia de qué impide avanzar
+     * y el reloj sigue corriendo. Por eso lo declara el propio responsable, sin
+     * pedir permiso: esconder un impedimento es justo lo que el método busca
+     * evitar, y exigir un trámite para reconocerlo desalienta reportarlo.
+     *
+     * El motivo es obligatorio al bloquear: "bloqueada" sin explicación no le
+     * sirve de nada a quien tiene que destrabarla.
+     */
+    function bloquearTarea($id, Request $request)
+    {
+        $data = $request->validate([
+            'bloqueada' => 'required|boolean',
+            'motivo'    => 'nullable|string|max:1000',
+        ]);
+
+        $tarea = DB::connection('mysql2')->table('tareas_empleados')->where('id', $id)->first();
+        if (!$tarea) {
+            return response()->json(['error' => 'Tarea no encontrada'], 404);
+        }
+
+        $bloquear = (bool) $data['bloqueada'];
+        $motivo   = trim((string) ($data['motivo'] ?? ''));
+
+        if ($bloquear && mb_strlen($motivo) < 10) {
+            return response()->json([
+                'error' => 'Explica qué impide avanzar (al menos 10 caracteres). '
+                         . 'Quien deba destrabarla necesita saberlo.',
+            ], 422);
+        }
+
+        DB::connection('mysql2')->beginTransaction();
+        try {
+            DB::connection('mysql2')->table('tareas_empleados')->where('id', $id)->update([
+                'bloqueada'      => $bloquear ? 1 : 0,
+                'motivo_bloqueo' => $bloquear ? $motivo : null,
+            ]);
+
+            $actor = $this->nombreActor();
+            $this->registrarActividad(
+                (int) $id,
+                $bloquear ? 'Bloqueada' : 'Desbloqueada',
+                $bloquear
+                    ? "{$actor} declaró un impedimento: {$motivo}"
+                    : "{$actor} levantó el impedimento de esta tarea."
+            );
+
+            DB::connection('mysql2')->commit();
+        } catch (\Exception $e) {
+            DB::connection('mysql2')->rollBack();
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+
+        return response()->json([
+            'success' => $bloquear
+                ? 'Impedimento registrado. Aparecerá en el tablero de tu líder.'
+                : 'Impedimento levantado.',
+        ], 200);
+    }
+
     function pausarTarea($id, Request $request)
     {
         $data = $request->all();
@@ -2097,6 +2160,9 @@ class EmpleadosController extends Controller
                 't.fecha_pactada',
                 't.fecha_entregada',
                 't.pausada',
+                't.criterio',
+                't.bloqueada',
+                't.motivo_bloqueo',
                 't.rechazada',
                 't.visto_bueno',
                 't.motivo_reprogramacion',
@@ -2191,6 +2257,8 @@ class EmpleadosController extends Controller
                     // Bandera, no el texto: el criterio es largo y el sondeo
                     // corre cada 5 segundos. El texto se pide al abrir la tarea.
                     'sin_criterio'    => empty($t->criterio),
+                    'bloqueada'       => (int) ($t->bloqueada ?? 0) === 1,
+                    'motivo_bloqueo'  => $conDetalle ? $t->motivo_bloqueo : null,
                 ];
             })->values();
         };
@@ -2267,6 +2335,7 @@ class EmpleadosController extends Controller
             'vencen_hoy' => $sinCompletar->filter(fn ($t) => $t['dias_restantes'] === 0)->count(),
             'proximas'   => $sinCompletar->filter(fn ($t) => $t['dias_restantes'] !== null && $t['dias_restantes'] > 0 && $t['dias_restantes'] <= 7)->count(),
             'pausadas'   => $pausa->count(),
+            'bloqueadas' => $sinCompletar->filter(fn ($t) => $t['bloqueada'])->count(),
             // Cuántas del fondo heredado siguen sin criterio pactado: es la
             // medida de cuánto falta para que el método cubra todo el equipo.
             'sin_criterio' => $sinCompletar->filter(fn ($t) => $t['sin_criterio'])->count(),

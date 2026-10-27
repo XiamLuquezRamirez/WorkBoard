@@ -107,6 +107,8 @@ export default function TableroKanban({ datos, previo, modoTv, interactivo }) {
 
         const a = datos.alertas || {};
         const filasAlerta = [
+            { id: 'bloqueadas', n: a.bloqueadas, texto: 'tareas bloqueadas', tono: 'al-roja',
+              detalle: 'Hay un impedimento declarado: no avanzan hasta que alguien lo destrabe.' },
             { id: 'vencidas', n: a.vencidas, texto: 'tareas vencidas', tono: 'al-roja',
               detalle: 'Pasaron su fecha pactada y siguen sin entregarse.' },
             { id: 'hoy', n: a.vencen_hoy, texto: 'vencen hoy', tono: 'al-naranja',

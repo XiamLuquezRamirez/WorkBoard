@@ -91,6 +91,9 @@ export default function TableroLateral({ datos, interactivo, onVerAlerta, onVerT
     ].find((t) => t.id === id) || null;
 
     const filasAlerta = [
+        // Encabeza: un impedimento no se resuelve solo con tiempo, requiere que
+        // alguien lo destrabe. Las vencidas avisan, ésta pide acción.
+        { id: 'bloqueadas', n: datos.alertas.bloqueadas, texto: 'tareas bloqueadas', clase: 'al-roja' },
         { id: 'vencidas', n: datos.alertas.vencidas, texto: 'tareas vencidas', clase: 'al-roja' },
         { id: 'hoy', n: datos.alertas.vencen_hoy, texto: 'vencen hoy', clase: 'al-naranja' },
         { id: 'semana', n: datos.alertas.proximas, texto: 'vencen esta semana', clase: 'al-amarilla' },

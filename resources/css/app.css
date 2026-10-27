@@ -4741,6 +4741,61 @@ body {
     color: #475569 !important;
 }
 
+/* Impedimento declarado. Rojo porque detiene el avance, aunque —a diferencia
+   de la pausa— el plazo siga corriendo. */
+.metodo-bloqueo {
+    background: #fef2f2;
+    border-left-color: #dc2626;
+}
+
+.metodo-bloqueo .metodo-label {
+    color: #b91c1c;
+}
+
+.metodo-bloqueo p {
+    color: #7f1d1d;
+}
+
+.metodo-accion {
+    border: 0;
+    background: #fff;
+    color: #b91c1c;
+    box-shadow: inset 0 0 0 1px #fecaca;
+    border-radius: 999px;
+    padding: .12rem .6rem;
+    font-size: .68rem;
+    font-weight: 700;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    cursor: pointer;
+}
+
+.metodo-accion:hover:not(:disabled) {
+    background: #fee2e2;
+}
+
+.btn-declarar-bloqueo {
+    justify-self: start;
+    border: 0;
+    background: transparent;
+    color: #b45309;
+    box-shadow: inset 0 0 0 1px #fcd34d;
+    border-radius: 8px;
+    padding: .4rem .8rem;
+    font-size: .82rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.btn-declarar-bloqueo:hover:not(:disabled) {
+    background: #fffbeb;
+}
+
+.btn-declarar-bloqueo:disabled {
+    opacity: .55;
+    cursor: not-allowed;
+}
+
 /* Falta el criterio: aviso, no error. Son 106 tareas heredadas y el tono
    debe invitar a pactarlo, no reprochar que no lo tenga. */
 .metodo-falta {

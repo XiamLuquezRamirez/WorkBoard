@@ -41,12 +41,18 @@ class ResumenTableroCorreo extends Mailable
             with: [
                 'datos' => $this->datos,
                 'secciones' => [
+                    // Encabeza: un bloqueo no se resuelve con tiempo, alguien
+                    // tiene que destrabarlo, y suele ser quien lee esto.
+                    'bloqueadas'      => 'BLOQUEADAS · REQUIEREN DESTRABARSE',
+                    'por_verificar'   => 'ENTREGADAS · ESPERAN TU VERIFICACIÓN',
                     'vencidas'        => 'VENCIDAS',
                     'estancadas'      => 'ESTANCADAS',
                     'sin_responsable' => 'SIN RESPONSABLE',
                     'vencen_pronto'   => 'VENCEN PRONTO',
                     'sin_fecha'       => 'SIN FECHA PACTADA',
                     'ficha_faltante'  => 'RESPONSABLE SIN FICHA DE EMPLEADO',
+                    // Al final: deuda del método, no riesgo de plazo.
+                    'sin_criterio'    => 'SIN CRITERIO DE CUMPLIMIENTO PACTADO',
                 ],
             ],
         );

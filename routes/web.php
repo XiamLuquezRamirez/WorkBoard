@@ -198,6 +198,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
         //pausar tarea
         Route::put('/pausarTarea/{id}', [empleadosController::class, 'pausarTarea']);
+        // Impedimento declarado: no detiene el plazo, sólo lo hace visible.
+        Route::put('/bloquearTarea/{id}', [EmpleadosController::class, 'bloquearTarea']);
 
         // solicitud formal de pausa (motivo + fecha reanudación + correo a líder o administrador)
         Route::post('/solicitarPausa', [EmpleadosController::class, 'solicitarPausa']);

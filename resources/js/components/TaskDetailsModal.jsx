@@ -85,6 +85,7 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton, is
     // Verificación del criterio de cumplimiento
     const [evidenciaCriterio, setEvidenciaCriterio] = useState('');
     const [verificando, setVerificando] = useState(false);
+    const [bloqueando, setBloqueando] = useState(false);
     // Subtareas / checklist (misma UX que EmployeeModal: panel, título, copiar, filas inline)
     const [subtareas, setSubtareas] = useState([]);
     const [nuevaSubtarea, setNuevaSubtarea] = useState('');
@@ -1003,6 +1004,48 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton, is
             fireSwal('Error', 'Error al rechazar la tarea', 'error');
         } finally {
             setIsUploading(false);
+        }
+    };
+
+    /**
+     * Declara o levanta un impedimento.
+     *
+     * Al bloquear se exige el motivo: "bloqueada" a secas no le sirve de nada a
+     * quien tiene que destrabarla.
+     */
+    const handleBloquear = async (bloquear) => {
+        let motivo = '';
+
+        if (bloquear) {
+            const { value, isConfirmed } = await Swal.fire({
+                title: '¿Qué impide avanzar?',
+                input: 'textarea',
+                inputPlaceholder: 'Ej.: Falta la aprobación del presupuesto por parte de la entidad',
+                showCancelButton: true,
+                confirmButtonText: 'Declarar impedimento',
+                cancelButtonText: 'Cancelar',
+                inputValidator: (v) => (!v || v.trim().length < 10)
+                    ? 'Explica el impedimento en al menos 10 caracteres.'
+                    : undefined,
+            });
+            if (!isConfirmed) return;
+            motivo = value;
+        }
+
+        setBloqueando(true);
+        try {
+            const { data } = await axiosInstance.put(`/bloquearTarea/${task.id}`, {
+                bloqueada: bloquear,
+                motivo,
+            });
+            task.bloqueada = bloquear ? 1 : 0;
+            task.motivo_bloqueo = bloquear ? motivo : null;
+            onUpdate();
+            fireSwal('¡Listo!', data.success, 'success');
+        } catch (error) {
+            fireSwal('Error', error?.response?.data?.error || 'No fue posible registrar el impedimento.', 'error');
+        } finally {
+            setBloqueando(false);
         }
     };
 
@@ -2039,6 +2082,27 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton, is
                                             </div>
                                         )}
 
+                                        {/* El impedimento va arriba: si algo detiene
+                                            la tarea, es lo primero que hay que ver. */}
+                                        {Number(task.bloqueada) === 1 && (
+                                            <div className="metodo-item metodo-bloqueo">
+                                                <span className="metodo-label">
+                                                    Bloqueada
+                                                    {!isArchived && (
+                                                        <button
+                                                            type="button"
+                                                            className="metodo-accion"
+                                                            disabled={bloqueando}
+                                                            onClick={() => handleBloquear(false)}
+                                                        >
+                                                            Levantar
+                                                        </button>
+                                                    )}
+                                                </span>
+                                                <p>{task.motivo_bloqueo}</p>
+                                            </div>
+                                        )}
+
                                         {task.criterio ? (
                                             <div className={`metodo-item metodo-criterio${Number(task.criterio_cumplido) === 1 ? ' es-verificado' : ''}`}>
                                                 <span className="metodo-label">
@@ -2063,6 +2127,21 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton, is
                                                     Edítala para pactar cómo sabremos que se cumplió.
                                                 </p>
                                             </div>
+                                        )}
+
+                                        {/* Lo declara quien hace el trabajo, sin pedir
+                                            permiso: exigir un trámite para reconocer un
+                                            impedimento desalienta reportarlo. */}
+                                        {Number(task.bloqueada) !== 1 && !isArchived
+                                            && task.estado !== 'Completada' && (
+                                            <button
+                                                type="button"
+                                                className="btn-declarar-bloqueo"
+                                                disabled={bloqueando}
+                                                onClick={() => handleBloquear(true)}
+                                            >
+                                                Algo impide avanzar
+                                            </button>
                                         )}
                                     </div>
                                 )}

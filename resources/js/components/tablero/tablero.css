@@ -279,6 +279,10 @@ a.tb-btn-sec, a.tb-btn-sec:visited { color: var(--tb-txt); }
 }
 .tb-card-pausada { opacity: .82; border-style: dashed; }
 
+/* Bloqueada: a plena opacidad, al contrario que la pausada. El trabajo sigue
+   vivo y su plazo corriendo; lo que falla es que algo lo impide. */
+.tb-card-bloqueada { box-shadow: inset 3px 0 0 var(--tb-rojo); }
+
 
 
 .tb-card-titulo {
@@ -823,6 +827,7 @@ a.tb-btn-sec, a.tb-btn-sec:visited { color: var(--tb-txt); }
     box-shadow: 0 0 0 2px rgba(229, 72, 77, .22);
 }
 .tb-mini-pausa { font-size: 10px; color: var(--tb-naranja); }
+.tb-mini-bloqueo { font-size: 10px; }
 
 /* Pie de tarjeta */
 .tb-card-meta {
