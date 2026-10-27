@@ -281,6 +281,27 @@ const TasksModal = ({
                                     rows="3"
                                 />
                             </div>
+                            {/* Método de la Escuela de Líderes: una tarea nace con
+                                un para qué y con la forma de saber que se cumplió.
+                                Sin criterio, «hecha» acaba siendo una opinión. */}
+                            <div className="form-group col-12">
+                                <label>¿Para qué sirve esta tarea?</label>
+                                <input
+                                    type="text"
+                                    value={nuevaTarea.proposito}
+                                    onChange={e => setNuevaTarea({ ...nuevaTarea, proposito: e.target.value })}
+                                    placeholder="El propósito, no el trabajo. Ej.: Presentar la cuenta de cobro a tiempo"
+                                />
+                            </div>
+                            <div className="form-group col-12">
+                                <label>¿Cómo sabremos que se cumplió?</label>
+                                <textarea
+                                    value={nuevaTarea.criterio}
+                                    onChange={e => setNuevaTarea({ ...nuevaTarea, criterio: e.target.value })}
+                                    placeholder="Algo verificable. Ej.: Acta firmada por la interventoría y radicada"
+                                    rows="2"
+                                />
+                            </div>
                             <div className="form-group col-12">
                                 <label>Proyecto (opcional)</label>
                                 <select value={nuevaTarea.proyecto_id} onChange={e => setNuevaTarea({ ...nuevaTarea, proyecto_id: e.target.value })}>
@@ -411,7 +432,7 @@ const TasksModal = ({
                             <div className="form-actions">
                                 <button className="cancel-button" onClick={() => {
                                     setMostrarFormTarea(false);
-                                    setNuevaTarea({ titulo: '', descripcion: '', fecha_pactada: '', estado: 'Pendiente', prioridad: 'Media', proyecto_id: '', accion: 'guardar' });
+                                    setNuevaTarea({ titulo: '', descripcion: '', proposito: '', criterio: '', fecha_pactada: '', estado: 'Pendiente', prioridad: 'Media', proyecto_id: '', accion: 'guardar' });
                                     setSubtareasForm([]);
                                     setNuevaSubtareaTexto('');
                                     setNuevaSubtareaFecha('');
@@ -576,7 +597,8 @@ const Dashboard = () => {
     const [selectedTask, setSelectedTask] = useState(null);
     const [mostrarFormTarea, setMostrarFormTarea] = useState(false);
     const [nuevaTarea, setNuevaTarea] = useState({
-        titulo: '', descripcion: '', fecha_pactada: '', estado: 'Pendiente',
+        titulo: '', descripcion: '', proposito: '', criterio: '',
+        fecha_pactada: '', estado: 'Pendiente',
         prioridad: 'Media', proyecto_id: '', accion: 'guardar'
     });
     const [proyectos, setProyectos] = useState([]);
@@ -859,6 +881,16 @@ const Dashboard = () => {
             Swal.fire({ title: 'Error', text: 'La descripción debe tener al menos 10 caracteres', icon: 'error', confirmButtonText: 'OK' });
             return;
         }
+        // El servidor los exige al crear; avisar aquí evita que el formulario
+        // se envíe para volver con un error genérico.
+        if ((nuevaTarea.proposito || '').trim().length < 10) {
+            Swal.fire({ title: 'Falta el propósito', text: 'Indica para qué sirve esta tarea (al menos 10 caracteres).', icon: 'warning', confirmButtonText: 'OK' });
+            return;
+        }
+        if ((nuevaTarea.criterio || '').trim().length < 10) {
+            Swal.fire({ title: 'Falta el criterio', text: 'Indica cómo sabremos que la tarea se cumplió (al menos 10 caracteres).', icon: 'warning', confirmButtonText: 'OK' });
+            return;
+        }
         setIsSavingTarea(true);
         try {
             const response = await axiosInstance.post('/guardarTarea', {
@@ -883,7 +915,7 @@ const Dashboard = () => {
             setChecklistTitulo('');
             setSelectedChecklistId('');
             setChecklistsExistentes([]);
-            setNuevaTarea({ titulo: '', descripcion: '', fecha_pactada: '', estado: 'Pendiente', prioridad: 'Media', proyecto_id: '', accion: 'guardar' });
+            setNuevaTarea({ titulo: '', descripcion: '', proposito: '', criterio: '', fecha_pactada: '', estado: 'Pendiente', prioridad: 'Media', proyecto_id: '', accion: 'guardar' });
             setMostrarFormTarea(false);
             const updated = await axiosInstance.get('/dashboard/cargarEmpleadosTareas');
             const emp = updated.data.find(e => e.id === selectedEmployee.id);
@@ -1473,7 +1505,7 @@ const Dashboard = () => {
                                 <div className="form-actions">
                                     <button className="cancel-button" onClick={() => {
                                         setMostrarFormTarea(false);
-                                        setNuevaTarea({ titulo: '', descripcion: '', fecha_pactada: '', estado: 'Pendiente', prioridad: 'Media', proyecto_id: '', accion: 'guardar' });
+                                        setNuevaTarea({ titulo: '', descripcion: '', proposito: '', criterio: '', fecha_pactada: '', estado: 'Pendiente', prioridad: 'Media', proyecto_id: '', accion: 'guardar' });
                                         setSubtareasForm([]);
                                         setNuevaSubtareaTexto('');
                                         setNuevaSubtareaFecha('');

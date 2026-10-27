@@ -64,6 +64,8 @@ const EmployeeInterface = ({ user }) => {
     const [formProyectoId, setFormProyectoId] = useState('');
     const [newTaskTitulo, setNewTaskTitulo] = useState('');
     const [newTaskDescripcion, setNewTaskDescripcion] = useState('');
+    const [newTaskProposito, setNewTaskProposito] = useState('');
+    const [newTaskCriterio, setNewTaskCriterio] = useState('');
     const [newTaskFecha, setNewTaskFecha] = useState('');
     const [newTaskPrioridad, setNewTaskPrioridad] = useState('Media');
     const [newTaskEstado, setNewTaskEstado] = useState('Pendiente');
@@ -90,6 +92,8 @@ const EmployeeInterface = ({ user }) => {
         setSelectedPlantillaId('');
         setNewTaskTitulo('');
         setNewTaskDescripcion('');
+        setNewTaskProposito('');
+        setNewTaskCriterio('');
         setNewTaskFecha('');
         setNewTaskPrioridad('Media');
         setNewTaskEstado('Pendiente');
@@ -584,9 +588,33 @@ const EmployeeInterface = ({ user }) => {
                 return;
             }
 
+            // El servidor los exige al crear; avisar aquí evita enviar el
+            // formulario para que vuelva con un error genérico.
+            if (String(newTaskProposito || '').trim().length < 10) {
+                Swal.fire({
+                    title: 'Falta el propósito',
+                    text: 'Indica para qué sirve esta tarea (al menos 10 caracteres).',
+                    icon: 'warning',
+                    confirmButtonText: 'OK',
+                });
+                return;
+            }
+
+            if (String(newTaskCriterio || '').trim().length < 10) {
+                Swal.fire({
+                    title: 'Falta el criterio',
+                    text: 'Indica cómo sabremos que la tarea se cumplió (al menos 10 caracteres).',
+                    icon: 'warning',
+                    confirmButtonText: 'OK',
+                });
+                return;
+            }
+
             const response = await axiosInstance.post('/guardarTarea', {
                 titulo: newTaskTitulo,
                 descripcion: newTaskDescripcion,
+                proposito: newTaskProposito,
+                criterio: newTaskCriterio,
                 fecha_pactada: newTaskFecha,
                 prioridad: newTaskPrioridad,
                 empleado: empleado,
@@ -830,6 +858,31 @@ const EmployeeInterface = ({ user }) => {
                                         name="descripcion"
                                         value={newTaskDescripcion}
                                         onChange={e => setNewTaskDescripcion(e.target.value)}
+                                        required
+                                    />
+                                </div>
+                                {/* Método de la Escuela de Líderes: la tarea nace
+                                    con un para qué y con la forma de verificarla. */}
+                                <div className="form-group">
+                                    <label htmlFor="proposito">¿Para qué sirve esta tarea?</label>
+                                    <input
+                                        type="text"
+                                        id="proposito"
+                                        name="proposito"
+                                        value={newTaskProposito}
+                                        onChange={e => setNewTaskProposito(e.target.value)}
+                                        placeholder="El propósito, no el trabajo. Ej.: Presentar la cuenta de cobro a tiempo"
+                                        required
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label htmlFor="criterio">¿Cómo sabremos que se cumplió?</label>
+                                    <textarea
+                                        id="criterio"
+                                        name="criterio"
+                                        value={newTaskCriterio}
+                                        onChange={e => setNewTaskCriterio(e.target.value)}
+                                        placeholder="Algo verificable. Ej.: Acta firmada por la interventoría y radicada"
                                         required
                                     />
                                 </div>

@@ -573,10 +573,19 @@ class EmpleadosController extends Controller
             'estado'        => 'required|string',
             'proyecto_id'   => 'nullable|integer',
             'accion'        => 'nullable|in:guardar,editar',
+            // Campos del método de la Escuela de Líderes.
+            'proposito'     => 'nullable|string|max:500',
+            'criterio'      => 'nullable|string',
         ];
         if ($accion === 'guardar') {
             $reglas['descripcion']   = 'required|string|min:10';
             $reglas['fecha_pactada'] = 'required|date|after_or_equal:today';
+            // Obligatorios sólo al crear: una tarea nace con un para qué y con
+            // la forma de saber que se cumplió. Al editar se relajan porque las
+            // 106 tareas vivas nacieron sin ellos y exigirlos impediría guardar
+            // cambios en campos ajenos.
+            $reglas['proposito'] = 'required|string|min:10|max:500';
+            $reglas['criterio']  = 'required|string|min:10';
         } else {
             $reglas['id'] = 'required|integer';
         }
@@ -584,6 +593,10 @@ class EmpleadosController extends Controller
         $request->validate($reglas, [
             'descripcion.min'                => 'La descripción debe tener al menos 10 caracteres.',
             'fecha_pactada.after_or_equal'   => 'La fecha pactada no puede ser anterior a hoy.',
+            'proposito.required'             => 'Indica para qué sirve esta tarea.',
+            'proposito.min'                  => 'El propósito debe explicarse en al menos 10 caracteres.',
+            'criterio.required'              => 'Indica cómo sabremos que la tarea se cumplió.',
+            'criterio.min'                   => 'El criterio debe explicarse en al menos 10 caracteres.',
         ]);
 
         $tarea = $request->all();
@@ -602,16 +615,28 @@ class EmpleadosController extends Controller
                     'pausada' => 0,
                     'editable' => 1,
                     'proyecto_id' => $tarea['proyecto_id'] ?? null,
+                    'proposito' => trim($tarea['proposito']),
+                    'criterio' => trim($tarea['criterio']),
                 ]);
             } else {
-                DB::connection('mysql2')->table('tareas_empleados')->where('id', $tarea['id'])->update([
+                $cambios = [
                     'titulo' => $tarea['titulo'],
                     'descripcion' => $tarea['descripcion'],
                     'fecha_pactada' => $tarea['fecha_pactada'],
                     'prioridad' => $tarea['prioridad'],
                     'estado' => $tarea['estado'],
                     'proyecto_id' => $tarea['proyecto_id'] ?? null,
-                ]);
+                ];
+
+                // Sólo se tocan si vienen en la petición: las pantallas que aún
+                // no envían estos campos no deben borrar lo que ya se pactó.
+                foreach (['proposito', 'criterio'] as $campo) {
+                    if (array_key_exists($campo, $tarea)) {
+                        $cambios[$campo] = trim((string) $tarea[$campo]) ?: null;
+                    }
+                }
+
+                DB::connection('mysql2')->table('tareas_empleados')->where('id', $tarea['id'])->update($cambios);
                 $IdTarea = $tarea['id'];
             }
 

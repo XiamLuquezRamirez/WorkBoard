@@ -75,6 +75,8 @@ const EmployeeModal = ({ isOpen, onClose }) => {
     const [nuevaTarea, setNuevaTarea] = useState({
         titulo: '',
         descripcion: '',
+        proposito: '',
+        criterio: '',
         fecha_pactada: '',
         estado: 'Pendiente',
         prioridad: 'Media',
@@ -676,6 +678,30 @@ const EmployeeModal = ({ isOpen, onClose }) => {
                 confirmButtonText: 'OK',
             });
             return;
+        }
+
+        // Sólo al crear: las tareas heredadas no tienen estos campos y
+        // exigirlos impediría guardar cambios en el resto del formulario.
+        if (nuevaTarea.accion === 'guardar') {
+            if (String(nuevaTarea.proposito || '').trim().length < 10) {
+                Swal.fire({
+                    title: 'Falta el propósito',
+                    text: 'Indica para qué sirve esta tarea (al menos 10 caracteres).',
+                    icon: 'warning',
+                    confirmButtonText: 'OK',
+                });
+                return;
+            }
+
+            if (String(nuevaTarea.criterio || '').trim().length < 10) {
+                Swal.fire({
+                    title: 'Falta el criterio',
+                    text: 'Indica cómo sabremos que la tarea se cumplió (al menos 10 caracteres).',
+                    icon: 'warning',
+                    confirmButtonText: 'OK',
+                });
+                return;
+            }
         }
 
         setIsSaving(true);
@@ -1474,6 +1500,28 @@ const EmployeeModal = ({ isOpen, onClose }) => {
                                             onChange={(e) => setNuevaTarea({ ...nuevaTarea, descripcion: e.target.value })}
                                             placeholder="Descripción detallada de la tarea"
                                             rows="3"
+                                        />
+                                    </div>
+
+                                    {/* Método de la Escuela de Líderes: la tarea
+                                        nace con un para qué y con la forma de
+                                        verificar que se cumplió. */}
+                                    <div className="form-group col-12">
+                                        <label>¿Para qué sirve esta tarea?</label>
+                                        <input
+                                            type="text"
+                                            value={nuevaTarea.proposito || ''}
+                                            onChange={(e) => setNuevaTarea({ ...nuevaTarea, proposito: e.target.value })}
+                                            placeholder="El propósito, no el trabajo. Ej.: Presentar la cuenta de cobro a tiempo"
+                                        />
+                                    </div>
+                                    <div className="form-group col-12">
+                                        <label>¿Cómo sabremos que se cumplió?</label>
+                                        <textarea
+                                            value={nuevaTarea.criterio || ''}
+                                            onChange={(e) => setNuevaTarea({ ...nuevaTarea, criterio: e.target.value })}
+                                            placeholder="Algo verificable. Ej.: Acta firmada por la interventoría y radicada"
+                                            rows="2"
                                         />
                                     </div>
 
