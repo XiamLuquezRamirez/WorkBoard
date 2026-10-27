@@ -80,6 +80,9 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton, is
     const [tempDriveLinks, setTempDriveLinks] = useState([]);
     // Estado para manejar la selección de radio buttons
     const [revisionSelection, setRevisionSelection] = useState('');
+    // Verificación del criterio de cumplimiento
+    const [evidenciaCriterio, setEvidenciaCriterio] = useState('');
+    const [verificando, setVerificando] = useState(false);
     // Subtareas / checklist (misma UX que EmployeeModal: panel, título, copiar, filas inline)
     const [subtareas, setSubtareas] = useState([]);
     const [nuevaSubtarea, setNuevaSubtarea] = useState('');
@@ -998,6 +1001,47 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton, is
             fireSwal('Error', 'Error al rechazar la tarea', 'error');
         } finally {
             setIsUploading(false);
+        }
+    };
+
+    /**
+     * Verifica el criterio pactado y cierra la tarea, o la devuelve a En Proceso.
+     *
+     * Al devolver se pide la razón: una tarea que vuelve sin explicación deja al
+     * responsable adivinando qué faltó.
+     */
+    const handleVerificar = async (cumple) => {
+        let observacion = '';
+
+        if (!cumple) {
+            const { value, isConfirmed } = await Swal.fire({
+                title: '¿Por qué no se cumple?',
+                input: 'textarea',
+                inputPlaceholder: 'Qué falta para dar por cumplido el criterio',
+                showCancelButton: true,
+                confirmButtonText: 'Devolver tarea',
+                cancelButtonText: 'Cancelar',
+                inputValidator: (v) => (!v || !v.trim())
+                    ? 'Indica qué falta: el responsable necesita saberlo.'
+                    : undefined,
+            });
+            if (!isConfirmed) return;
+            observacion = value;
+        }
+
+        setVerificando(true);
+        try {
+            const { data } = await axiosInstance.put(`/verificarTarea/${task.id}`, {
+                cumple,
+                evidencia: evidenciaCriterio,
+                observacion,
+            });
+            onUpdate();
+            fireSwal('¡Listo!', data.success, 'success');
+        } catch (error) {
+            fireSwal('Error', error?.response?.data?.error || 'No fue posible verificar la tarea.', 'error');
+        } finally {
+            setVerificando(false);
         }
     };
 
@@ -2565,6 +2609,44 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton, is
                                                 </label>
                                             </div>
                                         </div>
+
+                                        {/* Verificación del criterio: el paso que
+                                            convierte "la movieron" en "se cumplió".
+                                            Sólo aparece sobre tareas entregadas que
+                                            llevan criterio pactado. */}
+                                        {task.estado === 'En Revisión' && task.criterio && (
+                                            <div className='verificacion-panel'>
+                                                <h4>Verificar el cumplimiento</h4>
+                                                <p className='verificacion-criterio'>
+                                                    <strong>Criterio pactado:</strong> {task.criterio}
+                                                </p>
+                                                <input
+                                                    type="text"
+                                                    className='verificacion-evidencia'
+                                                    placeholder="Evidencia: enlace o nota (opcional)"
+                                                    value={evidenciaCriterio}
+                                                    onChange={(e) => setEvidenciaCriterio(e.target.value)}
+                                                />
+                                                <div className='verificacion-acciones'>
+                                                    <button
+                                                        type="button"
+                                                        className='btn-verificar-ok'
+                                                        disabled={verificando}
+                                                        onClick={() => handleVerificar(true)}
+                                                    >
+                                                        Se cumple · cerrar tarea
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        className='btn-verificar-no'
+                                                        disabled={verificando}
+                                                        onClick={() => handleVerificar(false)}
+                                                    >
+                                                        No se cumple · devolver
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        )}
 
                                         {task.estado === 'Completada' && (
                                             <div className='vistoBueno-panel'>

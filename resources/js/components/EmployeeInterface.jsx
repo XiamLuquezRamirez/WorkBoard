@@ -29,6 +29,14 @@ const EmployeeInterface = ({ user }) => {
             icon: FaSpinner,
             color: '#2563eb'
         },
+        // El trabajo se entrega aquí: el líder verifica el criterio y es él
+        // quien la cierra. El responsable ya no la pasa a Completada.
+        'En Revisión': {
+            title: 'En Revisión',
+            items: [],
+            icon: FaSearch,
+            color: '#0d9488'
+        },
         'Completada': {
             title: 'Completada',
             items: [],
@@ -262,6 +270,10 @@ const EmployeeInterface = ({ user }) => {
             },
             'En Proceso': {
                 ...columns['En Proceso'],
+                items: []
+            },
+            'En Revisión': {
+                ...columns['En Revisión'],
                 items: []
             },
             'Completada': {
@@ -662,6 +674,12 @@ const EmployeeInterface = ({ user }) => {
                     iconComponent: 'FaSpinner',
                     color: '#2563eb'
                 },
+                'En Revisión': {
+                    title: 'En Revisión',
+                    items: tasks.filter(task => task.estado === 'En Revisión'),
+                    iconComponent: 'FaSearch',
+                    color: '#0d9488'
+                },
                 'Completada': {
                     title: 'Completada',
                     items: tasks.filter(task => task.estado === 'Completada' && !task.archivar),
@@ -686,6 +704,8 @@ const EmployeeInterface = ({ user }) => {
                 return <FaClock />;
             case 'FaSpinner':
                 return <FaSpinner />;
+            case 'FaSearch':
+                return <FaSearch />;
             case 'FaCheck':
                 return <FaCheck />;
             default:

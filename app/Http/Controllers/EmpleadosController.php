@@ -13,6 +13,24 @@ use App\Mail\NotificacionMailable;
 
 class EmpleadosController extends Controller
 {
+    /**
+     * Estado intermedio del método de la Escuela de Líderes.
+     *
+     * Entre "yo terminé" y "está cumplido" debe haber alguien que verifique el
+     * criterio pactado. Antes ese paso ocurría sin dejar rastro: el responsable
+     * movía la tarjeta a Completada y nadie comprobaba nada.
+     */
+    private const EN_REVISION = 'En Revisión';
+
+    /**
+     * Estados en los que una tarea ya no está pendiente de trabajo activo.
+     *
+     * Se usa donde antes se escribía ['Completada', 'En Proceso'] a mano: una
+     * tarea en revisión tampoco debe pintarse como pausada ni caer en la
+     * columna de pausa, porque el trabajo ya se entregó.
+     */
+    private const ESTADOS_NO_PAUSABLES = ['Completada', 'En Proceso', self::EN_REVISION];
+
     function cargarNotificaciones(Request $request)
     {
         $id = $request->input('id');
@@ -773,6 +791,21 @@ class EmpleadosController extends Controller
             return response()->json([
                 'error' => 'La tarea está en pausa. Debe reanudarse antes de cambiar su estado.',
                 'pausada' => true,
+            ], 409);
+        }
+
+        // Una tarea sólo se cierra verificando su criterio, y eso lo hace el
+        // líder del responsable: si el propio responsable pudiera marcarla
+        // Completada, el método quedaría en nada. Entrega con "En Revisión" y
+        // el cierre pasa por verificarTarea().
+        //
+        // Las heredadas sin criterio quedan exentas: nacieron antes del método
+        // y bloquearlas dejaría 106 tareas vivas sin forma de cerrarse.
+        if ($tarea['estado'] === 'Completada' && !empty($actual->criterio)) {
+            return response()->json([
+                'error' => 'Esta tarea se cierra verificando su criterio de cumplimiento. '
+                         . 'Pásala a «' . self::EN_REVISION . '» para que tu líder la verifique.',
+                'requiere_verificacion' => true,
             ], 409);
         }
 
@@ -2026,14 +2059,14 @@ class EmpleadosController extends Controller
         // vuelto a "En Proceso": el estado explícito manda sobre la bandera.
         $estaPausada = function ($q) {
             return $q->where('t.pausada', 1)
-                ->whereNotIn('t.estado', ['Completada', 'En Proceso']);
+                ->whereNotIn('t.estado', self::ESTADOS_NO_PAUSABLES);
         };
 
         $noPausada = function ($q) {
             return $q->where(function ($w) {
                 $w->whereNull('t.pausada')
                   ->orWhere('t.pausada', '<>', 1)
-                  ->orWhereIn('t.estado', ['Completada', 'En Proceso']);
+                  ->orWhereIn('t.estado', self::ESTADOS_NO_PAUSABLES);
             });
         };
 
@@ -2094,7 +2127,7 @@ class EmpleadosController extends Controller
                     // reanudada o cerrada no se pinta como pausada aunque conserve
                     // la bandera de una pausa anterior.
                     'pausada'         => (int) ($t->pausada ?? 0) === 1
-                                          && !in_array($t->estado, ['Completada', 'En Proceso'], true),
+                                          && !in_array($t->estado, self::ESTADOS_NO_PAUSABLES, true),
                     'motivo'          => $t->motivo_reprogramacion,
                     'dias_restantes'  => $dias,
                     'checklist'       => $checklist,
@@ -2104,6 +2137,13 @@ class EmpleadosController extends Controller
 
         $pendiente = $mapear($noPausada($base())->where('t.estado', 'Pendiente')->orderBy('t.fecha_pactada')->get());
         $proceso   = $mapear($noPausada($base())->where('t.estado', 'En Proceso')->orderBy('t.fecha_pactada')->get(), true);
+        // Entregadas y a la espera de que el líder verifique el criterio. Van
+        // con detalle porque es la columna sobre la que él tiene que actuar.
+        $revision = $mapear(
+            $noPausada($base())->where('t.estado', self::EN_REVISION)
+                ->orderBy('t.fecha_pactada')->get(),
+            true
+        );
         $pausa = $mapear($estaPausada($base())->orderBy('t.fecha_pactada')->get());
 
         // Completadas dentro de la ventana; si no hay ninguna (histórico inactivo)
@@ -2159,7 +2199,9 @@ class EmpleadosController extends Controller
             ->sortByDesc('activas')->values();
 
         // Alertas y próximas entregas sobre tareas aún no completadas.
-        $sinCompletar = $pendiente->concat($proceso)->concat($pausa);
+        // En revisión cuenta como trabajo sin cerrar: su plazo sigue corriendo y
+        // debe aparecer en vencidas y en próximas entregas como cualquier otra.
+        $sinCompletar = $pendiente->concat($proceso)->concat($revision)->concat($pausa);
         $alertas = [
             'vencidas'   => $sinCompletar->filter(fn ($t) => $t['dias_restantes'] !== null && $t['dias_restantes'] < 0)->count(),
             'vencen_hoy' => $sinCompletar->filter(fn ($t) => $t['dias_restantes'] === 0)->count(),
@@ -2215,6 +2257,7 @@ class EmpleadosController extends Controller
                 'total'      => $totalCiclo,
                 'pendiente'  => $pendiente->count(),
                 'proceso'    => $proceso->count(),
+                'revision'   => $revision->count(),
                 'pausa'      => $pausa->count(),
                 'completadas' => $completadas->count(),
                 'avance_pct' => $totalCiclo > 0 ? (int) round($completadas->count() / $totalCiclo * 100) : 0,
@@ -2222,6 +2265,7 @@ class EmpleadosController extends Controller
             'columnas' => [
                 'pendiente'   => $pendiente,
                 'proceso'     => $proceso,
+                'revision'    => $revision,
                 'pausa'       => $pausa,
                 'completadas' => ['modo' => $modoCompletadas, 'items' => $completadas],
             ],
@@ -2282,6 +2326,103 @@ class EmpleadosController extends Controller
     }
 
     /** Lista de vídeos del tablero. Con ?todos=1 incluye los inactivos (gestión). */
+    /**
+     * Cierra una tarea verificando su criterio de cumplimiento.
+     *
+     * Es el único camino a "Completada" para una tarea que tiene criterio. Lo
+     * resuelve el líder del responsable —nunca el propio responsable, regla que
+     * hereda de resolutorAutorizado()—, de modo que quien hizo el trabajo no
+     * firma su propia verificación.
+     *
+     * Verificar y rechazar son la misma operación con distinto desenlace: si el
+     * criterio no se cumple, la tarea vuelve a "En Proceso" con la observación,
+     * en lugar de quedarse en revisión indefinidamente.
+     */
+    function verificarTarea(Request $request, $id)
+    {
+        $data = $request->validate([
+            'cumple'     => 'required|boolean',
+            'evidencia'  => 'nullable|string|max:500',
+            'observacion' => 'nullable|string',
+        ]);
+
+        $tarea = DB::connection('mysql2')->table('tareas_empleados')->where('id', $id)->first();
+        if (!$tarea) {
+            return response()->json(['error' => 'Tarea no encontrada'], 404);
+        }
+
+        if ($tarea->estado !== self::EN_REVISION) {
+            return response()->json([
+                'error' => 'Sólo se verifican las tareas que están en revisión.',
+            ], 409);
+        }
+
+        $verificador = $this->resolutorAutorizado($tarea);
+        if (!$verificador) {
+            return response()->json([
+                'error' => 'No tienes permiso para verificar esta tarea. '
+                         . 'La verifica el líder del responsable.',
+            ], 403);
+        }
+
+        $cumple = (bool) $data['cumple'];
+
+        DB::connection('mysql2')->beginTransaction();
+        try {
+            $cambios = [
+                'criterio_cumplido'  => $cumple ? 1 : 0,
+                'verificada_por'     => $verificador->id,
+                'fecha_verificacion' => now(),
+            ];
+
+            if (array_key_exists('evidencia', $data)) {
+                $cambios['evidencia_criterio'] = trim((string) $data['evidencia']) ?: null;
+            }
+
+            if ($cumple) {
+                $cambios['estado'] = 'Completada';
+                // Sólo se fija si no venía de antes: una tarea reprogramada o
+                // reabierta conserva la fecha en que realmente se entregó.
+                if (empty($tarea->fecha_entregada)) {
+                    $cambios['fecha_entregada'] = now()->toDateString();
+                }
+            } else {
+                // Devuelta: el trabajo continúa y el plazo sigue corriendo.
+                $cambios['estado'] = 'En Proceso';
+                if (!empty($data['observacion'])) {
+                    $cambios['observacion_entrega'] = trim($data['observacion']);
+                }
+            }
+
+            DB::connection('mysql2')->table('tareas_empleados')->where('id', $id)->update($cambios);
+
+            $actor = $this->nombreActor();
+            $obs = !empty($data['observacion']) ? ' Observación: ' . trim($data['observacion']) : '';
+
+            $this->registrarActividad(
+                $id,
+                $cumple ? 'Verificada' : 'Devuelta',
+                $cumple
+                    ? "Criterio verificado por {$actor}. La tarea quedó cerrada."
+                    : "Tarea devuelta por {$actor}: el criterio no se cumple.{$obs}"
+            );
+
+            self::guardarNotificacion($id, $cumple ? 'Aprobada' : 'Rechazada');
+
+            DB::connection('mysql2')->commit();
+        } catch (\Exception $e) {
+            DB::connection('mysql2')->rollBack();
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+
+        return response()->json([
+            'success' => $cumple
+                ? 'Criterio verificado. La tarea quedó cerrada.'
+                : 'La tarea volvió a En Proceso con tu observación.',
+            'estado'  => $cumple ? 'Completada' : 'En Proceso',
+        ], 200);
+    }
+
     function tableroVideos(Request $request)
     {
         $todos = filter_var($request->query('todos', false), FILTER_VALIDATE_BOOLEAN);

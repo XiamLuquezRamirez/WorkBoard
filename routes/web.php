@@ -98,6 +98,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
         //actualizar estado tarea
         Route::put('/actualizarEstadoTarea/{id}', [EmpleadosController::class, 'actualizarEstadoTarea']);
+        // Cierre verificado: único camino a Completada para una tarea con criterio.
+        Route::put('/verificarTarea/{id}', [EmpleadosController::class, 'verificarTarea']);
 
         //cargar empleados y tareas
         Route::get('/dashboard/cargarEmpleadosTareas', [EmpleadosController::class, 'cargarEmpleadosTareas']);

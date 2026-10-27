@@ -10,12 +10,16 @@ import ModalDestaque, { DetalleTarea } from './ModalDestaque';
 const COLUMNAS = [
     { clave: 'pendiente', titulo: 'POR HACER', color: 'col-pendiente' },
     { clave: 'proceso', titulo: 'EN PROCESO', color: 'col-proceso' },
+    /* Sólo aparece cuando hay algo que verificar: en reposo el tablero
+       conserva sus tres columnas —en un TV de 55" la cuarta estrechaba
+       demasiado las demás— y suma ésta justo cuando el líder debe actuar. */
+    { clave: 'revision', titulo: 'POR VERIFICAR', color: 'col-revision', soloConDatos: true },
     { clave: 'completadas', titulo: 'COMPLETADAS', color: 'col-completadas' },
 ];
 
-/* Para el cálculo de movimientos sí hay que mirar las cuatro ubicaciones:
+/* Para el cálculo de movimientos sí hay que mirar todas las ubicaciones:
    una tarjeta que pasa a pausa desaparece del kanban y debe detectarse. */
-const UBICACIONES = ['pendiente', 'proceso', 'pausa', 'completadas'];
+const UBICACIONES = ['pendiente', 'proceso', 'revision', 'pausa', 'completadas'];
 
 const items = (columnas, clave) =>
     clave === 'completadas' ? (columnas.completadas?.items || []) : (columnas[clave] || []);
@@ -116,9 +120,10 @@ export default function TableroKanban({ datos, previo, modoTv, interactivo }) {
         return [
             desdeColumna('pendiente', 'POR HACER', 'col-pendiente', 0),
             desdeColumna('proceso', 'EN PROCESO', 'col-proceso', 1),
-            desdeColumna('completadas', 'COMPLETADAS', 'col-completadas', 2),
+            desdeColumna('revision', 'POR VERIFICAR', 'col-revision', 2),
+            desdeColumna('completadas', 'COMPLETADAS', 'col-completadas', 3),
             {
-                clave: 'alertas', titulo: 'ALERTAS', color: 'col-alertas', orden: 3,
+                clave: 'alertas', titulo: 'ALERTAS', color: 'col-alertas', orden: 4,
                 // Cuenta las tareas afectadas, no los tipos de alerta: "2" no
                 // decía nada, mientras que el total sí informa de la magnitud.
                 total: filasAlerta.reduce((suma, f) => suma + f.n, 0),
@@ -140,8 +145,9 @@ export default function TableroKanban({ datos, previo, modoTv, interactivo }) {
 
     return (
         <div className={`tb-kanban ${interactivo ? 'es-interactivo' : ''}`}>
-            {COLUMNAS.map(({ clave, titulo, color }) => {
+            {COLUMNAS.map(({ clave, titulo, color, soloConDatos }) => {
                 const lista = items(datos.columnas, clave);
+                if (soloConDatos && lista.length === 0) return null;
                 const visibles = lista.slice(0, tope);
                 const ocultas = lista.length - visibles.length;
 

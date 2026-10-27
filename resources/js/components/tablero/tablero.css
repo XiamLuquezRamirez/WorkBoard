@@ -21,6 +21,7 @@
     --tb-naranja: #F08A00;   /* ámbar oscurecido: pausa */
     --tb-rojo: #E5484D;      /* alerta: fuera de marca por significado */
     --tb-morado: #7CC4D8;    /* completadas: azul claro derivado de la marca */
+    --tb-verde: #34B88A;     /* por verificar: entregado, a la espera del líder */
 
     position: fixed;
     inset: 0;
@@ -216,6 +217,7 @@ a.tb-btn-sec, a.tb-btn-sec:visited { color: var(--tb-txt); }
 }
 .col-pendiente { border-top-color: var(--tb-amarillo); }
 .col-proceso { border-top-color: var(--tb-azul); }
+.col-revision { border-top-color: var(--tb-verde); }
 .col-completadas { border-top-color: var(--tb-morado); }
 
 .tb-col-head {
@@ -896,6 +898,7 @@ a.tb-btn-sec, a.tb-btn-sec:visited { color: var(--tb-txt); }
 }
 .tb-slide-head.col-pendiente { border-bottom-color: var(--tb-amarillo); }
 .tb-slide-head.col-proceso { border-bottom-color: var(--tb-azul); }
+.tb-slide-head.col-revision { border-bottom-color: var(--tb-verde); }
 .tb-slide-head.col-completadas { border-bottom-color: var(--tb-morado); }
 .tb-slide-head.col-alertas { border-bottom-color: var(--tb-rojo); }
 .tb-slide-etiqueta {
