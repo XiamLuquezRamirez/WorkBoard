@@ -67,7 +67,9 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton, is
         descripcion: task.descripcion,
         prioridad: task.prioridad,
         fecha_pactada: task.fecha_pactada,
-        proyecto_id: task.proyecto_id ?? ''
+        proyecto_id: task.proyecto_id ?? '',
+        proposito: task.proposito ?? '',
+        criterio: task.criterio ?? ''
     });
     const [proyectos, setProyectos] = useState([]);
     //obtener el id del usuario logueado de variable de sesion laravel
@@ -1448,6 +1450,8 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton, is
             task.fecha_pactada = editedTask.fecha_pactada;
             task.proyecto_id = editedTask.proyecto_id || null;
             task.proyecto_nombre = res.data?.proyecto_nombre ?? null;
+            task.proposito = editedTask.proposito || null;
+            task.criterio = editedTask.criterio || null;
 
             onUpdate();
 
@@ -1456,11 +1460,15 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton, is
                 descripcion: editedTask.descripcion,
                 prioridad: editedTask.prioridad,
                 fecha_pactada: editedTask.fecha_pactada,
-                proyecto_id: editedTask.proyecto_id
+                proyecto_id: editedTask.proyecto_id,
+                proposito: editedTask.proposito,
+                criterio: editedTask.criterio
             });
             Swal.fire('¡Éxito!', 'Tarea actualizada correctamente', 'success');
         } catch (error) {
-            Swal.fire('Error', 'Error al actualizar la tarea', 'error');
+            // El servidor explica por qué (criterio vaciado, muy corto…); un
+            // mensaje genérico dejaría al usuario sin saber qué corregir.
+            Swal.fire('Error', error?.response?.data?.error || 'Error al actualizar la tarea', 'error');
         } finally {
             setLoading(false);
         }
@@ -1932,6 +1940,33 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton, is
                                                     rows="4"
                                                 />
                                             </div>
+                                            {/* Método de la Escuela de Líderes. En las
+                                                tareas heredadas llegan vacíos: éste es
+                                                el sitio donde se pactan sobre la marcha. */}
+                                            <div className="form-group">
+                                                <label htmlFor="proposito">¿Para qué sirve esta tarea?</label>
+                                                <input
+                                                    type="text"
+                                                    id="proposito"
+                                                    name="proposito"
+                                                    value={editedTask.proposito}
+                                                    onChange={handleInputChange}
+                                                    className="form-control"
+                                                    placeholder="El propósito, no el trabajo"
+                                                />
+                                            </div>
+                                            <div className="form-group">
+                                                <label htmlFor="criterio">¿Cómo sabremos que se cumplió?</label>
+                                                <textarea
+                                                    id="criterio"
+                                                    name="criterio"
+                                                    value={editedTask.criterio}
+                                                    onChange={handleInputChange}
+                                                    className="form-control"
+                                                    rows="2"
+                                                    placeholder="Algo verificable. Ej.: Acta firmada por la interventoría"
+                                                />
+                                            </div>
                                             <div className="form-group">
                                                 <label htmlFor="prioridad">Prioridad:</label>
                                                 <select
@@ -1988,6 +2023,47 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton, is
                                 {!isEditingTask && (
                                     <div className="task-description">
                                         <p>{task.descripcion}</p>
+                                    </div>
+                                )}
+
+                                {/* El criterio es lo que distingue "la movieron" de
+                                    "se cumplió": debe estar a la vista sin tener que
+                                    entrar a editar. Si falta, se dice —son 106 tareas
+                                    heredadas y el aviso es lo que mueve a pactarlo. */}
+                                {!isEditingTask && (
+                                    <div className="task-metodo">
+                                        {task.proposito && (
+                                            <div className="metodo-item">
+                                                <span className="metodo-label">Para qué</span>
+                                                <p>{task.proposito}</p>
+                                            </div>
+                                        )}
+
+                                        {task.criterio ? (
+                                            <div className={`metodo-item metodo-criterio${Number(task.criterio_cumplido) === 1 ? ' es-verificado' : ''}`}>
+                                                <span className="metodo-label">
+                                                    Cómo sabremos que se cumplió
+                                                    {Number(task.criterio_cumplido) === 1 && (
+                                                        <span className="metodo-sello">
+                                                            <FaCheck /> Verificado
+                                                        </span>
+                                                    )}
+                                                </span>
+                                                <p>{task.criterio}</p>
+                                                {task.evidencia_criterio && (
+                                                    <p className="metodo-evidencia">
+                                                        Evidencia: {task.evidencia_criterio}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        ) : (
+                                            <div className="metodo-item metodo-falta">
+                                                <p>
+                                                    Esta tarea no tiene criterio de cumplimiento.
+                                                    Edítala para pactar cómo sabremos que se cumplió.
+                                                </p>
+                                            </div>
+                                        )}
                                     </div>
                                 )}
 

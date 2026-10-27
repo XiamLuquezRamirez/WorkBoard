@@ -4673,6 +4673,86 @@ body {
     color: #1e293b;
 }
 
+/* El método en la vista de lectura del detalle. */
+.task-metodo {
+    display: grid;
+    gap: .7rem;
+    margin: 1rem 0;
+}
+
+.metodo-item {
+    background: #f8fafc;
+    border-left: 3px solid #cbd5e1;
+    border-radius: 0 8px 8px 0;
+    padding: .6rem .9rem;
+}
+
+.metodo-label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .6rem;
+    flex-wrap: wrap;
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    color: #64748b;
+    margin-bottom: .25rem;
+}
+
+.metodo-item p {
+    margin: 0;
+    font-size: .92rem;
+    line-height: 1.45;
+    color: #1e293b;
+    overflow-wrap: anywhere;
+}
+
+.metodo-criterio {
+    background: #f0fdfa;
+    border-left-color: #0d9488;
+}
+
+.metodo-criterio .metodo-label {
+    color: #0f766e;
+}
+
+.metodo-criterio.es-verificado {
+    background: #ecfdf5;
+    border-left-color: #16a34a;
+}
+
+.metodo-sello {
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+    background: #16a34a;
+    color: #fff;
+    padding: .1rem .5rem;
+    border-radius: 999px;
+    font-size: .68rem;
+    letter-spacing: .04em;
+}
+
+.metodo-evidencia {
+    margin-top: .4rem !important;
+    font-size: .82rem !important;
+    color: #475569 !important;
+}
+
+/* Falta el criterio: aviso, no error. Son 106 tareas heredadas y el tono
+   debe invitar a pactarlo, no reprochar que no lo tenga. */
+.metodo-falta {
+    background: #fffbeb;
+    border-left-color: #d97706;
+}
+
+.metodo-falta p {
+    color: #92400e;
+    font-size: .88rem;
+}
+
 /* Verificación del criterio de cumplimiento.
    Sin altura fija, a diferencia de .vistoBueno-panel: el criterio pactado es
    texto libre y recortarlo a 7rem escondería justo lo que hay que comprobar. */

@@ -115,6 +115,8 @@ export default function TableroKanban({ datos, previo, modoTv, interactivo }) {
               detalle: 'Entran en plazo durante los próximos siete días.' },
             { id: 'pausa', n: a.pausadas, texto: 'tareas en pausa', tono: 'al-azul',
               detalle: 'Detenidas a la espera de reanudarse; no avanzan mientras tanto.' },
+            { id: 'sin_criterio', n: a.sin_criterio, texto: 'sin criterio pactado', tono: 'al-gris',
+              detalle: 'Nacieron antes del método: no definen cómo sabremos que se cumplieron.' },
         ].filter((f) => f.n > 0);
 
         return [

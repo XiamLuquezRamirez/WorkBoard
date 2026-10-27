@@ -95,6 +95,9 @@ export default function TableroLateral({ datos, interactivo, onVerAlerta, onVerT
         { id: 'hoy', n: datos.alertas.vencen_hoy, texto: 'vencen hoy', clase: 'al-naranja' },
         { id: 'semana', n: datos.alertas.proximas, texto: 'vencen esta semana', clase: 'al-amarilla' },
         { id: 'pausa', n: datos.alertas.pausadas, texto: 'tareas en pausa', clase: 'al-azul' },
+        // Deuda del método: tareas que siguen sin criterio pactado. Se muestra
+        // en gris porque no es un riesgo de plazo, sino algo que corregir.
+        { id: 'sin_criterio', n: datos.alertas.sin_criterio, texto: 'sin criterio pactado', clase: 'al-gris' },
     ].filter((f) => f.n > 0);
 
     return (

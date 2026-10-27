@@ -752,14 +752,71 @@ class EmpleadosController extends Controller
 
     function actualizarTarea(Request $request, $id)
     {
-        $tarea = $request->all();
-        DB::connection('mysql2')->table('tareas_empleados')->where('id', $id)->update([
+        $tarea = $request->validate([
+            'titulo'        => 'required|string|max:255',
+            'descripcion'   => 'required|string',
+            'fecha_pactada' => 'required|date',
+            'prioridad'     => 'required|string',
+            'proyecto_id'   => 'nullable|integer',
+            'proposito'     => 'nullable|string|max:500',
+            'criterio'      => 'nullable|string',
+        ]);
+
+        $actual = DB::connection('mysql2')->table('tareas_empleados')->where('id', $id)->first();
+        if (!$actual) {
+            return response()->json(['error' => 'Tarea no encontrada'], 404);
+        }
+
+        $cambios = [
             'titulo'      => $tarea['titulo'],
             'descripcion' => $tarea['descripcion'],
             'fecha_pactada' => $tarea['fecha_pactada'],
             'prioridad'   => $tarea['prioridad'],
             'proyecto_id' => $tarea['proyecto_id'] ?? null,
-        ]);
+        ];
+
+        // Sólo se tocan si vienen: las pantallas que no los envían no deben
+        // borrar lo ya pactado.
+        foreach (['proposito', 'criterio'] as $campo) {
+            if (!array_key_exists($campo, $tarea)) {
+                continue;
+            }
+
+            $valor = trim((string) $tarea[$campo]);
+
+            // Un criterio ya pactado no se vacía. Permitirlo abriría la puerta
+            // a esquivar la verificación: bastaría con borrarlo para que la
+            // tarea volviera a cerrarse de un arrastre.
+            if ($valor === '' && !empty($actual->{$campo})) {
+                return response()->json([
+                    'error' => $campo === 'criterio'
+                        ? 'El criterio de cumplimiento no puede quedar vacío. Puedes redactarlo de otra forma, pero no eliminarlo.'
+                        : 'El propósito no puede quedar vacío.',
+                ], 422);
+            }
+
+            if ($valor !== '' && mb_strlen($valor) < 10) {
+                return response()->json([
+                    'error' => $campo === 'criterio'
+                        ? 'El criterio debe explicarse en al menos 10 caracteres.'
+                        : 'El propósito debe explicarse en al menos 10 caracteres.',
+                ], 422);
+            }
+
+            $cambios[$campo] = $valor ?: null;
+        }
+
+        // Registrar cuándo una tarea heredada adopta el método, para poder
+        // seguir cuántas del fondo antiguo ya tienen criterio pactado.
+        if (empty($actual->criterio) && !empty($cambios['criterio'] ?? null)) {
+            $this->registrarActividad(
+                (int) $id,
+                'Criterio',
+                "{$this->nombreActor()} pactó el criterio de cumplimiento de esta tarea."
+            );
+        }
+
+        DB::connection('mysql2')->table('tareas_empleados')->where('id', $id)->update($cambios);
         // devolver proyecto_nombre para que el frontend actualice la vista
         $proyecto = null;
         if (!empty($tarea['proyecto_id'])) {
@@ -2131,6 +2188,9 @@ class EmpleadosController extends Controller
                     'motivo'          => $t->motivo_reprogramacion,
                     'dias_restantes'  => $dias,
                     'checklist'       => $checklist,
+                    // Bandera, no el texto: el criterio es largo y el sondeo
+                    // corre cada 5 segundos. El texto se pide al abrir la tarea.
+                    'sin_criterio'    => empty($t->criterio),
                 ];
             })->values();
         };
@@ -2207,6 +2267,9 @@ class EmpleadosController extends Controller
             'vencen_hoy' => $sinCompletar->filter(fn ($t) => $t['dias_restantes'] === 0)->count(),
             'proximas'   => $sinCompletar->filter(fn ($t) => $t['dias_restantes'] !== null && $t['dias_restantes'] > 0 && $t['dias_restantes'] <= 7)->count(),
             'pausadas'   => $pausa->count(),
+            // Cuántas del fondo heredado siguen sin criterio pactado: es la
+            // medida de cuánto falta para que el método cubra todo el equipo.
+            'sin_criterio' => $sinCompletar->filter(fn ($t) => $t['sin_criterio'])->count(),
         ];
 
         // El panel priorizaba la fecha más antigua, de modo que bajo el título
