@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import useTableroEstado from './useTableroEstado';
 import TableroKPIs from './TableroKPIs';
 import TableroKanban from './TableroKanban';
+import TableroAgenda from './TableroAgenda';
 import TableroLateral from './TableroLateral';
 import TableroCard from './TableroCard';
 import { DetalleTarea } from './ModalDestaque';
@@ -171,6 +172,7 @@ function TableroContenido({ onCerrar, tvInicial = false }) {
     // Modo interactivo: detiene el carrusel para que el líder pueda revisar el
     // tablero a su ritmo y abrir el detalle de cualquier tarea.
     const [interactivo, setInteractivo] = useState(false);
+    const [verAgenda, setVerAgenda] = useState(false);
     const [alertaAbierta, setAlertaAbierta] = useState(null);
     const [tareaAbierta, setTareaAbierta] = useState(null);
     // Sin onCerrar el tablero vive en su propia pestaña: no hay a dónde "volver",
@@ -190,6 +192,7 @@ function TableroContenido({ onCerrar, tvInicial = false }) {
         const onKey = (ev) => {
             if (ev.key !== 'Escape') return;
             if (tareaAbierta) { setTareaAbierta(null); return; }
+            if (verAgenda) { setVerAgenda(false); return; }
             if (alertaAbierta) { setAlertaAbierta(null); return; }
             if (verPausadas) { setVerPausadas(false); return; }
             // En pestaña propia Escape sólo sale del modo TV: cerrar la pestaña
@@ -199,7 +202,7 @@ function TableroContenido({ onCerrar, tvInicial = false }) {
         };
         window.addEventListener('keydown', onKey);
         return () => window.removeEventListener('keydown', onKey);
-    }, [modoTv, onCerrar, verPausadas, alertaAbierta, tareaAbierta]);
+    }, [modoTv, onCerrar, verPausadas, alertaAbierta, tareaAbierta, verAgenda]);
 
     const eventos = useMemo(() => detectarEventos(datos, previo), [datos, previo]);
 
@@ -262,6 +265,16 @@ function TableroContenido({ onCerrar, tvInicial = false }) {
                         {interactivo ? '⏸ Explorando' : '☝ Interactuar'}
                     </button>
 
+                    {/* Disponible también en modo TV: consultar cuándo vence
+                        qué no obliga a salir de la pantalla. */}
+                    <button
+                        className="tb-btn tb-btn-sec"
+                        onClick={() => setVerAgenda(true)}
+                        title="Ver la agenda de entregas del equipo"
+                    >
+                        🗓 Agenda
+                    </button>
+
                     {!modoTv && (
                         <>
                             <button className="tb-btn" onClick={() => setModoTv(true)}>Modo TV</button>
@@ -294,6 +307,15 @@ function TableroContenido({ onCerrar, tvInicial = false }) {
                     onVerTarea={setTareaAbierta}
                 />
             </div>
+
+            {verAgenda && (
+                <TableroAgenda
+                    datosTablero={datos}
+                    interactivo={interactivo}
+                    onVerTarea={(t) => { setVerAgenda(false); setTareaAbierta(t); }}
+                    onCerrar={() => setVerAgenda(false)}
+                />
+            )}
 
             {tareaAbierta && (
                 <DetalleTarea

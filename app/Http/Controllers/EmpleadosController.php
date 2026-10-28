@@ -2115,6 +2115,115 @@ class EmpleadosController extends Controller
      * comparando la respuesta con la anterior, por lo que aquí no se emite ningún
      * evento: la respuesta describe el estado actual completo, no un delta.
      */
+    /**
+     * Agenda de entregas del equipo, día por día.
+     *
+     * Se sirve aparte de tableroEstado porque no cabe en un sondeo de 5
+     * segundos: recorre un rango largo y se consulta al abrir la vista.
+     *
+     * El rango no arranca en hoy, como haría un calendario convencional. Hoy
+     * las 106 tareas abiertas del sistema están vencidas y ninguna vence de hoy
+     * en adelante: mirar sólo hacia delante daría una agenda vacía. Va desde la
+     * entrega más antigua pendiente hasta la más lejana, con hoy en medio, de
+     * modo que muestra el atraso acumulado y seguirá sirviendo cuando empiecen
+     * a pactarse fechas futuras.
+     */
+    function tableroAgenda(Request $request)
+    {
+        $alcance = $this->alcanceEmpleadosInformes();
+        if ($alcance !== null && $alcance === []) {
+            return response()->json(['dias' => [], 'hoy' => now()->toDateString()]);
+        }
+
+        $base = function () use ($alcance) {
+            $q = DB::connection('mysql2')->table('tareas_empleados as t')
+                ->leftJoin('empleados as e', 't.empleado', '=', 'e.id')
+                ->leftJoin('users as u', 'u.empleado', '=', 't.empleado')
+                ->leftJoin('proyectos as p', 't.proyecto_id', '=', 'p.id')
+                ->whereNotIn('t.estado', ['Completada'])
+                ->where('t.estado_reg', 'Activo')
+                ->where(fn ($w) => $w->where('t.archivar', '<>', 1)->orWhereNull('t.archivar'))
+                ->whereNotNull('t.fecha_pactada');
+
+            if ($alcance !== null) {
+                $q->whereIn('t.empleado', $alcance);
+            }
+
+            return $q;
+        };
+
+        $tareas = $base()
+            ->select([
+                't.id', 't.titulo', 't.estado', 't.prioridad', 't.fecha_pactada',
+                't.pausada', 't.bloqueada', 't.criterio',
+                't.empleado as empleado_id',
+                'p.nombre as proyecto_nombre',
+                'u.name as empleado_usuario',
+                DB::connection('mysql2')->raw('CONCAT(e.nombres, " ", e.apellidos) as empleado'),
+            ])
+            ->orderBy('t.fecha_pactada')
+            ->orderByDesc('t.prioridad')
+            ->get();
+
+        $hoy = Carbon::today();
+
+        $porDia = $tareas->groupBy(fn ($t) => substr((string) $t->fecha_pactada, 0, 10));
+
+        // El rango abarca hoy aunque no haya nada ese día: sin ese anclaje, una
+        // agenda enteramente vencida no dejaría ver dónde está el presente.
+        $fechas = $porDia->keys()->map(fn ($f) => Carbon::parse($f));
+        $inicio = $fechas->min() ?: $hoy->copy();
+        $fin    = $fechas->max() ?: $hoy->copy();
+        $inicio = $inicio->lt($hoy) ? $inicio : $hoy->copy();
+        $fin    = $fin->gt($hoy) ? $fin : $hoy->copy();
+
+        // Un recorrido día a día de varios meses son cientos de filas casi
+        // todas vacías. Se devuelven sólo los días con entregas más el de hoy,
+        // y el frontend indica los huecos entre uno y otro.
+        $dias = collect();
+
+        foreach ($porDia as $fecha => $items) {
+            $dias->push($this->filaAgenda($fecha, $items, $hoy));
+        }
+
+        if (!$porDia->has($hoy->toDateString())) {
+            $dias->push($this->filaAgenda($hoy->toDateString(), collect(), $hoy));
+        }
+
+        return response()->json([
+            'hoy'   => $hoy->toDateString(),
+            'desde' => $inicio->toDateString(),
+            'hasta' => $fin->toDateString(),
+            'dias'  => $dias->sortBy('fecha')->values(),
+        ]);
+    }
+
+    /** Arma un día de la agenda con sus entregas. */
+    private function filaAgenda(string $fecha, $items, Carbon $hoy): array
+    {
+        $dia = Carbon::parse($fecha);
+
+        return [
+            'fecha'     => $fecha,
+            'dia_semana' => (int) $dia->dayOfWeek,
+            'es_hoy'    => $dia->isSameDay($hoy),
+            'dias'      => (int) $hoy->diffInDays($dia, false),
+            'tareas'    => collect($items)->map(fn ($t) => [
+                'id'          => (int) $t->id,
+                'titulo'      => $t->titulo,
+                'estado'      => $t->estado,
+                'prioridad'   => $t->prioridad,
+                'empleado'    => $t->empleado ?: ($t->empleado_usuario ?: 'Sin responsable'),
+                'empleado_id' => (int) $t->empleado_id,
+                'proyecto'    => $t->proyecto_nombre,
+                'pausada'     => (int) ($t->pausada ?? 0) === 1
+                                  && !in_array($t->estado, self::ESTADOS_NO_PAUSABLES, true),
+                'bloqueada'   => (int) ($t->bloqueada ?? 0) === 1,
+                'sin_criterio' => empty($t->criterio),
+            ])->values(),
+        ];
+    }
+
     function tableroEstado(Request $request)
     {
         $conn = DB::connection('mysql2');

@@ -167,6 +167,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
         // estado del tablero de seguimiento (kanban en vivo)
         Route::get('/tablero/estado', [EmpleadosController::class, 'tableroEstado']);
         Route::get('/tablero/avatares', [EmpleadosController::class, 'tableroAvatares']);
+        // Agenda de entregas: fuera del sondeo, se pide al abrir la vista.
+        Route::get('/tablero/agenda', [EmpleadosController::class, 'tableroAgenda']);
 
         // videos ambientales del tablero (se administran desde Parámetros)
         Route::get('/tablero/videos', [EmpleadosController::class, 'tableroVideos']);
