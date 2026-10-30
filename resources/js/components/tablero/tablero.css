@@ -1,6 +1,15 @@
 /* Tablero de Seguimiento — dark mode operativo, optimizado para 1920x1080 */
 
-.tb-root {
+/* Las variables de color viven en un selector propio porque el plano también
+   se abre desde «Mis Tareas», que es una interfaz clara y está fuera de
+   .tb-root: allí las variables no existían y el modal salía transparente,
+   con el texto oscuro ilegible sobre el fondo oscuro. */
+.tb-root,
+.tb-modal-plano-raiz,
+/* El plano incrustado vive dentro del espacio de equipo, fuera de
+   .tb-root: sin esto sus variables no resolvían y la barra de pisos
+   salía sin fondo ni color sobre el blanco del modal. */
+.tb-pm-incrustado {
     --tb-bg: #0F172A;
     --tb-panel: #1E293B;
     --tb-panel-2: #273449;
@@ -22,7 +31,11 @@
     --tb-rojo: #E5484D;      /* alerta: fuera de marca por significado */
     --tb-morado: #7CC4D8;    /* completadas: azul claro derivado de la marca */
     --tb-verde: #34B88A;     /* por verificar: entregado, a la espera del líder */
+}
 
+/* La maquetación de pantalla completa es sólo del tablero: el plano hereda los
+   colores de arriba, pero no debe ocupar la pantalla como si fuera él. */
+.tb-root {
     position: fixed;
     inset: 0;
     z-index: 9000;
@@ -1372,6 +1385,12 @@ a.tb-btn-sec, a.tb-btn-sec:visited { color: var(--tb-txt); }
 
 .tb-modal-agenda { max-width: 760px; }
 
+/* El cuerpo del modal es una rejilla de columnas de 230px, pensada para
+   las tarjetas del modal de pausadas. La agenda es una lista vertical:
+   sin ocupar la fila entera caía en una columna estrecha y el título se
+   partía letra a letra. */
+.tb-modal-body > .tb-agenda { grid-column: 1 / -1; }
+
 .tb-agenda {
     list-style: none;
     margin: 0;
@@ -1379,164 +1398,1211 @@ a.tb-btn-sec, a.tb-btn-sec:visited { color: var(--tb-txt); }
     display: flex;
     flex-direction: column;
     gap: 10px;
+    width: 100%;
+    min-width: 0;
 }
 
-/* El hueco entre dos entregas se resume en una línea: dibujar día a día
-   meses enteros vacíos haría ilegible lo poco que sí tiene contenido. */
-.tb-ag-hueco {
+
+
+/* ===================== Plano de la oficina =====================
+   La planta la dibuja PlanoOficina.jsx a partir del plano real de la
+   empresa. Aquí quedan sólo la caja y la leyenda que la rodean. */
+
+.tb-modal-plano {
+    width: min(1320px, 94vw);
+    max-width: 94vw;
+}
+
+.tb-pm-body {
+    display: flex;
+    flex-direction: column;
+}
+
+.tb-pm-escena {
+    display: flex;
+    align-items: stretch;
+    gap: 14px;
+    min-height: 0;
+    flex: 1;
+}
+
+/* ---------- Plano incrustado en el espacio de equipo ---------- */
+
+/* Dentro del espacio de equipo el plano no lleva modal: ocupa la caja entera
+   y conserva los colores del tablero, que es donde nació. */
+.tb-pm-incrustado {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    min-height: 0;
+    padding: 12px 14px 14px;
+    background: var(--tb-bg);
+    color: var(--tb-txt);
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+.tb-pm-incrustado .tb-pl-acciones { justify-content: flex-end; margin-bottom: 10px; }
+
+.tb-pm-incrustado .tb-modal-body {
+    padding: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.tb-pm-incrustado .tb-pm-escena { flex: 1; min-height: 0; align-items: stretch; }
+
+/* El SVG debe ocupar el alto disponible: con altura automática,
+   preserveAspectRatio lo encajaba por el lado corto y la planta quedaba
+   pequeña entre dos franjas vacías. */
+.tb-pm-incrustado .tb-pm-svg { max-height: none; height: 100%; }
+.tb-pm-incrustado .tb-pm-ficha { max-height: none; }
+
+/* ---------- Panel del puesto ---------- */
+
+.pp-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    padding: 0;
+    overflow: hidden;
+    flex-basis: 292px;
+}
+
+.pp-cab {
+    display: flex;
+    gap: 10px;
+    padding: 14px 30px 11px 14px;
+    border-bottom: 1px solid var(--tb-borde);
+}
+
+.pp-avatar {
+    flex: 0 0 44px;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 2px solid var(--tb-borde);
+    background: var(--tb-panel-2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--tb-txt);
+}
+
+.pp-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+.pp-avatar.se-bloqueado  { border-color: var(--tb-rojo); }
+.pp-avatar.se-pausa      { border-color: var(--tb-naranja); }
+.pp-avatar.se-atrasado   { border-color: var(--tb-amarillo); }
+.pp-avatar.se-trabajando { border-color: var(--tb-azul); }
+
+.pp-cab-txt { min-width: 0; }
+.pp-cab-txt h4 { margin: 0; font-size: 13.5px; line-height: 1.25; color: var(--tb-txt); }
+.pp-cab-txt p { margin: 2px 0 0; font-size: 11px; color: var(--tb-txt-tenue); }
+.pp-depto { font-style: italic; }
+
+.pp-acciones {
+    display: flex;
+    gap: 7px;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--tb-borde);
+}
+
+.pp-btn {
+    flex: 1;
+    border: 1px solid var(--tb-borde);
+    background: var(--tb-panel-2);
+    color: var(--tb-txt);
+    border-radius: 7px;
+    padding: 7px 9px;
+    font-size: 11.5px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+.pp-btn:hover { filter: brightness(1.18); }
+.pp-btn:disabled { opacity: .5; cursor: default; }
+
+.pp-btn.es-activo {
+    background: var(--tb-marca-azul);
+    border-color: var(--tb-marca-azul);
+    color: #FFFFFF;
+}
+
+/* El vídeo se incrusta en el propio panel: salir del plano para llamar
+   rompería la idea de llegar a la estación y hablar allí mismo. */
+.pp-video { border-bottom: 1px solid var(--tb-borde); }
+
+.pp-video iframe {
+    width: 100%;
+    height: 190px;
+    border: 0;
+    display: block;
+    background: #000000;
+}
+
+.pp-video-pie {
+    margin: 0;
+    padding: 6px 14px;
+    font-size: 10px;
+    color: var(--tb-txt-tenue);
+}
+
+.pp-pestanas {
+    display: flex;
+    border-bottom: 1px solid var(--tb-borde);
+}
+
+.pp-pestanas button {
+    flex: 1;
+    border: none;
+    background: transparent;
+    padding: 9px 4px;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--tb-txt-tenue);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    font-family: inherit;
+}
+
+.pp-pestanas button:hover { color: var(--tb-txt); }
+
+.pp-pestanas button.es-activa {
+    color: var(--tb-azul);
+    border-bottom-color: var(--tb-azul);
+}
+
+.pp-cuerpo {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 11px 14px 14px;
+    display: flex;
+    flex-direction: column;
+}
+
+.pp-vacio {
+    margin: 22px 0;
+    text-align: center;
+    font-size: 11.5px;
+    color: var(--tb-txt-tenue);
+}
+
+.pp-cifras {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 11px;
+    margin-bottom: 10px;
+    font-size: 11px;
+    color: var(--tb-txt-tenue);
+}
+
+.pp-cifras b { color: var(--tb-txt); font-size: 12.5px; }
+.pp-cifras .es-mal b { color: var(--tb-rojo); }
+.pp-cifras .es-ok b  { color: var(--tb-verde); }
+
+.pp-tareas { list-style: none; margin: 0; padding: 0; }
+
+.pp-tarea {
+    width: 100%;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    /* Los hijos de un <button> se centran por defecto; align-items los
+       alinea a la izquierda, que es como se lee una tarjeta. */
+    align-items: stretch;
+    gap: 4px;
+    border: 1px solid var(--tb-borde);
+    border-radius: 8px;
+    background: var(--tb-panel-2);
+    padding: 8px 9px;
+    margin-bottom: 6px;
+    cursor: pointer;
+    font-family: inherit;
+    color: var(--tb-txt);
+}
+
+.pp-tarea:hover:not(:disabled) { border-color: var(--tb-azul); }
+.pp-tarea:disabled { cursor: default; }
+
+.pp-tarea.es-tarde { border-left: 3px solid var(--tb-amarillo); }
+.pp-tarea.es-bloq  { border-left: 3px solid var(--tb-rojo); }
+
+.pp-tarea-cab { display: flex; align-items: center; justify-content: flex-start; gap: 5px; flex-wrap: wrap; }
+
+.pp-pin {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: .4px;
+    text-transform: uppercase;
+    padding: 1px 6px;
+    border-radius: 999px;
+    background: var(--tb-bg);
+    color: var(--tb-txt-tenue);
+}
+
+.pp-pin.es-proceso  { color: var(--tb-azul); }
+.pp-pin.es-revision { color: var(--tb-verde); }
+
+.pp-marca { font-size: 10px; }
+.pp-marca.es-mal { color: var(--tb-rojo); }
+
+.pp-tarea-tit {
+    font-size: 12.5px;
+    font-weight: 600;
+    line-height: 1.35;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    /* Un título sin espacios no rompe solo y estiraba la tarjeta. */
+    overflow-wrap: anywhere;
+}
+
+.pp-tarea-pie {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 8px;
+    font-size: 10.5px;
+    color: var(--tb-txt-tenue);
+    min-width: 0;
+}
+
+/* Sin min-width:0 un hijo flex no se encoge por debajo de su contenido,
+   así que el nombre del proyecto se salía de la tarjeta por los lados. */
+.pp-tarea-pie em {
+    font-style: normal;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.pp-tarea-pie .es-mal { color: var(--tb-amarillo); font-weight: 600; white-space: nowrap; }
+
+.pp-actividad { list-style: none; margin: 0; padding: 0; }
+
+.pp-actividad li {
+    display: flex;
+    gap: 8px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--tb-borde);
+}
+
+.pp-actividad li:last-child { border-bottom: none; }
+
+.pp-act-icono {
+    flex: 0 0 22px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--tb-panel-2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+}
+
+.pp-act-msj { margin: 0; font-size: 11.5px; line-height: 1.4; color: var(--tb-txt); }
+
+.pp-act-pie {
+    margin: 2px 0 0;
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 10px;
+    color: var(--tb-txt-tenue);
+}
+
+.pp-act-pie em {
+    font-style: normal;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* ---------- Chat dentro del panel ---------- */
+
+.pp-chat { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+
+.pp-chat-hilo {
+    flex: 1;
+    min-height: 140px;
+    overflow-y: auto;
+    padding-right: 2px;
+}
+
+.pp-burbuja {
+    max-width: 85%;
+    margin-bottom: 7px;
+    padding: 7px 9px;
+    border-radius: 10px;
+    background: var(--tb-panel-2);
+}
+
+/* Lo propio a la derecha y en el azul de la marca: es la convención de
+   cualquier chat y evita tener que leer quién habla. */
+.pp-burbuja.es-mia {
+    margin-left: auto;
+    background: rgba(1, 142, 178, .32);
+}
+
+.pp-burbuja p {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.4;
+    color: var(--tb-txt);
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.pp-burbuja span { font-size: 9.5px; color: var(--tb-txt-tenue); }
+
+.pp-chat-barra {
+    display: flex;
+    gap: 6px;
+    align-items: flex-end;
+    padding-top: 9px;
+    border-top: 1px solid var(--tb-borde);
+    margin-top: 9px;
+}
+
+.pp-chat-barra textarea {
+    flex: 1;
+    min-width: 0;
+    resize: none;
+    max-height: 80px;
+    border: 1px solid var(--tb-borde);
+    border-radius: 8px;
+    background: var(--tb-panel-2);
+    color: var(--tb-txt);
+    padding: 7px 9px;
+    font-size: 12px;
+    font-family: inherit;
+    line-height: 1.4;
+}
+
+.pp-chat-barra textarea:focus {
+    outline: none;
+    border-color: var(--tb-azul);
+}
+
+.pp-chat-barra .pp-btn { flex: 0 0 38px; }
+
+@media (max-width: 860px) {
+    .pp-panel { flex-basis: auto; }
+    .pp-video iframe { height: 160px; }
+}
+
+/* ===================== Plano real de la oficina =====================
+   La planta ya no se calcula: reproduce el plano de la empresa, con sus
+   dos pisos y sus salas donde están. Los avatares se dibujan a tamaño
+   fijo sobre el lienzo, así que acercarse muestra detalle en lugar de
+   agrandar una miniatura. */
+
+.po-marco {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    min-width: 0;
+}
+
+.po-barra {
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 2px 0;
-    font-size: 11px;
-    letter-spacing: .08em;
-    text-transform: uppercase;
-    color: var(--tb-tenue, #64748B);
+    flex-wrap: wrap;
+    margin-bottom: 9px;
 }
 
-.tb-ag-hueco::before,
-.tb-ag-hueco::after {
-    content: "";
-    flex: 1;
-    border-top: 1px dashed rgba(148, 163, 184, .35);
+.po-pisos {
+    display: flex;
+    gap: 2px;
+    background: var(--tb-panel-2);
+    border-radius: 8px;
+    padding: 2px;
 }
+
+.po-pisos button {
+    border: none;
+    background: transparent;
+    color: var(--tb-txt-tenue);
+    border-radius: 6px;
+    padding: 6px 13px;
+    font-size: 11.5px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+.po-pisos button:hover { color: var(--tb-txt); }
+
+.po-pisos button.es-activo {
+    background: var(--tb-marca-azul);
+    color: #FFFFFF;
+}
+
+.po-cuenta {
+    font-size: 11.5px;
+    color: var(--tb-txt-tenue);
+}
+
+.po-herramientas {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-left: auto;
+}
+
+.po-chip {
+    border: 1px solid var(--tb-borde);
+    background: var(--tb-panel-2);
+    color: var(--tb-txt);
+    border-radius: 7px;
+    padding: 5px 10px;
+    font-size: 11.5px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    line-height: 1.2;
+}
+
+.po-chip:hover { filter: brightness(1.2); }
+
+.po-chip.es-activo {
+    background: var(--tb-marca-azul);
+    border-color: var(--tb-marca-azul);
+    color: #FFFFFF;
+}
+
+.po-zoom {
+    font-size: 11px;
+    color: var(--tb-txt-tenue);
+    min-width: 38px;
+    text-align: center;
+}
+
+/* El lienzo recorta: dentro, el SVG se desplaza y escala con transform,
+   que el navegador compone sin volver a dibujar el vector. */
+.po-lienzo {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    border: 1px solid var(--tb-borde);
+    border-radius: 10px;
+    background: #0B1322;
+    cursor: grab;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.po-lienzo.es-arrastrando { cursor: grabbing; }
+
+.po-svg {
+    width: 100%;
+    height: 100%;
+    transform-origin: center center;
+    /* Sin esto, arrastrar seleccionaría los textos del plano. */
+    user-select: none;
+}
+
+
+.po-aviso {
+    margin: 8px 0 0;
+    font-size: 11px;
+    color: var(--tb-amarillo);
+    text-align: center;
+}
+
+.po-ayuda {
+    margin: 7px 0 0;
+    font-size: 10.5px;
+    color: var(--tb-txt-tenue);
+    text-align: center;
+}
+
+/* ---------- Salas ---------- */
+
+
+/* Las salas de servicio (baños, cocina, escalera) se apagan: son
+   referencia para orientarse, no sitios donde mirar trabajo. */
+.po-sala.es-servicio .po-sala.es-servicio .po-sala.zs-bloqueado    .po-sala.zs-bloqueado    .po-sala.zs-pausa        .po-sala.zs-pausa        .po-sala.zs-atrasado     .po-sala.zs-atrasado     .po-sala.zs-sin_criterio .po-sala.zs-trabajando   .po-sala.zs-bloqueado /* ---------- Mobiliario ---------- */
+
+.po-planta { pointer-events: none; }
+
+/* ---------- Puestos ---------- */
+
+.po-puesto { cursor: pointer; transition: opacity .15s ease; }
+.po-puesto:focus { outline: none; }
+
+@media (max-width: 860px) {
+    .po-barra { gap: 6px; }
+    .po-herramientas { margin-left: 0; }
+    .po-cuenta { order: 3; }
+}
+
+/* ---------- Accesorios y animación ---------- */
+
+.po-impresora-luz { fill: var(--tb-verde); }
+.po-caja-cinta { fill: rgba(226, 232, 240, .14); }
+
+/* La pantalla de cada escritorio parpadea muy despacio: da sensación de
+   oficina encendida sin distraer de las señales de estado, que son lo que
+   de verdad hay que mirar. */
+@keyframes po-brillo {
+    0%, 100% { opacity: .55; }
+    50%      { opacity: 1; }
+}
+
+.po-monitor-luz {
+    fill: #1D4F63;
+    animation: po-brillo 4s ease-in-out infinite;
+}
+
+/* Las plantas se mecen apenas. Giros de menos de un grado: a tamaño real
+   se percibe como vida, no como movimiento. */
+@keyframes po-mecer {
+    0%, 100% { transform: rotate(-0.8deg); }
+    50%      { transform: rotate(0.8deg); }
+}
+
+.po-planta {
+    transform-box: fill-box;
+    transform-origin: 50% 90%;
+    animation: po-mecer 6s ease-in-out infinite;
+}
+
+.po-sala:nth-child(2n) .po-planta { animation-duration: 7.5s; }
+.po-sala:nth-child(3n) .po-planta { animation-duration: 5.2s; }
+
+/* Quien está trabajando tiene un halo que late. Es el estado que más
+   importa ver de lejos y el único que se mueve, para que destaque. */
+@keyframes po-latir {
+    0%, 100% { opacity: .22; r: 24; }
+    50%      { opacity: 0; r: 32; }
+}
+
+.po-halo { fill: none; stroke: var(--tb-azul); stroke-width: 2; opacity: 0; }
+
+.po-puesto.se-trabajando .po-halo {
+    opacity: .22;
+    animation: po-latir 2.6s ease-out infinite;
+}
+
+.po-puesto.se-bloqueado .po-halo {
+    stroke: var(--tb-rojo);
+    opacity: .26;
+    animation: po-latir 1.8s ease-out infinite;
+}
+
+/* El puesto se levanta al pasar por encima: confirma que es pulsable. */
+.po-puesto { transition: opacity .15s ease; }
+
+/* La escala va en el grupo interno: en el exterior sustituiría al
+   translate que coloca al personaje, y éste saltaba a la esquina. */
+.po-figura {
+    transition: transform .16s ease;
+    transform-box: fill-box;
+    transform-origin: 50% 72%;
+}
+
+.po-puesto:hover .po-figura { transform: scale(1.09); }
+.po-puesto.es-elegido .po-figura { transform: scale(1.14); }
+
+/* La sala elegida se ilumina por dentro. */
+.po-sala .po-sala:hover /* Al entrar, la planta aparece con un gesto breve en lugar de aparecer de
+   golpe: hace entender que es una vista, no una imagen fija. */
+@keyframes po-entrar {
+    from { opacity: 0; transform: scale(.985); }
+    to   { opacity: 1; transform: scale(1); }
+}
+
+.po-svg { animation: po-entrar .34s ease-out; }
+
+/* Quien respeta «reduzco el movimiento» en su sistema no ve ninguna de
+   estas animaciones: son adorno, nunca información. */
+@media (prefers-reduced-motion: reduce) {
+    .po-monitor-luz,
+    .po-planta,
+    .po-puesto.se-trabajando .po-halo,
+    .po-puesto.se-bloqueado .po-halo,
+    .po-svg {
+        animation: none;
+    }
+    .po-figura { transition: none; }
+}
+
+/* ===================== Aspecto de oficina, estilo juego =====================
+   Suelo de madera, muros con grosor y gente de cuerpo entero. El plano
+   dejó de ser un diagrama oscuro para parecer un sitio donde se trabaja,
+   que es lo que hace reconocible cada sala de un vistazo. */
+
+/* Exterior del edificio: césped, para que la planta se lea como un
+   edificio y no como un rectángulo flotando. */
+.po-planta { fill: #3A6B48; }
+
+.po-lienzo { background: #2C5339; }
+
+.po-suelo { fill: #A06B3E; }
+
+/* La veta va encima del suelo y debajo de todo lo demás. */
+.po-veta { opacity: .95; pointer-events: none; }
+
+/* Los servicios llevan baldosa en vez de madera; se distinguen sin leer. */
+.po-sala.es-servicio .po-suelo { fill: #C9CFD8; }
+
+/* El muro: banda oscura exterior + filo claro interior = grosor. */
+.po-muro { fill: #2B2F38; }
+.po-muro-luz { fill: none; stroke: #4A5160; stroke-width: 3; }
+
+.po-pared {
+    fill: none;
+    stroke: #1E222A;
+    stroke-width: 1.5;
+}
+
+.po-puerta { fill: #A8763F; }
+.po-puerta-marco { fill: #6E4729; }
+
+/* El estado tiñe el suelo muy suavemente y marca el muro: se ve la sala
+   trabada sin perder el aspecto de oficina. */
+.po-sala.zs-bloqueado    .po-muro { fill: #7A2328; }
+.po-sala.zs-bloqueado    .po-veta { opacity: .74; }
+.po-sala.zs-pausa        .po-muro { fill: #7A4A14; }
+.po-sala.zs-atrasado     .po-muro { fill: #6E5218; }
+.po-sala.zs-trabajando   .po-muro { fill: #1D4A5C; }
+.po-sala.zs-sin_criterio .po-muro { fill: #3A3F4B; }
+
+.po-rotulo { fill: rgba(22, 27, 36, .86); }
+
+.po-rotulo-txt {
+    fill: #F1F5F9;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: .3px;
+}
+
+.po-rotulo-dato { fill: #FBBF24; font-size: 16px; font-weight: 700; }
+.po-sala.zs-bloqueado .po-rotulo-dato { fill: #FCA5A5; }
+
+/* ---------- Mobiliario con color ---------- */
+
+.po-mueble { fill: #B07B46; stroke: #6E4729; stroke-width: 1.5; }
+.po-mesa { fill: #A9713E; stroke: #6E4729; }
+.po-mesa-luz { fill: rgba(255, 255, 255, .16); }
+.po-sofa { fill: #3E6B8A; stroke: #2B4E66; }
+.po-sofa-cojin { fill: rgba(255, 255, 255, .18); }
+.po-encimera { fill: #C7CDD6; stroke: #98A1AE; }
+.po-encimera-luz { fill: rgba(255, 255, 255, .5); }
+.po-escalera { fill: #9AA3B2; stroke: #6B7280; }
+.po-monitor { fill: #23282F; stroke: #15181D; stroke-width: 1.2; }
+.po-sanitario { fill: #ECEFF3; stroke: #B4BCC7; stroke-width: 1.2; }
+.po-pizarra { fill: #F8FAFC; stroke: #94A3B8; stroke-width: 1.2; }
+.po-pizarra-trazo { fill: #60A5FA; }
+.po-linea { stroke: #6E4729; stroke-width: 1.2; }
+.po-impresora { fill: #4B5563; stroke: #374151; stroke-width: 1.3; }
+.po-caja { fill: #B07B46; stroke: #8A5A34; stroke-width: 1.2; }
+
+.po-hojas { fill: #2F8F4E; }
+.po-hojas-2 { fill: #45B063; }
+.po-maceta { fill: #C2703D; }
+
+/* ---------- La gente ---------- */
+
+.po-sombra-suelo { fill: rgba(0, 0, 0, .28); }
+
+.po-pierna { fill: #39404D; }
+.po-zapato { fill: #23282F; }
+
+.po-camisa { stroke: rgba(0, 0, 0, .3); stroke-width: 1.2; }
+.po-camisa-sombra { opacity: .55; }
+.po-brazo { stroke: rgba(0, 0, 0, .25); stroke-width: 1; }
+.po-mano, .po-cuello { stroke: rgba(0, 0, 0, .2); stroke-width: 1; }
+
+.po-cabeza-borde {
+    fill: #F8FAFC;
+    stroke: rgba(0, 0, 0, .35);
+    stroke-width: 1.5;
+}
+
+.po-cabeza-lisa { stroke: rgba(0, 0, 0, .2); stroke-width: 1; }
+
+.po-iniciales { fill: #3F3326; font-size: 15px; font-weight: 700; }
+
+/* El aro de estado rodea la cabeza; la vieja clase po-aro ya no se usa. */
+.po-puesto.se-bloqueado    .po-cabeza-borde { stroke: #EF4444; stroke-width: 3.5; }
+.po-puesto.se-pausa        .po-cabeza-borde { stroke: #F59E0B; stroke-width: 3; }
+.po-puesto.se-atrasado     .po-cabeza-borde { stroke: #FBBF24; stroke-width: 3; }
+.po-puesto.se-trabajando   .po-cabeza-borde { stroke: #38BDF8; stroke-width: 3; }
+.po-puesto.se-sin_criterio .po-cabeza-borde { stroke: #94A3B8; stroke-dasharray: 4 3; }
+
+/* El equipo propio lleva un pie resaltado, que no compite con el estado. */
+.po-puesto.es-mio .po-sombra-suelo {
+    fill: rgba(56, 189, 248, .55);
+    stroke: #38BDF8;
+    stroke-width: 2;
+}
+
+.po-chincheta { fill: #161B24; stroke: #4A5160; stroke-width: 1.5; }
+.po-chincheta-txt { font-size: 12px; fill: #CBD5E1; }
+
+.po-cinta { fill: rgba(22, 27, 36, .92); }
+.po-nombre { fill: #F1F5F9; font-size: 17px; font-weight: 700; }
+
+/* Los puestos atenuados no desaparecen: la organización entera debe
+   seguir leyéndose, sólo que en segundo plano. */
+.po-puesto.es-atenuado { opacity: .78; }
+.po-puesto.es-atenuado:hover { opacity: 1; }
+
+.po-puesto.es-elegido .po-cabeza-borde { stroke: #FFFFFF; stroke-width: 4; }
+
+/* ===================== Tema claro del tablero =====================
+   El tablero nació para proyectarse en un televisor, donde el fondo
+   oscuro descansa la vista. Dentro de WorkBoard convive con «Mis
+   Tareas», que es claro, y el contraste resultaba violento.
+
+   Todo el tablero dibuja con variables, así que basta redefinirlas:
+   el mismo componente sirve para los dos sitios y lo que se arregla en
+   uno vale para el otro. */
+
+.tb-claro {
+    --tb-bg: #F3F5F9;
+    --tb-panel: #FFFFFF;
+    --tb-panel-2: #F1F4F9;
+    --tb-borde: #D8DEE8;
+    --tb-txt: #111827;
+    --tb-txt-tenue: #6B7280;
+
+    /* Los colores institucionales se oscurecen, al revés que en el
+       tema oscuro: sobre blanco, el azul claro del televisor no se lee. */
+    --tb-marca-azul: #0176A1;
+    --tb-marca-verde: #2F8A20;
+    --tb-marca-ambar: #B97C00;
+
+    --tb-azul: #0E7FA8;
+    --tb-amarillo: #B97C00;
+    --tb-naranja: #C2650A;
+    --tb-rojo: #C62A2F;
+    --tb-morado: #4E7C96;
+    --tb-verde: #1F8F6A;
+
+    color: var(--tb-txt);
+}
+
+/* El fondo general y las cabeceras de columna, que en oscuro iban
+   saturadas, aquí se apoyan en el blanco. */
+.tb-claro .tb-col { background: var(--tb-panel); border-color: var(--tb-borde); }
+/* La cabecera de columna no tiene fondo de color —el color va en el
+   borde superior—, así que el texto debe seguir al tema. */
+.tb-claro .tb-col-head h3 { color: var(--tb-txt); }
+/* El contador con --tb-txt-tenue quedaba en 4.39 de contraste, por
+   debajo del mínimo: es un dato, no una anotación. */
+.tb-claro .tb-col-count { background: var(--tb-panel-2); color: #4B5563; }
+
+.tb-claro .tb-card {
+    background: var(--tb-panel);
+    border-color: var(--tb-borde);
+    box-shadow: 0 1px 2px rgba(17, 24, 39, .06);
+}
+
+.tb-claro .tb-card:hover { box-shadow: 0 4px 12px rgba(17, 24, 39, .12); }
+
+/* Los modales del tablero dentro del tema claro: fondo blanco y velo
+   más suave, porque no hay una sala a oscuras detrás. */
+.tb-claro .tb-modal-fondo { background: rgba(17, 24, 39, .45); }
+.tb-claro .tb-modal { background: var(--tb-panel); color: var(--tb-txt); }
+
+.tb-claro .tb-btn-sec {
+    background: var(--tb-panel-2);
+    color: var(--tb-txt);
+    border: 1px solid var(--tb-borde);
+}
+
+/* El plano dentro del tablero claro conserva su propio aspecto de
+   juego: el suelo de madera y el césped no dependen del tema. */
+.tb-claro .tb-pm-incrustado { background: #2C5339; }
+
+/* ---------- Tablero de equipo: el modal que lo contiene ---------- */
+
+.te-fondo {
+    position: fixed;
+    inset: 0;
+    z-index: 9400;
+    background: rgba(17, 24, 39, .55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2vh 1.5vw;
+}
+
+.te-modal {
+    width: min(1680px, 97vw);
+    height: 94vh;
+    display: flex;
+    flex-direction: column;
+    background: #FFFFFF;
+    border-radius: 14px;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, .28);
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    overflow: hidden;
+}
+
+.te-cabecera {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-bottom: 1px solid #E5E7EB;
+}
+
+.te-titulo {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 700;
+    color: #111827;
+}
+
+.te-cerrar {
+    border: none;
+    background: transparent;
+    font-size: 15px;
+    color: #9CA3AF;
+    cursor: pointer;
+    padding: 6px 8px;
+    line-height: 1;
+}
+
+.te-cerrar:hover { color: #111827; }
+
+/* El tablero ocupa la caja entera y se desplaza por dentro. */
+.te-cuerpo {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    overflow: hidden;
+}
+
+/* Dentro del modal el tablero no es una capa de pantalla completa:
+   .tb-root lleva position:fixed, que aquí lo sacaría de la caja. */
+.te-cuerpo .tb-root {
+    position: relative;
+    inset: auto;
+    z-index: auto;
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+}
+
+/* Los modales internos del tablero (detalle de tarea, agenda, plano)
+   se anclan al modal, no a la ventana. */
+.te-cuerpo .tb-modal-fondo { position: absolute; }
+
+/* ---------- Botones junto a Opciones ---------- */
+
+.acciones-equipo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-equipo {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    border: 1px solid #D1D5DB;
+    background: #FFFFFF;
+    color: #374151;
+    border-radius: 8px;
+    padding: 8px 13px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    white-space: nowrap;
+}
+
+.btn-equipo:hover { background: #F9FAFB; border-color: #9CA3AF; }
+
+.btn-equipo svg { font-size: 14px; }
+.btn-equipo.es-tablero svg { color: #2563eb; }
+.btn-equipo.es-espacio svg { color: #8b5cf6; }
+
+@media (max-width: 900px) {
+    /* En pantalla estrecha sólo queda el icono: el texto empujaba
+       «Opciones» fuera de la cabecera. */
+    .btn-equipo span { display: none; }
+    .btn-equipo { padding: 8px 10px; }
+}
+
+/* ---------- El plano dentro del espacio de equipo, en claro ---------- */
+
+/* El mapa conserva su aspecto de juego —suelo de madera, césped— porque
+   eso no es «tema oscuro», es el dibujo. Lo que se aclara es lo que lo
+   rodea: la barra de pisos y el panel del puesto, que antes eran dos
+   recuadros oscuros dentro de un modal blanco. */
+.eq-modal .tb-pm-incrustado {
+    --tb-bg: #F3F5F9;
+    --tb-panel: #FFFFFF;
+    --tb-panel-2: #F1F4F9;
+    --tb-borde: #D8DEE8;
+    --tb-txt: #111827;
+    --tb-txt-tenue: #6B7280;
+
+    --tb-marca-azul: #0176A1;
+    --tb-azul: #0E7FA8;
+    --tb-amarillo: #B97C00;
+    --tb-naranja: #C2650A;
+    --tb-rojo: #C62A2F;
+    --tb-verde: #1F8F6A;
+
+    background: var(--tb-bg);
+}
+
+/* El lienzo del mapa mantiene su césped: ahí dentro manda el dibujo. */
+.eq-modal .po-lienzo { background: #2C5339; border-color: #C3CBD8; }
+
+/* La chincheta de estado vive sobre el mapa oscuro, no sobre el panel:
+   conserva el fondo oscuro para seguir legible encima del suelo. */
+.eq-modal .po-chincheta { fill: #161B24; stroke: #4A5160; }
+.eq-modal .po-cinta { fill: rgba(22, 27, 36, .92); }
+.eq-modal .po-nombre { fill: #F1F5F9; }
+.eq-modal .po-rotulo { fill: rgba(22, 27, 36, .86); }
+.eq-modal .po-rotulo-txt { fill: #F1F5F9; }
+
+/* El panel del puesto, en cambio, es interfaz: va claro. */
+.eq-modal .pp-panel { background: #FFFFFF; border-color: #E5E7EB; }
+.eq-modal .pp-tarea { background: #F9FAFB; }
+.eq-modal .pp-tarea:hover:not(:disabled) { background: #F3F4F6; }
+.eq-modal .pp-pin { background: #FFFFFF; border: 1px solid #E5E7EB; }
+.eq-modal .pp-burbuja { background: #F1F4F9; }
+.eq-modal .pp-burbuja.es-mia { background: #DBEAFE; }
+.eq-modal .pp-chat-barra textarea { background: #FFFFFF; }
+.eq-modal .pp-act-icono { background: #F1F4F9; }
+
+/* El botón de cerrar del panel del puesto: su clase quedó sin estilos al
+   retirar el plano antiguo, y el aspa resultaba casi invisible. */
+.tb-pm-ficha-cerrar {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    z-index: 2;
+    width: 26px;
+    height: 26px;
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--tb-borde);
+    border-radius: 50%;
+    background: var(--tb-panel-2);
+    color: var(--tb-txt);
+    font-size: 12px;
+    line-height: 1;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+.tb-pm-ficha-cerrar:hover {
+    background: var(--tb-rojo);
+    border-color: var(--tb-rojo);
+    color: #FFFFFF;
+}
+
+.tb-pm-ficha-cerrar:focus-visible {
+    outline: 2px solid var(--tb-azul);
+    outline-offset: 2px;
+}
+
+/* El panel necesita ser el origen del posicionamiento para que el aspa
+   quede en SU esquina y no en la de la página. */
+.pp-panel { position: relative; }
+
+/* ===================== Agenda: estilo revisado =====================
+   Los fondos iban con un gris fijo (rgba 148,163,184) que en el tema
+   claro se veía como un bloque plano. Ahora cada día es una tarjeta con
+   su color de estado, y la fecha se separa con una línea en vez de con
+   un rectángulo gris. */
 
 .tb-ag-dia {
     display: grid;
-    grid-template-columns: 92px minmax(0, 1fr);
-    gap: 14px;
-    padding: 10px 12px;
-    background: rgba(148, 163, 184, .07);
+    grid-template-columns: 86px minmax(0, 1fr);
+    gap: 0;
+    padding: 0;
+    background: var(--tb-panel);
+    border: 1px solid var(--tb-borde);
+    border-left: 3px solid var(--tb-borde);
     border-radius: 10px;
-    border-left: 3px solid transparent;
+    overflow: hidden;
+    transition: border-color .15s ease, box-shadow .15s ease;
 }
 
-.tb-ag-dia.es-finde { background: rgba(148, 163, 184, .04); }
+.tb-ag-dia:hover { box-shadow: 0 2px 10px rgba(0, 0, 0, .12); }
 
-.tb-ag-dia.es-hoy {
-    background: rgba(34, 168, 204, .12);
-    border-left-color: var(--tb-azul);
-}
-
+/* La columna de la fecha se separa con un filo, no con otro bloque. */
 .tb-ag-fecha {
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
+    align-items: center;
+    justify-content: center;
     gap: 1px;
+    padding: 12px 8px;
+    border-right: 1px solid var(--tb-borde);
+    background: var(--tb-panel-2);
+    text-align: center;
 }
 
 .tb-ag-dsem {
-    font-size: 10px;
+    font-size: 10.5px;
     font-weight: 700;
-    letter-spacing: .1em;
-    color: var(--tb-tenue, #64748B);
+    letter-spacing: .12em;
+    color: var(--tb-txt);
+    opacity: .72;
 }
 
 .tb-ag-num {
-    font-size: 28px;
+    font-size: 30px;
     line-height: 1;
-    font-weight: 700;
+    font-weight: 800;
+    color: var(--tb-txt);
 }
 
 .tb-ag-mes {
-    font-size: 10px;
-    letter-spacing: .07em;
-    color: var(--tb-tenue, #64748B);
+    font-size: 10.5px;
+    letter-spacing: .06em;
+    color: var(--tb-txt);
+    opacity: .72;
+    white-space: nowrap;
 }
 
+/* El fin de semana se insinúa; no es un estado, sólo contexto. */
+.tb-ag-dia.es-finde .tb-ag-fecha { opacity: .72; }
+
+/* Hoy manda: borde propio y fecha destacada. */
+.tb-ag-dia.es-hoy {
+    border-left-color: var(--tb-azul);
+    border-color: var(--tb-azul);
+}
+
+.tb-ag-dia.es-hoy .tb-ag-fecha {
+    background: color-mix(in srgb, var(--tb-azul) 14%, transparent);
+}
+
+.tb-ag-dia.es-hoy .tb-ag-num { color: var(--tb-azul); }
+
+/* Un día con entregas vencidas se marca en el filo izquierdo: es la
+   señal que hay que ver al recorrer la lista de arriba abajo. */
+.tb-ag-dia.es-vencido { border-left-color: var(--tb-rojo); }
+
 .tb-ag-hoy {
-    margin-top: 3px;
+    margin-top: 4px;
     background: var(--tb-azul);
-    color: #04202B;
+    color: #FFFFFF;
     border-radius: 999px;
-    padding: 1px 7px;
+    padding: 1px 8px;
     font-size: 9.5px;
     font-weight: 800;
     letter-spacing: .09em;
 }
 
 .tb-ag-atraso {
-    margin-top: 3px;
+    margin-top: 4px;
     font-size: 10px;
     color: var(--tb-rojo);
-    font-weight: 600;
+    font-weight: 700;
+    white-space: nowrap;
 }
+
+/* ---------- Las entregas del día ---------- */
 
 .tb-ag-lista {
     display: flex;
     flex-direction: column;
-    gap: 6px;
     min-width: 0;
+    padding: 0;
 }
 
-.tb-ag-nada {
-    margin: 0;
-    align-self: center;
-    font-size: 12px;
-    font-style: italic;
-    color: var(--tb-tenue, #64748B);
-}
-
+/* Las tareas de un mismo día se separan con una línea, no con huecos:
+   se leen como filas de una misma jornada. */
 .tb-ag-tarea {
     display: flex;
-    align-items: flex-start;
-    gap: 9px;
+    align-items: center;
+    gap: 11px;
     width: 100%;
-    padding: 7px 9px;
-    background: rgba(15, 23, 42, .35);
-    border: 1px solid rgba(148, 163, 184, .16);
-    border-radius: 8px;
+    padding: 11px 13px;
+    background: transparent;
+    border: 0;
+    border-bottom: 1px solid var(--tb-borde);
+    border-radius: 0;
     text-align: left;
     color: inherit;
     font: inherit;
 }
 
+.tb-ag-lista > .tb-ag-tarea:last-child { border-bottom: 0; }
+
 .tb-ag-tarea.es-pulsable { cursor: pointer; }
 
 .tb-ag-tarea.es-pulsable:hover {
-    border-color: var(--tb-azul);
-    background: rgba(34, 168, 204, .1);
+    background: color-mix(in srgb, var(--tb-azul) 9%, transparent);
 }
 
 .tb-ag-tarea.es-pulsable:focus-visible {
     outline: 2px solid var(--tb-azul);
-    outline-offset: 2px;
+    outline-offset: -2px;
 }
 
 .tb-ag-avatar {
-    width: 26px;
-    height: 26px;
+    width: 34px;
+    height: 34px;
     border-radius: 50%;
     object-fit: cover;
     flex-shrink: 0;
     display: grid;
     place-items: center;
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 700;
+    background: var(--tb-panel-2);
+    border: 1px solid var(--tb-borde);
+    color: var(--tb-txt-tenue);
 }
 
 .tb-ag-info {
     display: flex;
     flex-direction: column;
-    gap: 1px;
+    gap: 2px;
     min-width: 0;
     flex: 1;
 }
 
 .tb-ag-titulo {
-    font-size: 13px;
+    font-size: 13.5px;
     font-weight: 600;
-    line-height: 1.3;
+    line-height: 1.35;
+    color: var(--tb-txt);
     overflow-wrap: anywhere;
 }
 
+/* El nombre en una línea y el proyecto recortado: en un día con varias
+   entregas, tres líneas por fila hacían ilegible la jornada. */
 .tb-ag-quien {
-    font-size: 11px;
-    color: var(--tb-tenue, #94A3B8);
-    overflow-wrap: anywhere;
+    font-size: 11.5px;
+    color: var(--tb-txt-tenue);
+    line-height: 1.35;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
 }
 
-.tb-ag-proyecto { opacity: .75; }
+.tb-ag-proyecto { opacity: .88; }
 
 .tb-ag-senales {
     display: flex;
@@ -1548,26 +2614,87 @@ a.tb-btn-sec, a.tb-btn-sec:visited { color: var(--tb-txt); }
 .tb-ag-senal {
     font-size: 9.5px;
     font-weight: 700;
-    letter-spacing: .05em;
-    padding: 1px 6px;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    padding: 2px 7px;
     border-radius: 999px;
+    border: 1px solid transparent;
 }
 
-.tb-ag-senal.es-bloqueada { background: rgba(229, 72, 77, .18); color: var(--tb-rojo); }
-.tb-ag-senal.es-pausada { background: rgba(236, 162, 0, .16); color: var(--tb-amarillo); }
-.tb-ag-senal.es-sincriterio { background: rgba(100, 116, 139, .2); color: #B8C4D4; }
+.tb-ag-senal.es-bloqueada {
+    background: color-mix(in srgb, var(--tb-rojo) 14%, transparent);
+    border-color: color-mix(in srgb, var(--tb-rojo) 40%, transparent);
+    color: var(--tb-rojo);
+}
 
+.tb-ag-senal.es-pausada {
+    background: color-mix(in srgb, var(--tb-amarillo) 14%, transparent);
+    border-color: color-mix(in srgb, var(--tb-amarillo) 40%, transparent);
+    color: var(--tb-amarillo);
+}
+
+.tb-ag-senal.es-sincriterio {
+    background: transparent;
+    border-color: var(--tb-borde);
+    color: var(--tb-txt-tenue);
+}
+
+/* La prioridad alta es un punto, no una etiqueta: va al margen para no
+   competir con las señales, que sí describen el estado del trabajo. */
 .tb-ag-alta {
-    width: 7px;
-    height: 7px;
+    width: 8px;
+    height: 8px;
     border-radius: 50%;
     background: var(--tb-rojo);
     flex-shrink: 0;
-    margin-top: 9px;
+    align-self: center;
 }
 
-@media (max-width: 640px) {
-    .tb-ag-dia { grid-template-columns: 1fr; gap: 8px; }
-    .tb-ag-fecha { flex-direction: row; align-items: baseline; gap: 7px; }
+/* El hueco entre entregas: una línea discreta con el conteo. */
+.tb-ag-hueco {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 2px 0;
+    font-size: 10.5px;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--tb-txt-tenue);
+}
+
+.tb-ag-hueco::before,
+.tb-ag-hueco::after {
+    content: "";
+    flex: 1;
+    border-top: 1px dashed var(--tb-borde);
+}
+
+.tb-ag-nada {
+    margin: 0;
+    align-self: center;
+    padding: 14px;
+    font-size: 12px;
+    font-style: italic;
+    color: var(--tb-txt-tenue);
+}
+
+@media (max-width: 620px) {
+    .tb-ag-dia { grid-template-columns: 1fr; }
+    .tb-ag-fecha {
+        flex-direction: row;
+        justify-content: flex-start;
+        gap: 8px;
+        padding: 8px 12px;
+        border-right: 0;
+        border-bottom: 1px solid var(--tb-borde);
+    }
     .tb-ag-num { font-size: 20px; }
+}
+
+/* Enlace de respaldo de la videollamada: si el iframe no consigue
+   permisos de cámara, la pestaña propia siempre los obtiene. */
+.pp-video-pie a {
+    color: var(--tb-azul);
+    font-weight: 600;
+    text-decoration: underline;
 }

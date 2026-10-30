@@ -2540,7 +2540,10 @@ body {
 
 /* Contenedor de las cards */
 .cards-container {
-    margin-top: 120px; /* Altura del dashboard-header + padding */
+    /* La altura la mide el Dashboard y la publica en --alto-cabecera-tablero:
+       la cabecera es fija y crece cuando la barra de búsqueda envuelve. El valor
+       de respaldo sólo cubre el primer pintado, antes de la medición. */
+    margin-top: calc(var(--alto-cabecera-tablero, 120px) + 0.5rem);
     padding: 1rem;
     width: 100%;
 }
@@ -2622,9 +2625,6 @@ body {
         margin-left: 0;
     }
 
-    .cards-container {
-        margin-top: 100px; /* Ajustar según necesidad en móviles */
-    }
 }
 
 @media (max-width: 640px) {
@@ -5902,8 +5902,11 @@ body {
     }
 
     .dashboard-header {
-        left: 120px;
-        padding: 2rem;
+        /* Alineada con .dashboard-content-column, que usa margin-left: 100px.
+           El padding se mantiene moderado: con 2rem la cabecera crecía tanto
+           que tapaba la primera fila de tarjetas. */
+        left: 100px;
+        padding: 1rem 1.5rem;
     }
 
     .parameters-container {
@@ -8441,6 +8444,8 @@ body {
 .task-options-item.item-archive svg   { color: #10b981; }
 .task-options-item.item-seguimiento svg { color: #16a34a; }
 .task-options-item.item-reportes svg  { color: #f59e0b; }
+.task-options-item.item-plano svg     { color: #0d9488; }
+.task-options-item.item-equipo svg    { color: #8b5cf6; }
 
 .task-options-divider {
     height: 1px;

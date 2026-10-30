@@ -13,6 +13,7 @@ import config from '../config';
 import { useUser } from './UserContext';
 import axiosInstance from '../axiosConfig';
 import { FaCircleCheck, FaCircle, FaCircleXmark } from 'react-icons/fa6';
+import CriteriosAceptacion from './criterios/CriteriosAceptacion';
 
 /** Normaliza aprobada desde API (1, "1", true, etc.) */
 const esTareaAprobadaValor = (v) => {
@@ -69,7 +70,6 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton, is
         fecha_pactada: task.fecha_pactada,
         proyecto_id: task.proyecto_id ?? '',
         proposito: task.proposito ?? '',
-        criterio: task.criterio ?? ''
     });
     const [proyectos, setProyectos] = useState([]);
     //obtener el id del usuario logueado de variable de sesion laravel
@@ -82,9 +82,6 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton, is
     const [tempDriveLinks, setTempDriveLinks] = useState([]);
     // Estado para manejar la selección de radio buttons
     const [revisionSelection, setRevisionSelection] = useState('');
-    // Verificación del criterio de cumplimiento
-    const [evidenciaCriterio, setEvidenciaCriterio] = useState('');
-    const [verificando, setVerificando] = useState(false);
     const [bloqueando, setBloqueando] = useState(false);
     // Subtareas / checklist (misma UX que EmployeeModal: panel, título, copiar, filas inline)
     const [subtareas, setSubtareas] = useState([]);
@@ -969,6 +966,7 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton, is
     };
 
     const handleVistoBueno = async (checked) => {
+        const previo = { vistoBueno, rechazada, revisionSelection };
         setVistoBueno(checked);
         if (checked) {
             setRechazada(false); // Desactivar rechazada si se activa visto bueno
@@ -982,13 +980,19 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton, is
             setIsUploading(false);
             fireSwal('¡Éxito!', 'Visto bueno actualizado correctamente', 'success');
         } catch (error) {
-            fireSwal('Error', 'Error al actualizar el visto bueno', 'error');
+            // Si el servidor lo rechaza, la casilla vuelve a como estaba: no
+            // debe mostrarse un visto bueno que no quedó guardado.
+            setVistoBueno(previo.vistoBueno);
+            setRechazada(previo.rechazada);
+            setRevisionSelection(previo.revisionSelection);
+            fireSwal('Error', error?.response?.data?.error || 'Error al actualizar el visto bueno', 'error');
         } finally {
             setIsUploading(false);
         }
     };
 
     const handleRechazada = async (checked) => {
+        const previo = { vistoBueno, rechazada, revisionSelection };
         setRechazada(checked);
         if (checked) {
             setVistoBueno(false); // Desactivar visto bueno si se activa rechazada
@@ -1001,7 +1005,10 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton, is
             onUpdate();
             fireSwal('¡Éxito!', 'Tarea rechazada correctamente', 'success');
         } catch (error) {
-            fireSwal('Error', 'Error al rechazar la tarea', 'error');
+            setVistoBueno(previo.vistoBueno);
+            setRechazada(previo.rechazada);
+            setRevisionSelection(previo.revisionSelection);
+            fireSwal('Error', error?.response?.data?.error || 'Error al rechazar la tarea', 'error');
         } finally {
             setIsUploading(false);
         }
@@ -1049,48 +1056,8 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton, is
         }
     };
 
-    /**
-     * Verifica el criterio pactado y cierra la tarea, o la devuelve a En Proceso.
-     *
-     * Al devolver se pide la razón: una tarea que vuelve sin explicación deja al
-     * responsable adivinando qué faltó.
-     */
-    const handleVerificar = async (cumple) => {
-        let observacion = '';
-
-        if (!cumple) {
-            const { value, isConfirmed } = await Swal.fire({
-                title: '¿Por qué no se cumple?',
-                input: 'textarea',
-                inputPlaceholder: 'Qué falta para dar por cumplido el criterio',
-                showCancelButton: true,
-                confirmButtonText: 'Devolver tarea',
-                cancelButtonText: 'Cancelar',
-                inputValidator: (v) => (!v || !v.trim())
-                    ? 'Indica qué falta: el responsable necesita saberlo.'
-                    : undefined,
-            });
-            if (!isConfirmed) return;
-            observacion = value;
-        }
-
-        setVerificando(true);
-        try {
-            const { data } = await axiosInstance.put(`/verificarTarea/${task.id}`, {
-                cumple,
-                evidencia: evidenciaCriterio,
-                observacion,
-            });
-            onUpdate();
-            fireSwal('¡Listo!', data.success, 'success');
-        } catch (error) {
-            fireSwal('Error', error?.response?.data?.error || 'No fue posible verificar la tarea.', 'error');
-        } finally {
-            setVerificando(false);
-        }
-    };
-
     const handleAprobada = async (checked) => {
+        const previo = aprobada;
         setAprobada(checked);
         setIsUploading(true);
         try {
@@ -1104,7 +1071,8 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton, is
                 fireSwal('¡Éxito!', 'Tarea desaprobada correctamente', 'success');
             }
         } catch (error) {
-            fireSwal('Error', 'Error al aprobar la tarea', 'error');
+            setAprobada(previo);
+            fireSwal('Error', error?.response?.data?.error || 'Error al aprobar la tarea', 'error');
         } finally {
             setIsUploading(false);
         }
@@ -1303,6 +1271,7 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton, is
     };
 
     const handleHabilitarEdicion = async (checked) => {
+        const previo = editable;
         setEditable(checked);
         setIsUploading(true);
         try {
@@ -1312,7 +1281,8 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton, is
             onUpdate();
             Swal.fire('¡Éxito!', 'Tarea habilitada correctamente', 'success');
         } catch (error) {
-            Swal.fire('Error', 'Error al habilitar la tarea', 'error');
+            setEditable(previo);
+            Swal.fire('Error', error?.response?.data?.error || 'Error al habilitar la tarea', 'error');
         } finally {
             setIsUploading(false);
         }
@@ -1494,7 +1464,6 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton, is
             task.proyecto_id = editedTask.proyecto_id || null;
             task.proyecto_nombre = res.data?.proyecto_nombre ?? null;
             task.proposito = editedTask.proposito || null;
-            task.criterio = editedTask.criterio || null;
 
             onUpdate();
 
@@ -1505,11 +1474,10 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton, is
                 fecha_pactada: editedTask.fecha_pactada,
                 proyecto_id: editedTask.proyecto_id,
                 proposito: editedTask.proposito,
-                criterio: editedTask.criterio
             });
             Swal.fire('¡Éxito!', 'Tarea actualizada correctamente', 'success');
         } catch (error) {
-            // El servidor explica por qué (criterio vaciado, muy corto…); un
+            // El servidor explica por qué (propósito muy corto…); un
             // mensaje genérico dejaría al usuario sin saber qué corregir.
             Swal.fire('Error', error?.response?.data?.error || 'Error al actualizar la tarea', 'error');
         } finally {
@@ -1999,18 +1967,6 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton, is
                                                 />
                                             </div>
                                             <div className="form-group">
-                                                <label htmlFor="criterio">¿Cómo sabremos que se cumplió?</label>
-                                                <textarea
-                                                    id="criterio"
-                                                    name="criterio"
-                                                    value={editedTask.criterio}
-                                                    onChange={handleInputChange}
-                                                    className="form-control"
-                                                    rows="2"
-                                                    placeholder="Algo verificable. Ej.: Acta firmada por la interventoría"
-                                                />
-                                            </div>
-                                            <div className="form-group">
                                                 <label htmlFor="prioridad">Prioridad:</label>
                                                 <select
                                                     id="prioridad"
@@ -2069,10 +2025,9 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton, is
                                     </div>
                                 )}
 
-                                {/* El criterio es lo que distingue "la movieron" de
-                                    "se cumplió": debe estar a la vista sin tener que
-                                    entrar a editar. Si falta, se dice —son 106 tareas
-                                    heredadas y el aviso es lo que mueve a pactarlo. */}
+                                {/* Para qué sirve la tarea y si algo la detiene: a la
+                                    vista sin tener que entrar a editar. Los criterios
+                                    de aceptación van en su propia sección, debajo. */}
                                 {!isEditingTask && (
                                     <div className="task-metodo">
                                         {task.proposito && (
@@ -2103,32 +2058,6 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton, is
                                             </div>
                                         )}
 
-                                        {task.criterio ? (
-                                            <div className={`metodo-item metodo-criterio${Number(task.criterio_cumplido) === 1 ? ' es-verificado' : ''}`}>
-                                                <span className="metodo-label">
-                                                    Cómo sabremos que se cumplió
-                                                    {Number(task.criterio_cumplido) === 1 && (
-                                                        <span className="metodo-sello">
-                                                            <FaCheck /> Verificado
-                                                        </span>
-                                                    )}
-                                                </span>
-                                                <p>{task.criterio}</p>
-                                                {task.evidencia_criterio && (
-                                                    <p className="metodo-evidencia">
-                                                        Evidencia: {task.evidencia_criterio}
-                                                    </p>
-                                                )}
-                                            </div>
-                                        ) : (
-                                            <div className="metodo-item metodo-falta">
-                                                <p>
-                                                    Esta tarea no tiene criterio de cumplimiento.
-                                                    Edítala para pactar cómo sabremos que se cumplió.
-                                                </p>
-                                            </div>
-                                        )}
-
                                         {/* Lo declara quien hace el trabajo, sin pedir
                                             permiso: exigir un trámite para reconocer un
                                             impedimento desalienta reportarlo. */}
@@ -2144,6 +2073,13 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton, is
                                             </button>
                                         )}
                                     </div>
+                                )}
+
+                                {/* Criterios de aceptación: independientes del
+                                    checklist. Miden si el resultado cumple lo
+                                    pactado; el checklist, cuánto se ejecutó. */}
+                                {!isEditingTask && task?.id && (
+                                    <CriteriosAceptacion task={task} onUpdate={onUpdate} />
                                 )}
 
                                 <div className="task-dates">
@@ -2764,44 +2700,6 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton, is
                                                 </label>
                                             </div>
                                         </div>
-
-                                        {/* Verificación del criterio: el paso que
-                                            convierte "la movieron" en "se cumplió".
-                                            Sólo aparece sobre tareas entregadas que
-                                            llevan criterio pactado. */}
-                                        {task.estado === 'En Revisión' && task.criterio && (
-                                            <div className='verificacion-panel'>
-                                                <h4>Verificar el cumplimiento</h4>
-                                                <p className='verificacion-criterio'>
-                                                    <strong>Criterio pactado:</strong> {task.criterio}
-                                                </p>
-                                                <input
-                                                    type="text"
-                                                    className='verificacion-evidencia'
-                                                    placeholder="Evidencia: enlace o nota (opcional)"
-                                                    value={evidenciaCriterio}
-                                                    onChange={(e) => setEvidenciaCriterio(e.target.value)}
-                                                />
-                                                <div className='verificacion-acciones'>
-                                                    <button
-                                                        type="button"
-                                                        className='btn-verificar-ok'
-                                                        disabled={verificando}
-                                                        onClick={() => handleVerificar(true)}
-                                                    >
-                                                        Se cumple · cerrar tarea
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        className='btn-verificar-no'
-                                                        disabled={verificando}
-                                                        onClick={() => handleVerificar(false)}
-                                                    >
-                                                        No se cumple · devolver
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        )}
 
                                         {task.estado === 'Completada' && (
                                             <div className='vistoBueno-panel'>

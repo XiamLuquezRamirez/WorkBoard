@@ -20,6 +20,15 @@ return Application::configure(basePath: dirname(__DIR__))
             'verified' => \App\Http\Middleware\EnsureEmailIsVerified::class,
         ]);
 
+        // La cookie del token CSRF se llama «XSRF-TOKEN» en todas las
+        // aplicaciones Laravel y el navegador no distingue el puerto, así que
+        // varios proyectos servidos desde localhost se pisaban el token entre
+        // sí. Este reemplazo le da a la cookie el nombre de esta aplicación.
+        $middleware->web(replace: [
+            \Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class
+                => \App\Http\Middleware\VerifyCsrfToken::class,
+        ]);
+
         //
     })
     ->withExceptions(function (Exceptions $exceptions) {

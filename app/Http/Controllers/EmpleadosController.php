@@ -599,11 +599,17 @@ class EmpleadosController extends Controller
             $reglas['descripcion']   = 'required|string|min:10';
             $reglas['fecha_pactada'] = 'required|date|after_or_equal:today';
             // Obligatorios sólo al crear: una tarea nace con un para qué y con
-            // la forma de saber que se cumplió. Al editar se relajan porque las
-            // 106 tareas vivas nacieron sin ellos y exigirlos impediría guardar
-            // cambios en campos ajenos.
+            // la forma de saber que el resultado está bien. Al editar se relajan
+            // porque las tareas vivas nacieron sin ellos.
             $reglas['proposito'] = 'required|string|min:10|max:500';
-            $reglas['criterio']  = 'required|string|min:10';
+
+            // El texto único de criterio se sustituyó por una lista de criterios
+            // de aceptación. Si una pantalla aún sin recargar manda el texto, se
+            // convierte en el primer criterio en vez de rechazar la tarea.
+            if (!$request->has('criterios') && trim((string) $request->input('criterio')) !== '') {
+                $request->merge(['criterios' => [['descripcion' => $request->input('criterio')]]]);
+            }
+            $reglas += CriteriosAceptacionController::reglasAlCrear();
         } else {
             $reglas['id'] = 'required|integer';
         }
@@ -615,7 +621,7 @@ class EmpleadosController extends Controller
             'proposito.min'                  => 'El propósito debe explicarse en al menos 10 caracteres.',
             'criterio.required'              => 'Indica cómo sabremos que la tarea se cumplió.',
             'criterio.min'                   => 'El criterio debe explicarse en al menos 10 caracteres.',
-        ]);
+        ] + CriteriosAceptacionController::mensajesAlCrear());
 
         $tarea = $request->all();
         DB::connection('mysql2')->beginTransaction();
@@ -634,8 +640,12 @@ class EmpleadosController extends Controller
                     'editable' => 1,
                     'proyecto_id' => $tarea['proyecto_id'] ?? null,
                     'proposito' => trim($tarea['proposito']),
-                    'criterio' => trim($tarea['criterio']),
                 ]);
+
+                // Los criterios de aceptación nacen con la tarea, dentro de la
+                // misma transacción: o se guarda todo o nada.
+                app(CriteriosAceptacionController::class)
+                    ->crearIniciales($IdTarea, $request->input('criterios', []));
             } else {
                 $cambios = [
                     'titulo' => $tarea['titulo'],
@@ -851,17 +861,20 @@ class EmpleadosController extends Controller
             ], 409);
         }
 
-        // Una tarea sólo se cierra verificando su criterio, y eso lo hace el
-        // líder del responsable: si el propio responsable pudiera marcarla
-        // Completada, el método quedaría en nada. Entrega con "En Revisión" y
-        // el cierre pasa por verificarTarea().
+        // Una tarea con criterios de aceptación sólo se cierra aceptando la
+        // entrega (CriteriosAceptacionController@aceptar), que exige los
+        // obligatorios cumplidos y lo hace alguien autorizado. Si arrastrar la
+        // tarjeta a Completada bastara, los criterios quedarían en nada.
         //
-        // Las heredadas sin criterio quedan exentas: nacieron antes del método
-        // y bloquearlas dejaría 106 tareas vivas sin forma de cerrarse.
-        if ($tarea['estado'] === 'Completada' && !empty($actual->criterio)) {
+        // Las heredadas sin criterios quedan exentas: nacieron antes del método
+        // y bloquearlas dejaría las tareas vivas sin forma de cerrarse.
+        $tieneCriterios = DB::connection('mysql2')->table('tarea_criterios')
+            ->where('tarea_id', $id)->whereNull('eliminado_at')->exists();
+
+        if ($tarea['estado'] === 'Completada' && $tieneCriterios) {
             return response()->json([
-                'error' => 'Esta tarea se cierra verificando su criterio de cumplimiento. '
-                         . 'Pásala a «' . self::EN_REVISION . '» para que tu líder la verifique.',
+                'error' => 'Esta tarea se cierra aceptando la entrega según sus criterios. '
+                         . 'Pásala a «' . self::EN_REVISION . '» para que tu líder la revise.',
                 'requiere_verificacion' => true,
             ], 409);
         }
@@ -878,6 +891,19 @@ class EmpleadosController extends Controller
                     'estado' => $tarea['estado']
                 ]);
             }
+            // El envío a revisión es un hito del flujo de aceptación: se anota
+            // en el historial de criterios, junto a lo que luego se verifique.
+            if ($tieneCriterios && $tarea['estado'] === self::EN_REVISION && $actual->estado !== self::EN_REVISION) {
+                DB::connection('mysql2')->table('tarea_criterio_historial')->insert([
+                    'tarea_id'    => $id,
+                    'evento'      => 'enviada_revision',
+                    'antes'       => json_encode(['estado' => $actual->estado], JSON_UNESCAPED_UNICODE),
+                    'despues'     => json_encode(['estado' => self::EN_REVISION], JSON_UNESCAPED_UNICODE),
+                    'usuario_id'  => $this->usuarioAutenticado()->id ?? null,
+                    'created_at'  => now(),
+                ]);
+            }
+
             //insertar evidencias
             if (isset($tarea['evidencias'])) {
                 foreach ($tarea['evidencias'] as $evidencia) {
@@ -1774,20 +1800,22 @@ class EmpleadosController extends Controller
 
     function vistoBueno(Request $request, $id)
     {
-        $data = $request->all();
-        //dd($data);
-        //manejo de errores
-        try {
+        $data = $request->validate(['visto_bueno' => 'required|boolean']);
 
+        $tarea = $this->exigirSupervisor($id);
+        if ($tarea instanceof \Illuminate\Http\JsonResponse) {
+            return $tarea;
+        }
+
+        try {
             DB::connection('mysql2')->table('tareas_empleados')
                 ->where('id', $id)
                 ->update([
-                    'visto_bueno' => (int) filter_var($data['visto_bueno'], FILTER_VALIDATE_BOOLEAN),
+                    'visto_bueno' => (int) $data['visto_bueno'],
                     'rechazada' => '0'
                 ]);
 
             self::guardarNotificacion($id, 'VistoBueno');
-
 
             return response()->json(['success' => 'Visto bueno actualizado correctamente'], 200);
         } catch (\Exception $e) {
@@ -1797,53 +1825,96 @@ class EmpleadosController extends Controller
 
     function rechazarTarea($id, Request $request)
     {
+        $data = $request->validate(['rechazada' => 'required|boolean']);
 
-        $data = $request->all();
-       // dd($data);
+        $tarea = $this->exigirSupervisor($id);
+        if ($tarea instanceof \Illuminate\Http\JsonResponse) {
+            return $tarea;
+        }
+
+        $rechazada = (bool) $data['rechazada'];
+        $tieneCriterios = DB::connection('mysql2')->table('tarea_criterios')
+            ->where('tarea_id', $id)->whereNull('eliminado_at')->exists();
+
+        // Retirar un rechazo devuelve la tarea a Completada. Con criterios de
+        // aceptación eso saltaría la aceptación: si la tarea no estaba ya
+        // cerrada, sólo se cierra aceptando la entrega.
+        if (!$rechazada && $tieneCriterios && $tarea->estado !== 'Completada') {
+            return response()->json([
+                'error' => 'Esta tarea tiene criterios de aceptación: se cierra aceptando la entrega, no retirando el rechazo.',
+                'requiere_verificacion' => true,
+            ], 409);
+        }
+
+        DB::connection('mysql2')->beginTransaction();
         try {
-
             DB::connection('mysql2')->table('tareas_empleados')
                 ->where('id', $id)
                 ->update([
-                    'rechazada' => (int) filter_var($data['rechazada'], FILTER_VALIDATE_BOOLEAN),
+                    'rechazada' => (int) $rechazada,
                     'visto_bueno' => '0',
-                    'estado' => $data['rechazada'] ? 'En Proceso' : 'Completada'
+                    'estado' => $rechazada ? 'En Proceso' : 'Completada'
                 ]);
+
+            // Rechazar una tarea ya aceptada la reabre: queda constancia junto
+            // a la aceptación, que no se borra.
+            if ($rechazada && $tieneCriterios && $tarea->estado === 'Completada') {
+                DB::connection('mysql2')->table('tarea_criterio_historial')->insert([
+                    'tarea_id'   => $id,
+                    'evento'     => 'tarea_reabierta',
+                    'antes'      => json_encode(['estado' => 'Completada'], JSON_UNESCAPED_UNICODE),
+                    'despues'    => json_encode(['estado' => 'En Proceso'], JSON_UNESCAPED_UNICODE),
+                    'usuario_id' => $this->usuarioAutenticado()->id ?? null,
+                    'created_at' => now(),
+                ]);
+            }
 
             self::guardarNotificacion($id, 'Rechazada');
 
+            DB::connection('mysql2')->commit();
             return response()->json(['success' => 'Tarea rechazada correctamente'], 200);
         } catch (\Exception $e) {
+            DB::connection('mysql2')->rollBack();
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
 
     function aprobarTarea($id, Request $request)
     {
-        $data = $request->all();
-        if ($data['aprobada']) {
-            $tarea = DB::connection('mysql2')->table('tareas_empleados')->where('id', $id)->update([
-                'aprobada' => (int) filter_var($data['aprobada'], FILTER_VALIDATE_BOOLEAN),
-                'fecha_aprobacion' => $data['aprobada'] ? now() : null,
-                'editable' => 0
-            ]);
+        // Antes se leía $data['aprobada'] sin validar: un «false» en texto
+        // contaba como verdadero y aprobaba la tarea.
+        $data = $request->validate(['aprobada' => 'required|boolean']);
 
-            self::guardarNotificacion($id, 'Aprobada');
-        } else {
-            $tarea = DB::connection('mysql2')->table('tareas_empleados')->where('id', $id)->update([
-                'aprobada' => (int) filter_var($data['aprobada'], FILTER_VALIDATE_BOOLEAN),
-                'fecha_aprobacion' => $data['aprobada'] ? now() : null,
-                'editable' => 1
-            ]);
+        $tarea = $this->exigirSupervisor($id);
+        if ($tarea instanceof \Illuminate\Http\JsonResponse) {
+            return $tarea;
         }
+
+        $aprobada = (bool) $data['aprobada'];
+
+        DB::connection('mysql2')->table('tareas_empleados')->where('id', $id)->update([
+            'aprobada' => (int) $aprobada,
+            'fecha_aprobacion' => $aprobada ? now() : null,
+            'editable' => $aprobada ? 0 : 1,
+        ]);
+
+        if ($aprobada) {
+            self::guardarNotificacion($id, 'Aprobada');
+        }
+
         return response()->json(['success' => 'Tarea aprobada correctamente'], 200);
     }
     function habilitarEdicion($id, Request $request)
     {
-        $data = $request->all();
+        $data = $request->validate(['editable' => 'required|boolean']);
 
-        $tarea = DB::connection('mysql2')->table('tareas_empleados')->where('id', $id)->update([
-            'editable' => (int) filter_var($data['editable'], FILTER_VALIDATE_BOOLEAN),
+        $tarea = $this->exigirSupervisor($id);
+        if ($tarea instanceof \Illuminate\Http\JsonResponse) {
+            return $tarea;
+        }
+
+        DB::connection('mysql2')->table('tareas_empleados')->where('id', $id)->update([
+            'editable' => (int) $data['editable'],
         ]);
 
         return response()->json(['success' => 'Tarea habilitada correctamente'], 200);
@@ -2155,7 +2226,7 @@ class EmpleadosController extends Controller
         $tareas = $base()
             ->select([
                 't.id', 't.titulo', 't.estado', 't.prioridad', 't.fecha_pactada',
-                't.pausada', 't.bloqueada', 't.criterio',
+                't.pausada', 't.bloqueada', DB::connection('mysql2')->raw(CriteriosAceptacionController::sqlConteo('t') . ' as n_criterios'),
                 't.empleado as empleado_id',
                 'p.nombre as proyecto_nombre',
                 'u.name as empleado_usuario',
@@ -2219,9 +2290,224 @@ class EmpleadosController extends Controller
                 'pausada'     => (int) ($t->pausada ?? 0) === 1
                                   && !in_array($t->estado, self::ESTADOS_NO_PAUSABLES, true),
                 'bloqueada'   => (int) ($t->bloqueada ?? 0) === 1,
-                'sin_criterio' => empty($t->criterio),
+                'sin_criterio' => (int) $t->n_criterios === 0,
             ])->values(),
         ];
+    }
+
+    /**
+     * Plano de la oficina: la organización vista como zonas y puestos.
+     *
+     * El tablero ordena el trabajo por estado; aquí se ordena por lugar. Cada
+     * departamento es una zona y cada persona un puesto, de modo que una zona
+     * entera en rojo se reconoce de lejos: eso es lo que las columnas no
+     * muestran.
+     *
+     * Devuelve siempre la organización completa y marca cuáles puestos son del
+     * equipo del líder. El alcance de lectura es deliberadamente amplio —un
+     * plano de tres puestos no dice nada—, pero el plano NO autoriza nada: sólo
+     * expone el pulso del trabajo. Abrir una tarea y actuar sobre ella sigue
+     * pasando por sus propios permisos, verificados en cada endpoint. Por eso
+     * aquí no viaja descripción, motivo de bloqueo ni observación: el detalle de
+     * un puesto ajeno se pide aparte, y allí manda resolutorAutorizado().
+     */
+    function tableroPlano(Request $request)
+    {
+        $conn = DB::connection('mysql2');
+        $hoy = Carbon::today();
+
+        $miEquipo = $this->equipoDelLiderActual();
+
+        // Empleados activos. Es la planta de la oficina, no el alcance del
+        // tablero: el plano se mira completo.
+        $empleados = $conn->table('empleados as e')
+            ->leftJoin('cargos as c', 'e.cargo', '=', 'c.id')
+            ->leftJoin('departamentos as d', 'e.departamento', '=', 'd.id')
+            ->leftJoin('empresas as em', 'e.empresa', '=', 'em.id')
+            ->where('e.estado_registro', 'Activo')
+            ->where('e.estado', 'Activo')
+            // La foto no viaja aquí: en esta instalación se guarda como base64
+            // en la propia tabla y sumaba 1,4 MB sobre un plano de 20 KB. El
+            // diccionario de avatares ya se carga una sola vez por separado
+            // (AvataresContext), así que el plano sólo envía el id.
+            ->select(
+                'e.id',
+                'e.departamento as departamento_id',
+                'c.nombre as cargo',
+                'd.nombre as departamento',
+                'em.nombre as empresa',
+                'e.nombres',
+                'e.apellidos',
+                $conn->raw('CONCAT(e.nombres, " ", e.apellidos) as nombre')
+            )
+            ->get();
+
+        // Rótulo corto de cada puesto. Basta el primer nombre salvo cuando se
+        // repite: con dos «FABIAN» en la misma sala se llamaba a quien no era.
+        // Entonces se añade el primer apellido, que sí los distingue.
+        $primero = fn ($txt) => mb_strtoupper(strtok(trim((string) $txt), ' ') ?: '');
+        $repetidos = $empleados->countBy(fn ($e) => $primero($e->nombres))
+            ->filter(fn ($n) => $n > 1);
+        $etiqueta = function ($e) use ($primero, $repetidos) {
+            $nombre = strtok(trim((string) $e->nombres), ' ') ?: '';
+            if (!$repetidos->has($primero($e->nombres))) {
+                return $nombre;
+            }
+            $apellido = strtok(trim((string) $e->apellidos), ' ') ?: '';
+            return trim($nombre.' '.$apellido);
+        };
+
+        if ($empleados->isEmpty()) {
+            return response()->json(['zonas' => [], 'hoy' => $hoy->toDateString()]);
+        }
+
+        // Tareas vivas de toda la planta, en una sola consulta. No se une con
+        // empleados a propósito: aquí sólo se agrupa por empleado, y las tareas
+        // de gente que ya no existe se descartan al no encontrar su puesto.
+        $tareas = $conn->table('tareas_empleados as t')
+            ->whereIn('t.empleado', $empleados->pluck('id'))
+            ->where('t.estado_reg', 'Activo')
+            ->where(fn ($w) => $w->whereNull('t.archivar')->orWhere('t.archivar', '<>', 1))
+            ->whereNotIn('t.estado', ['Completada'])
+            ->select(
+                't.id',
+                't.titulo',
+                't.estado',
+                't.prioridad',
+                't.fecha_pactada',
+                't.pausada',
+                't.bloqueada',
+                DB::connection('mysql2')->raw(CriteriosAceptacionController::sqlConteo('t') . ' as n_criterios'),
+                't.empleado'
+            )
+            ->get()
+            ->groupBy('empleado');
+
+        $puestos = $empleados->map(function ($e) use ($tareas, $hoy, $miEquipo, $etiqueta) {
+            $mias = collect($tareas[$e->id] ?? []);
+
+            $pausadas = $mias->filter(fn ($t) => (int) ($t->pausada ?? 0) === 1
+                && !in_array($t->estado, self::ESTADOS_NO_PAUSABLES, true));
+            $bloqueadas = $mias->filter(fn ($t) => (int) ($t->bloqueada ?? 0) === 1);
+            $revision = $mias->filter(fn ($t) => $t->estado === self::EN_REVISION);
+            $atrasadas = $mias->filter(fn ($t) => $t->fecha_pactada
+                && Carbon::parse($t->fecha_pactada)->startOfDay()->lt($hoy));
+            $sinCriterio = $mias->filter(fn ($t) => (int) $t->n_criterios === 0);
+
+            // En qué está ahora: la tarea En Proceso más urgente. Si no hay
+            // ninguna el puesto se ve libre aunque tenga pendientes, que es la
+            // lectura honesta: nadie está trabajando en ellas.
+            $enCurso = $mias->filter(fn ($t) => $t->estado === 'En Proceso')
+                ->sortBy(fn ($t) => $t->fecha_pactada ?: '9999-12-31')
+                ->first();
+
+            // La señal más grave manda el color del puesto. El orden es el del
+            // método: lo que impide avanzar pesa más que lo que sólo va tarde.
+            $senal = 'libre';
+            if ($mias->isNotEmpty()) {
+                $senal = 'trabajando';
+            }
+            if ($sinCriterio->isNotEmpty()) {
+                $senal = 'sin_criterio';
+            }
+            if ($atrasadas->isNotEmpty()) {
+                $senal = 'atrasado';
+            }
+            if ($pausadas->isNotEmpty()) {
+                $senal = 'pausa';
+            }
+            if ($bloqueadas->isNotEmpty()) {
+                $senal = 'bloqueado';
+            }
+
+            return [
+                'id'              => (int) $e->id,
+                'nombre'          => $e->nombre,
+                'etiqueta'        => $etiqueta($e),
+                'cargo'           => $e->cargo,
+                'empresa'         => $e->empresa,
+                'departamento_id' => (int) ($e->departamento_id ?: 0),
+                'mi_equipo'       => in_array((int) $e->id, $miEquipo, true),
+                'senal'           => $senal,
+                'en_curso'        => $enCurso ? [
+                    'id'     => (int) $enCurso->id,
+                    'titulo' => $enCurso->titulo,
+                ] : null,
+                'conteos'         => [
+                    'vivas'        => $mias->count(),
+                    'atrasadas'    => $atrasadas->count(),
+                    'bloqueadas'   => $bloqueadas->count(),
+                    'pausadas'     => $pausadas->count(),
+                    'revision'     => $revision->count(),
+                    'sin_criterio' => $sinCriterio->count(),
+                ],
+            ];
+        });
+
+        // Zonas = departamentos, ordenadas por tamaño para que el plano se
+        // dibuje estable entre recargas y las salas grandes queden primero.
+        $zonas = $puestos->groupBy('departamento_id')
+            ->map(function ($gente, $idDepto) use ($empleados) {
+                $ref = $empleados->firstWhere('departamento_id', (int) $idDepto);
+                $g = collect($gente);
+
+                return [
+                    'id'      => (int) $idDepto,
+                    'nombre'  => $ref->departamento ?? 'Sin departamento',
+                    'puestos' => $g->sortBy('nombre')->values(),
+                    'resumen' => [
+                        'personas'   => $g->count(),
+                        'mi_equipo'  => $g->where('mi_equipo', true)->count(),
+                        'bloqueadas' => $g->sum(fn ($p) => $p['conteos']['bloqueadas']),
+                        'atrasadas'  => $g->sum(fn ($p) => $p['conteos']['atrasadas']),
+                        'revision'   => $g->sum(fn ($p) => $p['conteos']['revision']),
+                    ],
+                ];
+            })
+            ->sortByDesc(fn ($z) => $z['resumen']['personas'])
+            ->values();
+
+        return response()->json([
+            'hoy'             => $hoy->toDateString(),
+            'zonas'           => $zonas,
+            'mi_equipo_total' => count($miEquipo),
+        ]);
+    }
+
+    /**
+     * Ids de empleados a cargo del usuario actual, incluido él mismo.
+     *
+     * Sirve para resaltar en el plano, no para autorizar. Devuelve [] cuando el
+     * usuario no tiene empleado asociado; un administrador tampoco recibe la
+     * organización entera marcada como «su equipo», porque eso vaciaría de
+     * sentido el resalte.
+     */
+    private function equipoDelLiderActual(): array
+    {
+        $usuario = $this->usuarioAutenticado();
+        if (!$usuario || !($usuario->empleado ?? null)) {
+            return [];
+        }
+
+        $yo = (int) $usuario->empleado;
+
+        // El join descarta las referencias huérfanas de lideres_empleados: hay
+        // filas que apuntan a empleados que ya no existen.
+        //
+        // Los dos filtros de estado son necesarios y deben coincidir con los de
+        // la consulta de puestos: hay empleados con estado_registro «Activo»
+        // pero estado «Inactivo». Filtrando sólo por el primero, el contador
+        // del equipo incluía a gente que luego no aparecía en ningún puesto.
+        $asignados = DB::connection('mysql2')->table('lideres_empleados as le')
+            ->join('empleados as e', 'le.empleado', '=', 'e.id')
+            ->where('le.lider', $yo)
+            ->where('e.estado_registro', 'Activo')
+            ->where('e.estado', 'Activo')
+            ->pluck('e.id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
+        return array_values(array_unique(array_merge([$yo], $asignados)));
     }
 
     function tableroEstado(Request $request)
@@ -2269,7 +2555,7 @@ class EmpleadosController extends Controller
                 't.fecha_pactada',
                 't.fecha_entregada',
                 't.pausada',
-                't.criterio',
+                DB::connection('mysql2')->raw(CriteriosAceptacionController::sqlConteo('t') . ' as n_criterios'),
                 't.bloqueada',
                 't.motivo_bloqueo',
                 't.rechazada',
@@ -2365,7 +2651,7 @@ class EmpleadosController extends Controller
                     'checklist'       => $checklist,
                     // Bandera, no el texto: el criterio es largo y el sondeo
                     // corre cada 5 segundos. El texto se pide al abrir la tarea.
-                    'sin_criterio'    => empty($t->criterio),
+                    'sin_criterio'    => (int) $t->n_criterios === 0,
                     'bloqueada'       => (int) ($t->bloqueada ?? 0) === 1,
                     'motivo_bloqueo'  => $conDetalle ? $t->motivo_bloqueo : null,
                 ];
@@ -2579,91 +2865,6 @@ class EmpleadosController extends Controller
      * criterio no se cumple, la tarea vuelve a "En Proceso" con la observación,
      * en lugar de quedarse en revisión indefinidamente.
      */
-    function verificarTarea(Request $request, $id)
-    {
-        $data = $request->validate([
-            'cumple'     => 'required|boolean',
-            'evidencia'  => 'nullable|string|max:500',
-            'observacion' => 'nullable|string',
-        ]);
-
-        $tarea = DB::connection('mysql2')->table('tareas_empleados')->where('id', $id)->first();
-        if (!$tarea) {
-            return response()->json(['error' => 'Tarea no encontrada'], 404);
-        }
-
-        if ($tarea->estado !== self::EN_REVISION) {
-            return response()->json([
-                'error' => 'Sólo se verifican las tareas que están en revisión.',
-            ], 409);
-        }
-
-        $verificador = $this->resolutorAutorizado($tarea);
-        if (!$verificador) {
-            return response()->json([
-                'error' => 'No tienes permiso para verificar esta tarea. '
-                         . 'La verifica el líder del responsable.',
-            ], 403);
-        }
-
-        $cumple = (bool) $data['cumple'];
-
-        DB::connection('mysql2')->beginTransaction();
-        try {
-            $cambios = [
-                'criterio_cumplido'  => $cumple ? 1 : 0,
-                'verificada_por'     => $verificador->id,
-                'fecha_verificacion' => now(),
-            ];
-
-            if (array_key_exists('evidencia', $data)) {
-                $cambios['evidencia_criterio'] = trim((string) $data['evidencia']) ?: null;
-            }
-
-            if ($cumple) {
-                $cambios['estado'] = 'Completada';
-                // Sólo se fija si no venía de antes: una tarea reprogramada o
-                // reabierta conserva la fecha en que realmente se entregó.
-                if (empty($tarea->fecha_entregada)) {
-                    $cambios['fecha_entregada'] = now()->toDateString();
-                }
-            } else {
-                // Devuelta: el trabajo continúa y el plazo sigue corriendo.
-                $cambios['estado'] = 'En Proceso';
-                if (!empty($data['observacion'])) {
-                    $cambios['observacion_entrega'] = trim($data['observacion']);
-                }
-            }
-
-            DB::connection('mysql2')->table('tareas_empleados')->where('id', $id)->update($cambios);
-
-            $actor = $this->nombreActor();
-            $obs = !empty($data['observacion']) ? ' Observación: ' . trim($data['observacion']) : '';
-
-            $this->registrarActividad(
-                $id,
-                $cumple ? 'Verificada' : 'Devuelta',
-                $cumple
-                    ? "Criterio verificado por {$actor}. La tarea quedó cerrada."
-                    : "Tarea devuelta por {$actor}: el criterio no se cumple.{$obs}"
-            );
-
-            self::guardarNotificacion($id, $cumple ? 'Aprobada' : 'Rechazada');
-
-            DB::connection('mysql2')->commit();
-        } catch (\Exception $e) {
-            DB::connection('mysql2')->rollBack();
-            return response()->json(['error' => $e->getMessage()], 500);
-        }
-
-        return response()->json([
-            'success' => $cumple
-                ? 'Criterio verificado. La tarea quedó cerrada.'
-                : 'La tarea volvió a En Proceso con tu observación.',
-            'estado'  => $cumple ? 'Completada' : 'En Proceso',
-        ], 200);
-    }
-
     function tableroVideos(Request $request)
     {
         $todos = filter_var($request->query('todos', false), FILTER_VALIDATE_BOOLEAN);
@@ -2799,9 +3000,14 @@ class EmpleadosController extends Controller
      * la propia columna y cambian muy rara vez: el tablero las pide una vez al
      * montar y las reutiliza, en lugar de arrastrarlas en cada sondeo.
      */
-    function tableroAvatares()
+    function tableroAvatares(Request $request)
     {
-        $alcance = $this->alcanceEmpleadosInformes();
+        // El plano dibuja la organización entera, así que necesita todas las
+        // fotos; el alcance de informes dejaría a la mayoría con iniciales. Se
+        // pide de forma explícita con ?plano=1 en vez de ampliar el alcance
+        // por defecto, que seguiría rigiendo para los informes.
+        $paraPlano = $request->boolean('plano');
+        $alcance = $paraPlano ? null : $this->alcanceEmpleadosInformes();
 
         $q = DB::connection('mysql2')->table('empleados')
             ->where('estado_registro', 'Activo')
@@ -2876,6 +3082,48 @@ class EmpleadosController extends Controller
      * El id devuelto es el que debe persistirse en aprobado_por: confiar en el
      * valor enviado por el cliente permitía atribuir la aprobación a un tercero.
      */
+    /**
+     * Quién supervisa una tarea: aprobarla, darle visto bueno, rechazarla o
+     * habilitar su edición. Son los mismos que resuelven sus solicitudes
+     * (administrador o líder directo del responsable) y, además, el propio
+     * responsable si tiene independencia: es la autorización expresa con la
+     * que el panel de supervisión ya se le mostraba en sus propias tareas.
+     *
+     * Antes estos endpoints no comprobaban nada: cualquier usuario con sesión
+     * podía aprobar o rechazar cualquier tarea.
+     */
+    private function supervisorAutorizado($tarea): ?object
+    {
+        if ($u = $this->resolutorAutorizado($tarea)) {
+            return $u;
+        }
+
+        $u = $this->usuarioAutenticado();
+        $esSuya = $u && $u->empleado && (int) $u->empleado === (int) $tarea->empleado;
+
+        return $esSuya && strcasecmp(trim((string) ($u->independencia ?? '')), 'Si') === 0 ? $u : null;
+    }
+
+    /**
+     * Carga la tarea y exige supervisor. Devuelve la tarea, o la respuesta de
+     * error lista para devolver (404 si no existe, 403 si no está autorizado).
+     */
+    private function exigirSupervisor($id)
+    {
+        $tarea = DB::connection('mysql2')->table('tareas_empleados')->where('id', (int) $id)->first();
+        if (!$tarea) {
+            return response()->json(['error' => 'Tarea no encontrada'], 404);
+        }
+
+        if (!$this->supervisorAutorizado($tarea)) {
+            return response()->json([
+                'error' => 'No tienes permiso para supervisar esta tarea. Lo hace el líder del responsable.',
+            ], 403);
+        }
+
+        return $tarea;
+    }
+
     private function resolutorAutorizado($tarea): ?object
     {
         $email = Auth::user()->email ?? null;

@@ -6,6 +6,7 @@ import { useUser } from './UserContext';
 import Parameters from './Parameters';
 import Reportes from './Reportes';
 import TableroSeguimiento from './tablero/TableroSeguimiento';
+import TimbreLlamada from './equipo/TimbreLlamada';
 
 function App() {
     const { user } = useUser();
@@ -53,6 +54,10 @@ function App() {
                 {/* Ruta por defecto */}
                 <Route path="*" element={<Navigate to={user ? "/dashboard" : "/login"} />} />
             </Routes>
+
+            {/* El timbre vive fuera de las rutas: una llamada debe sonar se
+                esté en la pantalla que se esté, no sólo en el plano. */}
+            {user && <TimbreLlamada />}
         </HashRouter>
     );
 }

@@ -10,16 +10,20 @@ const AvataresContext = createContext({});
  * Las fotos se almacenan como base64 en la base de datos, así que no pueden
  * viajar en cada sondeo del tablero: se piden al montar y se reutilizan.
  */
-export function AvataresProvider({ children }) {
+export function AvataresProvider({ children, todaLaOrganizacion = false }) {
     const [avatares, setAvatares] = useState({});
 
     useEffect(() => {
         let vivo = true;
-        axiosInstance.get('/tablero/avatares')
+        axiosInstance.get('/tablero/avatares', {
+            // El plano muestra a toda la organización: sin esto la mayoría de
+            // los puestos saldría con iniciales en vez de foto.
+            params: todaLaOrganizacion ? { plano: 1 } : {},
+        })
             .then((r) => { if (vivo) setAvatares(r.data || {}); })
             .catch(() => { /* sin avatares se muestran las iniciales */ });
         return () => { vivo = false; };
-    }, []);
+    }, [todaLaOrganizacion]);
 
     return (
         <AvataresContext.Provider value={avatares}>

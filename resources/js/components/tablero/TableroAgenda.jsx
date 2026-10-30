@@ -155,7 +155,11 @@ export default function TableroAgenda({ datosTablero, interactivo, onVerTarea, o
                                     <React.Fragment key={d.fecha}>
                                         {hueco && <li className="tb-ag-hueco">{hueco}</li>}
 
-                                        <li className={`tb-ag-dia ${d.es_hoy ? 'es-hoy' : ''} ${finde ? 'es-finde' : ''}`}>
+                                        <li className={`tb-ag-dia ${d.es_hoy ? 'es-hoy' : ''} ${finde ? 'es-finde' : ''}`
+                                            // Un día ya pasado con entregas sin cerrar se
+                                            // marca en el filo: es lo que hay que ver al
+                                            // recorrer la lista de arriba abajo.
+                                            + (d.dias < 0 && d.tareas.length > 0 ? ' es-vencido' : '')}>
                                             <div className="tb-ag-fecha">
                                                 <span className="tb-ag-dsem">{DIAS[p.semana]}</span>
                                                 <strong className="tb-ag-num">{p.dia}</strong>

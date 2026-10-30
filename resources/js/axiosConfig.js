@@ -1,9 +1,11 @@
 import axios from 'axios';
+import { getAssetUrl } from './utils/assetHelper';
 
-// Determinar la URL base según el entorno
-const baseURL = process.env.NODE_ENV === 'production' 
-    ? 'https://ingeer.co/WorkBoard/public/api'  // Reemplaza con tu dominio real
-    : 'http://localhost:8000/api';
+// La base de la API se deduce de la base pública real de la aplicación, no de
+// un host escrito a mano. Antes apuntaba fijo a «localhost:8000»: servido el
+// proyecto en otro puerto, las peticiones salían hacia otra aplicación —con
+// withCredentials, además, en otro origen— y fallaban por CORS o por CSRF.
+const baseURL = getAssetUrl('api');
 
 // Crear una instancia de axios con la configuración base
 const axiosInstance = axios.create({
@@ -40,9 +42,11 @@ axiosInstance.interceptors.response.use(
             localStorage.removeItem('token');
             localStorage.removeItem('userWorkBoard');
 
-            // Evitar redirecciones múltiples
+            // Evitar redirecciones múltiples. La ruta de login también se
+            // resuelve contra la base real: «/WorkBoard/public» sólo existe en
+            // producción y en desarrollo llevaba a un 404.
             if (!window.location.pathname.includes('/login')) {
-                window.location.href = '/WorkBoard/public/login';
+                window.location.href = getAssetUrl('login');
             }
         }
         return Promise.reject(error);

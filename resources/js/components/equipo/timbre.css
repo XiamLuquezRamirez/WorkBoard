@@ -1,0 +1,171 @@
+/* Timbre de llamada entrante.
+   Aparece sobre cualquier pantalla de la aplicación, así que trae sus
+   propios colores: no puede depender de dónde esté montado. */
+
+.tl-aviso {
+    position: fixed;
+    top: 18px;
+    right: 18px;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    width: min(380px, calc(100vw - 36px));
+    padding: 14px 16px;
+    background: #111827;
+    color: #F9FAFB;
+    border-radius: 14px;
+    box-shadow: 0 16px 42px rgba(0, 0, 0, .42);
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    animation: tl-entra .28s cubic-bezier(.2, .9, .3, 1.1);
+}
+
+@keyframes tl-entra {
+    from { opacity: 0; transform: translateX(26px) scale(.96); }
+    to   { opacity: 1; transform: none; }
+}
+
+/* El aro late como un teléfono sonando: es lo que hace mirar la esquina
+   sin tener que leer nada. */
+.tl-aro {
+    position: relative;
+    flex: 0 0 46px;
+    width: 46px;
+    height: 46px;
+    display: grid;
+    place-items: center;
+}
+
+.tl-aro::before {
+    content: "";
+    position: absolute;
+    inset: -5px;
+    border-radius: 50%;
+    border: 2px solid #22C55E;
+    animation: tl-latir 1.5s ease-out infinite;
+}
+
+@keyframes tl-latir {
+    0%   { opacity: .75; transform: scale(.92); }
+    70%  { opacity: 0;   transform: scale(1.25); }
+    100% { opacity: 0;   transform: scale(1.25); }
+}
+
+.tl-avatar {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: #1F2937;
+    border: 2px solid #374151;
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.tl-txt { flex: 1; min-width: 0; }
+
+.tl-rotulo {
+    margin: 0;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    color: #9CA3AF;
+}
+
+.tl-quien {
+    margin: 2px 0 0;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.25;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tl-botones {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.tl-si, .tl-no {
+    border: none;
+    border-radius: 8px;
+    padding: 7px 13px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    white-space: nowrap;
+}
+
+.tl-si { background: #16A34A; color: #FFFFFF; }
+.tl-si:hover { background: #15803D; }
+
+.tl-no { background: #374151; color: #E5E7EB; }
+.tl-no:hover { background: #4B5563; }
+
+/* ---------- La sala, una vez aceptada ---------- */
+
+/* Flotante y en una esquina: la llamada acompaña al trabajo en vez de
+   taparlo, que es lo que haría un modal a pantalla completa. */
+.tl-sala {
+    position: fixed;
+    right: 18px;
+    bottom: 18px;
+    z-index: 10000;
+    width: min(420px, calc(100vw - 36px));
+    background: #111827;
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 16px 42px rgba(0, 0, 0, .45);
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+.tl-sala-cab {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 9px 13px;
+    font-size: 12.5px;
+    color: #E5E7EB;
+}
+
+.tl-sala-cab b { color: #FFFFFF; }
+
+.tl-sala iframe {
+    width: 100%;
+    height: 290px;
+    border: 0;
+    display: block;
+    background: #000000;
+}
+
+.tl-colgar {
+    border: none;
+    background: #DC2626;
+    color: #FFFFFF;
+    border-radius: 7px;
+    padding: 5px 12px;
+    font-size: 11.5px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+.tl-colgar:hover { background: #B91C1C; }
+
+@media (prefers-reduced-motion: reduce) {
+    .tl-aviso { animation: none; }
+    .tl-aro::before { animation: none; opacity: .5; }
+}
+
+@media (max-width: 520px) {
+    .tl-aviso { flex-wrap: wrap; }
+    .tl-botones { flex-direction: row; width: 100%; }
+    .tl-si, .tl-no { flex: 1; }
+}

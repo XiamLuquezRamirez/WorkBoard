@@ -7,6 +7,7 @@ import TaskDetailsModal from './TaskDetailsModal';
 import axiosInstance from '../axiosConfig';
 import Paginador from './Paginador';
 import { getImageUrl, getAssetUrl } from '../utils/assetHelper';
+import EditorCriteriosNuevos, { criterioVacio, criteriosParaEnviar, validarCriterios } from './criterios/EditorCriteriosNuevos';
 
 
 
@@ -76,7 +77,7 @@ const EmployeeModal = ({ isOpen, onClose }) => {
         titulo: '',
         descripcion: '',
         proposito: '',
-        criterio: '',
+        criterios: [criterioVacio()],
         fecha_pactada: '',
         estado: 'Pendiente',
         prioridad: 'Media',
@@ -693,10 +694,11 @@ const EmployeeModal = ({ isOpen, onClose }) => {
                 return;
             }
 
-            if (String(nuevaTarea.criterio || '').trim().length < 10) {
+            const faltaCriterio = validarCriterios(nuevaTarea.criterios);
+            if (faltaCriterio) {
                 Swal.fire({
-                    title: 'Falta el criterio',
-                    text: 'Indica cómo sabremos que la tarea se cumplió (al menos 10 caracteres).',
+                    title: 'Faltan los criterios de aceptación',
+                    text: faltaCriterio,
                     icon: 'warning',
                     confirmButtonText: 'OK',
                 });
@@ -710,6 +712,14 @@ const EmployeeModal = ({ isOpen, onClose }) => {
             empleado: empleadoSeleccionado.id,
             evidencias: evidencias
         };
+        // Al crear viajan los criterios de aceptación; al editar se gestionan
+        // en el detalle de la tarea, uno a uno, y no se envían desde aquí.
+        if (nuevaTarea.accion === 'guardar') {
+            tareaData.criterios = criteriosParaEnviar(nuevaTarea.criterios);
+        } else {
+            delete tareaData.criterios;
+        }
+        delete tareaData.criterio;
 
         axiosInstance.post('/guardarTarea', tareaData)
             .then(async (response) => {
@@ -763,6 +773,7 @@ const EmployeeModal = ({ isOpen, onClose }) => {
                     prioridad: 'Media',
                     proyecto_id: '',
                     evidencias: [],
+                    criterios: [criterioVacio()],
                     accion: 'guardar'
                 });
                 setEvidencias([]);
@@ -1515,15 +1526,14 @@ const EmployeeModal = ({ isOpen, onClose }) => {
                                             placeholder="El propósito, no el trabajo. Ej.: Presentar la cuenta de cobro a tiempo"
                                         />
                                     </div>
-                                    <div className="form-group col-12">
-                                        <label>¿Cómo sabremos que se cumplió?</label>
-                                        <textarea
-                                            value={nuevaTarea.criterio || ''}
-                                            onChange={(e) => setNuevaTarea({ ...nuevaTarea, criterio: e.target.value })}
-                                            placeholder="Algo verificable. Ej.: Acta firmada por la interventoría y radicada"
-                                            rows="2"
-                                        />
-                                    </div>
+                                    {nuevaTarea.accion === 'guardar' && (
+                                        <div className="form-group col-12">
+                                            <EditorCriteriosNuevos
+                                                valor={nuevaTarea.criterios}
+                                                onCambio={(criterios) => setNuevaTarea({ ...nuevaTarea, criterios })}
+                                            />
+                                        </div>
+                                    )}
 
                                     <div className="form-group col-12">
                                         <label>Proyecto (opcional)</label>

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import axiosInstance from '../axiosConfig';
 import { getImageUrl, getAssetUrl } from '../utils/assetHelper';
 import Header from './Header';
@@ -29,6 +29,7 @@ import {
     FaSave
 } from 'react-icons/fa';
 import { FaCircleCheck, FaCircle, FaCircleXmark } from 'react-icons/fa6';
+import EditorCriteriosNuevos, { criterioVacio, criteriosParaEnviar, validarCriterios } from './criterios/EditorCriteriosNuevos';
 
 // Definidos fuera de `Dashboard` para evitar remount del modal
 // en cada cambio de estado del Dashboard (se percibe como "recarga").
@@ -282,8 +283,8 @@ const TasksModal = ({
                                 />
                             </div>
                             {/* Método de la Escuela de Líderes: una tarea nace con
-                                un para qué y con la forma de saber que se cumplió.
-                                Sin criterio, «hecha» acaba siendo una opinión. */}
+                                un para qué y con los criterios para aceptar su
+                                resultado. Sin ellos, «hecha» acaba siendo una opinión. */}
                             <div className="form-group col-12">
                                 <label>¿Para qué sirve esta tarea?</label>
                                 <input
@@ -294,12 +295,9 @@ const TasksModal = ({
                                 />
                             </div>
                             <div className="form-group col-12">
-                                <label>¿Cómo sabremos que se cumplió?</label>
-                                <textarea
-                                    value={nuevaTarea.criterio}
-                                    onChange={e => setNuevaTarea({ ...nuevaTarea, criterio: e.target.value })}
-                                    placeholder="Algo verificable. Ej.: Acta firmada por la interventoría y radicada"
-                                    rows="2"
+                                <EditorCriteriosNuevos
+                                    valor={nuevaTarea.criterios}
+                                    onCambio={(criterios) => setNuevaTarea({ ...nuevaTarea, criterios })}
                                 />
                             </div>
                             <div className="form-group col-12">
@@ -432,7 +430,7 @@ const TasksModal = ({
                             <div className="form-actions">
                                 <button className="cancel-button" onClick={() => {
                                     setMostrarFormTarea(false);
-                                    setNuevaTarea({ titulo: '', descripcion: '', proposito: '', criterio: '', fecha_pactada: '', estado: 'Pendiente', prioridad: 'Media', proyecto_id: '', accion: 'guardar' });
+                                    setNuevaTarea({ titulo: '', descripcion: '', proposito: '', criterios: [criterioVacio()], fecha_pactada: '', estado: 'Pendiente', prioridad: 'Media', proyecto_id: '', accion: 'guardar' });
                                     setSubtareasForm([]);
                                     setNuevaSubtareaTexto('');
                                     setNuevaSubtareaFecha('');
@@ -597,7 +595,7 @@ const Dashboard = () => {
     const [selectedTask, setSelectedTask] = useState(null);
     const [mostrarFormTarea, setMostrarFormTarea] = useState(false);
     const [nuevaTarea, setNuevaTarea] = useState({
-        titulo: '', descripcion: '', proposito: '', criterio: '',
+        titulo: '', descripcion: '', proposito: '', criterios: [criterioVacio()],
         fecha_pactada: '', estado: 'Pendiente',
         prioridad: 'Media', proyecto_id: '', accion: 'guardar'
     });
@@ -617,6 +615,28 @@ const Dashboard = () => {
     useEffect(() => {
         document.title = "Dashboard - WorkBoard";
     }, []);
+
+    // La cabecera del tablero es fija, así que el contenido tiene que apartarse
+    // su altura. Esa altura no es constante: la barra de búsqueda envuelve a dos
+    // líneas en pantallas angostas y el padding cambia por breakpoint. Un margen
+    // escrito a mano se quedaba corto y las tarjetas acababan debajo de ella, así
+    // que se mide la cabecera real y se publica para que el CSS la use.
+    const cabeceraRef = useRef(null);
+
+    useEffect(() => {
+        const cabecera = cabeceraRef.current;
+        if (!cabecera) return undefined;
+
+        const medir = () => {
+            const alto = Math.ceil(cabecera.getBoundingClientRect().height);
+            document.documentElement.style.setProperty('--alto-cabecera-tablero', `${alto}px`);
+        };
+
+        medir();
+        const observador = new ResizeObserver(medir);
+        observador.observe(cabecera);
+        return () => observador.disconnect();
+    });
 
     useEffect(() => {
         axiosInstance.get('/cargarProyectos').then(r => setProyectos(r.data)).catch(() => {});
@@ -887,14 +907,16 @@ const Dashboard = () => {
             Swal.fire({ title: 'Falta el propósito', text: 'Indica para qué sirve esta tarea (al menos 10 caracteres).', icon: 'warning', confirmButtonText: 'OK' });
             return;
         }
-        if ((nuevaTarea.criterio || '').trim().length < 10) {
-            Swal.fire({ title: 'Falta el criterio', text: 'Indica cómo sabremos que la tarea se cumplió (al menos 10 caracteres).', icon: 'warning', confirmButtonText: 'OK' });
+        const faltaCriterio = validarCriterios(nuevaTarea.criterios);
+        if (faltaCriterio) {
+            Swal.fire({ title: 'Faltan los criterios de aceptación', text: faltaCriterio, icon: 'warning', confirmButtonText: 'OK' });
             return;
         }
         setIsSavingTarea(true);
         try {
             const response = await axiosInstance.post('/guardarTarea', {
                 ...nuevaTarea,
+                criterios: criteriosParaEnviar(nuevaTarea.criterios),
                 empleado: selectedEmployee.id,
                 evidencias: []
             });
@@ -915,7 +937,7 @@ const Dashboard = () => {
             setChecklistTitulo('');
             setSelectedChecklistId('');
             setChecklistsExistentes([]);
-            setNuevaTarea({ titulo: '', descripcion: '', proposito: '', criterio: '', fecha_pactada: '', estado: 'Pendiente', prioridad: 'Media', proyecto_id: '', accion: 'guardar' });
+            setNuevaTarea({ titulo: '', descripcion: '', proposito: '', criterios: [criterioVacio()], fecha_pactada: '', estado: 'Pendiente', prioridad: 'Media', proyecto_id: '', accion: 'guardar' });
             setMostrarFormTarea(false);
             const updated = await axiosInstance.get('/dashboard/cargarEmpleadosTareas');
             const emp = updated.data.find(e => e.id === selectedEmployee.id);
@@ -959,7 +981,7 @@ const Dashboard = () => {
                             </div>
                         ) : (
                             <div className="cards-container">
-                                <div className="dashboard-header">
+                                <div className="dashboard-header" ref={cabeceraRef}>
                                     <h1 className="dashboard-header__title">
                                         Tablero de seguimiento de empleados
                                     </h1>
@@ -1505,7 +1527,7 @@ const Dashboard = () => {
                                 <div className="form-actions">
                                     <button className="cancel-button" onClick={() => {
                                         setMostrarFormTarea(false);
-                                        setNuevaTarea({ titulo: '', descripcion: '', proposito: '', criterio: '', fecha_pactada: '', estado: 'Pendiente', prioridad: 'Media', proyecto_id: '', accion: 'guardar' });
+                                        setNuevaTarea({ titulo: '', descripcion: '', proposito: '', criterios: [criterioVacio()], fecha_pactada: '', estado: 'Pendiente', prioridad: 'Media', proyecto_id: '', accion: 'guardar' });
                                         setSubtareasForm([]);
                                         setNuevaSubtareaTexto('');
                                         setNuevaSubtareaFecha('');

@@ -24,6 +24,9 @@
         <env name="CACHE_STORE" value="array"/>
         <env name="DB_CONNECTION" value="sqlite"/>
         <env name="DB_DATABASE" value=":memory:"/>
+        <!-- Las pruebas de dominio usan la conexión mysql2. Apuntan a una base
+             aparte, con la misma estructura y vacía: nunca a workboard. -->
+        <env name="DB_DATABASE_SECOND" value="workboard_test"/>
         <env name="MAIL_MAILER" value="array"/>
         <env name="PULSE_ENABLED" value="false"/>
         <env name="QUEUE_CONNECTION" value="sync"/>

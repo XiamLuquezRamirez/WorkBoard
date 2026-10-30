@@ -3,6 +3,7 @@ import useTableroEstado from './useTableroEstado';
 import TableroKPIs from './TableroKPIs';
 import TableroKanban from './TableroKanban';
 import TableroAgenda from './TableroAgenda';
+import TableroPlano from './TableroPlano';
 import TableroLateral from './TableroLateral';
 import TableroCard from './TableroCard';
 import { DetalleTarea } from './ModalDestaque';
@@ -160,19 +161,31 @@ function PanelAlerta({ alerta, datos, onCerrar }) {
 
 export default function TableroSeguimiento(props) {
     return (
-        <AvataresProvider>
+        // El plano, que cuelga de aquí, dibuja toda la organización: sin esto
+        // la mayoría de sus puestos saldría con iniciales.
+        <AvataresProvider todaLaOrganizacion>
             <TableroContenido {...props} />
         </AvataresProvider>
     );
 }
 
-function TableroContenido({ onCerrar, tvInicial = false }) {
+function TableroContenido({
+    onCerrar,
+    tvInicial = false,
+    // Dentro de WorkBoard el tablero se ve en claro: el tema oscuro nació
+    // para proyectarlo en un televisor y aquí choca con «Mis Tareas».
+    claro = false,
+    // En el modal se entra ya explorando: el carrusel sólo tiene sentido
+    // cuando el tablero está proyectado y nadie lo está mirando de cerca.
+    interactivoInicial = false,
+}) {
     const [modoTv, setModoTv] = useState(tvInicial);
     const [verPausadas, setVerPausadas] = useState(false);
     // Modo interactivo: detiene el carrusel para que el líder pueda revisar el
     // tablero a su ritmo y abrir el detalle de cualquier tarea.
-    const [interactivo, setInteractivo] = useState(false);
+    const [interactivo, setInteractivo] = useState(interactivoInicial);
     const [verAgenda, setVerAgenda] = useState(false);
+    const [verPlano, setVerPlano] = useState(false);
     const [alertaAbierta, setAlertaAbierta] = useState(null);
     const [tareaAbierta, setTareaAbierta] = useState(null);
     // Sin onCerrar el tablero vive en su propia pestaña: no hay a dónde "volver",
@@ -192,6 +205,7 @@ function TableroContenido({ onCerrar, tvInicial = false }) {
         const onKey = (ev) => {
             if (ev.key !== 'Escape') return;
             if (tareaAbierta) { setTareaAbierta(null); return; }
+            if (verPlano) { setVerPlano(false); return; }
             if (verAgenda) { setVerAgenda(false); return; }
             if (alertaAbierta) { setAlertaAbierta(null); return; }
             if (verPausadas) { setVerPausadas(false); return; }
@@ -202,13 +216,13 @@ function TableroContenido({ onCerrar, tvInicial = false }) {
         };
         window.addEventListener('keydown', onKey);
         return () => window.removeEventListener('keydown', onKey);
-    }, [modoTv, onCerrar, verPausadas, alertaAbierta, tareaAbierta, verAgenda]);
+    }, [modoTv, onCerrar, verPausadas, alertaAbierta, tareaAbierta, verAgenda, verPlano]);
 
     const eventos = useMemo(() => detectarEventos(datos, previo), [datos, previo]);
 
     if (cargando && !datos) {
         return (
-            <div className="tb-root tb-cargando">
+            <div className={`tb-root tb-cargando ${claro ? 'tb-claro' : ''}`}>
                 <div className="tb-spinner" aria-label="Cargando tablero" />
                 <p>Cargando tablero…</p>
             </div>
@@ -217,7 +231,7 @@ function TableroContenido({ onCerrar, tvInicial = false }) {
 
     if (!datos) {
         return (
-            <div className="tb-root tb-cargando">
+            <div className={`tb-root tb-cargando ${claro ? 'tb-claro' : ''}`}>
                 <p className="tb-error">No fue posible cargar el tablero.</p>
                 {onCerrar
                     ? <button className="tb-btn" onClick={onCerrar}>Volver</button>
@@ -231,7 +245,7 @@ function TableroContenido({ onCerrar, tvInicial = false }) {
         : (datos.alcance.departamento || 'MI EQUIPO').toUpperCase();
 
     return (
-        <div className={`tb-root ${modoTv ? 'tb-tv' : ''}`}>
+        <div className={`tb-root ${modoTv ? 'tb-tv' : ''} ${claro ? 'tb-claro' : ''}`}>
             <header className="tb-header">
                 <div className="tb-header-izq">
                     <img
@@ -275,6 +289,16 @@ function TableroContenido({ onCerrar, tvInicial = false }) {
                         🗓 Agenda
                     </button>
 
+                    {/* El plano ordena el equipo por lugar en vez de por
+                        estado: una zona trabada se reconoce de lejos. */}
+                    <button
+                        className="tb-btn tb-btn-sec"
+                        onClick={() => setVerPlano(true)}
+                        title="Ver el plano de la oficina"
+                    >
+                        🗺 Plano
+                    </button>
+
                     {!modoTv && (
                         <>
                             <button className="tb-btn" onClick={() => setModoTv(true)}>Modo TV</button>
@@ -305,6 +329,9 @@ function TableroContenido({ onCerrar, tvInicial = false }) {
                     interactivo={interactivo}
                     onVerAlerta={setAlertaAbierta}
                     onVerTarea={setTareaAbierta}
+                    // El vídeo ambiental acompaña al tablero proyectado; en
+                    // el tema claro, dentro de WorkBoard, estorba.
+                    sinAmbiente={claro}
                 />
             </div>
 
@@ -314,6 +341,15 @@ function TableroContenido({ onCerrar, tvInicial = false }) {
                     interactivo={interactivo}
                     onVerTarea={(t) => { setVerAgenda(false); setTareaAbierta(t); }}
                     onCerrar={() => setVerAgenda(false)}
+                />
+            )}
+
+            {verPlano && (
+                <TableroPlano
+                    datosTablero={datos}
+                    interactivo={interactivo}
+                    onVerTarea={(t) => { setVerPlano(false); setTareaAbierta(t); }}
+                    onCerrar={() => setVerPlano(false)}
                 />
             )}
 

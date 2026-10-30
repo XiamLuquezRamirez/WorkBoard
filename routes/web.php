@@ -5,6 +5,8 @@ use App\Http\Controllers\Auth\LoginController;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\EmpleadosController;
 use App\Http\Controllers\EvidenciasController;
+use App\Http\Controllers\EspacioEquipoController;
+use App\Http\Controllers\CriteriosAceptacionController;
 // Ruta para el CSRF cookie de Sanctum
 
 // Rutas de Sanctum para CSRF
@@ -98,8 +100,24 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
         //actualizar estado tarea
         Route::put('/actualizarEstadoTarea/{id}', [EmpleadosController::class, 'actualizarEstadoTarea']);
-        // Cierre verificado: único camino a Completada para una tarea con criterio.
-        Route::put('/verificarTarea/{id}', [EmpleadosController::class, 'verificarTarea']);
+        // Cierre verificado: único camino a Completada para una tarea con
+        // criterios. Ahora lo resuelve la aceptación, con sus mismas reglas.
+        Route::put('/verificarTarea/{id}', [CriteriosAceptacionController::class, 'verificarLegado']);
+
+        // Criterios de aceptación: independientes del checklist (subtareas).
+        Route::get('/tareas/{id}/criterios', [CriteriosAceptacionController::class, 'index']);
+        Route::post('/tareas/{id}/criterios', [CriteriosAceptacionController::class, 'store']);
+        Route::put('/tareas/{id}/criterios/orden', [CriteriosAceptacionController::class, 'ordenar']);
+        Route::get('/tareas/{id}/criterios/historial', [CriteriosAceptacionController::class, 'historial']);
+        Route::put('/criterios/{id}', [CriteriosAceptacionController::class, 'update']);
+        Route::delete('/criterios/{id}', [CriteriosAceptacionController::class, 'destroy']);
+        Route::put('/criterios/{id}/declarar', [CriteriosAceptacionController::class, 'declarar']);
+        Route::put('/criterios/{id}/verificar', [CriteriosAceptacionController::class, 'verificar']);
+        Route::post('/criterios/{id}/evidencias', [CriteriosAceptacionController::class, 'agregarEvidencia']);
+        Route::delete('/criterios/evidencias/{id}', [CriteriosAceptacionController::class, 'quitarEvidencia']);
+        // Aceptación final: una decisión aparte, nunca automática.
+        Route::put('/tareas/{id}/aceptar', [CriteriosAceptacionController::class, 'aceptar']);
+        Route::put('/tareas/{id}/devolver', [CriteriosAceptacionController::class, 'devolver']);
 
         //cargar empleados y tareas
         Route::get('/dashboard/cargarEmpleadosTareas', [EmpleadosController::class, 'cargarEmpleadosTareas']);
@@ -169,6 +187,25 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::get('/tablero/avatares', [EmpleadosController::class, 'tableroAvatares']);
         // Agenda de entregas: fuera del sondeo, se pide al abrir la vista.
         Route::get('/tablero/agenda', [EmpleadosController::class, 'tableroAgenda']);
+        // Plano de la oficina: el equipo visto por lugar en vez de por estado.
+        Route::get('/tablero/plano', [EmpleadosController::class, 'tableroPlano']);
+
+        // Espacio de equipo: lo que ha pasado y lo que viene.
+        Route::get('/equipo/actividad', [EspacioEquipoController::class, 'actividad']);
+        Route::get('/equipo/reuniones', [EspacioEquipoController::class, 'reuniones']);
+        Route::post('/equipo/reuniones', [EspacioEquipoController::class, 'crearReunion']);
+        Route::put('/equipo/reuniones/{id}/respuesta', [EspacioEquipoController::class, 'responderReunion']);
+        Route::delete('/equipo/reuniones/{id}', [EspacioEquipoController::class, 'cancelarReunion']);
+        Route::get('/equipo/convocables', [EspacioEquipoController::class, 'convocables']);
+        Route::get('/equipo/puesto/{empleado}', [EspacioEquipoController::class, 'puesto']);
+        // Llamadas: el aviso suena en la pantalla del receptor.
+        Route::post('/equipo/llamar', [EspacioEquipoController::class, 'llamar']);
+        Route::get('/equipo/llamada-entrante', [EspacioEquipoController::class, 'llamadaEntrante']);
+        Route::get('/equipo/llamada/{id}', [EspacioEquipoController::class, 'estadoLlamada']);
+        Route::put('/equipo/llamada/{id}', [EspacioEquipoController::class, 'responderLlamada']);
+        Route::get('/equipo/chat/canales', [EspacioEquipoController::class, 'chatCanales']);
+        Route::get('/equipo/chat/mensajes', [EspacioEquipoController::class, 'chatMensajes']);
+        Route::post('/equipo/chat/mensajes', [EspacioEquipoController::class, 'chatEnviar']);
 
         // videos ambientales del tablero (se administran desde Parámetros)
         Route::get('/tablero/videos', [EmpleadosController::class, 'tableroVideos']);

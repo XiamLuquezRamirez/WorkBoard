@@ -1,25 +1,67 @@
 /**
- * Función para obtener la URL correcta de los assets
+ * Base pública de la aplicación.
+ *
+ * Antes venía escrita a mano («http://localhost:8000» en desarrollo), lo que
+ * ataba el bundle a un puerto concreto: al servir el proyecto en otro puerto
+ * —o al convivir con otro proyecto en el que sí estaba el 8000— las imágenes
+ * y la API se pedían a una aplicación ajena y respondían 404.
+ *
+ * La vista publica la base con asset(), que es la misma función que ya resuelve
+ * el CSS y el JS, así que vale igual en «localhost:8001», bajo XAMPP en
+ * «/work-board/public» y en producción bajo «/WorkBoard/public». Si faltara la
+ * etiqueta, se deduce de la ruta del propio script cargado.
+ */
+const calcularBase = () => {
+    const meta = document.querySelector('meta[name="asset-base"]');
+    const declarada = meta && meta.getAttribute('content');
+    if (declarada) {
+        return declarada.replace(/\/+$/, '');
+    }
+
+    // Respaldo: el <script> que cargó este bundle vive en «<base>/js/app.js».
+    const script = document.querySelector('script[src*="js/app.js"]');
+    if (script) {
+        return new URL(script.getAttribute('src'), window.location.href)
+            .href.replace(/\/js\/app\.js.*$/, '');
+    }
+
+    return window.location.origin;
+};
+
+let baseCache = null;
+
+export const getBaseUrl = () => {
+    if (baseCache === null) {
+        baseCache = calcularBase();
+    }
+    return baseCache;
+};
+
+/**
+ * URL absoluta de un recurso de la aplicación.
+ *
+ * Acepta rutas con o sin barra inicial. Si ya recibe una URL absoluta o un
+ * dato embebido («data:…», como las fotos en base64 de empleados), la devuelve
+ * tal cual.
+ *
  * @param {string} path - Ruta relativa del asset (ej: 'images/logo.png')
  * @returns {string} - URL completa del asset
  */
 export const getAssetUrl = (path) => {
-    const baseUrl = process.env.NODE_ENV === 'production' 
-        ? 'https://ingeer.co/WorkBoard/public'
-        : 'http://localhost:8000';
-    
-    return `${baseUrl}/${path}`;
+    const ruta = String(path ?? '');
+
+    if (/^(https?:|data:|blob:)/i.test(ruta)) {
+        return ruta;
+    }
+
+    return `${getBaseUrl()}/${ruta.replace(/^\/+/, '')}`;
 };
 
 /**
- * Función para obtener la URL correcta de las imágenes
+ * URL completa de una imagen. Misma resolución que getAssetUrl; se mantiene
+ * como nombre propio porque es el que usan los componentes.
+ *
  * @param {string} imagePath - Ruta relativa de la imagen (ej: 'images/logo.png')
  * @returns {string} - URL completa de la imagen
  */
-export const getImageUrl = (imagePath) => {
-    const baseUrl = process.env.NODE_ENV === 'production' 
-        ? 'https://ingeer.co/WorkBoard/public'
-        : 'http://localhost:8000';
-    
-    return `${baseUrl}/${imagePath}`;
-}; 
+export const getImageUrl = (imagePath) => getAssetUrl(imagePath);

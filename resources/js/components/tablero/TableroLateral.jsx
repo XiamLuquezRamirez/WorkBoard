@@ -61,7 +61,15 @@ function Persona({ p }) {
     );
 }
 
-export default function TableroLateral({ datos, interactivo, onVerAlerta, onVerTarea }) {
+export default function TableroLateral({
+    datos,
+    interactivo,
+    onVerAlerta,
+    onVerTarea,
+    // El vídeo ambiental es para el televisor de la oficina: dentro de
+    // WorkBoard, mientras se trabaja, sobra.
+    sinAmbiente = false,
+}) {
     const [plegados, setPlegados] = useState(() => {
         try {
             return JSON.parse(localStorage.getItem(CLAVE_PLEGADOS)) || {};
@@ -204,10 +212,12 @@ export default function TableroLateral({ datos, interactivo, onVerAlerta, onVerT
 
             {/* El vídeo ocupa el hueco libre bajo las entregas, dentro del
                 lateral: así no se superpone al kanban ni le resta espacio. */}
-            <TableroAmbiente
-                plegado={plegados.ambiente}
-                onAlternar={() => alternar('ambiente')}
-            />
+            {!sinAmbiente && (
+                <TableroAmbiente
+                    plegado={plegados.ambiente}
+                    onAlternar={() => alternar('ambiente')}
+                />
+            )}
         </aside>
     );
 }

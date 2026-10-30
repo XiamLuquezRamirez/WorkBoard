@@ -6,11 +6,15 @@ import {
     FaFileImage, FaFilePdf, FaTimes,
     FaSave, FaArrowLeft, FaLock, FaLink, FaArchive, FaFolder,
     FaCalendar, FaChevronLeft, FaChevronRight, FaChevronDown, FaChartBar, FaEllipsisV, FaPause,
-    FaDesktop, FaVideo
+    FaDesktop, FaVideo, FaUsers, FaColumns
 } from 'react-icons/fa';
 import TaskDetailsModal from './TaskDetailsModal';
 import ReportesDepartamentoModal from './ReportesDepartamentoModal';
 import VideosTableroModal from './VideosTableroModal';
+import EspacioEquipoModal from './equipo/EspacioEquipoModal';
+import EditorCriteriosNuevos, { criterioVacio, criteriosParaEnviar, validarCriterios } from './criterios/EditorCriteriosNuevos';
+import TableroEquipoModal from './equipo/TableroEquipoModal';
+import { AvataresProvider } from './tablero/AvataresContext';
 import axiosInstance from '../axiosConfig';
 import Swal from 'sweetalert2';
 import { FaCircleCheck, FaCircle, FaCircleXmark, FaListCheck } from 'react-icons/fa6';
@@ -29,8 +33,8 @@ const EmployeeInterface = ({ user }) => {
             icon: FaSpinner,
             color: '#2563eb'
         },
-        // El trabajo se entrega aquí: el líder verifica el criterio y es él
-        // quien la cierra. El responsable ya no la pasa a Completada.
+        // El trabajo se entrega aquí: el líder verifica los criterios de
+        // aceptación y es él quien acepta la entrega y la cierra.
         'En Revisión': {
             title: 'En Revisión',
             items: [],
@@ -73,7 +77,7 @@ const EmployeeInterface = ({ user }) => {
     const [newTaskTitulo, setNewTaskTitulo] = useState('');
     const [newTaskDescripcion, setNewTaskDescripcion] = useState('');
     const [newTaskProposito, setNewTaskProposito] = useState('');
-    const [newTaskCriterio, setNewTaskCriterio] = useState('');
+    const [newTaskCriterios, setNewTaskCriterios] = useState([criterioVacio()]);
     const [newTaskFecha, setNewTaskFecha] = useState('');
     const [newTaskPrioridad, setNewTaskPrioridad] = useState('Media');
     const [newTaskEstado, setNewTaskEstado] = useState('Pendiente');
@@ -83,6 +87,9 @@ const EmployeeInterface = ({ user }) => {
     const [showOptionsDropdown, setShowOptionsDropdown] = useState(false);
     const [showReportesModal, setShowReportesModal] = useState(false);
     const [showVideosModal, setShowVideosModal] = useState(false);
+    // Guarda la pestaña con la que abrir el espacio de equipo, o null si está cerrado.
+    const [espacioEquipo, setEspacioEquipo] = useState(null);
+    const [verTableroEquipo, setVerTableroEquipo] = useState(false);
     const [showCalendarModal, setShowCalendarModal] = useState(false);
     const [calendarMonthAnchor, setCalendarMonthAnchor] = useState(() => {
         const d = new Date();
@@ -101,7 +108,7 @@ const EmployeeInterface = ({ user }) => {
         setNewTaskTitulo('');
         setNewTaskDescripcion('');
         setNewTaskProposito('');
-        setNewTaskCriterio('');
+        setNewTaskCriterios([criterioVacio()]);
         setNewTaskFecha('');
         setNewTaskPrioridad('Media');
         setNewTaskEstado('Pendiente');
@@ -393,8 +400,13 @@ const EmployeeInterface = ({ user }) => {
                     setColumns(columnasPrevias);
                     const msg = error?.response?.data?.error
                         || 'No fue posible actualizar el estado de la tarea.';
+                    // El 409 tiene dos causas: la pausa, o que la tarea tiene
+                    // criterios de aceptación y sólo se cierra aceptándola.
+                    const titulo409 = error?.response?.data?.requiere_verificacion
+                        ? 'Requiere aceptación'
+                        : 'Tarea en pausa';
                     Swal.fire({
-                        title: error?.response?.status === 409 ? 'Tarea en pausa' : 'Error',
+                        title: error?.response?.status === 409 ? titulo409 : 'Error',
                         text: msg,
                         icon: error?.response?.status === 409 ? 'info' : 'error',
                         confirmButtonText: 'Entendido',
@@ -612,10 +624,11 @@ const EmployeeInterface = ({ user }) => {
                 return;
             }
 
-            if (String(newTaskCriterio || '').trim().length < 10) {
+            const faltaCriterio = validarCriterios(newTaskCriterios);
+            if (faltaCriterio) {
                 Swal.fire({
-                    title: 'Falta el criterio',
-                    text: 'Indica cómo sabremos que la tarea se cumplió (al menos 10 caracteres).',
+                    title: 'Faltan los criterios de aceptación',
+                    text: faltaCriterio,
                     icon: 'warning',
                     confirmButtonText: 'OK',
                 });
@@ -626,7 +639,7 @@ const EmployeeInterface = ({ user }) => {
                 titulo: newTaskTitulo,
                 descripcion: newTaskDescripcion,
                 proposito: newTaskProposito,
-                criterio: newTaskCriterio,
+                criterios: criteriosParaEnviar(newTaskCriterios),
                 fecha_pactada: newTaskFecha,
                 prioridad: newTaskPrioridad,
                 empleado: empleado,
@@ -737,6 +750,27 @@ const EmployeeInterface = ({ user }) => {
                 <h2>Mis Tareas</h2>
 
                 <div className="header-right">
+                    {/* Las dos vistas de equipo salen del menú y quedan a la
+                        vista: son lo que un líder abre a diario. */}
+                    {user.lider == 'Si' && (
+                        <div className="acciones-equipo">
+                            <button
+                                className="btn-equipo es-tablero"
+                                onClick={() => setVerTableroEquipo(true)}
+                                title="Tablero del equipo"
+                            >
+                                <FaColumns /> <span>Tablero de Equipo</span>
+                            </button>
+                            <button
+                                className="btn-equipo es-espacio"
+                                onClick={() => setEspacioEquipo('actividad')}
+                                title="Espacio de equipo"
+                            >
+                                <FaUsers /> <span>Espacio de Equipo</span>
+                            </button>
+                        </div>
+                    )}
+
                     <div className="task-options-dropdown" ref={optionsDropdownRef}>
                         <button
                             className="task-options-btn"
@@ -895,17 +929,7 @@ const EmployeeInterface = ({ user }) => {
                                         required
                                     />
                                 </div>
-                                <div className="form-group">
-                                    <label htmlFor="criterio">¿Cómo sabremos que se cumplió?</label>
-                                    <textarea
-                                        id="criterio"
-                                        name="criterio"
-                                        value={newTaskCriterio}
-                                        onChange={e => setNewTaskCriterio(e.target.value)}
-                                        placeholder="Algo verificable. Ej.: Acta firmada por la interventoría y radicada"
-                                        required
-                                    />
-                                </div>
+                                <EditorCriteriosNuevos valor={newTaskCriterios} onCambio={setNewTaskCriterios} />
                                 <div className="form-group">
                                     <label htmlFor="fecha_pactada">Fecha límite</label>
                                     <input
@@ -1636,6 +1660,17 @@ const EmployeeInterface = ({ user }) => {
 
             {showVideosModal && (
                 <VideosTableroModal onClose={() => setShowVideosModal(false)} />
+            )}
+
+            {verTableroEquipo && (
+                <TableroEquipoModal onCerrar={() => setVerTableroEquipo(false)} />
+            )}
+
+            {espacioEquipo && (
+                <EspacioEquipoModal
+                    pestanaInicial={espacioEquipo}
+                    onCerrar={() => setEspacioEquipo(null)}
+                />
             )}
 
             {showArchivedTaskDetails && selectedArchivedTask && (

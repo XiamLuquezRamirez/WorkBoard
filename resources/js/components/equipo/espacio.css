@@ -1,0 +1,736 @@
+/* Espacio de equipo: Actividad y Reuniones.
+   Se abre desde «Mis Tareas», que es una interfaz clara, así que este modal
+   no hereda la paleta oscura del tablero: trae la suya. */
+
+.eq-fondo {
+    position: fixed;
+    inset: 0;
+    z-index: 9400;
+    background: rgba(17, 24, 39, .55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2vh 1.5vw;
+}
+
+.eq-modal {
+    /* El plano necesita sitio: con 760px los avatares salían diminutos y
+       había que acercarse para leer cualquier nombre. */
+    width: min(1680px, 97vw);
+    max-height: 94vh;
+    display: flex;
+    flex-direction: column;
+    background: #FFFFFF;
+    border-radius: 14px;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, .28);
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    color: #111827;
+    overflow: hidden;
+}
+
+.eq-cabecera {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 14px;
+    border-bottom: 1px solid #E5E7EB;
+}
+
+.eq-pestanas {
+    display: flex;
+    gap: 2px;
+}
+
+.eq-pestanas button {
+    border: none;
+    background: transparent;
+    padding: 15px 16px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #6B7280;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+}
+
+.eq-pestanas button:hover { color: #111827; }
+
+.eq-pestanas button.es-activa {
+    color: #2563EB;
+    border-bottom-color: #2563EB;
+}
+
+.eq-cerrar {
+    border: none;
+    background: transparent;
+    font-size: 15px;
+    color: #9CA3AF;
+    cursor: pointer;
+    padding: 6px 8px;
+    line-height: 1;
+}
+
+.eq-cerrar:hover { color: #111827; }
+
+.eq-cuerpo {
+    padding: 16px;
+    overflow-y: auto;
+}
+
+.eq-vacio {
+    margin: 34px 0;
+    text-align: center;
+    font-size: 13px;
+    color: #9CA3AF;
+}
+
+.eq-aviso {
+    margin: 0 0 12px;
+    padding: 9px 12px;
+    border-radius: 8px;
+    background: #FEF2F2;
+    color: #B91C1C;
+    font-size: 12.5px;
+}
+
+/* ---------- Barra y filtros ---------- */
+
+.eq-barra {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.eq-filtros {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 14px;
+}
+
+.eq-barra .eq-filtros { margin-bottom: 0; }
+
+.eq-chip {
+    border: 1px solid #E5E7EB;
+    background: #FFFFFF;
+    border-radius: 999px;
+    padding: 5px 11px;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #4B5563;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.eq-chip:hover { background: #F9FAFB; }
+
+.eq-chip.es-activo {
+    background: #EFF6FF;
+    border-color: #BFDBFE;
+    color: #1D4ED8;
+}
+
+.eq-select {
+    padding-right: 26px;
+    font-family: inherit;
+    cursor: pointer;
+    max-width: 230px;
+}
+
+.eq-btn {
+    border: none;
+    background: #2563EB;
+    color: #FFFFFF;
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.eq-btn:hover { background: #1D4ED8; }
+.eq-btn:disabled { opacity: .6; cursor: default; }
+
+.eq-btn-sec {
+    border: 1px solid #D1D5DB;
+    background: #FFFFFF;
+    color: #374151;
+    border-radius: 8px;
+    padding: 7px 13px;
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.eq-btn-sec:hover { background: #F9FAFB; }
+
+/* La respuesta elegida se marca en color: sin esto no se distingue de la
+   otra opción y no se sabe qué se contestó. */
+.eq-btn-sec.es-si { background: #ECFDF5; border-color: #A7F3D0; color: #047857; }
+.eq-btn-sec.es-no { background: #FEF2F2; border-color: #FECACA; color: #B91C1C; }
+
+.eq-btn-chico { padding: 5px 11px; font-size: 11.5px; }
+
+.eq-mas {
+    display: block;
+    width: 100%;
+    margin-top: 12px;
+    border: 1px solid #E5E7EB;
+    background: #FFFFFF;
+    border-radius: 8px;
+    padding: 9px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #4B5563;
+    cursor: pointer;
+}
+
+.eq-mas:hover { background: #F9FAFB; }
+
+/* ---------- Flujo de actividad ---------- */
+
+.eq-flujo {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.eq-evento {
+    display: flex;
+    gap: 11px;
+    padding: 11px 0;
+    border-bottom: 1px solid #F3F4F6;
+}
+
+.eq-evento:last-child { border-bottom: none; }
+
+.eq-ev-icono {
+    flex: 0 0 30px;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    background: #F3F4F6;
+}
+
+.eq-ev-icono.ev-malo   { background: #FEF2F2; color: #DC2626; }
+.eq-ev-icono.ev-aviso  { background: #FFFBEB; color: #D97706; }
+.eq-ev-icono.ev-bueno  { background: #ECFDF5; color: #059669; }
+.eq-ev-icono.ev-neutro { background: #F3F4F6; color: #6B7280; }
+
+.eq-ev-cuerpo { min-width: 0; flex: 1; }
+
+.eq-ev-mensaje {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.45;
+    color: #111827;
+}
+
+.eq-ev-pie {
+    margin: 3px 0 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 8px;
+    font-size: 11.5px;
+    color: #9CA3AF;
+}
+
+/* El título de la tarea puede ser muy largo: una línea y puntos suspensivos,
+   con el texto completo en el title. */
+.eq-ev-tarea {
+    max-width: 60%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: #4B5563;
+    font-weight: 600;
+}
+
+.eq-ev-cuando { margin-left: auto; white-space: nowrap; }
+
+/* ---------- Reuniones ---------- */
+
+.eq-dia { margin-bottom: 18px; }
+
+.eq-dia-titulo {
+    margin: 0 0 8px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .6px;
+    text-transform: uppercase;
+    color: #9CA3AF;
+}
+
+.eq-reunion {
+    display: flex;
+    gap: 13px;
+    padding: 13px;
+    border: 1px solid #E5E7EB;
+    border-radius: 11px;
+    margin-bottom: 9px;
+}
+
+.eq-reunion.es-cancelada { opacity: .62; }
+
+.eq-re-hora {
+    flex: 0 0 52px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    font-size: 12px;
+    color: #9CA3AF;
+}
+
+.eq-re-hora b { font-size: 15px; color: #111827; }
+
+.eq-re-cuerpo { min-width: 0; flex: 1; }
+
+.eq-re-cuerpo h5 {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.3;
+    color: #111827;
+}
+
+.eq-re-cancel { color: #DC2626; font-style: normal; font-weight: 600; font-size: 12px; }
+
+.eq-re-desc {
+    margin: 4px 0 0;
+    font-size: 12.5px;
+    line-height: 1.45;
+    color: #4B5563;
+}
+
+.eq-re-meta {
+    margin: 5px 0 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    font-size: 11.5px;
+    color: #9CA3AF;
+}
+
+.eq-re-gente {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 9px;
+}
+
+.eq-av {
+    width: 25px;
+    height: 25px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9.5px;
+    font-weight: 700;
+    background: #E5E7EB;
+    color: #4B5563;
+    border: 2px solid transparent;
+}
+
+/* La respuesta se ve en el borde del avatar: así se sabe quién viene sin
+   abrir nada. */
+.eq-av-acepta    { border-color: #10B981; }
+.eq-av-rechaza   { border-color: #EF4444; opacity: .55; }
+.eq-av-pendiente { border-color: #E5E7EB; }
+
+.eq-re-acciones {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 11px;
+}
+
+/* ---------- Formulario ---------- */
+
+.eq-form {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 11px;
+    padding: 15px;
+    margin-bottom: 18px;
+    border: 1px solid #E5E7EB;
+    border-radius: 11px;
+    background: #F9FAFB;
+}
+
+.eq-campo {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.eq-ancho { grid-column: 1 / -1; }
+
+.eq-campo > span {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .4px;
+    text-transform: uppercase;
+    color: #6B7280;
+}
+
+.eq-campo input,
+.eq-campo textarea {
+    border: 1px solid #D1D5DB;
+    border-radius: 7px;
+    padding: 8px 10px;
+    font-size: 13px;
+    font-family: inherit;
+    color: #111827;
+    background: #FFFFFF;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.eq-campo input:focus,
+.eq-campo textarea:focus {
+    outline: none;
+    border-color: #2563EB;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, .12);
+}
+
+.eq-campo textarea { resize: vertical; }
+
+.eq-invitados {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.eq-invitado {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid #D1D5DB;
+    background: #FFFFFF;
+    border-radius: 999px;
+    padding: 4px 11px 4px 4px;
+    font-size: 12px;
+    color: #374151;
+    cursor: pointer;
+}
+
+.eq-invitado:hover { background: #F3F4F6; }
+
+.eq-invitado.es-activo {
+    background: #EFF6FF;
+    border-color: #93C5FD;
+    color: #1D4ED8;
+}
+
+.eq-invitado.es-activo .eq-av { background: #2563EB; color: #FFFFFF; }
+
+.eq-form-pie {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 2px;
+}
+
+@media (max-width: 620px) {
+    .eq-form { grid-template-columns: 1fr 1fr; }
+    .eq-reunion { flex-direction: column; gap: 8px; }
+    .eq-re-hora { flex-direction: row; align-items: baseline; gap: 7px; }
+    .eq-ev-tarea { max-width: 100%; }
+}
+
+/* ---------- Barra inferior ---------- */
+
+.eq-titulo {
+    margin: 0;
+    padding: 15px 4px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #111827;
+}
+
+.eq-barra-inferior {
+    display: flex;
+    border-top: 1px solid #E5E7EB;
+    background: #FAFBFC;
+}
+
+.eq-barra-inferior button {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    border: none;
+    background: transparent;
+    padding: 12px 8px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #6B7280;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+.eq-barra-inferior button:hover { background: #F3F4F6; color: #111827; }
+
+.eq-barra-inferior button.es-activa {
+    color: #0F766E;
+    background: #ECFDF5;
+}
+
+.eq-bi-icono { font-size: 14px; line-height: 1; }
+
+/* El chat ocupa toda la altura: su propia lista y conversación se desplazan
+   por separado, así que el cuerpo del modal no debe hacerlo. */
+.eq-modal.es-chat { height: 94vh; }
+.eq-cuerpo.es-plano { padding: 0; overflow: hidden; display: flex; flex: 1; min-height: 0; }
+
+/* ---------- Chat ---------- */
+
+.ch-marco {
+    display: flex;
+    width: 100%;
+    min-height: 0;
+}
+
+.ch-lado {
+    flex: 0 0 216px;
+    border-right: 1px solid #E5E7EB;
+    background: #FAFBFC;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow-y: auto;
+}
+
+.ch-buscar { padding: 11px 11px 7px; }
+
+.ch-buscar input {
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid #E5E7EB;
+    border-radius: 7px;
+    padding: 7px 10px;
+    font-size: 12.5px;
+    font-family: inherit;
+    background: #FFFFFF;
+    color: #111827;
+}
+
+.ch-buscar input:focus {
+    outline: none;
+    border-color: #2563EB;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, .12);
+}
+
+.ch-rotulo {
+    margin: 10px 13px 4px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .7px;
+    text-transform: uppercase;
+    color: #9CA3AF;
+}
+
+.ch-lista { list-style: none; margin: 0; padding: 0 7px; }
+
+.ch-item {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: none;
+    background: transparent;
+    border-radius: 7px;
+    padding: 6px 8px;
+    font-size: 12.5px;
+    color: #374151;
+    cursor: pointer;
+    text-align: left;
+    font-family: inherit;
+}
+
+.ch-item:hover { background: #F3F4F6; }
+
+.ch-item.es-activo {
+    background: #E5E7EB;
+    color: #111827;
+}
+
+.ch-item-txt { min-width: 0; flex: 1; display: flex; flex-direction: column; }
+
+.ch-item-txt b {
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ch-item-txt em {
+    font-style: normal;
+    font-size: 10.5px;
+    color: #9CA3AF;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ch-almohadilla { color: #9CA3AF; font-weight: 700; }
+
+.ch-av {
+    flex: 0 0 23px;
+    width: 23px;
+    height: 23px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+    font-weight: 700;
+    background: #E5E7EB;
+    color: #4B5563;
+}
+
+/* Lo no leído se marca con número, que es lo que hace falta saber. */
+.ch-globo {
+    flex: 0 0 auto;
+    min-width: 17px;
+    height: 17px;
+    padding: 0 5px;
+    border-radius: 999px;
+    background: #DC2626;
+    color: #FFFFFF;
+    font-size: 10px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.ch-nada { padding: 8px 10px; font-size: 11.5px; color: #9CA3AF; }
+
+.ch-conversacion {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.ch-cabecera {
+    padding: 11px 15px;
+    border-bottom: 1px solid #E5E7EB;
+}
+
+.ch-cabecera h3 {
+    margin: 0;
+    font-size: 13.5px;
+    font-weight: 700;
+    color: #111827;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.ch-mensajes {
+    flex: 1;
+    overflow-y: auto;
+    padding: 13px 15px;
+    min-height: 0;
+}
+
+.ch-dia {
+    margin: 14px 0 10px;
+    text-align: center;
+    border-top: 1px solid #F3F4F6;
+}
+
+.ch-dia:first-child { margin-top: 0; border-top: none; }
+
+.ch-dia span {
+    position: relative;
+    top: -9px;
+    background: #FFFFFF;
+    padding: 0 9px;
+    font-size: 10.5px;
+    font-weight: 600;
+    color: #9CA3AF;
+}
+
+.ch-msj { display: flex; gap: 9px; margin-bottom: 9px; }
+
+/* Los mensajes seguidos de la misma persona se sangran bajo su avatar. */
+.ch-msj.es-seguido { margin-top: -6px; margin-bottom: 4px; padding-left: 32px; }
+
+.ch-msj-cuerpo { min-width: 0; flex: 1; }
+
+.ch-msj-cab {
+    margin: 0 0 1px;
+    display: flex;
+    align-items: baseline;
+    gap: 7px;
+}
+
+.ch-msj-cab b { font-size: 12.5px; font-weight: 700; color: #111827; }
+.ch-msj-cab span { font-size: 10.5px; color: #9CA3AF; }
+
+.ch-msj-txt {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.45;
+    color: #1F2937;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.ch-msj.es-mio .ch-av { background: #DBEAFE; color: #1D4ED8; }
+
+.ch-escribir {
+    display: flex;
+    gap: 8px;
+    align-items: flex-end;
+    padding: 11px 15px;
+    border-top: 1px solid #E5E7EB;
+}
+
+.ch-escribir textarea {
+    flex: 1;
+    min-width: 0;
+    resize: none;
+    border: 1px solid #D1D5DB;
+    border-radius: 9px;
+    padding: 9px 11px;
+    font-size: 13px;
+    font-family: inherit;
+    line-height: 1.4;
+    max-height: 110px;
+    color: #111827;
+}
+
+.ch-escribir textarea:focus {
+    outline: none;
+    border-color: #2563EB;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, .12);
+}
+
+@media (max-width: 620px) {
+    /* En pantalla estrecha no caben las dos columnas: la lista pasa arriba,
+       en una tira horizontal. */
+    .ch-marco { flex-direction: column; }
+    .ch-lado {
+        flex: 0 0 auto;
+        max-height: 148px;
+        border-right: none;
+        border-bottom: 1px solid #E5E7EB;
+    }
+}
