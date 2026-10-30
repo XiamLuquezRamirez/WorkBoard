@@ -1,4 +1,5 @@
 // App.jsx
+import { useEffect } from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Dashboard from './Dashboard';
 import LoginForm from './LoginForm';
@@ -7,10 +8,16 @@ import Parameters from './Parameters';
 import Reportes from './Reportes';
 import TableroSeguimiento from './tablero/TableroSeguimiento';
 import TimbreLlamada from './equipo/TimbreLlamada';
+import AvisoMensajes from './equipo/AvisoMensajes';
+import { observarTablas } from '../utils/tablasMoviles';
 
 function App() {
     const { user } = useUser();
-  
+
+    // Etiqueta las celdas de todas las tablas para que en móvil se lean
+    // como fichas (ver utils/tablasMoviles.js y app.css).
+    useEffect(() => observarTablas(), []);
+
     return (
         <HashRouter>
             <Routes>
@@ -55,9 +62,11 @@ function App() {
                 <Route path="*" element={<Navigate to={user ? "/dashboard" : "/login"} />} />
             </Routes>
 
-            {/* El timbre vive fuera de las rutas: una llamada debe sonar se
-                esté en la pantalla que se esté, no sólo en el plano. */}
+            {/* El timbre y el aviso de mensajes viven fuera de las rutas: una
+                llamada o un mensaje deben avisar se esté en la pantalla que se
+                esté, no sólo en el plano. */}
             {user && <TimbreLlamada />}
+            {user && <AvisoMensajes />}
         </HashRouter>
     );
 }

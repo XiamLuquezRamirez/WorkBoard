@@ -3,7 +3,7 @@ import {
     FaFileUpload, FaCheck,
     FaClock, FaSpinner, FaDownload,
     FaTrash, FaFile, FaImage, FaEdit, FaSave, FaEye, FaPause, FaPlay, FaComment,
-    FaLink, FaGoogleDrive, FaArchive, FaCalendar, FaFolder, FaPlus, FaTimes
+    FaLink, FaGoogleDrive, FaArchive, FaCalendar, FaFolder, FaPlus, FaTimes, FaPaperPlane
 } from 'react-icons/fa';    
 import axios from 'axios';
 import Swal from 'sweetalert2';
@@ -14,6 +14,7 @@ import { useUser } from './UserContext';
 import axiosInstance from '../axiosConfig';
 import { FaCircleCheck, FaCircle, FaCircleXmark } from 'react-icons/fa6';
 import CriteriosAceptacion from './criterios/CriteriosAceptacion';
+import VisionGeneralTarea from './tareas/VisionGeneralTarea';
 
 /** Normaliza aprobada desde API (1, "1", true, etc.) */
 const esTareaAprobadaValor = (v) => {
@@ -108,6 +109,11 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton, is
     const [resolviendoPausa, setResolviendoPausa] = useState(false);
     const subtareasRef = useRef([]);
     const checklistTituloRef = useRef('');
+    // Criterios de aceptación tal como los cargó su sección: la visión general
+    // y los botones de estado los leen de aquí, sin una segunda petición.
+    const [criteriosDatos, setCriteriosDatos] = useState(null);
+    const [abrirCriterios, setAbrirCriterios] = useState(0);
+    const seccionesRef = useRef({});
 
     // Ref del overlay para anclar SweetAlert2 dentro del modal.
     // Esto evita conflictos de foco/click cuando se dispara Swal desde un modal abierto.
@@ -618,8 +624,57 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton, is
         }
     };
 
+    const irASeccion = (nombre) => {
+        if (nombre === 'criterios') setAbrirCriterios((n) => n + 1);
+        const el = seccionesRef.current[nombre];
+        if (!el) return;
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        el.classList.remove('vg-destello');
+        void el.offsetWidth;
+        el.classList.add('vg-destello');
+    };
+
+    const tieneCriterios = (criteriosDatos?.resumen?.total || 0) > 0;
+
     const handleStatusChange = async (newStatus) => {
         if (newStatus === currentStatus) return;
+
+        // Con criterios de aceptación la tarea no se cierra desde aquí: se
+        // envía a revisión y la cierra quien acepta la entrega.
+        if (newStatus === 'Completada' && tieneCriterios) {
+            const r = await fireSwal({
+                title: 'Esta tarea se cierra aceptando la entrega',
+                text: 'Tiene criterios de aceptación: envíala a revisión y tu líder verificará los criterios antes de cerrarla.',
+                icon: 'info',
+                showCancelButton: true,
+                confirmButtonText: 'Enviar a revisión',
+                cancelButtonText: 'Cancelar',
+            });
+            if (r.isConfirmed) handleStatusChange('En Revisión');
+            return;
+        }
+
+        if (newStatus === 'En Revisión') {
+            const r = criteriosDatos?.resumen;
+            const avisos = [];
+            if (subtareas.length > 0 && subtareasCompletadas < subtareas.length) {
+                avisos.push(`El checklist va ${subtareasCompletadas}/${subtareas.length}.`);
+            }
+            if (r && r.total > r.declarados) {
+                avisos.push(`Has declarado ${r.declarados} de ${r.total} criterios.`);
+            }
+            const confirmacion = await fireSwal({
+                title: 'Enviar a revisión',
+                text: avisos.length
+                    ? `${avisos.join(' ')} ¿Enviar de todos modos?`
+                    : 'Tu líder verificará los criterios y aceptará o devolverá la entrega.',
+                icon: avisos.length ? 'warning' : 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Enviar',
+                cancelButtonText: 'Cancelar',
+            });
+            if (!confirmacion.isConfirmed) return;
+        }
 
         if (newStatus === 'Completada' && subtareas.length > 0 && subtareasCompletadas < subtareas.length) {
             fireSwal('Checklist incompleto', `Debes completar todas las subtareas antes de cerrar la tarea. (${subtareasCompletadas}/${subtareas.length} completadas)`, 'warning');
@@ -889,7 +944,8 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton, is
                 fireSwal('¡Éxito!', 'Estado actualizado correctamente', 'success');
             }
         } catch (error) {
-            fireSwal('Error', 'Error al actualizar el estado', 'error');
+            const d = error?.response?.data;
+            fireSwal(d?.requiere_verificacion ? 'Requiere aceptación' : 'Error', d?.error || 'Error al actualizar el estado', 'error');
         } finally {
             setIsChangingStatus(false);
         }
@@ -1827,6 +1883,22 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton, is
                         </div>
 
                         <div className="modal-body">
+                            {!isEditingTask && (
+                                <VisionGeneralTarea
+                                    task={task}
+                                    estado={currentStatus}
+                                    criterios={criteriosDatos}
+                                    checklist={{ hechas: subtareasCompletadas, total: subtareas.length }}
+                                    evidencias={evidencias.length}
+                                    pausada={pausada}
+                                    rechazada={rechazada}
+                                    archivada={isArchived}
+                                    esResponsable={isOwnTask}
+                                    reprogramacionPendiente={!!reprgPendiente}
+                                    onIrA={irASeccion}
+                                />
+                            )}
+
                             {/* Panel izquierdo: Información de la tarea */}
                             <div className="task-info-panel">
                                 <div className="edit-buttons">
@@ -2025,18 +2097,11 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton, is
                                     </div>
                                 )}
 
-                                {/* Para qué sirve la tarea y si algo la detiene: a la
-                                    vista sin tener que entrar a editar. Los criterios
-                                    de aceptación van en su propia sección, debajo. */}
+                                {/* Si algo detiene la tarea, a la vista sin tener que
+                                    entrar a editar. El propósito encabeza la visión
+                                    general; los criterios van en su sección, debajo. */}
                                 {!isEditingTask && (
                                     <div className="task-metodo">
-                                        {task.proposito && (
-                                            <div className="metodo-item">
-                                                <span className="metodo-label">Para qué</span>
-                                                <p>{task.proposito}</p>
-                                            </div>
-                                        )}
-
                                         {/* El impedimento va arriba: si algo detiene
                                             la tarea, es lo primero que hay que ver. */}
                                         {Number(task.bloqueada) === 1 && (
@@ -2079,10 +2144,17 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton, is
                                     checklist. Miden si el resultado cumple lo
                                     pactado; el checklist, cuánto se ejecutó. */}
                                 {!isEditingTask && task?.id && (
-                                    <CriteriosAceptacion task={task} onUpdate={onUpdate} />
+                                    <div ref={(el) => { seccionesRef.current.criterios = el; }}>
+                                        <CriteriosAceptacion
+                                            task={{ ...task, estado: currentStatus }}
+                                            onUpdate={onUpdate}
+                                            onCargado={setCriteriosDatos}
+                                            abrirSenal={abrirCriterios}
+                                        />
+                                    </div>
                                 )}
 
-                                <div className="task-dates">
+                                <div className="task-dates" ref={(el) => { seccionesRef.current.fechas = el; }}>
                                     {/* Fecha creación */}
                                     <div className="date-item">
                                         <FaCalendar />
@@ -2201,10 +2273,21 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton, is
                                             >
                                                 <FaSpinner /> En Proceso
                                             </button>
+                                            {(tieneCriterios || currentStatus === 'En Revisión') && (
+                                                <button
+                                                    className={`status-button review ${currentStatus === 'En Revisión' ? 'active' : ''}`}
+                                                    onClick={() => handleStatusChange('En Revisión')}
+                                                    disabled={isChangingStatus || currentStatus === 'En Revisión' || currentStatus === 'Completada'}
+                                                    title="Entregar para que verifiquen los criterios y acepten la tarea"
+                                                >
+                                                    <FaPaperPlane /> {currentStatus === 'En Revisión' ? 'En Revisión' : 'Enviar a revisión'}
+                                                </button>
+                                            )}
                                             <button
-                                                className={`status-button completed ${currentStatus === 'Completada' ? 'active' : ''}`}
+                                                className={`status-button completed ${currentStatus === 'Completada' ? 'active' : ''} ${tieneCriterios ? 'es-por-aceptacion' : ''}`}
                                                 onClick={() => handleStatusChange('Completada')}
                                                 disabled={isChangingStatus || currentStatus === 'Completada'}
+                                                title={tieneCriterios ? 'Se cierra al aceptar la entrega' : undefined}
                                             >
                                                 <FaCheck /> Completada
                                             </button>
@@ -2215,7 +2298,7 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton, is
 
 
                                 {/* ── Checklist (misma UX que EmployeeModal) ─ */}
-                                <div className="subtareas-section">
+                                <div className="subtareas-section" ref={(el) => { seccionesRef.current.checklist = el; }}>
                                     <h4 className="subtareas-title">
                                         ☑ Checklist
                                         <span className="subtareas-counter">
@@ -2432,7 +2515,7 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton, is
                             </div>
 
                             {/* Panel derecho: Evidencias */}
-                            <div className="evidence-panel ">
+                            <div className="evidence-panel " ref={(el) => { seccionesRef.current.evidencias = el; }}>
                                 <h4>Evidencias de la tarea</h4>
 
                                 {/* Nota de entrega del empleado */}

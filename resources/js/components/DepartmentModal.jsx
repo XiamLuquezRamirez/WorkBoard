@@ -9,8 +9,19 @@ import Swal from 'sweetalert2';
 
 // ── helpers ────────────────────────────────────────────────────────────────
 
+// Los departamentos anteriores a la columna «estado» la tienen vacía y
+// cuentan como activos. Un solo criterio para la insignia y el botón: antes
+// la insignia decía «Activo» y el botón ofrecía «Activar».
+const esActivo = (estado) => estado !== 'Inactivo';
+
+const errorDe = (err, porDefecto) => {
+    const d = err?.response?.data;
+    if (d?.errors) return Object.values(d.errors).flat().join(' ');
+    return d?.message || d?.error || porDefecto;
+};
+
 const estadoBadge = (estado) => {
-    const activo = estado === 'Activo' || estado == null;
+    const activo = esActivo(estado);
     return (
         <span className={`dm-badge ${activo ? 'dm-badge--activo' : 'dm-badge--inactivo'}`}>
             {activo ? 'Activo' : 'Inactivo'}
@@ -39,7 +50,7 @@ const DepartmentModal = ({ isOpen, onClose }) => {
     const [selected, setSelected] = useState(null);
 
     // estado del formulario create/edit
-    const [form, setForm] = useState({ nombre: '', estado: 'Activo' });
+    const [form, setForm] = useState({ nombre: '', estado: 'Activo', lider_id: '' });
     const [formError, setFormError] = useState('');
     const [savingForm, setSavingForm] = useState(false);
 
@@ -63,9 +74,14 @@ const DepartmentModal = ({ isOpen, onClose }) => {
             .finally(() => setLoading(false));
     }, []);
 
+    // Cualquier empleado activo puede liderar un departamento.
     const cargarLideres = useCallback(() => {
         axiosInstance.post('/cargarEmpleados')
-            .then(r => setLideresDisponibles(r.data))
+            .then(r => setLideresDisponibles(
+                (r.data || [])
+                    .filter(e => e.estado === 'Activo')
+                    .sort((a, b) => `${a.nombres} ${a.apellidos}`.localeCompare(`${b.nombres} ${b.apellidos}`))
+            ))
             .catch(() => {});
     }, []);
 
@@ -87,14 +103,14 @@ const DepartmentModal = ({ isOpen, onClose }) => {
     // ── navegación ─────────────────────────────────────────────────────────
 
     const abrirCrear = () => {
-        setForm({ nombre: '', estado: 'Activo' });
+        setForm({ nombre: '', estado: 'Activo', lider_id: '' });
         setFormError('');
         setSelected(null);
         setView('form');
     };
 
     const abrirEditar = (dept) => {
-        setForm({ nombre: dept.nombre, estado: dept.estado || 'Activo' });
+        setForm({ nombre: dept.nombre, estado: esActivo(dept.estado) ? 'Activo' : 'Inactivo', lider_id: dept.lider_id || '' });
         setFormError('');
         setSelected(dept);
         setView('form');
@@ -118,26 +134,24 @@ const DepartmentModal = ({ isOpen, onClose }) => {
     const handleGuardarForm = () => {
         if (!form.nombre.trim()) { setFormError('El nombre es obligatorio'); return; }
         setSavingForm(true);
+        const datos = { ...form, lider_id: form.lider_id || null };
         const req = selected
-            ? axiosInstance.put(`/parametros/departamentos/${selected.id}`, form)
-            : axiosInstance.post('/parametros/departamentos', form);
+            ? axiosInstance.put(`/parametros/departamentos/${selected.id}`, datos)
+            : axiosInstance.post('/parametros/departamentos', datos);
 
         req.then(() => {
             Swal.fire({ icon: 'success', title: selected ? 'Departamento actualizado' : 'Departamento creado', timer: 1500, showConfirmButton: false });
             cargarDepartamentos();
             volverLista();
         })
-        .catch(err => {
-            const msg = err.response?.data?.message || 'Error al guardar';
-            Swal.fire('Error', msg, 'error');
-        })
+        .catch(err => Swal.fire('Error', errorDe(err, 'Error al guardar'), 'error'))
         .finally(() => setSavingForm(false));
     };
 
     const handleEliminar = (dept) => {
         Swal.fire({
             title: `¿Eliminar "${dept.nombre}"?`,
-            text: 'Esta acción no se puede deshacer.',
+            text: 'Dejará de aparecer en la gestión. Si sólo quieres dejar de usarlo por un tiempo, desactívalo.',
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#dc2626',
@@ -157,11 +171,16 @@ const DepartmentModal = ({ isOpen, onClose }) => {
         });
     };
 
+    // Desactivar no lo oculta: queda en la lista, atenuado, para reactivarlo.
+    // Deja de ofrecerse al elegir el departamento de un empleado.
     const handleToggleEstado = (dept) => {
-        const nuevo = dept.estado === 'Activo' ? 'Inactivo' : 'Activo';
+        const nuevo = esActivo(dept.estado) ? 'Inactivo' : 'Activo';
         axiosInstance.put(`/parametros/departamentos/${dept.id}`, { nombre: dept.nombre, estado: nuevo })
-            .then(() => cargarDepartamentos())
-            .catch(() => Swal.fire('Error', 'No se pudo cambiar el estado', 'error'));
+            .then(() => {
+                setDepartamentos(prev => prev.map(d => (d.id === dept.id ? { ...d, estado: nuevo } : d)));
+                Swal.fire({ icon: 'success', title: nuevo === 'Activo' ? 'Departamento activado' : 'Departamento desactivado', timer: 1300, showConfirmButton: false });
+            })
+            .catch(err => Swal.fire('Error', errorDe(err, 'No se pudo cambiar el estado'), 'error'));
     };
 
     // ── líder del departamento ─────────────────────────────────────────────
@@ -169,13 +188,20 @@ const DepartmentModal = ({ isOpen, onClose }) => {
     const handleGuardarLider = () => {
         setSavingLider(true);
         axiosInstance.post(`/parametros/departamentos/${selected.id}/lider`, { lider_id: liderSelId || null })
-            .then(() => {
-                Swal.fire({ icon: 'success', title: 'Líder asignado', timer: 1400, showConfirmButton: false });
+            .then(r => {
+                Swal.fire({ icon: 'success', title: r.data?.message || 'Líder actualizado', timer: 1400, showConfirmButton: false });
                 cargarDepartamentos();
-                // actualizar selected en memoria
-                setSelected(prev => ({ ...prev, lider_id: liderSelId || null }));
+                const lider = lideresDisponibles.find(e => String(e.id) === String(liderSelId));
+                setSelected(prev => ({
+                    ...prev,
+                    lider_id: liderSelId || null,
+                    lider_nombre: lider ? `${lider.nombres} ${lider.apellidos}` : null,
+                    lider_independencia: null,
+                }));
+                // Las marcas «Líder» de la lista de empleados cambian.
+                cargarEmpleadosDept(selected.id);
             })
-            .catch(() => Swal.fire('Error', 'No se pudo asignar el líder', 'error'))
+            .catch(err => Swal.fire('Error', errorDe(err, 'No se pudo asignar el líder'), 'error'))
             .finally(() => setSavingLider(false));
     };
 
@@ -263,7 +289,7 @@ const DepartmentModal = ({ isOpen, onClose }) => {
                                     </thead>
                                     <tbody>
                                         {departamentosFiltrados.map(dept => (
-                                            <tr key={dept.id} className={dept.estado === 'Inactivo' ? 'dm-row--inactivo' : ''}>
+                                            <tr key={dept.id} className={esActivo(dept.estado) ? '' : 'dm-row--inactivo'}>
                                                 <td>
                                                     <div className="dm-dept-name">
                                                         <FaBuilding className="dm-dept-icon" />
@@ -272,9 +298,16 @@ const DepartmentModal = ({ isOpen, onClose }) => {
                                                 </td>
                                                 <td>{estadoBadge(dept.estado)}</td>
                                                 <td>
-                                                    {dept.lider_nombre
-                                                        ? <span className="dm-lider-chip"><FaUserTie /> {dept.lider_nombre}</span>
-                                                        : <span className="dm-sin-lider">Sin líder</span>}
+                                                    <button
+                                                        type="button"
+                                                        className="dm-lider-celda"
+                                                        title={dept.lider_nombre ? 'Cambiar o quitar el líder' : 'Asignar líder'}
+                                                        onClick={() => abrirDetalle(dept)}
+                                                    >
+                                                        {dept.lider_nombre
+                                                            ? <span className="dm-lider-chip"><FaUserTie /> {dept.lider_nombre}</span>
+                                                            : <span className="dm-sin-lider"><FaPlus /> Asignar líder</span>}
+                                                    </button>
                                                 </td>
                                                 <td style={{ textAlign: 'center' }}>
                                                     <span className="dm-emp-count">{dept.total_empleados}</span>
@@ -283,10 +316,10 @@ const DepartmentModal = ({ isOpen, onClose }) => {
                                                     <div className="dm-actions">
                                                         <button
                                                             className="dm-action-btn dm-action-btn--view"
-                                                            title="Ver detalle / empleados"
+                                                            title="Líder y empleados"
                                                             onClick={() => abrirDetalle(dept)}
                                                         >
-                                                            <FaUsers />
+                                                            <FaUserTie />
                                                         </button>
                                                         <button
                                                             className="dm-action-btn dm-action-btn--edit"
@@ -296,11 +329,11 @@ const DepartmentModal = ({ isOpen, onClose }) => {
                                                             <FaEdit />
                                                         </button>
                                                         <button
-                                                            className={`dm-action-btn ${dept.estado === 'Activo' ? 'dm-action-btn--toggle-off' : 'dm-action-btn--toggle-on'}`}
-                                                            title={dept.estado === 'Activo' ? 'Desactivar' : 'Activar'}
+                                                            className={`dm-action-btn ${esActivo(dept.estado) ? 'dm-action-btn--toggle-off' : 'dm-action-btn--toggle-on'}`}
+                                                            title={esActivo(dept.estado) ? 'Desactivar' : 'Activar'}
                                                             onClick={() => handleToggleEstado(dept)}
                                                         >
-                                                            {dept.estado === 'Activo' ? <FaBan /> : <FaCheck />}
+                                                            {esActivo(dept.estado) ? <FaBan /> : <FaCheck />}
                                                         </button>
                                                         <button
                                                             className="dm-action-btn dm-action-btn--delete"
@@ -336,6 +369,19 @@ const DepartmentModal = ({ isOpen, onClose }) => {
                                     onKeyDown={e => e.key === 'Enter' && handleGuardarForm()}
                                 />
                                 {formError && <span className="dm-form-error">{formError}</span>}
+                            </div>
+
+                            <div className="dm-form-group">
+                                <label className="dm-label">Líder del departamento</label>
+                                <SelectorLider
+                                    valor={form.lider_id}
+                                    onCambio={v => setForm(p => ({ ...p, lider_id: v }))}
+                                    empleados={lideresDisponibles}
+                                    deptId={selected?.id}
+                                />
+                                <span className="dm-hint">
+                                    Los empleados del departamento pasarán a reportarle. Elige «Sin líder» para dejarlo vacante.
+                                </span>
                             </div>
 
                             {selected && (
@@ -376,26 +422,23 @@ const DepartmentModal = ({ isOpen, onClose }) => {
                         <section className="dm-section">
                             <h3 className="dm-section-title"><FaUserTie /> Líder de Área</h3>
                             <div className="dm-lider-row">
-                                <select
-                                    className="dm-input dm-lider-select"
-                                    value={liderSelId}
-                                    onChange={e => setLiderSelId(e.target.value)}
-                                >
-                                    <option value="">— Sin líder —</option>
-                                    {lideresDisponibles.map(emp => (
-                                        <option key={emp.id} value={emp.id}>
-                                            {emp.nombres} {emp.apellidos}
-                                        </option>
-                                    ))}
-                                </select>
+                                <SelectorLider
+                                    valor={liderSelId}
+                                    onCambio={setLiderSelId}
+                                    empleados={lideresDisponibles}
+                                    deptId={selected.id}
+                                />
                                 <button
                                     className="dm-btn dm-btn--primary"
                                     onClick={handleGuardarLider}
-                                    disabled={savingLider}
+                                    disabled={savingLider || String(liderSelId || '') === String(selected.lider_id || '')}
                                 >
-                                    <FaSave /> {savingLider ? 'Guardando…' : 'Asignar líder'}
+                                    <FaSave /> {savingLider ? 'Guardando…' : liderSelId ? 'Asignar líder' : 'Dejar sin líder'}
                                 </button>
                             </div>
+                            <p className="dm-hint">
+                                Al cambiar el líder, los empleados del departamento pasan a reportarle a él.
+                            </p>
                             {selected.lider_nombre && (
                                 <p className="dm-lider-actual">
                                     Líder actual: <strong>{selected.lider_nombre}</strong>
@@ -469,5 +512,26 @@ const DepartmentModal = ({ isOpen, onClose }) => {
         </div>
     );
 };
+
+/**
+ * Lista de posibles líderes: primero la gente del propio departamento, luego
+ * el resto con su área entre paréntesis.
+ */
+function SelectorLider({ valor, onCambio, empleados, deptId }) {
+    const propios = empleados.filter(e => deptId && String(e.departamento) === String(deptId));
+    const otros = empleados.filter(e => !deptId || String(e.departamento) !== String(deptId));
+    const opcion = (e) => (
+        <option key={e.id} value={e.id}>
+            {e.nombres} {e.apellidos}{e.nombre_departamento && String(e.departamento) !== String(deptId) ? ` (${e.nombre_departamento})` : ''}
+        </option>
+    );
+    return (
+        <select className="dm-input dm-lider-select" value={valor || ''} onChange={ev => onCambio(ev.target.value)}>
+            <option value="">— Sin líder —</option>
+            {propios.length > 0 && <optgroup label="De este departamento">{propios.map(opcion)}</optgroup>}
+            <optgroup label={propios.length ? 'De otros departamentos' : 'Empleados'}>{otros.map(opcion)}</optgroup>
+        </select>
+    );
+}
 
 export default DepartmentModal;

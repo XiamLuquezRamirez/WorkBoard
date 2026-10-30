@@ -136,6 +136,35 @@ function Mueble({ m }) {
                     <rect className="po-caja-cinta" x={x + U(0.36)} y={y} width={U(0.13)} height={U(0.8)} />
                 </g>
             );
+        case 'alfombra':
+            return (
+                <g>
+                    <rect className="po-alfombra" x={x} y={y} width={w} height={h} rx="6" />
+                    <rect className="po-alfombra-borde" x={x + 5} y={y + 5} width={Math.max(0, w - 10)} height={Math.max(0, h - 10)} rx="4" />
+                </g>
+            );
+        case 'tv':
+            return (
+                <g>
+                    <rect className="po-tv" x={x} y={y} width={w} height={h} rx="2" />
+                    <rect className="po-tv-luz" x={x + 3} y={y + 2.5} width={Math.max(0, w - 6)} height={Math.max(1, h - 5)} rx="1" />
+                </g>
+            );
+        case 'cafetera':
+            return (
+                <g>
+                    <rect className="po-cafetera" x={x} y={y} width={U(0.7)} height={U(0.8)} rx="3" />
+                    <circle className="po-cafe" cx={x + U(0.35)} cy={y + U(0.48)} r={U(0.17)} />
+                </g>
+            );
+        case 'dispensador':
+            return (
+                <g>
+                    <rect className="po-mueble" x={x} y={y} width={U(0.8)} height={U(0.8)} rx="3" />
+                    <circle className="po-garrafon" cx={x + U(0.4)} cy={y + U(0.4)} r={U(0.3)} />
+                    <circle className="po-garrafon-luz" cx={x + U(0.32)} cy={y + U(0.32)} r={U(0.09)} />
+                </g>
+            );
         case 'planta':
             return (
                 <g className="po-planta">
@@ -148,6 +177,64 @@ function Mueble({ m }) {
         default:
             return null;
     }
+}
+
+/** Giro según el lado de la mesa en que queda la plaza (ver ladoDeMesa). */
+const GIRO_LADO = { n: 0, e: 90, s: 180, o: -90 };
+
+/**
+ * Silla de una plaza sin nadie: el respaldo queda del lado contrario a la
+ * mesa. Dice cuánto sitio libre tiene el área sin contar cabezas.
+ */
+function SillaLibre({ s }) {
+    return (
+        <g className="po-silla" transform={`translate(${U(s.x)} ${U(s.y)}) rotate(${GIRO_LADO[s.lado] || 0})`}>
+            <rect className="po-silla-asiento" x="-12" y="-8" width="24" height="20" rx="6" />
+            <rect className="po-silla-respaldo" x="-13" y="-15" width="26" height="7" rx="3.5" />
+        </g>
+    );
+}
+
+/**
+ * Portátil sobre el borde de la mesa, de cara a su plaza. Encendido (y con
+ * su taza al lado) cuando alguien se sienta ahí.
+ */
+function Portatil({ p }) {
+    return (
+        <g
+            className={`po-portatil${p.encendido ? ' es-encendido' : ''}`}
+            transform={`translate(${U(p.x)} ${U(p.y)}) rotate(${GIRO_LADO[p.lado] || 0})`}
+        >
+            <rect className="po-portatil-base" x="-12" y="4" width="24" height="14" rx="2" />
+            <rect className="po-portatil-teclas" x="-9" y="7" width="18" height="6" rx="1" />
+            <rect className="po-portatil-pantalla" x="-12" y="18" width="24" height="5" rx="1.5" />
+            {p.encendido && <circle className="po-taza" cx="19" cy="10" r="4" />}
+        </g>
+    );
+}
+
+/**
+ * Ventanas repartidas a lo largo de los muros que dan a la calle. Se
+ * dibujan sobre el grosor del muro, como en un plano de arquitecto.
+ */
+function ventanasDe(sala) {
+    const x = U(sala.x);
+    const y = U(sala.y);
+    const w = U(sala.ancho);
+    const h = U(sala.alto);
+    const tramos = (largo) => {
+        const n = Math.max(1, Math.floor(largo / U(3.2)));
+        const paso = largo / n;
+        const hueco = Math.min(U(1.8), paso - U(0.6));
+        return Array.from({ length: n }, (_, i) => ({ centro: paso * (i + 0.5), hueco }));
+    };
+
+    const lados = sala.ventanas || {};
+    const v = [];
+    if (lados.n) tramos(w).forEach((t) => v.push({ x: x + t.centro - t.hueco / 2, y: y - 5, width: t.hueco, height: 6 }));
+    if (lados.o) tramos(h - U(1.4)).forEach((t) => v.push({ x: x - 5, y: y + t.centro - t.hueco / 2, width: 6, height: t.hueco }));
+    if (lados.e) tramos(h - U(1.4)).forEach((t) => v.push({ x: x + w - 1, y: y + t.centro - t.hueco / 2, width: 6, height: t.hueco }));
+    return v;
 }
 
 // ─── Puesto ─────────────────────────────────────────────────────────────────
@@ -308,6 +395,8 @@ function Sala({ sala, resaltarEquipo, elegido, onElegir }) {
     const w = U(sala.ancho);
     const h = U(sala.alto);
     const r = sala.zona?.resumen;
+    const gente = (sala.puestos || []).length;
+    const bisagra = x + w / 2 - 22;
 
     return (
         <g className={`po-sala zs-${peor.senal}${sala.depto ? '' : ' es-servicio'}`}>
@@ -326,15 +415,29 @@ function Sala({ sala, resaltarEquipo, elegido, onElegir }) {
                 fill={`url(#${sala.depto ? 'po-madera' : 'po-baldosa'})`}
             />
 
+            {/* Luz de techo: las áreas de trabajo se ven encendidas y cálidas
+                frente a los servicios. */}
+            {sala.depto && (
+                <rect className="po-luz-techo" x={x} y={y} width={w} height={h} rx="3" fill="url(#po-luz)" />
+            )}
+
             {/* Filo interior claro: remata el muro por dentro. */}
             <rect className="po-muro-luz" x={x} y={y} width={w} height={h} rx="3" />
 
-            {/* Puerta: hueco en el muro, con su marco */}
-            <rect className="po-puerta" x={x + w / 2 - 22} y={y + h - 4} width="44" height="8" rx="2" />
+            {ventanasDe(sala).map((v, i) => <rect key={`v${i}`} className="po-ventana" rx="1.5" {...v} />)}
+
+            {/* Puerta: hueco en el muro, con su marco y el barrido de la hoja
+                hacia dentro, como en un plano de arquitecto. */}
+            <rect className="po-puerta" x={bisagra} y={y + h - 4} width="44" height="8" rx="2" />
+            <path className="po-puerta-barrido" d={`M ${bisagra + 40} ${y + h - 2} A 40 40 0 0 0 ${bisagra} ${y + h - 42}`} />
+            <line className="po-puerta-hoja" x1={bisagra} y1={y + h - 2} x2={bisagra} y2={y + h - 42} />
             <rect className="po-puerta-marco" x={x + w / 2 - 24} y={y + h - 5} width="4" height="10" rx="1" />
             <rect className="po-puerta-marco" x={x + w / 2 + 20} y={y + h - 5} width="4" height="10" rx="1" />
 
             {(sala.muebles || []).map((m, i) => <Mueble key={i} m={m} />)}
+
+            {(sala.portatiles || []).map((p, i) => <Portatil key={`p${i}`} p={p} />)}
+            {(sala.sillasLibres || []).map((s, i) => <SillaLibre key={`s${i}`} s={s} />)}
 
             {(sala.puestos || []).map((c) => (
                 <Puesto
@@ -349,7 +452,10 @@ function Sala({ sala, resaltarEquipo, elegido, onElegir }) {
             {sala.corto && (
                 <>
                     <rect className="po-rotulo" x={x + 7} y={y + 7} width={Math.max(80, w - 14)} height="30" rx="7" />
-                    <text className="po-rotulo-txt" x={x + 16} y={y + 28}>{sala.corto}</text>
+                    <text className="po-rotulo-txt" x={x + 16} y={y + 28}>
+                        {sala.corto}
+                        {gente > 0 && <tspan className="po-rotulo-n" dx="8">{`· ${gente}`}</tspan>}
+                    </text>
                     {r && (r.bloqueadas > 0 || r.atrasadas > 0) && (
                         <text className="po-rotulo-dato" x={x + w - 16} y={y + 28} textAnchor="end">
                             {r.bloqueadas > 0 ? `⛔ ${r.bloqueadas}` : `${r.atrasadas} tarde`}
@@ -379,6 +485,9 @@ export default function PlanoOficina({ zonas, miEquipoTotal, elegido, onElegir, 
     const [zoom, setZoom] = useState(1);
     const [desp, setDesp] = useState({ x: 0, y: 0 });
     const arrastre = useRef(null);
+    // Dedos (o ratón) sobre el lienzo, por pointerId: con dos se pellizca.
+    const punteros = useRef(new Map());
+    const pellizco = useRef(null);
     const cajaRef = useRef(null);
 
     const datosPiso = PISOS[piso];
@@ -390,7 +499,7 @@ export default function PlanoOficina({ zonas, miEquipoTotal, elegido, onElegir, 
             .filter((z) => z.puestos.length > 0);
     }, [zonas, soloMios]);
 
-    const { salas, sinSala } = useMemo(
+    const { salas, sinSala, franjas, ancho, ocultas } = useMemo(
         () => repartirEnPlano(datosPiso, filtradas),
         [datosPiso, filtradas]
     );
@@ -423,17 +532,53 @@ export default function PlanoOficina({ zonas, miEquipoTotal, elegido, onElegir, 
         acercar(e.deltaY < 0 ? 1.15 : 1 / 1.15, { x: e.clientX, y: e.clientY });
     };
 
-    const alBajarRaton = (e) => {
-        arrastre.current = { x: e.clientX, y: e.clientY, dx: desp.x, dy: desp.y };
+    // Eventos de puntero: valen igual para ratón, dedo y lápiz. Antes sólo
+    // había eventos de ratón y en el móvil el plano no se podía mover.
+    const empezarArrastre = (x, y) => {
+        arrastre.current = { x, y, dx: desp.x, dy: desp.y };
+    };
+
+    const dosDedos = () => {
+        const [a, b] = [...punteros.current.values()];
+        return {
+            distancia: Math.hypot(a.x - b.x, a.y - b.y),
+            centro: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 },
+        };
+    };
+
+    const alBajar = (e) => {
+        punteros.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+        if (punteros.current.size === 1) {
+            empezarArrastre(e.clientX, e.clientY);
+        } else if (punteros.current.size === 2) {
+            arrastre.current = null;
+            pellizco.current = dosDedos().distancia;
+        }
     };
 
     const alMover = (e) => {
+        if (!punteros.current.has(e.pointerId)) return;
+        punteros.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+        if (punteros.current.size >= 2 && pellizco.current) {
+            const { distancia, centro } = dosDedos();
+            if (distancia > 0) acercar(distancia / pellizco.current, centro);
+            pellizco.current = distancia;
+            return;
+        }
         if (!arrastre.current) return;
         const a = arrastre.current;
         setDesp({ x: a.dx + (e.clientX - a.x), y: a.dy + (e.clientY - a.y) });
     };
 
-    const soltar = () => { arrastre.current = null; };
+    const soltar = (e) => {
+        punteros.current.delete(e.pointerId);
+        if (punteros.current.size < 2) pellizco.current = null;
+        // Al levantar uno de dos dedos se sigue arrastrando con el otro, sin salto.
+        const resto = [...punteros.current.values()][0];
+        if (resto) empezarArrastre(resto.x, resto.y);
+        else arrastre.current = null;
+    };
 
     const reencuadrar = () => { setZoom(1); setDesp({ x: 0, y: 0 }); };
 
@@ -457,6 +602,9 @@ export default function PlanoOficina({ zonas, miEquipoTotal, elegido, onElegir, 
 
                 <span className="po-cuenta">
                     {gentePiso} {gentePiso === 1 ? 'persona' : 'personas'}
+                    {ocultas > 0 && (ocultas === 1
+                        ? ' · 1 oficina vacía oculta'
+                        : ` · ${ocultas} oficinas vacías ocultas`)}
                 </span>
 
                 <div className="po-herramientas">
@@ -479,14 +627,15 @@ export default function PlanoOficina({ zonas, miEquipoTotal, elegido, onElegir, 
                 className={`po-lienzo ${arrastre.current ? 'es-arrastrando' : ''}`}
                 ref={cajaRef}
                 onWheel={alRodar}
-                onMouseDown={alBajarRaton}
-                onMouseMove={alMover}
-                onMouseUp={soltar}
-                onMouseLeave={soltar}
+                onPointerDown={alBajar}
+                onPointerMove={alMover}
+                onPointerUp={soltar}
+                onPointerCancel={soltar}
+                onPointerLeave={soltar}
             >
                 <svg
                     className="po-svg"
-                    viewBox={`0 0 ${U(datosPiso.ancho)} ${U(datosPiso.alto)}`}
+                    viewBox={`0 0 ${U(ancho)} ${U(datosPiso.alto)}`}
                     preserveAspectRatio="xMidYMid meet"
                     style={{
                         transform: `translate(${desp.x}px, ${desp.y}px) scale(${zoom})`,
@@ -509,9 +658,33 @@ export default function PlanoOficina({ zonas, miEquipoTotal, elegido, onElegir, 
                             <rect width="26" height="26" fill="#C9CFD8" />
                             <rect width="26" height="26" fill="none" stroke="#B4BCC7" strokeWidth="1.4" />
                         </pattern>
+                        <pattern id="po-cemento" width="40" height="40" patternUnits="userSpaceOnUse">
+                            <rect width="40" height="40" fill="#8A8F98" />
+                            <circle cx="9" cy="12" r="1.2" fill="#7B8089" />
+                            <circle cx="29" cy="31" r="1" fill="#7B8089" />
+                            <circle cx="33" cy="8" r="0.8" fill="#9A9FA8" />
+                        </pattern>
+                        <radialGradient id="po-luz" cx="50%" cy="45%" r="60%">
+                            <stop offset="0%" stopColor="#FFE9B8" stopOpacity="0.26" />
+                            <stop offset="100%" stopColor="#FFE9B8" stopOpacity="0" />
+                        </radialGradient>
                     </defs>
 
-                    <rect className="po-planta" x="0" y="0" width={U(datosPiso.ancho)} height={U(datosPiso.alto)} />
+                    {/* La clase no puede ser po-planta: ésa es la de las
+                        macetas, y el césped entero se mecía con ellas. */}
+                    <rect className="po-exterior" x="0" y="0" width={U(ancho)} height={U(datosPiso.alto)} />
+
+                    {/* Pasillo: la huella del edificio bajo las salas. */}
+                    {franjas.map((f) => (
+                        <rect
+                            key={f.y}
+                            className="po-pasillo"
+                            x={U(f.x - 0.55)} y={U(f.y - 0.55)}
+                            width={U(f.ancho + 1.1)} height={U(f.alto + 1.1)}
+                            rx="10"
+                            fill="url(#po-cemento)"
+                        />
+                    ))}
 
                     {salas.map((s) => (
                         <Sala
@@ -532,8 +705,16 @@ export default function PlanoOficina({ zonas, miEquipoTotal, elegido, onElegir, 
                 </p>
             )}
 
+            <div className="po-leyenda">
+                {['trabajando', 'atrasado', 'pausa', 'bloqueado', 'sin_criterio'].map((k) => (
+                    <span key={k} className={`po-ley ley-${k}`}><i />{SENALES[k].etiqueta}</span>
+                ))}
+                {hayEquipo && <span className="po-ley ley-mio"><i />Tu equipo</span>}
+                <span className="po-ley ley-silla"><i />Puesto libre</span>
+            </div>
+
             <p className="po-ayuda">
-                Rueda para acercar · arrastra para moverte · pulsa un puesto para ver a esa persona
+                Rueda o pellizco para acercar · arrastra para moverte · pulsa un puesto para ver a esa persona
             </p>
         </div>
     );

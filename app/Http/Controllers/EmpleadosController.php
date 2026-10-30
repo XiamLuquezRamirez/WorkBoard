@@ -188,10 +188,31 @@ class EmpleadosController extends Controller
             ->join('empresas', 'empleados.empresa', 'empresas.id')
             ->join('departamentos', 'empleados.departamento', '=', 'departamentos.id')
             ->join('cargos', 'empleados.cargo', '=', 'cargos.id')
-            ->select('empleados.*', 'empresas.nombre as nombre_empresa', 'departamentos.nombre as nombre_departamento', 'cargos.nombre as nombre_cargo')
+            ->select(
+                'empleados.*',
+                'empresas.nombre as nombre_empresa',
+                'departamentos.nombre as nombre_departamento',
+                'cargos.nombre as nombre_cargo',
+                DB::raw(self::SQL_DEPARTAMENTOS_LIDERADOS . ' as departamentos_liderados')
+            )
             ->where('empleados.estado_registro', 'Activo')
             ->get();
         return response()->json($empleados);
+    }
+
+    /** Nombres de los departamentos vigentes que lidera el empleado de la fila. */
+    private const SQL_DEPARTAMENTOS_LIDERADOS =
+        "(SELECT GROUP_CONCAT(d.nombre SEPARATOR ', ') FROM departamentos d
+           WHERE d.lider_id = empleados.id AND (d.estado IS NULL OR d.estado <> 'Eliminado'))";
+
+    /** Los estados que puede tener un departamento visible en la gestión. */
+    private const DEPARTAMENTO_VISIBLE = "(departamentos.estado IS NULL OR departamentos.estado <> 'Eliminado')";
+
+    /** Administradores y supervisores: quienes ven el menú de parámetros. */
+    private function puedeAdministrar(): bool
+    {
+        $u = $this->usuarioAutenticado();
+        return $u && in_array($u->tipo_usuario, ['Administrador', 'Supervisor'], true);
     }
 
     function buscarEmpleados()
@@ -202,7 +223,12 @@ class EmpleadosController extends Controller
         $empleados = DB::connection('mysql2')->table('empleados')
             ->join('empresas', 'empleados.empresa', 'empresas.id')
             ->join('cargos', 'empleados.cargo', 'cargos.id')
-            ->select('empleados.*', 'empresas.nombre as nombre_empresa', 'cargos.nombre as nombre_cargo')
+            ->select(
+                'empleados.*',
+                'empresas.nombre as nombre_empresa',
+                'cargos.nombre as nombre_cargo',
+                DB::raw(self::SQL_DEPARTAMENTOS_LIDERADOS . ' as departamentos_liderados')
+            )
             ->where('empleados.estado_registro', 'Activo')
             ->where(function ($query) use ($searchTerm) {
                 $query->where('empleados.nombres', 'like', '%' . $searchTerm . '%')
@@ -225,11 +251,12 @@ class EmpleadosController extends Controller
 
     function cargarDepartamentos()
     {
-        // Se excluyen los inactivos. El estado admite NULL en los registros
-        // anteriores a esta columna, y esos cuentan como activos.
+        // Para elegir departamento sólo sirven los activos. El estado admite
+        // NULL en los registros anteriores a esta columna, y esos cuentan como
+        // activos; los inactivos y los eliminados quedan fuera.
         $departamentos = DB::connection('mysql2')->table('departamentos')
             ->where(function ($q) {
-                $q->whereNull('estado')->orWhere('estado', '<>', 'Inactivo');
+                $q->whereNull('estado')->orWhere('estado', 'Activo');
             })
             ->get();
         return response()->json($departamentos);
@@ -243,6 +270,22 @@ class EmpleadosController extends Controller
     function guardarEmpleado(Request $request)
     {
         $empleado = $request->all();
+
+        // «Es líder» se decide en la ficha del empleado, pero el líder de un
+        // departamento lo es por esa asignación: desmarcarlo aquí lo dejaría
+        // como líder del área sin acceso a su equipo.
+        $empleado['lider'] = ($empleado['lider'] ?? 'No') === 'Si' ? 'Si' : 'No';
+        if ($empleado['lider'] === 'No' && ($empleado['accion'] ?? '') !== 'guardar' && !empty($empleado['id'])) {
+            $lidera = DB::connection('mysql2')->table('departamentos')
+                ->where('lider_id', $empleado['id'])
+                ->whereRaw("(estado IS NULL OR estado <> 'Eliminado')")
+                ->pluck('nombre');
+            if ($lidera->isNotEmpty()) {
+                return response()->json([
+                    'error' => 'Es líder de ' . $lidera->implode(', ') . '. Quítale ese liderazgo en Departamentos antes de desmarcarlo como líder.',
+                ], 422);
+            }
+        }
 
         DB::connection('mysql2')->beginTransaction();
         try {
@@ -603,6 +646,10 @@ class EmpleadosController extends Controller
             // porque las tareas vivas nacieron sin ellos.
             $reglas['proposito'] = 'required|string|min:10|max:500';
 
+            // Una tarea nueva no puede nacer cerrada ni en revisión: tendría
+            // criterios sin verificar y se saltaría la aceptación.
+            $reglas['estado'] = 'required|in:Pendiente,En Proceso';
+
             // El texto único de criterio se sustituyó por una lista de criterios
             // de aceptación. Si una pantalla aún sin recargar manda el texto, se
             // convierte en el primer criterio en vez de rechazar la tarea.
@@ -619,9 +666,25 @@ class EmpleadosController extends Controller
             'fecha_pactada.after_or_equal'   => 'La fecha pactada no puede ser anterior a hoy.',
             'proposito.required'             => 'Indica para qué sirve esta tarea.',
             'proposito.min'                  => 'El propósito debe explicarse en al menos 10 caracteres.',
+            'estado.in'                      => 'Una tarea nueva empieza Pendiente o En Proceso.',
             'criterio.required'              => 'Indica cómo sabremos que la tarea se cumplió.',
             'criterio.min'                   => 'El criterio debe explicarse en al menos 10 caracteres.',
         ] + CriteriosAceptacionController::mensajesAlCrear());
+
+        // Editar no es otra puerta para cerrar la tarea: con criterios vivos,
+        // pasar a Completada exige aceptar la entrega, igual que al moverla.
+        if ($accion === 'editar' && $request->input('estado') === 'Completada') {
+            $actual = DB::connection('mysql2')->table('tareas_empleados')->where('id', $request->input('id'))->value('estado');
+            $tieneCriterios = DB::connection('mysql2')->table('tarea_criterios')
+                ->where('tarea_id', $request->input('id'))->whereNull('eliminado_at')->exists();
+            if ($actual !== 'Completada' && $tieneCriterios) {
+                return response()->json([
+                    'error' => 'Esta tarea se cierra aceptando la entrega según sus criterios. '
+                             . 'Pásala a «' . self::EN_REVISION . '» para que tu líder la revise.',
+                    'requiere_verificacion' => true,
+                ], 409);
+            }
+        }
 
         $tarea = $request->all();
         DB::connection('mysql2')->beginTransaction();
@@ -1333,17 +1396,17 @@ class EmpleadosController extends Controller
 
     function cargarUsuarios()
     {
-        // Los usuarios dados de baja conservan su fila para no romper las
-        // referencias de sus tareas, pero no deben figurar en la gestión.
+        // Se listan activos e inactivos: un usuario desactivado tiene que
+        // seguir a la vista para poder reactivarlo. El login ya le niega el
+        // acceso por su estado.
         $usuarios = DB::connection('mysql2')->table('users')
             ->leftJoin('empleados', 'users.empleado', '=', 'empleados.id') // 🔹 LEFT JOIN para incluir admins
             ->select(
                 'users.*',
                 DB::connection('mysql2')->raw('IFNULL(CONCAT(empleados.nombres, " ", empleados.apellidos), "---") as nombre_empleado')
             )
-            ->where(function ($q) {
-                $q->whereNull('users.estado')->orWhere('users.estado', 'Activo');
-            })
+            ->orderByRaw("users.estado = 'Inactivo'")
+            ->orderBy('users.name')
             ->get();
 
         return response()->json($usuarios);
@@ -1358,7 +1421,6 @@ class EmpleadosController extends Controller
                 'users.*',
                 DB::connection('mysql2')->raw('IFNULL(CONCAT(empleados.nombres, " ", empleados.apellidos), "---") as nombre_empleado')
             )
-            ->where('users.estado', 'Activo')
             ->where(function ($query) use ($searchTerm) {
                 $query->where('users.name', 'like', '%' . $searchTerm . '%')
                     ->orWhere('users.email', 'like', '%' . $searchTerm . '%')
@@ -1386,6 +1448,23 @@ class EmpleadosController extends Controller
     function guardarUsuario(Request $request)
     {
         $usuario = $request->all();
+
+        // «Líder de seguimiento» elige a qué administrador le llegan los avisos
+        // de los líderes; en otros roles no se usa. Que alguien sea líder se
+        // decide en su ficha de empleado y en Departamentos, no aquí.
+        $usuario['lider_seguimiento'] = ($usuario['role'] ?? '') === 'Administrador'
+            && ($usuario['lider_seguimiento'] ?? 'No') === 'Si' ? 'Si' : 'No';
+        $usuario['cambiar_password'] = filter_var($usuario['cambiar_password'] ?? false, FILTER_VALIDATE_BOOLEAN);
+
+        if ($usuario['accion'] == 'guardar' || $usuario['cambiar_password']) {
+            if (strlen((string) ($usuario['password'] ?? '')) < 6) {
+                return response()->json(['error' => 'La contraseña debe tener al menos 6 caracteres.'], 422);
+            }
+            if (($usuario['password'] ?? '') !== ($usuario['password_confirmation'] ?? '')) {
+                return response()->json(['error' => 'Las contraseñas no coinciden.'], 422);
+            }
+        }
+
         if ($usuario['accion'] == 'guardar') {
             $fotoUrl = $this->procesarFoto($usuario['foto'] ?? null);
             $usuarioId = DB::connection('mysql2')->table('users')->insertGetId([
@@ -1445,6 +1524,26 @@ class EmpleadosController extends Controller
             }
         }
         return response()->json(['success' => 'Usuario guardado correctamente'], 200);
+    }
+
+    /** Activa o desactiva un usuario. Desactivado no entra, pero sigue en la lista. */
+    function cambiarEstadoUsuario(Request $request, $id)
+    {
+        if (!$this->puedeAdministrar()) {
+            return response()->json(['error' => 'No tienes permiso para gestionar usuarios.'], 403);
+        }
+        $datos = $request->validate(['estado' => 'required|in:Activo,Inactivo']);
+
+        $usuario = DB::connection('mysql2')->table('users')->where('id', $id)->first();
+        if (!$usuario) {
+            return response()->json(['error' => 'Usuario no encontrado'], 404);
+        }
+        if ($datos['estado'] === 'Inactivo' && (int) $usuario->id === (int) ($this->usuarioAutenticado()->id ?? 0)) {
+            return response()->json(['error' => 'No puedes desactivar tu propio usuario.'], 422);
+        }
+
+        DB::connection('mysql2')->table('users')->where('id', $id)->update(['estado' => $datos['estado']]);
+        return response()->json(['estado' => $datos['estado']]);
     }
 
     function eliminarUsuario($id)
@@ -3583,47 +3682,80 @@ class EmpleadosController extends Controller
 
     function cargarDepartamentosDetalle()
     {
+        // Activos e inactivos: desactivar un departamento no lo saca de la
+        // gestión, para poder reactivarlo. Sólo se ocultan los eliminados.
+        // El usuario del líder va en subconsultas: un JOIN con users repetía
+        // el departamento si el líder tenía más de un usuario.
         $departamentos = DB::connection('mysql2')->table('departamentos')
             ->leftJoin('empleados as e', 'departamentos.lider_id', '=', 'e.id')
-            ->leftJoin('users as u', 'u.empleado', '=', 'e.id')
             ->select(
                 'departamentos.id',
                 'departamentos.nombre',
-                'departamentos.estado',
+                DB::raw("COALESCE(departamentos.estado, 'Activo') as estado"),
                 'departamentos.lider_id',
                 DB::raw("CONCAT(e.nombres, ' ', e.apellidos) as lider_nombre"),
                 'e.id as lider_emp_id',
-                'u.id as lider_user_id',
-                'u.independencia as lider_independencia',
+                DB::raw('(SELECT u.id FROM users u WHERE u.empleado = e.id ORDER BY u.id LIMIT 1) as lider_user_id'),
+                DB::raw('(SELECT u.independencia FROM users u WHERE u.empleado = e.id ORDER BY u.id LIMIT 1) as lider_independencia'),
                 DB::raw("(SELECT COUNT(*) FROM empleados WHERE departamento = departamentos.id AND estado_registro = 'Activo' AND estado = 'Activo') as total_empleados")
             )
-            ->where(function ($q) {
-                $q->whereNull('departamentos.estado')->orWhere('departamentos.estado', '<>', 'Inactivo');
-            })
+            ->whereRaw(self::DEPARTAMENTO_VISIBLE)
+            ->orderByRaw("COALESCE(departamentos.estado, 'Activo') = 'Inactivo'")
+            ->orderBy('departamentos.nombre')
             ->get();
         return response()->json($departamentos);
     }
 
     function crearDepartamento(Request $request)
     {
+        if (!$this->puedeAdministrar()) {
+            return response()->json(['message' => 'No tienes permiso para gestionar departamentos.'], 403);
+        }
+        $datos = $request->validate([
+            'nombre'   => 'required|string|max:200',
+            'lider_id' => 'nullable|integer',
+        ]);
+
         $id = DB::connection('mysql2')->table('departamentos')->insertGetId([
-            'nombre' => $request->nombre,
+            'nombre' => trim($datos['nombre']),
             'estado' => 'Activo',
         ]);
+        if (!empty($datos['lider_id'])) {
+            $error = $this->fijarLiderDepartamento($id, (int) $datos['lider_id']);
+            if ($error) return $error;
+        }
         return response()->json(['id' => $id, 'message' => 'Departamento creado']);
     }
 
     function editarDepartamento(Request $request, $id)
     {
-        DB::connection('mysql2')->table('departamentos')->where('id', $id)->update([
-            'nombre' => $request->nombre,
-            'estado' => $request->estado ?? 'Activo',
+        if (!$this->puedeAdministrar()) {
+            return response()->json(['message' => 'No tienes permiso para gestionar departamentos.'], 403);
+        }
+        $datos = $request->validate([
+            'nombre'   => 'required|string|max:200',
+            'estado'   => 'nullable|in:Activo,Inactivo',
+            'lider_id' => 'nullable|integer',
         ]);
+
+        DB::connection('mysql2')->table('departamentos')->where('id', $id)->update([
+            'nombre' => trim($datos['nombre']),
+            'estado' => $datos['estado'] ?? 'Activo',
+        ]);
+        // El líder sólo se toca si el formulario lo envía: el botón de
+        // activar y desactivar manda nombre y estado, y no debe quitarlo.
+        if ($request->has('lider_id')) {
+            $error = $this->fijarLiderDepartamento((int) $id, $datos['lider_id'] ? (int) $datos['lider_id'] : null);
+            if ($error) return $error;
+        }
         return response()->json(['message' => 'Departamento actualizado']);
     }
 
     function eliminarDepartamento($id)
     {
+        if (!$this->puedeAdministrar()) {
+            return response()->json(['message' => 'No tienes permiso para gestionar departamentos.'], 403);
+        }
         $count = DB::connection('mysql2')->table('empleados')
             ->where('departamento', $id)
             ->where('estado_registro', 'Activo')
@@ -3638,40 +3770,89 @@ class EmpleadosController extends Controller
         // historial de tareas se quedaban apuntando a un departamento inexistente
         // y los informes perdían esa trazabilidad. Los ocho departamentos tienen
         // tareas asociadas, así que conservarlos importa.
+        //
+        // «Eliminado» y no «Inactivo»: inactivo es un estado reversible que se
+        // sigue viendo en la gestión; eliminado sale de ella.
         DB::connection('mysql2')->table('departamentos')->where('id', $id)
-            ->update(['estado' => 'Inactivo']);
+            ->update(['estado' => 'Eliminado']);
 
-        return response()->json(['message' => 'Departamento inactivado']);
+        return response()->json(['message' => 'Departamento eliminado']);
     }
 
     function asignarLiderDepartamento(Request $request, $id)
     {
-        $nuevoLiderId = $request->lider_id ?: null;
-
-        // Obtener líder anterior para revocarle el flag si ya no lidera ningún dpto
-        $anterior = DB::connection('mysql2')->table('departamentos')->where('id', $id)->value('lider_id');
-
-        DB::connection('mysql2')->table('departamentos')->where('id', $id)->update([
-            'lider_id' => $nuevoLiderId,
-        ]);
-
-        // Marcar nuevo líder en empleados y users
-        if ($nuevoLiderId) {
-            DB::connection('mysql2')->table('empleados')->where('id', $nuevoLiderId)->update(['lider' => 'Si']);
-            DB::connection('mysql2')->table('users')->where('empleado', $nuevoLiderId)->update(['lider' => 'Si']);
+        if (!$this->puedeAdministrar()) {
+            return response()->json(['message' => 'No tienes permiso para asignar líderes.'], 403);
         }
+        $request->validate(['lider_id' => 'nullable|integer']);
 
-        // Si había un líder anterior diferente y ya no lidera ningún departamento, revocarle el flag
-        if ($anterior && $anterior != $nuevoLiderId) {
-            $sigueComoLider = DB::connection('mysql2')->table('departamentos')
-                ->where('lider_id', $anterior)->exists();
-            if (!$sigueComoLider) {
-                DB::connection('mysql2')->table('empleados')->where('id', $anterior)->update(['lider' => 'No']);
-                DB::connection('mysql2')->table('users')->where('empleado', $anterior)->update(['lider' => 'No']);
+        $error = $this->fijarLiderDepartamento((int) $id, $request->lider_id ? (int) $request->lider_id : null);
+        if ($error) return $error;
+
+        return response()->json(['message' => $request->lider_id ? 'Líder asignado correctamente' : 'El departamento quedó sin líder']);
+    }
+
+    /**
+     * Pone o quita el líder de un departamento y deja coherente lo que
+     * depende de ello: la marca de líder del empleado y de su usuario, y a
+     * quién reporta cada empleado del área (lideres_empleados).
+     *
+     * Antes sólo cambiaba departamentos.lider_id: el líder nuevo no veía a
+     * su equipo hasta que se volvía a guardar la ficha de cada empleado.
+     *
+     * Devuelve una respuesta de error, o null si todo fue bien.
+     */
+    private function fijarLiderDepartamento(int $deptId, ?int $nuevoLiderId)
+    {
+        $conn = DB::connection('mysql2');
+
+        if ($nuevoLiderId) {
+            $valido = $conn->table('empleados')->where('id', $nuevoLiderId)
+                ->where('estado_registro', 'Activo')->where('estado', 'Activo')->exists();
+            if (!$valido) {
+                return response()->json(['message' => 'El líder debe ser un empleado activo.'], 422);
             }
         }
 
-        return response()->json(['message' => 'Líder asignado correctamente']);
+        $anterior = $conn->table('departamentos')->where('id', $deptId)->value('lider_id');
+
+        $conn->transaction(function () use ($conn, $deptId, $nuevoLiderId, $anterior) {
+            $conn->table('departamentos')->where('id', $deptId)->update(['lider_id' => $nuevoLiderId]);
+
+            if ($nuevoLiderId) {
+                $conn->table('empleados')->where('id', $nuevoLiderId)->update(['lider' => 'Si']);
+                $conn->table('users')->where('empleado', $nuevoLiderId)->update(['lider' => 'Si']);
+            }
+
+            $delArea = $conn->table('empleados')->where('departamento', $deptId)
+                ->where('estado_registro', 'Activo')->pluck('id');
+
+            // El equipo deja de reportar al líder saliente…
+            if ($anterior && (int) $anterior !== (int) $nuevoLiderId) {
+                $conn->table('lideres_empleados')->where('lider', $anterior)
+                    ->whereIn('empleado', $delArea)->delete();
+
+                // …y si ya no lidera ningún departamento, deja de ser líder.
+                $sigueComoLider = $conn->table('departamentos')->where('lider_id', $anterior)
+                    ->whereRaw("(estado IS NULL OR estado <> 'Eliminado')")->exists();
+                if (!$sigueComoLider) {
+                    $conn->table('empleados')->where('id', $anterior)->update(['lider' => 'No']);
+                    $conn->table('users')->where('empleado', $anterior)->update(['lider' => 'No']);
+                }
+            }
+
+            // …y pasa a reportar al nuevo, igual que hace guardarEmpleado.
+            if ($nuevoLiderId) {
+                foreach ($delArea as $empId) {
+                    if ((int) $empId === $nuevoLiderId) continue;
+                    $conn->table('lideres_empleados')->updateOrInsert(
+                        ['lider' => $nuevoLiderId, 'empleado' => $empId]
+                    );
+                }
+            }
+        });
+
+        return null;
     }
 
     // ── Gestión de Cargos ─────────────────────────────────────────────────────

@@ -2542,8 +2542,10 @@ body {
 .cards-container {
     /* La altura la mide el Dashboard y la publica en --alto-cabecera-tablero:
        la cabecera es fija y crece cuando la barra de búsqueda envuelve. El valor
-       de respaldo sólo cubre el primer pintado, antes de la medición. */
-    margin-top: calc(var(--alto-cabecera-tablero, 120px) + 0.5rem);
+       de respaldo sólo cubre el primer pintado, antes de la medición.
+       La cabecera arranca bajo la barra superior (70px), así que se suman
+       las dos: sin ellos tapaba la primera fila de cifras. */
+    margin-top: calc(var(--alto-cabecera-tablero, 120px) + 70px + 0.5rem);
     padding: 1rem;
     width: 100%;
 }
@@ -8796,6 +8798,11 @@ body {
     font-weight: 600;
 }
 .dm-sin-lider { color: #9ca3af; font-style: italic; font-size: 0.82rem; }
+/* La celda del líder lleva a asignarlo, cambiarlo o quitarlo. */
+.dm-lider-celda { background: none; border: 0; padding: 0; font: inherit; cursor: pointer; text-align: left; }
+.dm-lider-celda:hover .dm-lider-chip { box-shadow: 0 0 0 2px #bfdbfe; }
+.dm-lider-celda .dm-sin-lider { display: inline-flex; align-items: center; gap: .3rem; color: #2563eb; font-style: normal; font-weight: 600; }
+.dm-hint { display: block; margin-top: .35rem; font-size: 0.8rem; color: #64748b; }
 
 /* ── Action buttons ── */
 .dm-actions { display: flex; gap: 0.4rem; justify-content: center; }
@@ -9400,3 +9407,502 @@ body {
 }
 .tbv-icono:hover { color: #0891b2; }
 .tbv-icono.tbv-borrar:hover { color: #dc2626; }
+
+/* ─── Mis tareas: tablero en cualquier pantalla ───────────────────────────
+   Las cuatro columnas (Pendiente, En Proceso, En Revisión, Completada) caben
+   en escritorio. Por debajo de 1200px se apilaban dentro de un contenedor de
+   altura fija con overflow oculto, y las de abajo quedaban cortadas sin
+   forma de llegar a ellas. Ahora el tablero se desliza en horizontal: dos
+   columnas a la vista en tablet, una en móvil, con pestañas para saltar. */
+
+.kanban-board {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    position: relative;
+    min-height: 0;
+}
+
+.kanban-column {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.kanban-column .task-list {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    max-height: calc(100vh - 200px);
+}
+
+.kanban-pestanas { display: none; }
+
+@media (max-width: 1200px) {
+    .kanban-container {
+        height: calc(100dvh - 64px);
+        padding: 1rem 1rem .75rem;
+    }
+
+    .kanban-header { margin-bottom: .75rem; }
+
+    .kanban-pestanas {
+        position: relative;
+        display: flex;
+        gap: .4rem;
+        margin-bottom: .75rem;
+        overflow-x: auto;
+        scrollbar-width: none;
+    }
+    .kanban-pestanas::-webkit-scrollbar { display: none; }
+
+    .kanban-pestanas button {
+        --color-columna: #64748b;
+        flex: 0 0 auto;
+        display: inline-flex;
+        align-items: center;
+        gap: .4rem;
+        padding: .45rem .8rem;
+        border: 1px solid #e2e8f0;
+        border-radius: 999px;
+        background: #fff;
+        color: #334155;
+        font: inherit;
+        font-size: .82rem;
+        font-weight: 600;
+        cursor: pointer;
+        white-space: nowrap;
+    }
+    .kanban-pestanas button span {
+        min-width: 1.4rem;
+        padding: 0 .35rem;
+        border-radius: 999px;
+        background: #f1f5f9;
+        font-size: .72rem;
+        text-align: center;
+    }
+    .kanban-pestanas button.es-activa {
+        background: var(--color-columna);
+        border-color: var(--color-columna);
+        color: #fff;
+    }
+    .kanban-pestanas button.es-activa span { background: rgba(255, 255, 255, .25); }
+
+    /* Sustituye a la regla anterior, que apilaba las columnas en una sola. */
+    .kanban-board {
+        display: flex;
+        flex: 1;
+        gap: .75rem;
+        height: auto;
+        overflow-x: auto;
+        overflow-y: hidden;
+        scroll-snap-type: x mandatory;
+        overscroll-behavior-x: contain;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+    .kanban-board::-webkit-scrollbar { display: none; }
+
+    .kanban-column {
+        flex: 0 0 calc(50% - .375rem);
+        height: auto;
+        min-height: 0;
+        scroll-snap-align: start;
+    }
+
+    .kanban-column .task-list { max-height: none; }
+}
+
+@media (max-width: 768px) {
+    .kanban-container {
+        padding: .75rem .75rem .5rem;
+        margin-top: 70px;
+        height: calc(100dvh - 70px);
+    }
+
+    .kanban-header { gap: .5rem; }
+    .kanban-header h2 { font-size: 1.25rem; white-space: nowrap; margin: 0; }
+
+    .kanban-column .task-card { padding: .9rem; }
+    .kanban-column .task-card-header { padding: .5rem 0; gap: .5rem; }
+    .kanban-column .task-card-header h4 { font-size: .95rem; }
+}
+
+/* Teléfono: una columna a la vista y el borde de la siguiente, para que se
+   note que se puede deslizar. Una tablet en vertical conserva dos. */
+@media (max-width: 640px) {
+    .kanban-column { flex-basis: 88%; }
+}
+
+/* ─── Detalle de tarea en móvil ───────────────────────────────────────────
+   A pantalla completa: como tarjeta flotante perdía casi un tercio del
+   ancho en márgenes y bordes. */
+@media (max-width: 640px) {
+    .modal-overlay:has(> .task-details-modal) {
+        padding: 0;
+        align-items: stretch;
+    }
+
+    .task-details-modal {
+        width: 100%;
+        max-width: none;
+        height: 100dvh;
+        max-height: 100dvh;
+        border-radius: 0;
+    }
+
+    .task-details-modal .modal-header { padding: .75rem 1rem; }
+    .task-details-modal .modal-header h2 { font-size: 1.05rem; }
+    .task-details-modal .modal-body { padding: 1rem; }
+
+    .task-details-modal .task-info-panel {
+        padding-right: 0;
+        border-right: 0;
+        min-width: 0;
+    }
+
+    .task-details-modal .edit-buttons {
+        padding: 0 0 .5rem;
+        flex-wrap: wrap;
+        gap: .5rem;
+    }
+
+    .task-details-modal .task-header { flex-wrap: wrap; gap: .5rem; margin-top: .75rem; }
+
+    /* El proyecto ya está en la visión general; repetido aquí ocupaba media
+       pantalla con un nombre largo. */
+    .task-details-modal .vg ~ .task-info-panel .task-proyecto-panel { display: none; }
+
+    /* Botón de cerrar con tamaño de dedo, no de puntero. */
+    .task-details-modal .modal-header .close-button {
+        min-width: 40px;
+        min-height: 40px;
+        font-size: 1.5rem;
+    }
+
+    .task-details-modal .status-buttons {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        padding: .5rem 0;
+    }
+
+    /* La zona de evidencias medía 380px por el texto del campo de archivo. */
+    .task-details-modal .evidence-panel,
+    .task-details-modal .evidence-upload,
+    .task-details-modal .upload-options,
+    .task-details-modal .file-upload-section,
+    .task-details-modal .drive-link-section {
+        min-width: 0;
+        max-width: 100%;
+    }
+    .task-details-modal .file-upload-section { flex-wrap: wrap; }
+    .task-details-modal input[type="file"] { max-width: 100%; }
+    .task-details-modal .drive-link-button { width: 100%; box-sizing: border-box; justify-content: center; }
+
+    /* Botones de aceptación: el texto largo parte en dos líneas. */
+    .task-details-modal .ca-btn.ca-grande {
+        flex: 1 1 100%;
+        justify-content: center;
+        white-space: normal;
+    }
+}
+
+/* ─── Panel del administrador en móvil ────────────────────────────────────
+   La barra lateral se escondía fuera de la pantalla por debajo de 768px y
+   no había botón para abrirla: desde el móvil no se llegaba a Reportes ni a
+   Parámetros. Ahí pasa a ser una barra de navegación inferior. */
+
+.sidebar-texto { display: none; }
+
+@media (max-width: 768px) {
+    .sidebar,
+    .sidebar.active {
+        transform: none;
+        top: auto;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        width: 100%;
+        min-width: 0;
+        max-width: none;
+        height: calc(60px + env(safe-area-inset-bottom));
+        padding: 0 0 env(safe-area-inset-bottom);
+        flex-direction: row;
+        justify-content: space-around;
+        align-items: stretch;
+        overflow: visible;
+        background: #fff;
+        border-top: 1px solid #e2e8f0;
+        box-shadow: 0 -2px 10px rgba(15, 23, 42, .08);
+        z-index: 900;
+    }
+
+    .sidebar .sidebar-icon {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 3px;
+        margin: 0;
+        padding: 6px 0;
+        border-radius: 0;
+        color: #64748b;
+        text-decoration: none;
+    }
+    .sidebar .sidebar-icon svg { width: 22px; height: 22px; }
+    .sidebar .sidebar-icon:hover { transform: none; background: transparent; }
+    .sidebar .sidebar-icon.active { color: var(--primary-color); background: #eff6ff; }
+    .sidebar-texto { display: block; font-size: .7rem; font-weight: 600; }
+
+    /* Que la barra inferior no tape el final de la página. El Dashboard
+       desplaza dentro de .main-content, no en la ventana. */
+    body:has(.sidebar),
+    .main-content { padding-bottom: calc(64px + env(safe-area-inset-bottom)); }
+}
+
+@media (max-width: 640px) {
+    .dashboard-header { padding: .6rem .75rem; gap: .5rem; }
+    .dashboard-header__title { font-size: 1rem; margin: 0; }
+    .dashboard-header__toolbar {
+        display: flex;
+        gap: .5rem;
+        width: 100%;
+    }
+    .dashboard-header__toolbar .search-box { flex: 1; min-width: 0; }
+    .dashboard-header__toolbar .search-input { width: 100%; }
+    .dashboard-header__toolbar .dept-filter-container { flex: 0 0 42%; min-width: 0; }
+    .dashboard-header__toolbar .dept-filter-select { width: 100%; }
+
+    .cards-container { padding: .75rem; }
+}
+
+/* ─── Tablas como fichas en móvil ─────────────────────────────────────────
+   Una tabla de seis columnas en 375px montaba los textos unos sobre otros.
+   Cada fila pasa a ser una ficha con «columna: valor»; los títulos los
+   copia utils/tablasMoviles.js a data-label. */
+@media (max-width: 640px) {
+    table.wb-tabla-movil,
+    table.wb-tabla-movil tbody,
+    table.wb-tabla-movil tr,
+    table.wb-tabla-movil td {
+        display: block;
+        width: auto !important;
+        min-width: 0 !important;
+    }
+
+    table.wb-tabla-movil { border: 0; background: transparent; box-shadow: none; }
+    table.wb-tabla-movil thead { display: none; }
+
+    table.wb-tabla-movil tbody tr {
+        margin: 0 0 .65rem;
+        padding: .45rem .8rem;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        background: #fff;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, .05);
+    }
+
+    table.wb-tabla-movil td {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: .75rem;
+        padding: .35rem 0 !important;
+        border: 0 !important;
+        text-align: right !important;
+        white-space: normal !important;
+        overflow-wrap: anywhere;
+        font-size: .88rem;
+    }
+    table.wb-tabla-movil td + td { border-top: 1px dashed #eef2f7 !important; }
+
+    table.wb-tabla-movil td::before {
+        content: attr(data-label);
+        flex: 0 1 auto;
+        max-width: 45%;
+        overflow-wrap: normal;
+        word-break: normal;
+        text-align: left;
+        font-size: .74rem;
+        font-weight: 700;
+        letter-spacing: .02em;
+        text-transform: uppercase;
+        color: #64748b;
+    }
+    table.wb-tabla-movil td[data-label=""] { justify-content: center; text-align: center !important; }
+    table.wb-tabla-movil td[data-label=""]::before { display: none; }
+
+    /* Las acciones, a la derecha y con tamaño de dedo. */
+    table.wb-tabla-movil td .dm-actions,
+    table.wb-tabla-movil td .action-buttons { justify-content: flex-end; gap: .5rem; }
+}
+
+/* ─── Modales del administrador a pantalla completa en móvil ──────────── */
+@media (max-width: 640px) {
+    .modal-overlay:has(> .modal-report, > .form-modal-large, > .profile-modal, > .tasks-modal,
+        > .tareas-modal, > .modal-project, > .modal-leader, > .modal-employee, > .modal-Company,
+        > .modal-user, > .funciones-modal, > .evidencias-modal, > .asignar-modal,
+        > .lista-empleados-asignados-modal, > .tareas-empleado-modal) {
+        padding: 0;
+        align-items: stretch;
+    }
+
+    .modal-overlay > .modal-report,
+    .modal-overlay > .form-modal-large,
+    .modal-overlay > .profile-modal,
+    .modal-overlay > .tasks-modal,
+    .modal-overlay > .tareas-modal,
+    .modal-overlay > .modal-project,
+    .modal-overlay > .modal-leader,
+    .modal-overlay > .modal-employee,
+    .modal-overlay > .modal-Company,
+    .modal-overlay > .modal-user,
+    .modal-overlay > .funciones-modal,
+    .modal-overlay > .evidencias-modal,
+    .modal-overlay > .asignar-modal,
+    .modal-overlay > .lista-empleados-asignados-modal,
+    .modal-overlay > .tareas-empleado-modal {
+        width: 100% !important;
+        max-width: none !important;
+        height: 100dvh !important;
+        max-height: 100dvh !important;
+        margin: 0 !important;
+        border-radius: 0 !important;
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto;
+    }
+
+    /* El contenido del modal llevaba width: 100% y además margen y relleno
+       en línea: medía más que la pantalla y cortaba las fichas. */
+    .modal-overlay > div > .modal-content {
+        box-sizing: border-box;
+        width: 100% !important;
+        max-width: 100%;
+        margin: 0 !important;
+        padding: 12px !important;
+    }
+
+    .wb-paginador-num { display: none; }
+
+    /* Títulos largos («TAREAS DE FABIAN ALBERTO ARAQUE ZUTA») en una línea. */
+    .modal-overlay > div > .modal-header { gap: .5rem; padding: .75rem 1rem; }
+    .modal-overlay > div > .modal-header > div {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+    .modal-overlay > div > .modal-header .close-button { flex: none; }
+    .form-modal-large .visto-bueno-checkbox label {
+        display: inline-flex;
+        align-items: center;
+        gap: .5rem;
+    }
+    .modal-overlay > div > .modal-header h2 {
+        min-width: 0;
+        font-size: 1.05rem !important;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    /* Tarjetas de estado de las tareas de un empleado: dos por fila. */
+    .tasks-modal .estados-cards {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: .6rem;
+    }
+    .tasks-modal .estado-card { padding: .75rem; margin: 0; }
+    .tasks-modal .estado-card-count span:first-child { font-size: 1.6rem; }
+
+    /* Parámetros: encabezado y tarjetas compactos. El botón de volver sobra:
+       la barra inferior ya lleva a Inicio. */
+    .parameters-header { padding: 1rem; }
+    .parameters-header h1 { font-size: 1.25rem; margin: 0; }
+    .parameters-header .back-button { display: none; }
+    .parameters-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: .6rem;
+        padding: 0;
+    }
+    .parameter-card { padding: .9rem .8rem; min-height: 0; }
+    .parameter-card .card-content h3 { font-size: .95rem; }
+    .parameter-card .card-content p { font-size: .75rem; }
+}
+
+/* Informes en móvil: el título arriba y en una sola línea debajo PDF,
+   Imprimir, Excel y cerrar. Antes los botones iban en columna y la cabecera
+   ocupaba 130px. */
+@media (max-width: 640px) {
+    .modal-report > .modal-header { flex-wrap: wrap; row-gap: .5rem; }
+    .modal-report > .modal-header > h2 { flex: 1 1 100%; }
+    .modal-report > .modal-header > .header-actions {
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: .4rem;
+        width: 100%;
+    }
+    .modal-report > .modal-header > .header-actions > button { padding: .4rem .65rem; font-size: .8rem; }
+    .modal-report > .modal-header > .header-actions > .close-button { margin-left: auto; }
+}
+
+/* Tarjetas de empleado del Dashboard en móvil: medían ~1.050px cada una
+   (25 empleados ≈ 29.000px de scroll). Foto y datos en fila, botones lado a
+   lado y rellenos más ajustados. */
+@media (max-width: 640px) {
+    .employee-card .employee-main-info {
+        flex-direction: row !important;
+        align-items: center;
+        gap: .85rem;
+        padding: .9rem 1rem !important;
+        min-height: 0 !important;
+        text-align: left !important;
+    }
+    .employee-card .employee-photo {
+        width: 56px !important;
+        height: 56px !important;
+        margin: 0 !important;
+        flex: none;
+    }
+    .employee-card .employee-details { min-width: 0; text-align: left; }
+    .employee-card .employee-details h3 { font-size: 1rem; line-height: 1.25; margin: 0 0 .2rem; }
+    .employee-card .employee-details p { font-size: .75rem; justify-content: flex-start; }
+
+    .employee-card .employee-actions {
+        flex-direction: row !important;
+        gap: .5rem;
+        padding: .6rem .75rem;
+    }
+    .employee-card .employee-actions .action-button { flex: 1; width: auto; }
+
+    .employee-card .performance-section { padding: 1rem .9rem .75rem !important; }
+    .employee-card .task-stats-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: .4rem;
+        margin-bottom: 1rem !important;
+    }
+    .employee-card .stat-item { padding: .4rem .3rem; }
+    .employee-card .urgent-tasks { margin-top: .75rem !important; }
+}
+
+/* Departamentos en móvil: la cabecera con «← Departamentos» no envuelve
+   (el aspa de cerrar bajaba a otra línea), y en la ficha del líder el
+   bloque de independencia pasa debajo en vez de montarse sobre el nombre. */
+@media (max-width: 640px) {
+    .dm-modal > .modal-header { flex-wrap: nowrap; }
+
+    .dm-emp-card { flex-wrap: wrap; gap: .75rem; padding: .8rem; }
+    .dm-emp-card .dm-emp-info { flex: 1 1 0; min-width: 0; }
+    .dm-indep-wrap {
+        flex: 1 1 100%;
+        min-width: 0;
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        padding-top: .6rem;
+        border-top: 1px dashed #e5e7eb;
+    }
+    .dm-indep-hint { flex: 1 1 100%; text-align: left; margin: 0; }
+
+    .dm-lider-row { flex-wrap: wrap; }
+    .dm-lider-row .dm-lider-select { flex: 1 1 100%; min-width: 0; }
+}

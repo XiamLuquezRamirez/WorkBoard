@@ -151,6 +151,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
         //eliminar usuario
         Route::delete('/eliminarUsuario/{id}', [EmpleadosController::class, 'eliminarUsuario']);
+        Route::post('/usuarios/{id}/estado', [EmpleadosController::class, 'cambiarEstadoUsuario']);
 
         //cargar empresas
         Route::get('/cargarEmpresas', [EmpleadosController::class, 'cargarEmpresas']);
@@ -206,6 +207,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::get('/equipo/chat/canales', [EspacioEquipoController::class, 'chatCanales']);
         Route::get('/equipo/chat/mensajes', [EspacioEquipoController::class, 'chatMensajes']);
         Route::post('/equipo/chat/mensajes', [EspacioEquipoController::class, 'chatEnviar']);
+        Route::get('/equipo/chat/avisos', [EspacioEquipoController::class, 'chatAvisos']);
 
         // videos ambientales del tablero (se administran desde Parámetros)
         Route::get('/tablero/videos', [EmpleadosController::class, 'tableroVideos']);

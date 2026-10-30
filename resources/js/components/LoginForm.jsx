@@ -119,7 +119,7 @@ const LoginForm = () => {
             />
             <div className="login-card">
                 <div className="login-header">
-                    <img src={getImageUrl('images/logo.png')} alt="Logo" className="login-logo" />
+                    <img src={getImageUrl('images/logo-480.png')} alt="Logo" className="login-logo" />
                     <h2>Iniciar Sesión</h2>
                 </div>
                 {error && <div className="login-error">{error}</div>}

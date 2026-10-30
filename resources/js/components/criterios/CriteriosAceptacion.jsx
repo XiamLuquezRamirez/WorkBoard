@@ -61,8 +61,13 @@ const errorDe = (e, porDefecto) => {
  * indicador es suyo. Lo que cada usuario puede hacer lo decide el servidor
  * (permisos en la respuesta); aquí sólo se ocultan los botones que no le
  * corresponden, para no ofrecer acciones que acabarían en un 403.
+ *
+ * onCargado recibe los datos cada vez que se recargan, para que la visión
+ * general de la tarea muestre las mismas cifras sin pedirlas otra vez.
+ * abrirSenal: al cambiar, despliega la sección (la visión general la usa
+ * para llevar al usuario hasta aquí).
  */
-export default function CriteriosAceptacion({ task, onUpdate }) {
+export default function CriteriosAceptacion({ task, onUpdate, onCargado, abrirSenal }) {
     const [datos, setDatos] = useState(null);
     const [error, setError] = useState(false);
     const [abierto, setAbierto] = useState(task?.estado === 'En Revisión');
@@ -80,6 +85,10 @@ export default function CriteriosAceptacion({ task, onUpdate }) {
     }, [task?.id]);
 
     useEffect(() => { cargar(); }, [cargar, task?.estado]);
+
+    useEffect(() => { if (datos && onCargado) onCargado(datos); }, [datos]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    useEffect(() => { if (abrirSenal) setAbierto(true); }, [abrirSenal]);
 
     // Quién puede ser responsable de verificación: la gente del alcance del
     // usuario. Sólo se pide si puede gestionar.
@@ -442,6 +451,8 @@ export default function CriteriosAceptacion({ task, onUpdate }) {
                                 <ul className="ca-bloqueos">
                                     {resumen.bloqueos.map((b) => <li key={b}>{b}</li>)}
                                 </ul>
+                            ) : criterios.length === 0 ? (
+                                <p className="ca-nota">No tiene criterios de aceptación: decide con lo entregado.</p>
                             ) : (
                                 <p className="ca-lista-ok">Todos los criterios obligatorios están cumplidos.</p>
                             )}

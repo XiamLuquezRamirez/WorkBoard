@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import axiosInstance from '../../axiosConfig';
+import { registrarChatAbierto } from './chatAbierto';
 
 /** Cada cuánto se piden mensajes nuevos mientras el chat está abierto. */
 const SONDEO_MS = 5000;
@@ -60,6 +61,9 @@ export default function Chat() {
     // El último id recibido vive en una referencia y no en el estado: el
     // sondeo lo lee en cada vuelta y no debe reprogramarse cuando cambia.
     const ultimoRef = useRef(0);
+
+    // La conversación a la vista no dispara el aviso de mensajes.
+    useEffect(() => registrarChatAbierto(activa), [activa]);
 
     const cargarCanales = () => axiosInstance.get('/equipo/chat/canales')
         .then((r) => {

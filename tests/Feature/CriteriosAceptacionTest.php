@@ -121,6 +121,30 @@ class CriteriosAceptacionTest extends TestCase
             ->assertStatus(409);
     }
 
+    public function test_una_tarea_no_nace_completada_ni_en_revision(): void
+    {
+        foreach (['Completada', 'En Revisión'] as $estado) {
+            $this->como($this->lider)
+                ->postJson('/api/guardarTarea', $this->datosTarea(['estado' => $estado]))
+                ->assertStatus(422)
+                ->assertJsonValidationErrors('estado');
+        }
+        $this->assertSame(0, DB::connection('mysql2')
+            ->table('tareas_empleados')->where('empleado', $this->colaborador)->count());
+    }
+
+    public function test_no_se_cierra_editando_la_tarea(): void
+    {
+        $tarea = $this->crearTarea();
+        $datos = $this->datosTarea(['accion' => 'editar', 'id' => $tarea, 'estado' => 'Completada']);
+        unset($datos['criterios']);
+
+        $this->como($this->lider)->postJson('/api/guardarTarea', $datos)
+            ->assertStatus(409)
+            ->assertJson(['requiere_verificacion' => true]);
+        $this->assertSame('Pendiente', $this->estadoTarea($tarea));
+    }
+
     public function test_flujo_completo_con_devolucion_y_aceptacion(): void
     {
         $tarea = $this->crearTarea();

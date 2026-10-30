@@ -899,6 +899,88 @@ class EspacioEquipoController extends Controller
         return response()->json(['success' => true, 'id' => $idMensaje], 201);
     }
 
+    /**
+     * Mensajes nuevos que hay que avisarle al usuario: los directos que le
+     * escriben y los de su canal de departamento.
+     *
+     * Lo consulta el aviso de mensajes desde cualquier pantalla, también con
+     * la pestaña oculta. Sin «desde» sólo devuelve el último id, que es el
+     * punto de partida: así al abrir la aplicación no se avisa del historial.
+     * Lo ya leído (chat_lecturas) no se avisa aunque sea posterior a «desde».
+     */
+    public function chatAvisos(Request $request)
+    {
+        $yo = $this->empleadoActual();
+        if (!$yo) {
+            return response()->json(['ultimo' => 0, 'mensajes' => []]);
+        }
+
+        $conn = DB::connection('mysql2');
+        $ultimo = (int) $conn->table('chat_mensajes')->max('id');
+
+        if (!$request->filled('desde')) {
+            return response()->json(['ultimo' => $ultimo, 'mensajes' => []]);
+        }
+
+        $miDepto = (int) $conn->table('empleados')->where('id', $yo)->value('departamento');
+
+        // Las conversaciones que le tocan. El LIKE acota en la base y el
+        // filtro por pares lo confirma: «dir:5-%» también casaría con un id 55.
+        $conversaciones = $conn->table('chat_conversaciones')
+            ->where(function ($q) use ($yo, $miDepto) {
+                $q->where(function ($d) use ($yo) {
+                    $d->where('tipo', 'directo')
+                      ->where(fn ($c) => $c->where('clave', 'like', "dir:{$yo}-%")->orWhere('clave', 'like', "dir:%-{$yo}"));
+                });
+                if ($miDepto) {
+                    $q->orWhere('clave', 'dep:' . $miDepto);
+                }
+            })
+            ->get(['id', 'clave', 'tipo'])
+            ->filter(fn ($c) => $c->tipo !== 'directo' || in_array($yo, $this->paresDeDirecto($c->clave), true))
+            ->keyBy('id');
+
+        if ($conversaciones->isEmpty()) {
+            return response()->json(['ultimo' => $ultimo, 'mensajes' => []]);
+        }
+
+        $leido = $conn->table('chat_lecturas')
+            ->where('empleado', $yo)
+            ->whereIn('conversacion', $conversaciones->keys())
+            ->pluck('ultimo_leido', 'conversacion');
+
+        $canal = $miDepto ? $conn->table('departamentos')->where('id', $miDepto)->value('nombre') : null;
+
+        $mensajes = $conn->table('chat_mensajes as m')
+            ->leftJoin('empleados as e', 'm.empleado', '=', 'e.id')
+            ->whereIn('m.conversacion', $conversaciones->keys())
+            ->where('m.id', '>', (int) $request->query('desde'))
+            ->where('m.empleado', '<>', $yo)
+            ->orderBy('m.id')
+            ->limit(30)
+            ->get([
+                'm.id', 'm.conversacion', 'm.empleado', 'm.mensaje', 'm.created_at',
+                $conn->raw('CONCAT(e.nombres, " ", e.apellidos) as autor'),
+            ])
+            ->filter(fn ($m) => (int) $m->id > (int) ($leido[$m->conversacion] ?? 0))
+            ->map(function ($m) use ($conversaciones, $canal) {
+                $c = $conversaciones[$m->conversacion];
+                return [
+                    'id'       => (int) $m->id,
+                    'clave'    => $c->clave,
+                    'directo'  => $c->tipo === 'directo',
+                    'canal'    => $c->tipo === 'directo' ? null : $canal,
+                    'empleado' => (int) $m->empleado,
+                    'autor'    => $m->autor,
+                    'mensaje'  => mb_strimwidth($m->mensaje, 0, 180, '…'),
+                    'cuando'   => $m->created_at,
+                ];
+            })
+            ->values();
+
+        return response()->json(['ultimo' => $ultimo, 'mensajes' => $mensajes]);
+    }
+
     /** Guarda hasta dónde ha leído alguien. */
     private function marcarLeido(int $conversacion, int $empleado, int $hasta): void
     {

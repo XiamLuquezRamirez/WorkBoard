@@ -86,7 +86,7 @@ const Header = ({ currentUser, showUserMenu, setShowUserMenu, setIsSidebarOpen }
         <header className="header">
             <div className="header-content">
                 <div className="logo-section">
-                    <img src={getImageUrl('images/logo.png')} alt="Logo" />
+                    <img src={getImageUrl('images/logo-480.png')} alt="Logo" />
                 </div>
                 <div className="header-right">
                     <div className="notification-section">

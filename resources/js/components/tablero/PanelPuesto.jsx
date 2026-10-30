@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import axiosInstance from '../../axiosConfig';
+import { registrarChatAbierto } from '../equipo/chatAbierto';
 import { useAvatar } from './AvataresContext';
 
 /** Cada cuánto se piden mensajes nuevos con el panel de chat abierto. */
@@ -139,6 +140,9 @@ function ChatPuesto({ clave, nombre }) {
     const [enviando, setEnviando] = useState(false);
     const finRef = useRef(null);
     const ultimoRef = useRef(0);
+
+    // La conversación a la vista no dispara el aviso de mensajes.
+    useEffect(() => registrarChatAbierto(clave), [clave]);
 
     useEffect(() => {
         let vivo = true;

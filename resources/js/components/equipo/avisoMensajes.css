@@ -1,0 +1,217 @@
+/* Aviso de mensajes del chat.
+   Aparece sobre cualquier pantalla, así que trae sus propios colores, igual
+   que el timbre de llamadas (timbre.css). Va abajo a la derecha para no
+   taparse con el timbre, que ocupa la esquina de arriba. */
+
+.am-pila {
+    position: fixed;
+    right: 18px;
+    bottom: 18px;
+    z-index: 10001;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: min(360px, calc(100vw - 32px));
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+.am-aviso {
+    position: relative;
+    display: flex;
+    gap: 12px;
+    padding: 13px 34px 13px 14px;
+    background: #ffffff;
+    color: #0f172a;
+    border: 1px solid #e2e8f0;
+    border-left: 4px solid #2563eb;
+    border-radius: 14px;
+    box-shadow: 0 14px 36px rgba(15, 23, 42, .22);
+    animation: am-entra .28s cubic-bezier(.2, .9, .3, 1.1);
+}
+
+@keyframes am-entra {
+    from { opacity: 0; transform: translateY(18px) scale(.97); }
+    to   { opacity: 1; transform: none; }
+}
+
+.am-avatar {
+    flex: 0 0 40px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: #dbeafe;
+    color: #1d4ed8;
+    font-weight: 700;
+    font-size: .9rem;
+}
+.am-avatar.es-canal { background: #ccfbf1; color: #0f766e; font-size: 1.15rem; }
+
+.am-txt { min-width: 0; flex: 1; }
+.am-txt p { margin: 0; }
+
+.am-rotulo {
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+    font-size: .72rem;
+    color: #64748b;
+}
+
+.am-cuenta {
+    padding: .05rem .45rem;
+    border-radius: 999px;
+    background: #2563eb;
+    color: #fff;
+    font-weight: 700;
+    font-size: .66rem;
+}
+
+.am-quien { font-weight: 700; font-size: .92rem; margin-top: 2px !important; text-transform: capitalize; }
+
+.am-mensaje {
+    margin-top: 3px !important;
+    font-size: .86rem;
+    color: #334155;
+    overflow-wrap: anywhere;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.am-botones { display: flex; gap: 8px; margin-top: 10px; }
+
+.am-responder,
+.am-descartar {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    padding: .38rem .8rem;
+    border-radius: 8px;
+    font: inherit;
+    font-size: .8rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+.am-responder { background: #2563eb; border: 1px solid #2563eb; color: #fff; }
+.am-responder:hover { background: #1d4ed8; }
+.am-descartar { background: #fff; border: 1px solid #e2e8f0; color: #475569; }
+.am-descartar:hover { background: #f8fafc; }
+
+.am-cerrar {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 26px;
+    height: 26px;
+    display: grid;
+    place-items: center;
+    border: 0;
+    border-radius: 7px;
+    background: transparent;
+    color: #94a3b8;
+    cursor: pointer;
+}
+.am-cerrar:hover { background: #f1f5f9; color: #0f172a; }
+
+.am-permiso {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .6rem .8rem;
+    border: 1px dashed #93c5fd;
+    border-radius: 10px;
+    background: #eff6ff;
+    color: #1d4ed8;
+    font: inherit;
+    font-size: .8rem;
+    font-weight: 600;
+    text-align: left;
+    cursor: pointer;
+}
+
+/* ─── Conversación pequeña ──────────────────────────────────────────────── */
+
+.am-chat {
+    position: fixed;
+    right: 18px;
+    bottom: 18px;
+    z-index: 10002;
+    width: min(360px, calc(100vw - 32px));
+    height: min(460px, calc(100vh - 36px));
+    display: flex;
+    flex-direction: column;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    box-shadow: 0 18px 46px rgba(15, 23, 42, .28);
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    color: #0f172a;
+    animation: am-entra .25s ease;
+    overflow: hidden;
+}
+
+/* Con la conversación abierta, los avisos suben para no taparla. */
+.am-pila:has(~ .am-chat) { bottom: calc(min(460px, 100vh - 36px) + 30px); }
+
+.am-chat > header {
+    position: relative;
+    display: flex;
+    align-items: center;
+    padding: 12px 40px 12px 16px;
+    background: #2563eb;
+    color: #fff;
+}
+.am-chat > header .am-cerrar { top: 9px; color: #dbeafe; }
+.am-chat > header .am-cerrar:hover { background: rgba(255, 255, 255, .15); color: #fff; }
+.am-chat-titulo { font-weight: 700; font-size: .95rem; text-transform: capitalize; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.am-chat-hilo {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 14px;
+    background: #f8fafc;
+}
+
+.am-chat-vacio { margin: auto; color: #94a3b8; font-size: .85rem; }
+
+.am-burbuja {
+    max-width: 82%;
+    align-self: flex-start;
+    padding: 8px 11px 6px;
+    border-radius: 12px 12px 12px 4px;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    font-size: .86rem;
+}
+.am-burbuja.es-mia { align-self: flex-end; background: #dbeafe; border-color: #bfdbfe; border-radius: 12px 12px 4px 12px; }
+.am-burbuja b { display: block; font-size: .72rem; color: #1d4ed8; text-transform: capitalize; }
+.am-burbuja p { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.am-burbuja time { display: block; margin-top: 2px; font-size: .66rem; color: #64748b; text-align: right; }
+
+.am-chat-barra { display: flex; gap: 8px; padding: 10px; border-top: 1px solid #e2e8f0; }
+.am-chat-barra input {
+    flex: 1;
+    min-width: 0;
+    padding: .55rem .75rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    font: inherit;
+    font-size: .88rem;
+    outline: none;
+}
+.am-chat-barra input:focus { border-color: #93c5fd; box-shadow: 0 0 0 3px rgba(37, 99, 235, .12); }
+.am-chat-barra button {
+    width: 40px;
+    border: 0;
+    border-radius: 10px;
+    background: #2563eb;
+    color: #fff;
+    cursor: pointer;
+}
+.am-chat-barra button:disabled { background: #cbd5e1; cursor: not-allowed; }

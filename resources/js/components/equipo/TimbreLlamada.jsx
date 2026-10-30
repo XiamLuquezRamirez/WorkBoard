@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import axiosInstance from '../../axiosConfig';
+import { notificarEscritorio, sonarAviso } from './avisoEscritorio';
 import './timbre.css';
 
 /** Cada cuánto se pregunta si hay una llamada entrante. */
@@ -37,14 +38,18 @@ export default function TimbreLlamada() {
     const [llamada, setLlamada] = useState(null);
     const [enSala, setEnSala] = useState(null);
     const vistas = useRef(new Set());
+    // Última llamada que ya sonó, para no repetir sonido ni notificación en
+    // cada sondeo mientras sigue entrando.
+    const avisada = useRef(null);
 
     useEffect(() => {
         let vivo = true;
 
         const mirar = () => {
-            // Sin pestaña visible no hay a quién avisar, y en una llamada ya
-            // aceptada el timbre sobra.
-            if (document.hidden || enSala) return;
+            // En una llamada ya aceptada el timbre sobra. Con la pestaña
+            // oculta sí se consulta: la llamada se avisa con una
+            // notificación del sistema.
+            if (enSala) return;
 
             axiosInstance.get('/equipo/llamada-entrante')
                 .then((r) => {
@@ -56,6 +61,13 @@ export default function TimbreLlamada() {
                     if (!l || vistas.current.has(l.id)) {
                         setLlamada((a) => (a && (!l || a.id !== l.id) ? null : a));
                         return;
+                    }
+                    if (avisada.current !== l.id) {
+                        avisada.current = l.id;
+                        sonarAviso();
+                        if (document.hidden || !document.hasFocus()) {
+                            notificarEscritorio(`Videollamada de ${l.quien}`, 'Vuelve a WorkBoard para contestar.', `wb-llamada-${l.id}`);
+                        }
                     }
                     setLlamada(l);
                 })

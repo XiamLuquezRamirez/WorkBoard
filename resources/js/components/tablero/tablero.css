@@ -1897,6 +1897,9 @@ a.tb-btn-sec, a.tb-btn-sec:visited { color: var(--tb-txt); }
     flex: 1;
     min-height: 0;
     overflow: hidden;
+    /* El plano gestiona los gestos: sin esto el navegador desplazaría o
+       ampliaría la página entera al arrastrar o pellizcar. */
+    touch-action: none;
     border: 1px solid var(--tb-borde);
     border-radius: 10px;
     background: #0B1322;
@@ -1924,6 +1927,35 @@ a.tb-btn-sec, a.tb-btn-sec:visited { color: var(--tb-txt); }
     text-align: center;
 }
 
+/* Leyenda: qué significa cada aro de color alrededor de la cabeza. */
+.po-leyenda {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px 14px;
+    margin: 8px 0 0;
+    font-size: 11px;
+    color: var(--tb-txt-tenue);
+}
+
+.po-ley { display: inline-flex; align-items: center; gap: 5px; }
+
+.po-ley i {
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    border: 2.5px solid currentColor;
+    box-sizing: border-box;
+}
+
+.po-ley.ley-trabajando   i { color: #38BDF8; }
+.po-ley.ley-atrasado     i { color: #FBBF24; }
+.po-ley.ley-pausa        i { color: #F59E0B; }
+.po-ley.ley-bloqueado    i { color: #EF4444; }
+.po-ley.ley-sin_criterio i { color: #94A3B8; border-style: dashed; }
+.po-ley.ley-mio          i { color: #38BDF8; background: rgba(56, 189, 248, .55); border-radius: 40%; height: 8px; }
+.po-ley.ley-silla        i { color: #374151; background: #4B5563; border-radius: 3px; }
+
 .po-ayuda {
     margin: 7px 0 0;
     font-size: 10.5px;
@@ -1934,9 +1966,7 @@ a.tb-btn-sec, a.tb-btn-sec:visited { color: var(--tb-txt); }
 /* ---------- Salas ---------- */
 
 
-/* Las salas de servicio (baños, cocina, escalera) se apagan: son
-   referencia para orientarse, no sitios donde mirar trabajo. */
-.po-sala.es-servicio .po-sala.es-servicio .po-sala.zs-bloqueado    .po-sala.zs-bloqueado    .po-sala.zs-pausa        .po-sala.zs-pausa        .po-sala.zs-atrasado     .po-sala.zs-atrasado     .po-sala.zs-sin_criterio .po-sala.zs-trabajando   .po-sala.zs-bloqueado /* ---------- Mobiliario ---------- */
+/* ---------- Mobiliario ---------- */
 
 .po-planta { pointer-events: none; }
 
@@ -2019,8 +2049,7 @@ a.tb-btn-sec, a.tb-btn-sec:visited { color: var(--tb-txt); }
 .po-puesto:hover .po-figura { transform: scale(1.09); }
 .po-puesto.es-elegido .po-figura { transform: scale(1.14); }
 
-/* La sala elegida se ilumina por dentro. */
-.po-sala .po-sala:hover /* Al entrar, la planta aparece con un gesto breve en lugar de aparecer de
+/* Al entrar, la planta aparece con un gesto breve en lugar de aparecer de
    golpe: hace entender que es una vista, no una imagen fija. */
 @keyframes po-entrar {
     from { opacity: 0; transform: scale(.985); }
@@ -2033,6 +2062,8 @@ a.tb-btn-sec, a.tb-btn-sec:visited { color: var(--tb-txt); }
    estas animaciones: son adorno, nunca información. */
 @media (prefers-reduced-motion: reduce) {
     .po-monitor-luz,
+    .po-tv-luz,
+    .po-portatil.es-encendido .po-portatil-pantalla,
     .po-planta,
     .po-puesto.se-trabajando .po-halo,
     .po-puesto.se-bloqueado .po-halo,
@@ -2049,7 +2080,29 @@ a.tb-btn-sec, a.tb-btn-sec:visited { color: var(--tb-txt); }
 
 /* Exterior del edificio: césped, para que la planta se lea como un
    edificio y no como un rectángulo flotando. */
-.po-planta { fill: #3A6B48; }
+.po-exterior { fill: #3A6B48; }
+
+/* Pasillo: cemento bajo las salas, con su propia sombra sobre el césped. */
+.po-pasillo { stroke: #5E636B; stroke-width: 2; }
+
+/* Luz de techo y ventanas: lo que hace que la sala parezca habitada. */
+.po-luz-techo { pointer-events: none; }
+.po-sala.es-servicio .po-luz-techo { display: none; }
+
+.po-ventana {
+    fill: #9FD3F0;
+    stroke: #E6F4FC;
+    stroke-width: 1.2;
+}
+
+.po-puerta-barrido {
+    fill: none;
+    stroke: rgba(255, 255, 255, .35);
+    stroke-width: 1.2;
+    stroke-dasharray: 4 4;
+}
+
+.po-puerta-hoja { stroke: #6E4729; stroke-width: 3; stroke-linecap: round; }
 
 .po-lienzo { background: #2C5339; }
 
@@ -2093,6 +2146,7 @@ a.tb-btn-sec, a.tb-btn-sec:visited { color: var(--tb-txt); }
 }
 
 .po-rotulo-dato { fill: #FBBF24; font-size: 16px; font-weight: 700; }
+.po-rotulo-n { fill: #94A3B8; font-weight: 600; }
 .po-sala.zs-bloqueado .po-rotulo-dato { fill: #FCA5A5; }
 
 /* ---------- Mobiliario con color ---------- */
@@ -2112,6 +2166,26 @@ a.tb-btn-sec, a.tb-btn-sec:visited { color: var(--tb-txt); }
 .po-linea { stroke: #6E4729; stroke-width: 1.2; }
 .po-impresora { fill: #4B5563; stroke: #374151; stroke-width: 1.3; }
 .po-caja { fill: #B07B46; stroke: #8A5A34; stroke-width: 1.2; }
+
+.po-alfombra { fill: #7A3B3B; }
+.po-alfombra-borde { fill: none; stroke: #C99A5B; stroke-width: 2; stroke-dasharray: 6 3; }
+.po-tv { fill: #15181D; }
+.po-tv-luz { fill: #1D4F63; animation: po-brillo 5s ease-in-out infinite; }
+.po-cafetera { fill: #2B2F38; stroke: #15181D; stroke-width: 1.2; }
+.po-cafe { fill: #6B3F22; }
+.po-garrafon { fill: #7CC4EA; stroke: #3B8DBA; stroke-width: 1.2; }
+.po-garrafon-luz { fill: rgba(255, 255, 255, .7); }
+
+/* Sillas de las plazas libres: claras y planas, para que no se confundan
+   con alguien sentado. */
+.po-silla-asiento { fill: #4B5563; stroke: #2B2F38; stroke-width: 1.2; }
+.po-silla-respaldo { fill: #374151; stroke: #23282F; stroke-width: 1.2; }
+
+.po-portatil-base { fill: #9CA3AF; stroke: #6B7280; stroke-width: 1; }
+.po-portatil-teclas { fill: #6B7280; }
+.po-portatil-pantalla { fill: #374151; }
+.po-portatil.es-encendido .po-portatil-pantalla { fill: #38BDF8; animation: po-brillo 4s ease-in-out infinite; }
+.po-taza { fill: #F8FAFC; stroke: #6E4729; stroke-width: 1.5; }
 
 .po-hojas { fill: #2F8F4E; }
 .po-hojas-2 { fill: #45B063; }
@@ -2697,4 +2771,27 @@ a.tb-btn-sec, a.tb-btn-sec:visited { color: var(--tb-txt); }
     color: var(--tb-azul);
     font-weight: 600;
     text-decoration: underline;
+}
+
+/* ---------- Plano en móvil ----------
+   La ficha del puesto iba al lado del plano con ancho fijo y lo aplastaba
+   hasta dejarlo en una tira. En pantallas estrechas la cubre entera; el aspa
+   la cierra y se vuelve al plano. */
+@media (max-width: 700px) {
+    .tb-pm-escena { position: relative; }
+
+    .tb-pm-escena > .tb-pm-ficha {
+        position: absolute;
+        inset: 0;
+        z-index: 5;
+        width: auto;
+        max-width: none;
+        flex: none;
+        overflow-y: auto;
+    }
+
+    .tb-pm-ficha-cerrar { width: 36px; height: 36px; }
+
+    .tb-pm-incrustado { padding: 8px; }
+    .po-barra { gap: 6px; }
 }

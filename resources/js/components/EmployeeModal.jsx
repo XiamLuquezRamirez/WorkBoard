@@ -7,7 +7,7 @@ import TaskDetailsModal from './TaskDetailsModal';
 import axiosInstance from '../axiosConfig';
 import Paginador from './Paginador';
 import { getImageUrl, getAssetUrl } from '../utils/assetHelper';
-import EditorCriteriosNuevos, { criterioVacio, criteriosParaEnviar, validarCriterios } from './criterios/EditorCriteriosNuevos';
+import FormularioTarea from './tareas/FormularioTarea';
 
 
 
@@ -65,26 +65,6 @@ const EmployeeModal = ({ isOpen, onClose }) => {
     const [isSaving, setIsSaving] = useState(false);
     const [mostrarFormularioTarea, setMostrarFormularioTarea] = useState(false);
     const [proyectos, setProyectos] = useState([]);
-    const [subtareasForm, setSubtareasForm] = useState([]); // keep name for API compat
-    const [nuevaSubtareaTexto, setNuevaSubtareaTexto] = useState('');
-    const [nuevaSubtareaFecha, setNuevaSubtareaFecha] = useState('');
-    const [checklistTitulo, setChecklistTitulo] = useState('');
-    const [showChecklist, setShowChecklist] = useState(false);
-    const [checklistsExistentes, setChecklistsExistentes] = useState([]);
-    const [selectedChecklistId, setSelectedChecklistId] = useState('');
-    const [deletedSubtareaIds, setDeletedSubtareaIds] = useState([]);
-    const [nuevaTarea, setNuevaTarea] = useState({
-        titulo: '',
-        descripcion: '',
-        proposito: '',
-        criterios: [criterioVacio()],
-        fecha_pactada: '',
-        estado: 'Pendiente',
-        prioridad: 'Media',
-        proyecto_id: '',
-        evidencias: [],
-        accion: 'guardar'
-    });
     const [searchTarea, setSearchTarea] = useState('');
     const [editandoTarea, setEditandoTarea] = useState(null);
     const [evidencias, setEvidencias] = useState([]);
@@ -242,7 +222,7 @@ const EmployeeModal = ({ isOpen, onClose }) => {
                 console.error('Error al guardar el empleado:', error);
                 Swal.fire({
                     title: 'Error',
-                    text: 'Hubo un error al guardar el empleado',
+                    text: error?.response?.data?.error || 'Hubo un error al guardar el empleado',
                     icon: 'error',
                     confirmButtonText: 'OK',
                 });
@@ -256,7 +236,7 @@ const EmployeeModal = ({ isOpen, onClose }) => {
             fecha_nacimiento: empleado.fecha_nacimiento || '',
             fecha_ingreso: empleado.fecha_ingreso || '',
             tipo_contrato: empleado.tipo_contrato || '',
-            lider: empleado.lider || '',
+            lider: empleado.lider === 'Si' ? 'Si' : 'No',
             accion: 'editar',
             id: empleado.id
         });
@@ -412,29 +392,13 @@ const EmployeeModal = ({ isOpen, onClose }) => {
     };
 
     const handleEditarTarea = (tarea) => {
+        setEditandoTarea(tarea);
         setMostrarFormularioTarea(true);
-        setNuevaTarea({ ...tarea, accion: 'editar' });
-        setDeletedSubtareaIds([]);
-        setSubtareasForm([]);
-        setChecklistTitulo('');
-        setShowChecklist(false);
-        axiosInstance.get(`/subtareas/${tarea.id}`)
-            .then(r => {
-                if (r.data.length > 0) {
-                    setSubtareasForm(r.data.map(s => ({
-                        id: s.id,
-                        tempId: `e-${s.id}`,
-                        titulo: s.titulo,
-                        fecha_vencimiento: s.fecha_vencimiento || '',
-                        completada: s.completada
-                    })));
-                    if (r.data[0].checklist_titulo) {
-                        setChecklistTitulo(r.data[0].checklist_titulo);
-                    }
-                    setShowChecklist(true);
-                }
-            })
-            .catch(() => {});
+    };
+
+    const cerrarFormularioTarea = () => {
+        setMostrarFormularioTarea(false);
+        setEditandoTarea(null);
     };
 
     const handleEliminarFuncion = (id) => {
@@ -628,178 +592,6 @@ const EmployeeModal = ({ isOpen, onClose }) => {
         }
     };
 
-    const loadChecklistsExistentes = async (empleadoId) => {
-        try {
-            const r = await axiosInstance.get(`/checklists-empleado/${empleadoId}`);
-            setChecklistsExistentes(r.data);
-        } catch {}
-    };
-
-    const handleCopyChecklist = (tareaId) => {
-        setSelectedChecklistId(tareaId);
-        if (!tareaId) return;
-        const found = checklistsExistentes.find(c => c.tarea_id == tareaId);
-        if (found) {
-            setSubtareasForm(found.items.map((item, i) => ({
-                tempId: Date.now() + i,
-                titulo: item.titulo,
-                fecha_vencimiento: item.fecha_vencimiento || ''
-            })));
-            if (found.checklist_titulo) setChecklistTitulo(found.checklist_titulo);
-        }
-    };
-
-    const handleGuardarTarea = () => {
-        if (!nuevaTarea.titulo.trim() || !nuevaTarea.fecha_pactada) {
-            Swal.fire({
-                title: 'Error',
-                text: 'Por favor complete los campos requeridos',
-                icon: 'error',
-                confirmButtonText: 'OK',
-            });
-            return;
-        }
-
-        if (nuevaTarea.fecha_pactada < new Date().toISOString().split('T')[0]) {
-            Swal.fire({
-                title: 'Error',
-                text: 'La fecha pactada no puede ser menor a la fecha actual',
-                icon: 'error',
-                confirmButtonText: 'OK',
-            });
-            return;
-        }
-
-        //validar la descripcion de la tarea
-        if (nuevaTarea.descripcion.length < 10) {
-            Swal.fire({
-                title: 'Error',
-                text: 'La descripción de la tarea debe tener al menos 10 caracteres',
-                icon: 'error',
-                confirmButtonText: 'OK',
-            });
-            return;
-        }
-
-        // Sólo al crear: las tareas heredadas no tienen estos campos y
-        // exigirlos impediría guardar cambios en el resto del formulario.
-        if (nuevaTarea.accion === 'guardar') {
-            if (String(nuevaTarea.proposito || '').trim().length < 10) {
-                Swal.fire({
-                    title: 'Falta el propósito',
-                    text: 'Indica para qué sirve esta tarea (al menos 10 caracteres).',
-                    icon: 'warning',
-                    confirmButtonText: 'OK',
-                });
-                return;
-            }
-
-            const faltaCriterio = validarCriterios(nuevaTarea.criterios);
-            if (faltaCriterio) {
-                Swal.fire({
-                    title: 'Faltan los criterios de aceptación',
-                    text: faltaCriterio,
-                    icon: 'warning',
-                    confirmButtonText: 'OK',
-                });
-                return;
-            }
-        }
-
-        setIsSaving(true);
-        const tareaData = {
-            ...nuevaTarea,
-            empleado: empleadoSeleccionado.id,
-            evidencias: evidencias
-        };
-        // Al crear viajan los criterios de aceptación; al editar se gestionan
-        // en el detalle de la tarea, uno a uno, y no se envían desde aquí.
-        if (nuevaTarea.accion === 'guardar') {
-            tareaData.criterios = criteriosParaEnviar(nuevaTarea.criterios);
-        } else {
-            delete tareaData.criterios;
-        }
-        delete tareaData.criterio;
-
-        axiosInstance.post('/guardarTarea', tareaData)
-            .then(async (response) => {
-                // Guardar subtareas si es tarea nueva
-                if (tareaData.accion === 'guardar' && response.data.tarea_id && subtareasForm.length > 0) {
-                    await Promise.all(subtareasForm.map(s =>
-                        axiosInstance.post('/subtareas', {
-                            tarea_id: response.data.tarea_id,
-                            titulo: s.titulo,
-                            fecha_vencimiento: s.fecha_vencimiento || null,
-                            checklist_titulo: checklistTitulo || null
-                        })
-                    ));
-                }
-                // Sincronizar checklist al editar
-                if (tareaData.accion === 'editar' && response.data.tarea_id) {
-                    const ops = [
-                        ...subtareasForm.filter(s => s.id).map(s =>
-                            axiosInstance.put(`/subtareas/${s.id}`, {
-                                titulo: s.titulo,
-                                fecha_vencimiento: s.fecha_vencimiento || null,
-                                checklist_titulo: checklistTitulo || null
-                            })
-                        ),
-                        ...subtareasForm.filter(s => !s.id).map(s =>
-                            axiosInstance.post('/subtareas', {
-                                tarea_id: response.data.tarea_id,
-                                titulo: s.titulo,
-                                fecha_vencimiento: s.fecha_vencimiento || null,
-                                checklist_titulo: checklistTitulo || null
-                            })
-                        ),
-                        ...deletedSubtareaIds.map(id => axiosInstance.delete(`/subtareas/${id}`))
-                    ];
-                    if (ops.length > 0) await Promise.all(ops);
-                    setDeletedSubtareaIds([]);
-                }
-                setSubtareasForm([]);
-                setNuevaSubtareaTexto('');
-                setNuevaSubtareaFecha('');
-                setShowChecklist(false);
-                setChecklistTitulo('');
-                setSelectedChecklistId('');
-                setChecklistsExistentes([]);
-                setTareasEmpleado(response.data.tareas);
-                setNuevaTarea({
-                    titulo: '',
-                    descripcion: '',
-                    fecha_pactada: '',
-                    estado: 'Pendiente',
-                    prioridad: 'Media',
-                    proyecto_id: '',
-                    evidencias: [],
-                    criterios: [criterioVacio()],
-                    accion: 'guardar'
-                });
-                setEvidencias([]);
-                setMostrarFormularioTarea(false);
-
-                Swal.fire({
-                    title: 'Tarea guardada correctamente',
-                    icon: 'success',
-                    confirmButtonText: 'OK',
-                });
-            })
-            .catch((error) => {
-                console.error('Error al guardar la tarea:', error);
-                Swal.fire({
-                    title: 'Error',
-                    text: 'Hubo un error al guardar la tarea',
-                    icon: 'error',
-                    confirmButtonText: 'OK',
-                });
-            })
-            .finally(() => {
-                setIsSaving(false);
-            });
-    };
-
-
     const handleActualizarEstadoTarea = (tarea, nuevoEstado) => {
         if (nuevoEstado === 'Completada') {
             setTareaActual(tarea);
@@ -856,9 +648,11 @@ const EmployeeModal = ({ isOpen, onClose }) => {
             })
             .catch((error) => {
                 console.error('Error al actualizar el estado:', error);
+                // Con criterios de aceptación, Completada se responde con un
+                // 409 que explica cómo cerrarla: mejor mostrarlo que ocultarlo.
                 Swal.fire({
-                    title: 'Error',
-                    text: 'Hubo un error al actualizar el estado de la tarea',
+                    title: error?.response?.data?.requiere_verificacion ? 'Requiere aceptación' : 'Error',
+                    text: error?.response?.data?.error || 'Hubo un error al actualizar el estado de la tarea',
                     icon: 'error',
                     confirmButtonText: 'OK',
                 });
@@ -1208,6 +1002,34 @@ const EmployeeModal = ({ isOpen, onClose }) => {
                                 </div>
                             </div>
 
+                            {/* Si es líder se decide aquí, en su ficha; antes se
+                                confundía con «Líder de seguimiento» del modal de
+                                usuarios. Quien lidera un departamento es líder por
+                                esa asignación y se gestiona en Departamentos. */}
+                            <div className="form-row">
+                                <div className="form-group col-4">
+                                    <label>¿Es líder?</label>
+                                    <select
+                                        onChange={(e) => setNewEmpleado({ ...newEmpleado, lider: e.target.value })}
+                                        value={newEmpleado.lider === 'Si' ? 'Si' : 'No'}
+                                        className="form-control"
+                                        name="lider"
+                                        id="lider"
+                                        disabled={!!newEmpleado.departamentos_liderados}
+                                    >
+                                        <option value="No">No</option>
+                                        <option value="Si">Sí</option>
+                                    </select>
+                                </div>
+                                <div className="form-group col-8">
+                                    <p className="form-hint" style={{ margin: '1.9rem 0 0', fontSize: '0.85rem', color: '#64748b' }}>
+                                        {newEmpleado.departamentos_liderados
+                                            ? <>Lidera <strong>{newEmpleado.departamentos_liderados}</strong>. Para cambiarlo, asigna otro líder en Departamentos.</>
+                                            : 'Un líder ve el tablero y el espacio de su equipo y supervisa sus tareas.'}
+                                    </p>
+                                </div>
+                            </div>
+
                             <div className="form-actions">
                                 <button
                                     type="button"
@@ -1418,10 +1240,10 @@ const EmployeeModal = ({ isOpen, onClose }) => {
                             <div className="justify-content-center jimu-primary-loading"></div>
                         </div>
                     )}
-                    <div className="tareas-modal">
+                    <div className={`tareas-modal${mostrarFormularioTarea ? ' ft-modal-ancho' : ''}`}>
                         <div className="modal-header">
                             <h2>
-                                {mostrarFormularioTarea ? 'Nueva Tarea' :
+                                {mostrarFormularioTarea ? (editandoTarea ? 'Editar Tarea' : 'Nueva Tarea') :
                                     `TAREAS DE ${empleadoSeleccionado.nombres} ${empleadoSeleccionado.apellidos}`}
                             </h2>
                             <div className="modal-header-actions">
@@ -1430,7 +1252,7 @@ const EmployeeModal = ({ isOpen, onClose }) => {
                                     className="close-button"
                                     onClick={() => {
                                         setShowTareasModal(false);
-                                        setMostrarFormularioTarea(false);
+                                        cerrarFormularioTarea();
                                     }}
                                 >
                                     &times;
@@ -1450,7 +1272,7 @@ const EmployeeModal = ({ isOpen, onClose }) => {
                                 />
                                 <button
                                     className="dm-btn dm-btn--primary"
-                                    onClick={() => setMostrarFormularioTarea(true)}
+                                    onClick={() => { setEditandoTarea(null); setMostrarFormularioTarea(true); }}
                                 >
                                     <FaPlus /> Nueva Tarea
                                 </button>
@@ -1458,306 +1280,18 @@ const EmployeeModal = ({ isOpen, onClose }) => {
                         )}
                         <div className="tareas-content">
                             {mostrarFormularioTarea ? (
-                                <div className="tarea-form">
-                                    <div className="form-row">
-                                        <div className="form-group col-12">
-                                            <label className='form-label'>Título</label>
-                                            <input
-                                                type="text"
-                                                value={nuevaTarea.titulo}
-                                                onChange={(e) => setNuevaTarea({ ...nuevaTarea, titulo: e.target.value })}
-                                                placeholder="Título de la tarea"
-                                            />
-                                        </div>
-
-                                    </div>
-                                    <div className='form-row'>
-                                        <div className="form-group col-4">
-                                            <label className='form-label'>Fecha Pactada</label>
-                                            <input
-                                                type="date"
-                                                value={nuevaTarea.fecha_pactada || ""}
-                                                onChange={(e) => setNuevaTarea({ ...nuevaTarea, fecha_pactada: e.target.value })}
-                                            />
-                                        </div>
-                                        <div className="form-group col-4">
-                                            <label>Prioridad</label>
-                                            <select
-                                                value={nuevaTarea.prioridad}
-                                                onChange={(e) => setNuevaTarea({ ...nuevaTarea, prioridad: e.target.value })}
-                                            >
-                                                <option value="Alta">Alta</option>
-                                                <option value="Media">Media</option>
-                                                <option value="Baja">Baja</option>
-                                            </select>
-                                        </div>
-                                        <div className="form-group col-4">
-                                            <label>Estado</label>
-                                            <select
-                                                value={nuevaTarea.estado}
-                                                onChange={(e) => setNuevaTarea({ ...nuevaTarea, estado: e.target.value })}
-                                            >
-                                                <option value="Pendiente">Pendiente</option>
-                                                <option value="En Proceso">En Proceso</option>
-                                                <option value="Completada">Completada</option>
-                                            </select>
-                                        </div>
-
-                                    </div>
-                                    <div className="form-group col-12">
-                                        <label>Descripción</label>
-                                        <textarea
-                                            value={nuevaTarea.descripcion}
-                                            onChange={(e) => setNuevaTarea({ ...nuevaTarea, descripcion: e.target.value })}
-                                            placeholder="Descripción detallada de la tarea"
-                                            rows="3"
-                                        />
-                                    </div>
-
-                                    {/* Método de la Escuela de Líderes: la tarea
-                                        nace con un para qué y con la forma de
-                                        verificar que se cumplió. */}
-                                    <div className="form-group col-12">
-                                        <label>¿Para qué sirve esta tarea?</label>
-                                        <input
-                                            type="text"
-                                            value={nuevaTarea.proposito || ''}
-                                            onChange={(e) => setNuevaTarea({ ...nuevaTarea, proposito: e.target.value })}
-                                            placeholder="El propósito, no el trabajo. Ej.: Presentar la cuenta de cobro a tiempo"
-                                        />
-                                    </div>
-                                    {nuevaTarea.accion === 'guardar' && (
-                                        <div className="form-group col-12">
-                                            <EditorCriteriosNuevos
-                                                valor={nuevaTarea.criterios}
-                                                onCambio={(criterios) => setNuevaTarea({ ...nuevaTarea, criterios })}
-                                            />
-                                        </div>
-                                    )}
-
-                                    <div className="form-group col-12">
-                                        <label>Proyecto (opcional)</label>
-                                        <select
-                                            value={nuevaTarea.proyecto_id}
-                                            onChange={(e) => setNuevaTarea({ ...nuevaTarea, proyecto_id: e.target.value })}
-                                        >
-                                            <option value="">Sin proyecto</option>
-                                            {proyectos.map(p => (
-                                                <option key={p.id} value={p.id}>{p.nombre}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-
-                                    {/* Checklist */}
-                                    <div className="form-group col-12">
-                                        {nuevaTarea.accion === 'guardar' && (
-                                            <div className="checklist-toggle-row">
-                                                <button
-                                                    type="button"
-                                                    className={`checklist-toggle-btn${showChecklist ? ' active' : ''}`}
-                                                    onClick={() => {
-                                                        if (!showChecklist && empleadoSeleccionado?.id) {
-                                                            loadChecklistsExistentes(empleadoSeleccionado.id);
-                                                        }
-                                                        setShowChecklist(prev => !prev);
-                                                    }}
-                                                >
-                                                    ☑ Checklist
-                                                </button>
-                                                {!nuevaTarea.proyecto_id && (
-                                                    <span className="checklist-hint">Proyecto opcional: puedes usar checklist sin seleccionarlo</span>
-                                                )}
-                                            </div>
-                                        )}
-                                        {nuevaTarea.accion === 'editar' && (
-                                            <div className="checklist-toggle-row">
-                                                <button
-                                                    type="button"
-                                                    className={`checklist-toggle-btn${showChecklist ? ' active' : ''}`}
-                                                    onClick={() => setShowChecklist(prev => !prev)}
-                                                >
-                                                    ☑ Checklist {subtareasForm.length > 0 && `(${subtareasForm.length})`}
-                                                </button>
-                                            </div>
-                                        )}
-                                        {showChecklist && (
-                                            <div className="checklist-form-section">
-                                                <div className="checklist-header-row">
-                                                    <input
-                                                        type="text"
-                                                        className="checklist-titulo-input"
-                                                        placeholder="Título del checklist (opcional)..."
-                                                        value={checklistTitulo}
-                                                        onChange={e => setChecklistTitulo(e.target.value)}
-                                                    />
-                                                    {nuevaTarea.accion === 'guardar' && checklistsExistentes.length > 0 && (
-                                                        <select
-                                                            className="checklist-copy-select"
-                                                            value={selectedChecklistId}
-                                                            onChange={e => handleCopyChecklist(e.target.value)}
-                                                        >
-                                                            <option value="">Copiar de existente...</option>
-                                                            {checklistsExistentes.map(c => (
-                                                                <option key={c.tarea_id} value={c.tarea_id}>
-                                                                    {c.tarea_titulo}{c.checklist_titulo ? ` — ${c.checklist_titulo}` : ''}
-                                                                </option>
-                                                            ))}
-                                                        </select>
-                                                    )}
-                                                </div>
-                                                {subtareasForm.length > 0 && (
-                                                    <ul className="subtareas-list" style={{ marginBottom: '0.5rem' }}>
-                                                        {subtareasForm.map(s => (
-                                                            <li key={s.tempId} className="subtarea-item">
-                                                                <input
-                                                                    type="text"
-                                                                    className="subtarea-edit-input"
-                                                                    value={s.titulo}
-                                                                    onChange={e => setSubtareasForm(prev =>
-                                                                        prev.map(x => x.tempId === s.tempId ? { ...x, titulo: e.target.value } : x)
-                                                                    )}
-                                                                    placeholder="Descripción del ítem..."
-                                                                />
-                                                                <input
-                                                                    type="date"
-                                                                    className="subtarea-edit-date"
-                                                                    value={s.fecha_vencimiento || ''}
-                                                                    onChange={e => setSubtareasForm(prev =>
-                                                                        prev.map(x => x.tempId === s.tempId ? { ...x, fecha_vencimiento: e.target.value } : x)
-                                                                    )}
-                                                                    title="Fecha de vencimiento"
-                                                                />
-                                                                <button type="button" className="subtarea-delete" style={{ opacity: 1 }}
-                                                                    onClick={() => {
-                                                                        if (s.id) setDeletedSubtareaIds(prev => [...prev, s.id]);
-                                                                        setSubtareasForm(prev => prev.filter(x => x.tempId !== s.tempId));
-                                                                    }}>
-                                                                    <FaTimes />
-                                                                </button>
-                                                            </li>
-                                                        ))}
-                                                    </ul>
-                                                )}
-                                                <div className="subtarea-add-row">
-                                                    <input
-                                                        type="text"
-                                                        className="subtarea-add-input"
-                                                        placeholder="Ítem del checklist..."
-                                                        value={nuevaSubtareaTexto}
-                                                        onChange={e => setNuevaSubtareaTexto(e.target.value)}
-                                                        onKeyDown={e => {
-                                                            if (e.key === 'Enter') {
-                                                                e.preventDefault();
-                                                                if (!nuevaSubtareaTexto.trim()) return;
-                                                                setSubtareasForm(prev => [...prev, { tempId: Date.now(), titulo: nuevaSubtareaTexto.trim(), fecha_vencimiento: nuevaSubtareaFecha }]);
-                                                                setNuevaSubtareaTexto('');
-                                                                setNuevaSubtareaFecha('');
-                                                            }
-                                                        }}
-                                                    />
-                                                    <input
-                                                        type="date"
-                                                        className="subtarea-add-date"
-                                                        value={nuevaSubtareaFecha}
-                                                        onChange={e => setNuevaSubtareaFecha(e.target.value)}
-                                                        title="Fecha de vencimiento"
-                                                    />
-                                                    <button type="button" className="subtarea-add-btn"
-                                                        disabled={!nuevaSubtareaTexto.trim()}
-                                                        onClick={() => {
-                                                            if (!nuevaSubtareaTexto.trim()) return;
-                                                            setSubtareasForm(prev => [...prev, { tempId: Date.now(), titulo: nuevaSubtareaTexto.trim(), fecha_vencimiento: nuevaSubtareaFecha }]);
-                                                            setNuevaSubtareaTexto('');
-                                                            setNuevaSubtareaFecha('');
-                                                        }}>
-                                                        <FaPlus />
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    <div className="form-row">
-                                        <div className="form-group col-12">
-                                            <label>Evidencias</label>
-                                            <div className="evidencia-upload-container">
-                                                <input
-                                                    type="file"
-                                                    multiple
-                                                    onChange={handleEvidenciaUpload}
-                                                    className="evidencia-input"
-                                                    disabled={isUploading}
-                                                />
-                                                {isUploading && (
-                                                    <div className="loader">
-                                                        <div className="justify-content-center jimu-primary-loading"></div>
-                                                    </div>
-                                                )}
-                                            </div>
-                                            <div className="evidencias-preview">
-                                                {evidencias.map((evidencia, index) => (
-                                                    <div key={index} className="evidencia-item">
-                                                        {evidencia.tipo.startsWith('image/') ? (
-                                                            <img
-                                                                src={`/storage/${evidencia.ruta}`}
-                                                                alt={evidencia.nombre}
-                                                                className="evidencia-thumbnail"
-                                                            />
-                                                        ) : (
-                                                            <div className="file-icon">
-                                                                {evidencia.tipo.includes('pdf') ? (
-                                                                    <FaFilePdf className="evidencia-icon pdf" />
-                                                                ) : evidencia.tipo.includes('word') ? (
-                                                                    <FaFileWord className="evidencia-icon word" />
-                                                                ) : (
-                                                                    <FaFile className="evidencia-icon" />
-                                                                )}
-                                                            </div>
-                                                        )}
-                                                        <span className="evidencia-nombre">{evidencia.nombre}</span>
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => handleFileClick(evidencia)}
-                                                            className="view-evidencia"
-                                                            title='Ver evidencia'
-                                                        >
-                                                            <FaEye />
-                                                        </button>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="form-actions">
-                                        <button
-                                            className="cancel-button"
-                                            onClick={() => {
-                                                setMostrarFormularioTarea(false);
-                                                setNuevaTarea({
-                                                    titulo: '',
-                                                    descripcion: '',
-                                                    fecha_pactada: '',
-                                                    estado: 'Pendiente',
-                                                    prioridad: 'Media',
-                                                    proyecto_id: '',
-                                                    evidencias: [],
-                                                    accion: 'guardar'
-                                                });
-                                                setEvidencias([]);
-                                                setSubtareasForm([]);
-                                                setDeletedSubtareaIds([]);
-                                                setShowChecklist(false);
-                                                setChecklistTitulo('');
-                                                setSelectedChecklistId('');
-                                            }}
-                                        >
-                                            <FaTimes /> {' '} Cancelar
-                                        </button>
-                                        <button onClick={handleGuardarTarea} className="save-button">
-                                            <FaSave /> {' '} Guardar Tarea
-                                        </button>
-                                    </div>
-                                </div>
+                                <FormularioTarea
+                                    key={editandoTarea?.id || 'nueva'}
+                                    empleadoId={empleadoSeleccionado.id}
+                                    empleadoNombre={`${empleadoSeleccionado.nombres} ${empleadoSeleccionado.apellidos}`}
+                                    tarea={editandoTarea}
+                                    proyectos={proyectos}
+                                    onGuardada={(datos) => {
+                                        if (Array.isArray(datos?.tareas)) setTareasEmpleado(datos.tareas);
+                                        cerrarFormularioTarea();
+                                    }}
+                                    onCancelar={cerrarFormularioTarea}
+                                />
                             ) : (
                                 <div className="tareas-list">
                                     {tareasEmpleado.length > 0 ? (
@@ -1801,6 +1335,7 @@ const EmployeeModal = ({ isOpen, onClose }) => {
                                                             >
                                                                 <option value="Pendiente">Pendiente</option>
                                                                 <option value="En Proceso">En Proceso</option>
+                                                                <option value="En Revisión">En Revisión</option>
                                                                 <option value="Completada">Completada</option>
                                                                 <option value="Cancelada">Cancelada</option>
                                                             </select>

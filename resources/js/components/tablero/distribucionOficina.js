@@ -100,8 +100,10 @@ export const PISOS = [
                 corto: 'Sala de Juntas',
                 x: 1, y: 10.5, ancho: 7, alto: 10,
                 muebles: [
+                    M('alfombra', 2, 12.8, 5, 5),
                     M('mesa-redonda', 2.6, 13.4, 3.8, 3.8),
                     M('pizarra', 1.3, 11.6, 0.4, 2.4),
+                    M('tv', 7.55, 13.4, 0.35, 3.4),
                     M('planta', 7, 19.6),
                     M('sofa', 2, 18.4, 3, 1.1),
                 ],
@@ -155,7 +157,7 @@ export const PISOS = [
                 nombre: 'Sala de reuniones',
                 corto: 'Sala',
                 x: 1, y: 21, ancho: 6, alto: 8,
-                muebles: [M('mesa-redonda', 2.4, 23.4, 2.8, 2.8), M('sofa', 1.8, 27, 2.6, 1.1), M('planta', 6.2, 28.4)],
+                muebles: [M('alfombra', 1.9, 22.9, 3.8, 3.8), M('mesa-redonda', 2.4, 23.4, 2.8, 2.8), M('sofa', 1.8, 27, 2.6, 1.1), M('planta', 6.2, 28.4)],
             },
             {
                 id: 'bano-1',
@@ -171,7 +173,9 @@ export const PISOS = [
                 x: 14, y: 21, ancho: 7, alto: 8,
                 muebles: [
                     M('encimera', 14.8, 22, 5.4, 1.2),
+                    M('cafetera', 15.3, 22.15),
                     M('nevera', 19.8, 26.6),
+                    M('dispensador', 14.9, 27.9),
                     M('mesa-redonda', 15.4, 25.2, 2.4, 2.4),
                     M('planta', 20.4, 28.4),
                 ],
@@ -191,7 +195,9 @@ export const PISOS = [
                 muebles: [
                     M('sofa', 27.8, 22.4, 2.8, 1.1),
                     M('sofa', 27.8, 26.6, 2.8, 1.1),
+                    M('alfombra', 30.8, 23.8, 3, 3),
                     M('mesa-baja', 31.4, 24.4, 1.8, 1.8),
+                    M('dispensador', 33.2, 22),
                     M('planta', 33.2, 28.4),
                 ],
             },
@@ -205,6 +211,7 @@ export const PISOS = [
                     M('planta', 41, 23),
                     M('planta', 41, 28),
                     M('sofa', 35.4, 27, 2.8, 1.1),
+                    M('alfombra', 37.5, 28.1, 1.6, 0.75),
                 ],
             },
             {
@@ -240,6 +247,7 @@ export const PISOS = [
                 muebles: [
                     M('mesa-larga', 3, 5.6, 11.4, 2.4),
                     M('planta', 17.4, 12.2),
+                    M('dispensador', 1.6, 11.6),
                     M('pizarra', 1.3, 2, 0.4, 3),
                     M('impresora', 16.8, 2.2),
                     M('estante', 16.4, 7.4, 1, 3.4),
@@ -274,6 +282,7 @@ export const PISOS = [
                 corto: 'Salón',
                 x: 1, y: 13.5, ancho: 12, alto: 10.5,
                 muebles: [
+                    M('tv', 12.55, 15.6, 0.35, 4.4),
                     M('mesa-larga', 2.4, 16.4, 8.4, 1.4),
                     M('mesa-larga', 2.4, 20, 8.4, 1.4),
                     M('pizarra', 1.3, 14.6, 0.4, 3),
@@ -293,7 +302,9 @@ export const PISOS = [
                 corto: 'Sala',
                 x: 20, y: 13.5, ancho: 9, alto: 10.5,
                 muebles: [
+                    M('alfombra', 22, 15.8, 4.6, 4.6),
                     M('mesa-redonda', 22.6, 16.4, 3.4, 3.4),
+                    M('tv', 28.55, 16.4, 0.35, 3.4),
                     M('sofa', 21, 21.4, 2.8, 1.1),
                     M('planta', 28.2, 23.4),
                 ],
@@ -315,12 +326,126 @@ export const PISOS = [
     },
 ];
 
+const MESAS = ['mesa-larga', 'escritorio', 'mesa-redonda'];
+
+/**
+ * Hacia qué lado de su mesa queda una plaza: 'n' si la persona se sienta al
+ * norte de la mesa, 's' al sur, 'o' y 'e' en las cabeceras. Orienta la silla
+ * y el portátil, que de otro modo mirarían todos hacia el mismo sitio.
+ */
+function ladoDeMesa(px, py, muebles) {
+    const mesas = muebles.filter((m) => MESAS.includes(m.tipo));
+    const holgura = 0.3;
+
+    const enFrente = mesas.find((m) => px >= m.x - holgura && px <= m.x + m.ancho + holgura);
+    if (enFrente) {
+        const arriba = py < enFrente.y + enFrente.alto / 2;
+        // El portátil no puede colgar del canto aunque la plaza esté justo
+        // en la esquina de la mesa.
+        const x = Math.min(Math.max(px, enFrente.x + 0.5), enFrente.x + enFrente.ancho - 0.5);
+        return { lado: arriba ? 'n' : 's', mesa: enFrente, x, y: arriba ? enFrente.y : enFrente.y + enFrente.alto };
+    }
+
+    const alCostado = mesas.find((m) => py >= m.y - holgura && py <= m.y + m.alto + holgura);
+    if (alCostado) {
+        const izquierda = px < alCostado.x + alCostado.ancho / 2;
+        const y = Math.min(Math.max(py, alCostado.y + 0.5), alCostado.y + alCostado.alto - 0.5);
+        return { lado: izquierda ? 'o' : 'e', mesa: alCostado, x: izquierda ? alCostado.x : alCostado.x + alCostado.ancho, y };
+    }
+
+    return { lado: 'n', mesa: null };
+}
+
+/** Mueve una sala entera —paredes, muebles, gente— `dx` unidades. */
+function desplazar(sala, dx) {
+    if (!dx) return sala;
+    const mover = (o) => ({ ...o, x: o.x + dx });
+    return {
+        ...sala,
+        x: sala.x + dx,
+        muebles: (sala.muebles || []).map(mover),
+        puestos: sala.puestos.map(mover),
+        sillasLibres: sala.sillasLibres.map(mover),
+        portatiles: sala.portatiles.map(mover),
+    };
+}
+
+/**
+ * Quita las oficinas de departamento sin nadie dentro y cierra el hueco que
+ * dejan: las salas de la misma franja que quedaban a su derecha se corren a
+ * la izquierda. Un hueco de césped en mitad del edificio parecía una sala
+ * derribada; así la planta sigue leyéndose como un edificio continuo.
+ *
+ * Las salas de servicio (cocina, baños…) se quedan siempre: son el edificio y
+ * sirven para orientarse.
+ */
+function compactar(salas, piso) {
+    const vacia = (s) => s.depto && s.puestos.length === 0;
+
+    const filas = new Map();
+    for (const s of salas) {
+        if (!filas.has(s.y)) filas.set(s.y, []);
+        filas.get(s.y).push(s);
+    }
+
+    const corrimiento = new Map();
+    for (const fila of filas.values()) {
+        fila.sort((a, b) => a.x - b.x);
+        let acumulado = 0;
+        fila.forEach((s, i) => {
+            if (vacia(s)) {
+                // Se quita la sala y el pasillo que la separaba de la siguiente.
+                const siguiente = fila[i + 1];
+                acumulado += siguiente ? siguiente.x - s.x : s.ancho;
+            } else {
+                corrimiento.set(s.id, acumulado);
+            }
+        });
+    }
+
+    const visibles = salas.filter((s) => !vacia(s)).map((s) => desplazar(s, -corrimiento.get(s.id)));
+
+    // Las ventanas van en los muros que dan a la calle: arriba, a la
+    // izquierda y en la última sala de cada franja.
+    const ultimaDeFila = new Map();
+    for (const s of visibles) {
+        const actual = ultimaDeFila.get(s.y);
+        if (!actual || s.x > actual.x) ultimaDeFila.set(s.y, s);
+    }
+
+    const conVentanas = visibles.map((s) => ({
+        ...s,
+        ventanas: { n: s.y <= 1, o: s.x <= 1, e: ultimaDeFila.get(s.y) === s },
+    }));
+
+    // Cada franja apoya sobre un piso de pasillo; la unión de todas es la
+    // huella del edificio, y entre sala y sala se ve pasillo, no césped.
+    const franjas = [...filas.keys()].map((y) => {
+        const fila = conVentanas.filter((s) => s.y === y);
+        if (fila.length === 0) return null;
+        const x0 = Math.min(...fila.map((s) => s.x));
+        const x1 = Math.max(...fila.map((s) => s.x + s.ancho));
+        const y1 = Math.max(...fila.map((s) => s.y + s.alto));
+        return { x: x0, y, ancho: x1 - x0, alto: y1 - y };
+    }).filter(Boolean);
+
+    const derecha = Math.max(0, ...conVentanas.map((s) => s.x + s.ancho));
+
+    return {
+        salas: conVentanas,
+        franjas,
+        ancho: Math.min(piso.ancho, derecha + 1),
+        ocultas: salas.filter(vacia).length,
+    };
+}
+
 /**
  * Reparte a la gente del servidor en las plazas del plano.
  *
  * Los puestos llegan agrupados por departamento (`zonas`); se colocan en la
  * sala cuyo `depto` coincide. Quien no tenga sala en ningún piso va a una
- * lista aparte, visible, en vez de perderse.
+ * lista aparte, visible, en vez de perderse. Las oficinas que quedan sin
+ * nadie no se dibujan (ver `compactar`).
  */
 export function repartirEnPlano(piso, zonas) {
     const porDepto = new Map();
@@ -333,6 +458,7 @@ export function repartirEnPlano(piso, zonas) {
         if (sala.depto) porDepto.delete(sala.depto);
 
         const plazas = sala.plazas || [];
+        const muebles = sala.muebles || [];
         const puestos = gente.map((p, i) => {
             if (i < plazas.length) {
                 return { puesto: p, x: plazas[i][0], y: plazas[i][1] };
@@ -347,7 +473,27 @@ export function repartirEnPlano(piso, zonas) {
             };
         });
 
-        return { ...sala, puestos, zona: zonas.find((z) => Number(z.id) === sala.depto) || null };
+        // Las plazas sin nadie se ven como sillas vacías: dicen cuánto sitio
+        // libre queda en el área sin tener que contar.
+        const sillasLibres = plazas.slice(gente.length).map(([x, y]) => ({
+            x, y, lado: ladoDeMesa(x, y, muebles).lado,
+        }));
+
+        // Un portátil en la mesa delante de cada plaza: encendido si alguien
+        // se sienta ahí, cerrado si no. Los escritorios ya traen monitor.
+        const portatiles = plazas.map(([px, py], i) => {
+            const r = ladoDeMesa(px, py, muebles);
+            if (!r.mesa || r.mesa.tipo !== 'mesa-larga') return null;
+            return { x: r.x, y: r.y, lado: r.lado, encendido: i < gente.length };
+        }).filter(Boolean);
+
+        return {
+            ...sala,
+            puestos,
+            sillasLibres,
+            portatiles,
+            zona: zonas.find((z) => Number(z.id) === sala.depto) || null,
+        };
     });
 
     // Sólo son «sin sala» los departamentos que NINGÚN piso contempla: los
@@ -362,5 +508,5 @@ export function repartirEnPlano(piso, zonas) {
         sinSala.push({ zona: zonas.find((x) => Number(x.id) === id), puestos: gente });
     }
 
-    return { salas: colocadas, sinSala };
+    return { ...compactar(colocadas, piso), sinSala };
 }

@@ -7,7 +7,8 @@ import React from 'react';
             justifyContent: 'center',
             alignItems: 'center',
             marginTop: '1rem',
-            gap: '0.5rem'
+            gap: '0.5rem',
+            flexWrap: 'wrap'
         },
         button: {
             padding: '0.5rem 1rem',
@@ -42,7 +43,9 @@ import React from 'react';
 
 const Paginador = ({ currentPage, totalPages, onPageChange }) => {
     return (
-        <div style={paginationStyles.container}>
+        // En móvil se ocultan los números (app.css): con muchas páginas no
+        // cabían, y «Anterior · Página 2 de 7 · Siguiente» basta.
+        <div className="wb-paginador" style={paginationStyles.container}>
         <button
             style={{
                 ...paginationStyles.button,
@@ -57,6 +60,7 @@ const Paginador = ({ currentPage, totalPages, onPageChange }) => {
         {[...Array(totalPages)].map((_, index) => (
             <button
                 key={index + 1}
+                className="wb-paginador-num"
                 style={{
                     ...paginationStyles.button,
                     ...(currentPage === index + 1 ? paginationStyles.activeButton : {})

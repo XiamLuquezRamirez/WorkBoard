@@ -4,7 +4,7 @@ import {
     FaPlus, FaClock, FaSpinner, FaCheck,
     FaEye, FaSearch, FaFile, FaFileWord,
     FaFileImage, FaFilePdf, FaTimes,
-    FaSave, FaArrowLeft, FaLock, FaLink, FaArchive, FaFolder,
+    FaArrowLeft, FaLock, FaLink, FaArchive, FaFolder,
     FaCalendar, FaChevronLeft, FaChevronRight, FaChevronDown, FaChartBar, FaEllipsisV, FaPause,
     FaDesktop, FaVideo, FaUsers, FaColumns
 } from 'react-icons/fa';
@@ -12,7 +12,7 @@ import TaskDetailsModal from './TaskDetailsModal';
 import ReportesDepartamentoModal from './ReportesDepartamentoModal';
 import VideosTableroModal from './VideosTableroModal';
 import EspacioEquipoModal from './equipo/EspacioEquipoModal';
-import EditorCriteriosNuevos, { criterioVacio, criteriosParaEnviar, validarCriterios } from './criterios/EditorCriteriosNuevos';
+import FormularioTarea from './tareas/FormularioTarea';
 import TableroEquipoModal from './equipo/TableroEquipoModal';
 import { AvataresProvider } from './tablero/AvataresContext';
 import axiosInstance from '../axiosConfig';
@@ -64,26 +64,20 @@ const EmployeeInterface = ({ user }) => {
     const [tareasArchivadas, setTareasArchivadas] = useState([]);
     const [selectedArchivedTask, setSelectedArchivedTask] = useState(null);
     const [showArchivedTaskDetails, setShowArchivedTaskDetails] = useState(false);
-    const [isSaving, setIsSaving] = useState(false);
     const [proyectos, setProyectos] = useState([]);
-    const [subtareasForm, setSubtareasForm] = useState([]);
-    const [nuevaSubtareaTexto, setNuevaSubtareaTexto] = useState('');
-    const [nuevaSubtareaFecha, setNuevaSubtareaFecha] = useState('');
-    const [checklistTitulo, setChecklistTitulo] = useState('');
-    const [showChecklist, setShowChecklist] = useState(false);
-    const [checklistsExistentes, setChecklistsExistentes] = useState([]);
-    const [selectedChecklistId, setSelectedChecklistId] = useState('');
-    const [formProyectoId, setFormProyectoId] = useState('');
-    const [newTaskTitulo, setNewTaskTitulo] = useState('');
-    const [newTaskDescripcion, setNewTaskDescripcion] = useState('');
-    const [newTaskProposito, setNewTaskProposito] = useState('');
-    const [newTaskCriterios, setNewTaskCriterios] = useState([criterioVacio()]);
-    const [newTaskFecha, setNewTaskFecha] = useState('');
-    const [newTaskPrioridad, setNewTaskPrioridad] = useState('Media');
-    const [newTaskEstado, setNewTaskEstado] = useState('Pendiente');
-    const [selectedPlantillaId, setSelectedPlantillaId] = useState('');
-    const checklistBlockRef = useRef(null);
     const optionsDropdownRef = useRef(null);
+    // En pantallas estrechas el tablero muestra una columna (o dos) y se
+    // desliza en horizontal; las pestañas dicen cuál se está viendo.
+    const tableroRef = useRef(null);
+    const pestanasRef = useRef(null);
+    const [columnaVisible, setColumnaVisible] = useState(0);
+
+    // La pestaña de la columna visible no debe quedar cortada en la barra.
+    useEffect(() => {
+        const p = pestanasRef.current?.children[columnaVisible];
+        const barra = pestanasRef.current;
+        if (p && barra) barra.scrollTo({ left: p.offsetLeft - 8, behavior: 'smooth' });
+    }, [columnaVisible]);
     const [showOptionsDropdown, setShowOptionsDropdown] = useState(false);
     const [showReportesModal, setShowReportesModal] = useState(false);
     const [showVideosModal, setShowVideosModal] = useState(false);
@@ -95,25 +89,6 @@ const EmployeeInterface = ({ user }) => {
         const d = new Date();
         return new Date(d.getFullYear(), d.getMonth(), 1);
     });
-
-    const resetNewTaskModalState = () => {
-        setSubtareasForm([]);
-        setNuevaSubtareaTexto('');
-        setNuevaSubtareaFecha('');
-        setShowChecklist(false);
-        setChecklistTitulo('');
-        setSelectedChecklistId('');
-        setFormProyectoId('');
-        setSelectedPlantillaId('');
-        setNewTaskTitulo('');
-        setNewTaskDescripcion('');
-        setNewTaskProposito('');
-        setNewTaskCriterios([criterioVacio()]);
-        setNewTaskFecha('');
-        setNewTaskPrioridad('Media');
-        setNewTaskEstado('Pendiente');
-        setChecklistsExistentes([]);
-    };
 
     const normalizeYmd = (val) => {
         if (!val) return null;
@@ -224,14 +199,6 @@ const EmployeeInterface = ({ user }) => {
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
-
-    useEffect(() => {
-        if (!showChecklist || !showNewTaskModal) return;
-        const t = window.setTimeout(() => {
-            checklistBlockRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        }, 80);
-        return () => window.clearTimeout(t);
-    }, [showChecklist, showNewTaskModal]);
 
     const loadProyectos = async () => {
         try {
@@ -432,7 +399,6 @@ const EmployeeInterface = ({ user }) => {
     };
 
     const asignarTareas = () => {
-        resetNewTaskModalState();
         setShowNewTaskModal(true);
         setShowTareasEmpleado(false);
         setAsignarTareasEmpleado(true);
@@ -507,210 +473,6 @@ const EmployeeInterface = ({ user }) => {
         setEstadoSeleccionado(null);
     };
 
-    const loadChecklistsExistentes = async (empleadoId) => {
-        try {
-            const r = await axiosInstance.get(`/checklists-empleado/${empleadoId}`);
-            setChecklistsExistentes(r.data);
-        } catch {}
-    };
-
-    const handleCopyChecklist = (tareaId) => {
-        setSelectedChecklistId(tareaId);
-        if (!tareaId) return;
-        const found = checklistsExistentes.find(c => c.tarea_id == tareaId);
-        if (found) {
-            setSubtareasForm(found.items.map((item, i) => ({
-                tempId: Date.now() + i,
-                titulo: item.titulo,
-                fecha_vencimiento: item.fecha_vencimiento || ''
-            })));
-            if (found.checklist_titulo) setChecklistTitulo(found.checklist_titulo);
-        }
-    };
-
-    const aplicarPlantillaDesdeTarea = async (tareaId) => {
-        if (!tareaId) return;
-        try {
-            const [tRes, sRes] = await Promise.all([
-                axiosInstance.get(`/cargarTareaSeleccionada/${tareaId}`),
-                axiosInstance.get(`/subtareas/${tareaId}`),
-            ]);
-            const t = tRes.data;
-            setNewTaskTitulo(t.titulo || '');
-            setNewTaskDescripcion(t.descripcion || '');
-            setNewTaskFecha(normalizeYmd(t.fecha_pactada) || '');
-            const pr = String(t.prioridad || 'Media').trim();
-            setNewTaskPrioridad(['Alta', 'Media', 'Baja'].includes(pr) ? pr : 'Media');
-            const est = String(t.estado || 'Pendiente').trim();
-            setNewTaskEstado(est === 'En Proceso' ? 'En Proceso' : 'Pendiente');
-            setFormProyectoId(t.proyecto_id ? String(t.proyecto_id) : '');
-            const subs = Array.isArray(sRes.data) ? sRes.data : [];
-            if (subs.length > 0) {
-                setShowChecklist(true);
-                setChecklistTitulo(subs[0]?.checklist_titulo || '');
-                setSubtareasForm(
-                    subs.map((s, i) => ({
-                        tempId: Date.now() + i,
-                        titulo: s.titulo || '',
-                        fecha_vencimiento: normalizeYmd(s.fecha_vencimiento) || '',
-                    }))
-                );
-            } else {
-                setShowChecklist(false);
-                setChecklistTitulo('');
-                setSubtareasForm([]);
-            }
-            setSelectedPlantillaId(String(tareaId));
-            setSelectedChecklistId('');
-            window.requestAnimationFrame(() => {
-                checklistBlockRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-            });
-        } catch (err) {
-            console.error('Error al cargar plantilla:', err);
-            Swal.fire('Error', 'No se pudo cargar la plantilla de la tarea', 'error');
-        }
-    };
-
-    const onPlantillaSelectChange = (value) => {
-        if (!value) {
-            resetNewTaskModalState();
-            return;
-        }
-        aplicarPlantillaDesdeTarea(value);
-    };
-
-    const handleSubmitNewTask = async (e) => {
-        e.preventDefault();
-        setIsSaving(true);
-
-        try {
-
-            let empleado = null;
-            if (asignarTareasEmpleado) {
-                empleado = empleadoAsignado;
-            } else {
-                empleado = user.empleado;
-            }
-
-            if (!String(newTaskTitulo || '').trim() || !String(newTaskDescripcion || '').trim() || !newTaskFecha) {
-                Swal.fire({
-                    title: 'Error',
-                    text: 'Completa título, descripción y fecha límite',
-                    icon: 'error',
-                    confirmButtonText: 'OK',
-                });
-                return;
-            }
-
-            if (newTaskFecha < new Date().toISOString().split('T')[0]) {
-                Swal.fire({
-                    title: 'Error',
-                    text: 'La fecha pactada no puede ser menor a la fecha actual',
-                    icon: 'error',
-                    confirmButtonText: 'OK',
-                });
-                return;
-            }
-
-            // El servidor los exige al crear; avisar aquí evita enviar el
-            // formulario para que vuelva con un error genérico.
-            if (String(newTaskProposito || '').trim().length < 10) {
-                Swal.fire({
-                    title: 'Falta el propósito',
-                    text: 'Indica para qué sirve esta tarea (al menos 10 caracteres).',
-                    icon: 'warning',
-                    confirmButtonText: 'OK',
-                });
-                return;
-            }
-
-            const faltaCriterio = validarCriterios(newTaskCriterios);
-            if (faltaCriterio) {
-                Swal.fire({
-                    title: 'Faltan los criterios de aceptación',
-                    text: faltaCriterio,
-                    icon: 'warning',
-                    confirmButtonText: 'OK',
-                });
-                return;
-            }
-
-            const response = await axiosInstance.post('/guardarTarea', {
-                titulo: newTaskTitulo,
-                descripcion: newTaskDescripcion,
-                proposito: newTaskProposito,
-                criterios: criteriosParaEnviar(newTaskCriterios),
-                fecha_pactada: newTaskFecha,
-                prioridad: newTaskPrioridad,
-                empleado: empleado,
-                estado: newTaskEstado,
-                proyecto_id: formProyectoId || null,
-                accion: 'guardar'
-            });
-
-            // Guardar subtareas si las hay
-            const tareaId = response.data.tarea_id;
-            if (tareaId && subtareasForm.length > 0) {
-                const items = subtareasForm
-                    .map(s => ({ ...s, titulo: String(s.titulo || '').trim() }))
-                    .filter(s => s.titulo.length > 0);
-                await Promise.all(items.map(s =>
-                    axiosInstance.post('/subtareas', {
-                        tarea_id: tareaId,
-                        titulo: s.titulo,
-                        fecha_vencimiento: s.fecha_vencimiento || null,
-                        checklist_titulo: checklistTitulo || null
-                    })
-                ));
-            }
-            resetNewTaskModalState();
-
-            // Cerrar el modal primero
-            setShowNewTaskModal(false);
-
-            // preguntar si la tarea es para un empleado o para el lider
-            const tasksResponse = await axiosInstance.get(`/cargarTareas/${user.empleado}`);
-            const tasks = tasksResponse.data.tareas;
-
-            // Organizar las tareas en las columnas
-      
-            const newColumns = {
-                'Pendiente': {
-                    title: 'Pendiente',
-                    items: tasks.filter(task => task.estado === 'Pendiente'),
-                    iconComponent: 'FaClock',
-                    color: '#f97316'
-                },
-                'En Proceso': {
-                    title: 'En Proceso',
-                    items: tasks.filter(task => task.estado === 'En Proceso'),
-                    iconComponent: 'FaSpinner',
-                    color: '#2563eb'
-                },
-                'En Revisión': {
-                    title: 'En Revisión',
-                    items: tasks.filter(task => task.estado === 'En Revisión'),
-                    iconComponent: 'FaSearch',
-                    color: '#0d9488'
-                },
-                'Completada': {
-                    title: 'Completada',
-                    items: tasks.filter(task => task.estado === 'Completada' && !task.archivar),
-                    iconComponent: 'FaCheck',
-                    color: '#16a34a'
-                }
-            };
-
-            setColumns(newColumns);
-            Swal.fire('¡Éxito!', 'Tarea creada correctamente', 'success');
-        } catch (error) {
-            console.error('Error al crear la tarea:', error);
-            Swal.fire('Error', 'Error al crear la tarea', 'error');
-        } finally {
-            setIsSaving(false);
-        }
-    };
-
     const renderIcon = (iconName) => {
         switch (iconName) {
             case 'FaClock':
@@ -741,7 +503,7 @@ const EmployeeInterface = ({ user }) => {
         } catch (error) {
             console.error('Error al desarchivar tarea:', error);
             Swal.fire('Error', 'Error al desarchivar la tarea', 'error');
-        }J
+        }
     };
 
     return (
@@ -783,7 +545,6 @@ const EmployeeInterface = ({ user }) => {
                                 <button
                                     className="task-options-item item-new"
                                     onClick={() => {
-                                        resetNewTaskModalState();
                                         setShowNewTaskModal(true);
                                         setAsignarTareasEmpleado(false);
                                         setShowOptionsDropdown(false);
@@ -853,295 +614,35 @@ const EmployeeInterface = ({ user }) => {
 
             </div>
 
-            {/* Modal de nueva tarea */}
-            {showNewTaskModal && (
-                <>  
-                {isSaving && (
-                    <div className="loader">
-                        <div className="justify-content-center jimu-primary-loading"></div>
-                    </div>
-                )}
-                <div className="modal-overlay">
-                    <div className="new-task-modal">
-                        <div className="modal-header">
-                            <h2>Nueva Tarea</h2>
-                            <button
-                                type="button"
-                                className="close-button"
-                                onClick={() => { setShowNewTaskModal(false); resetNewTaskModalState(); }}
-                            >
-                                &times;
-                            </button>
-                        </div>
-                        <form className="new-task-modal-form" onSubmit={handleSubmitNewTask}>
+            {/* Modal de nueva tarea: para mí o para alguien de mi equipo. */}
+            {showNewTaskModal && (() => {
+                const paraOtro = asignarTareasEmpleado && empleadoAsignado;
+                const destinatario = paraOtro
+                    ? (user.empleados_asignados || []).find(e => String(e.id) === String(empleadoAsignado))?.nombre
+                    : 'Yo';
+                return (
+                    <div className="modal-overlay">
+                        <div className="new-task-modal ft-modal-ancho">
+                            <div className="modal-header">
+                                <h2>Nueva Tarea</h2>
+                                <button type="button" className="close-button" onClick={() => setShowNewTaskModal(false)}>
+                                    &times;
+                                </button>
+                            </div>
                             <div className="new-task-modal-body">
-                                <div className="form-group">
-                                    <label htmlFor="plantilla_tarea">Plantilla (tarea ya creada)</label>
-                                    <select
-                                        id="plantilla_tarea"
-                                        className="plantilla-tarea-select"
-                                        value={selectedPlantillaId}
-                                        onChange={e => onPlantillaSelectChange(e.target.value)}
-                                    >
-                                        <option value="">Empezar en blanco</option>
-                                        {tareasPlantillaOpciones.map(opt => (
-                                            <option key={opt.id} value={String(opt.id)}>
-                                                {opt.titulo}
-                                            </option>
-                                        ))}
-                                    </select>
-                                    <p className="plantilla-tarea-hint">
-                                        Carga título, descripción, fechas, prioridad, proyecto y checklist de una tarea tuya del tablero para editar solo lo necesario.
-                                    </p>
-                                </div>
-                                <div className="form-group">
-                                    <label htmlFor="titulo">Título</label>
-                                    <input
-                                        type="text"
-                                        id="titulo"
-                                        name="titulo"
-                                        value={newTaskTitulo}
-                                        onChange={e => setNewTaskTitulo(e.target.value)}
-                                        required
-                                    />
-                                </div>
-                                <div className="form-group">
-                                    <label htmlFor="descripcion">Descripción</label>
-                                    <textarea
-                                        id="descripcion"
-                                        name="descripcion"
-                                        value={newTaskDescripcion}
-                                        onChange={e => setNewTaskDescripcion(e.target.value)}
-                                        required
-                                    />
-                                </div>
-                                {/* Método de la Escuela de Líderes: la tarea nace
-                                    con un para qué y con la forma de verificarla. */}
-                                <div className="form-group">
-                                    <label htmlFor="proposito">¿Para qué sirve esta tarea?</label>
-                                    <input
-                                        type="text"
-                                        id="proposito"
-                                        name="proposito"
-                                        value={newTaskProposito}
-                                        onChange={e => setNewTaskProposito(e.target.value)}
-                                        placeholder="El propósito, no el trabajo. Ej.: Presentar la cuenta de cobro a tiempo"
-                                        required
-                                    />
-                                </div>
-                                <EditorCriteriosNuevos valor={newTaskCriterios} onCambio={setNewTaskCriterios} />
-                                <div className="form-group">
-                                    <label htmlFor="fecha_pactada">Fecha límite</label>
-                                    <input
-                                        type="date"
-                                        id="fecha_pactada"
-                                        name="fecha_pactada"
-                                        value={newTaskFecha}
-                                        onChange={e => setNewTaskFecha(e.target.value)}
-                                        required
-                                    />
-                                </div>
-                                <div className="form-group">
-                                    <label htmlFor="prioridad">Prioridad</label>
-                                    <select
-                                        id="prioridad"
-                                        name="prioridad"
-                                        value={newTaskPrioridad}
-                                        onChange={e => setNewTaskPrioridad(e.target.value)}
-                                        required
-                                    >
-                                        <option value="Alta">Alta</option>
-                                        <option value="Media">Media</option>
-                                        <option value="Baja">Baja</option>
-                                    </select>
-                                </div>
-                                <div className="form-group">
-                                    <label htmlFor="estado">Estado</label>
-                                    <select
-                                        id="estado"
-                                        name="estado"
-                                        value={newTaskEstado}
-                                        onChange={e => setNewTaskEstado(e.target.value)}
-                                        required
-                                    >
-                                        <option value="Pendiente">Pendiente</option>
-                                        <option value="En Proceso">En Proceso</option>
-                                    </select>
-                                </div>
-                                <div className="form-group">
-                                    <label htmlFor="proyecto_id">Proyecto (opcional)</label>
-                                    <select
-                                        id="proyecto_id"
-                                        name="proyecto_id"
-                                        value={formProyectoId}
-                                        onChange={e => setFormProyectoId(e.target.value)}
-                                    >
-                                        <option value="">Sin proyecto</option>
-                                        {proyectos.map(p => (
-                                            <option key={p.id} value={p.id}>{p.nombre}</option>
-                                        ))}
-                                    </select>
-                                </div>
-
-                                <div className="form-group" ref={checklistBlockRef}>
-                                    <div className="checklist-toggle-row">
-                                        <button
-                                            type="button"
-                                            className={`checklist-toggle-btn${showChecklist ? ' active' : ''}`}
-                                            onClick={() => {
-                                                const empId = asignarTareasEmpleado ? empleadoAsignado : user?.empleado;
-                                                if (!showChecklist && empId) {
-                                                    loadChecklistsExistentes(empId);
-                                                }
-                                                setShowChecklist(prev => !prev);
-                                            }}
-                                        >
-                                            ☑ Checklist
-                                        </button>
-                                        <span className="checklist-hint">Aquí abajo agregas los ítems</span>
-                                    </div>
-                                    {showChecklist && (
-                                        <div className="checklist-form-section">
-                                            <div className="checklist-header-row">
-                                                <input
-                                                    type="text"
-                                                    className="checklist-titulo-input"
-                                                    placeholder="Título del checklist (opcional)..."
-                                                    value={checklistTitulo}
-                                                    onChange={e => setChecklistTitulo(e.target.value)}
-                                                />
-                                                {checklistsExistentes.length > 0 && (
-                                                    <select
-                                                        className="checklist-copy-select"
-                                                        value={selectedChecklistId}
-                                                        onChange={e => handleCopyChecklist(e.target.value)}
-                                                    >
-                                                        <option value="">Copiar checklist de otra tarea…</option>
-                                                        {checklistsExistentes.map(c => (
-                                                            <option key={c.tarea_id} value={c.tarea_id}>
-                                                                {c.tarea_titulo}{c.checklist_titulo ? ` — ${c.checklist_titulo}` : ''}
-                                                            </option>
-                                                        ))}
-                                                    </select>
-                                                )}
-                                            </div>
-                                            {subtareasForm.length > 0 && (
-                                                <ul className="subtareas-list checklist-items-preview new-task-subtareas-editable">
-                                                    {subtareasForm.map(s => (
-                                                        <li key={s.tempId} className="subtarea-item">
-                                                            <input
-                                                                type="text"
-                                                                className="subtarea-edit-input"
-                                                                value={s.titulo}
-                                                                placeholder="Descripción del ítem..."
-                                                                onChange={e =>
-                                                                    setSubtareasForm(prev =>
-                                                                        prev.map(x =>
-                                                                            x.tempId === s.tempId
-                                                                                ? { ...x, titulo: e.target.value }
-                                                                                : x
-                                                                        )
-                                                                    )
-                                                                }
-                                                            />
-                                                            <input
-                                                                type="date"
-                                                                className="subtarea-edit-date"
-                                                                value={s.fecha_vencimiento || ''}
-                                                                onChange={e =>
-                                                                    setSubtareasForm(prev =>
-                                                                        prev.map(x =>
-                                                                            x.tempId === s.tempId
-                                                                                ? { ...x, fecha_vencimiento: e.target.value }
-                                                                                : x
-                                                                        )
-                                                                    )
-                                                                }
-                                                                title="Fecha de vencimiento del ítem"
-                                                            />
-                                                            <button
-                                                                type="button"
-                                                                className="subtarea-delete"
-                                                                style={{ opacity: 1 }}
-                                                                title="Quitar ítem"
-                                                                onClick={() =>
-                                                                    setSubtareasForm(prev =>
-                                                                        prev.filter(x => x.tempId !== s.tempId)
-                                                                    )
-                                                                }
-                                                            >
-                                                                <FaTimes />
-                                                            </button>
-                                                        </li>
-                                                    ))}
-                                                </ul>
-                                            )}
-                                            <div className="checklist-add-zone">
-                                                <div className="checklist-add-zone-label">Nuevo ítem del checklist</div>
-                                                <div className="subtarea-add-row">
-                                                    <input
-                                                        type="text"
-                                                        className="subtarea-add-input"
-                                                        placeholder="Escribe el ítem y pulsa + o Enter"
-                                                        value={nuevaSubtareaTexto}
-                                                        onChange={e => setNuevaSubtareaTexto(e.target.value)}
-                                                        onKeyDown={e => {
-                                                            if (e.key === 'Enter') {
-                                                                e.preventDefault();
-                                                                if (!nuevaSubtareaTexto.trim()) return;
-                                                                setSubtareasForm(prev => [...prev, { tempId: Date.now(), titulo: nuevaSubtareaTexto.trim(), fecha_vencimiento: nuevaSubtareaFecha }]);
-                                                                setNuevaSubtareaTexto('');
-                                                                setNuevaSubtareaFecha('');
-                                                            }
-                                                        }}
-                                                    />
-                                                    <input
-                                                        type="date"
-                                                        className="subtarea-add-date"
-                                                        value={nuevaSubtareaFecha}
-                                                        onChange={e => setNuevaSubtareaFecha(e.target.value)}
-                                                        title="Fecha de vencimiento del ítem"
-                                                    />
-                                                    <button
-                                                        type="button"
-                                                        className="subtarea-add-btn"
-                                                        disabled={!nuevaSubtareaTexto.trim()}
-                                                        onClick={() => {
-                                                            if (!nuevaSubtareaTexto.trim()) return;
-                                                            setSubtareasForm(prev => [...prev, { tempId: Date.now(), titulo: nuevaSubtareaTexto.trim(), fecha_vencimiento: nuevaSubtareaFecha }]);
-                                                            setNuevaSubtareaTexto('');
-                                                            setNuevaSubtareaFecha('');
-                                                        }}
-                                                    >
-                                                        <FaPlus />
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
+                                <FormularioTarea
+                                    empleadoId={paraOtro ? empleadoAsignado : user.empleado}
+                                    empleadoNombre={destinatario}
+                                    proyectos={proyectos}
+                                    plantillas={tareasPlantillaOpciones}
+                                    onGuardada={async () => { setShowNewTaskModal(false); await loadTasks(); }}
+                                    onCancelar={() => setShowNewTaskModal(false)}
+                                />
                             </div>
-
-                            <div className="modal-actions new-task-modal-actions">
-                                <button
-                                    type="button"
-                                    className="cancel-button-new-task"
-                                    onClick={() => { setShowNewTaskModal(false); resetNewTaskModalState(); }}
-                                >
-                                    <FaTimes /> Cancelar
-                                </button>
-                                <button
-                                    type="submit"
-                                    className="submit-button-new-task"
-                                >
-                                    <FaSave /> Crear Tarea
-                                </button>
-                            </div>
-                        </form>
+                        </div>
                     </div>
-                </div>
-                </>
-            )}
+                );
+            })()}
 
             {showListaEmpleadosAsignados && (
                 <div className="modal-overlay">
@@ -1333,10 +834,46 @@ const EmployeeInterface = ({ user }) => {
                 </div>
             )}
 
+            {/* Sólo se ven en móvil y tablet: en escritorio caben las cuatro columnas. */}
+            <nav className="kanban-pestanas" aria-label="Columnas del tablero" ref={pestanasRef}>
+                {Object.entries(columns).map(([columnId, column], i) => (
+                    <button
+                        key={columnId}
+                        type="button"
+                        className={i === columnaVisible ? 'es-activa' : ''}
+                        style={{ '--color-columna': column.color }}
+                        aria-current={i === columnaVisible ? 'true' : undefined}
+                        onClick={() => {
+                            const t = tableroRef.current;
+                            const col = t?.children[i];
+                            if (col) t.scrollTo({ left: col.offsetLeft - t.firstElementChild.offsetLeft, behavior: 'smooth' });
+                        }}
+                    >
+                        {column.title}
+                        <span>{column.items.length}</span>
+                    </button>
+                ))}
+            </nav>
+
             <DragDropContext onDragEnd={onDragEnd}>
-                <div className="kanban-board">
+                <div
+                    className="kanban-board"
+                    ref={tableroRef}
+                    onScroll={(e) => {
+                        // La columna visible es la que tiene el borde izquierdo
+                        // más cerca del borde del tablero.
+                        const t = e.currentTarget;
+                        let mejor = 0;
+                        let distancia = Infinity;
+                        [...t.children].forEach((c, i) => {
+                            const d = Math.abs(c.offsetLeft - t.firstElementChild.offsetLeft - t.scrollLeft);
+                            if (d < distancia) { distancia = d; mejor = i; }
+                        });
+                        if (mejor !== columnaVisible) setColumnaVisible(mejor);
+                    }}
+                >
                     {Object.entries(columns).map(([columnId, column]) => (
-                        <div key={columnId} className="kanban-column" data-status={column.title} style={{ overflow: 'hidden' }}>
+                        <div key={columnId} className="kanban-column" data-status={column.title}>
                             <div className="column-header" style={{ backgroundColor: column.color }}>
                                 {renderIcon(column.iconComponent)}
                                 <h3>{column.title}</h3>
@@ -1348,7 +885,6 @@ const EmployeeInterface = ({ user }) => {
                                         {...provided.droppableProps}
                                         ref={provided.innerRef}
                                         className="task-list"
-                                        style={{ overflow: 'auto', maxHeight: 'calc(100vh - 200px)' }}
                                     >
                                         {column.items.map((task, index) => (
                                             <Draggable
