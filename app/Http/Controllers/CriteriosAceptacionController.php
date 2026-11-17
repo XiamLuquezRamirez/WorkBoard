@@ -612,7 +612,8 @@ class CriteriosAceptacionController extends Controller
             'criterios.*.descripcion'         => 'required|string|min:5|max:1000',
             'criterios.*.obligatorio'         => 'nullable|boolean',
             'criterios.*.requiere_evidencia'  => 'nullable|boolean',
-            'criterios.*.responsable_verificacion' => 'nullable|integer',
+            // Igual que al añadir un criterio a una tarea existente.
+            'criterios.*.responsable_verificacion' => 'nullable|integer|exists:mysql2.empleados,id',
         ];
     }
 
@@ -623,6 +624,7 @@ class CriteriosAceptacionController extends Controller
             'criterios.min'                    => 'Define al menos un criterio de aceptación.',
             'criterios.*.descripcion.required' => 'Cada criterio necesita una descripción.',
             'criterios.*.descripcion.min'      => 'Cada criterio debe explicarse en al menos 5 caracteres.',
+            'criterios.*.responsable_verificacion.exists' => 'Quien verifica el criterio no existe.',
         ];
     }
 

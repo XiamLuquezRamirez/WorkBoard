@@ -203,7 +203,6 @@ class CicloTareasCrearEditarTest extends CicloTareasCaso
         $this->assertSame(0, $this->db()->table('tareas_empleados')->count());
     }
 
-    #[Group('hallazgo')]
     public function test_no_se_asigna_una_tarea_a_un_empleado_inactivo(): void
     {
         $this->db()->table('empleados')->where('id', $this->ajeno)->update(['estado' => 'Inactivo']);
@@ -213,7 +212,6 @@ class CicloTareasCrearEditarTest extends CicloTareasCaso
         $this->assertSame(0, $this->tareasDe($this->ajeno));
     }
 
-    #[Group('hallazgo')]
     public function test_un_proyecto_inexistente_se_rechaza(): void
     {
         $this->crear($this->lider, ['proyecto_id' => self::INEXISTENTE])
@@ -222,7 +220,6 @@ class CicloTareasCrearEditarTest extends CicloTareasCaso
         $this->assertSame(0, $this->tareasDe($this->colaborador));
     }
 
-    #[Group('hallazgo')]
     public function test_el_responsable_de_verificacion_debe_existir(): void
     {
         // POST /tareas/{id}/criterios ya lo exige (exists:mysql2.empleados,id);
@@ -234,7 +231,6 @@ class CicloTareasCrearEditarTest extends CicloTareasCaso
         $this->assertSame(0, $this->tareasDe($this->colaborador));
     }
 
-    #[Group('hallazgo')]
     public function test_la_prioridad_debe_ser_alta_media_o_baja(): void
     {
         // El orden de cargarTareas usa FIELD(prioridad, 'Alta', 'Media', 'Baja'):
@@ -329,7 +325,6 @@ class CicloTareasCrearEditarTest extends CicloTareasCaso
         $this->assertSame('Tarea heredada', $this->campoTarea($tarea, 'titulo'));
     }
 
-    #[Group('hallazgo')]
     public function test_editar_no_acepta_un_estado_inventado(): void
     {
         // actualizarEstadoTarea valida contra ESTADOS_TAREA; editar no.

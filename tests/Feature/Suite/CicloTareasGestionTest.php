@@ -41,7 +41,6 @@ class CicloTareasGestionTest extends CicloTareasCaso
         $this->assertFalse($this->existeTarea($tarea));
     }
 
-    #[Group('hallazgo')]
     public function test_eliminar_una_tarea_no_deja_subtareas_ni_comentarios_huerfanos(): void
     {
         $tarea = $this->tarea();
@@ -165,7 +164,6 @@ class CicloTareasGestionTest extends CicloTareasCaso
         $this->assertCount(0, $this->avisos($this->colaborador, 'Observacion'));
     }
 
-    #[Group('hallazgo')]
     public function test_comentar_sin_texto_responde_422(): void
     {
         // Sin el campo hoy revienta (clave indefinida, 500); vacío se guarda.
@@ -209,7 +207,6 @@ class CicloTareasGestionTest extends CicloTareasCaso
         $this->assertSame('Original del responsable', $this->campoTarea($tarea, 'observacion_entrega'));
     }
 
-    #[Group('hallazgo')]
     public function test_la_observacion_de_entrega_sin_texto_o_sin_tarea_no_responde_500(): void
     {
         $tarea = $this->tarea(['observacion_entrega' => 'Original']);
@@ -270,7 +267,6 @@ class CicloTareasGestionTest extends CicloTareasCaso
         $this->assertSame('Completada', $this->estadoTarea($tarea));
     }
 
-    #[Group('hallazgo')]
     public function test_rechazar_no_saca_una_tarea_de_revision(): void
     {
         // De «En Revisión» sólo se sale aceptando o devolviendo (devolver exige
@@ -369,7 +365,6 @@ class CicloTareasGestionTest extends CicloTareasCaso
         $this->assertSame(0, (int) $fila->completada);
     }
 
-    #[Group('hallazgo')]
     public function test_una_subtarea_sin_titulo_responde_422(): void
     {
         // La columna es NOT NULL y no se valida: hoy responde 500.
@@ -426,7 +421,6 @@ class CicloTareasGestionTest extends CicloTareasCaso
             ->where('empleado', $this->colaborador)->pluck('descripcion')->all());
     }
 
-    #[Group('hallazgo')]
     public function test_una_actividad_sin_texto_responde_422(): void
     {
         // Hoy lee claves que no vienen y responde 500.

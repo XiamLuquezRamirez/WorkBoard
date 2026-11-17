@@ -309,7 +309,6 @@ class CicloTareasConsultaTest extends CicloTareasCaso
 
     // ─── obtenerObservacion ─────────────────────────────────────────────────
 
-    #[Group('hallazgo')]
     public function test_obtener_una_observacion_inexistente_responde_404(): void
     {
         // Hoy lee ->creador de null y responde 500. (El caso con observación

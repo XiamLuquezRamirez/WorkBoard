@@ -212,8 +212,12 @@ class EmpleadosController extends Controller
             return $tarea;
         }
 
-        $observaciones = $request->all();
-        $observaciones = DB::connection('mysql2')->table('tareas_empleados')->where('id', $id)->update([
+        // El campo debe venir (puede ir vacío para borrarla): sin él se leía
+        // una clave inexistente y respondía 500.
+        $observaciones = $request->validate(['observacion_entrega' => 'present|nullable|string|max:5000'], [
+            'observacion_entrega.present' => 'Falta la observación de entrega.',
+        ]);
+        DB::connection('mysql2')->table('tareas_empleados')->where('id', $id)->update([
             'observacion_entrega' => $observaciones['observacion_entrega']
         ]);
         return response()->json(['success' => 'Observaciones guardadas correctamente'], 200);
@@ -257,9 +261,20 @@ class EmpleadosController extends Controller
             return $error;
         }
 
-        $tarea = DB::connection('mysql2')->table('tareas_empleados')->where('id', $id)->delete();
-        $evidencias = DB::connection('mysql2')->table('evidencia_tarea')->where('tarea', $id)->delete();
-        $notificaciones = DB::connection('mysql2')->table('notif_generales')->where('tarea_id', $id)->delete();
+        // Todo lo que cuelga de la tarea se va con ella, en una transacción.
+        // Antes quedaban subtareas, comentarios y solicitudes huérfanas. Los
+        // criterios, sus evidencias y las aceptaciones caen por cascada.
+        $conn = DB::connection('mysql2');
+        $conn->transaction(function () use ($conn, $id) {
+            $conn->table('subtareas')->where('tarea_id', $id)->delete();
+            $conn->table('observaciones_tareas')->where('id_tarea', $id)->delete();
+            $conn->table('pausas_solicitadas')->where('tarea_id', $id)->delete();
+            $conn->table('reprogramaciones_tareas')->where('tarea_id', $id)->delete();
+            $conn->table('tarea_criterio_historial')->where('tarea_id', $id)->delete();
+            $conn->table('evidencia_tarea')->where('tarea', $id)->delete();
+            $conn->table('notif_generales')->where('tarea_id', $id)->delete();
+            $conn->table('tareas_empleados')->where('id', $id)->delete();
+        });
         return response()->json(['success' => 'Tarea eliminada correctamente'], 200);
     }
 
@@ -809,9 +824,11 @@ class EmpleadosController extends Controller
             'descripcion'   => 'required|string',
             'fecha_pactada' => 'required|date',
             'empleado'      => 'required|integer|exists:mysql2.empleados,id',
-            'prioridad'     => 'required|string',
-            'estado'        => 'required|string',
-            'proyecto_id'   => 'nullable|integer',
+            // El orden y los filtros usan FIELD(prioridad, 'Alta','Media','Baja'):
+            // cualquier otro texto quedaba fuera de ambos.
+            'prioridad'     => 'required|in:Alta,Media,Baja',
+            'estado'        => ['required', Rule::in(self::ESTADOS_TAREA)],
+            'proyecto_id'   => 'nullable|integer|exists:mysql2.proyectos,id',
             'accion'        => 'nullable|in:guardar,editar',
             // Campos del método de la Escuela de Líderes.
             'proposito'     => 'nullable|string|max:500',
@@ -828,6 +845,9 @@ class EmpleadosController extends Controller
             // Una tarea nueva no puede nacer cerrada ni en revisión: tendría
             // criterios sin verificar y se saltaría la aceptación.
             $reglas['estado'] = 'required|in:Pendiente,En Proceso';
+            // Una tarea nueva no se asigna a quien ya no está activo.
+            $reglas['empleado'] = ['required', 'integer', Rule::exists('mysql2.empleados', 'id')
+                ->where('estado', 'Activo')->where('estado_registro', 'Activo')];
 
             // El texto único de criterio se sustituyó por una lista de criterios
             // de aceptación. Si una pantalla aún sin recargar manda el texto, se
@@ -846,6 +866,9 @@ class EmpleadosController extends Controller
             'proposito.required'             => 'Indica para qué sirve esta tarea.',
             'proposito.min'                  => 'El propósito debe explicarse en al menos 10 caracteres.',
             'estado.in'                      => 'Una tarea nueva empieza Pendiente o En Proceso.',
+            'prioridad.in'                   => 'La prioridad debe ser Alta, Media o Baja.',
+            'proyecto_id.exists'             => 'El proyecto no existe.',
+            'empleado.exists'                => 'El responsable no existe o ya no está activo.',
             'criterio.required'              => 'Indica cómo sabremos que la tarea se cumplió.',
             'criterio.min'                   => 'El criterio debe explicarse en al menos 10 caracteres.',
         ] + CriteriosAceptacionController::mensajesAlCrear());
@@ -1032,10 +1055,13 @@ class EmpleadosController extends Controller
             'titulo'        => 'required|string|max:255',
             'descripcion'   => 'required|string',
             'fecha_pactada' => 'required|date',
-            'prioridad'     => 'required|string',
-            'proyecto_id'   => 'nullable|integer',
+            'prioridad'     => 'required|in:Alta,Media,Baja',
+            'proyecto_id'   => 'nullable|integer|exists:mysql2.proyectos,id',
             'proposito'     => 'nullable|string|max:500',
             'criterio'      => 'nullable|string',
+        ], [
+            'prioridad.in'       => 'La prioridad debe ser Alta, Media o Baja.',
+            'proyecto_id.exists' => 'El proyecto no existe.',
         ]);
 
         $actual = DB::connection('mysql2')->table('tareas_empleados')->where('id', $id)->first();
@@ -1613,11 +1639,17 @@ class EmpleadosController extends Controller
             return $tarea;
         }
 
-        $data = $request->all();
+        $data = $request->validate(['observaciones' => 'required|string|max:5000'], [
+            'observaciones.required' => 'Escribe el comentario.',
+        ]);
+        // Sólo espacios tampoco es un comentario.
+        if (trim($data['observaciones']) === '') {
+            return response()->json(['message' => 'Escribe el comentario.', 'errors' => ['observaciones' => ['Escribe el comentario.']]], 422);
+        }
         $usuarioActual = DB::connection('mysql2')->table('users')->where('email', Auth::user()->email)->first();
         $observaciones = DB::connection('mysql2')->table('observaciones_tareas')->insert([
             'id_tarea' => $id,
-            'observaciones' => $data['observaciones'],
+            'observaciones' => trim($data['observaciones']),
             'fecha' => now(),
             'creador' => $usuarioActual->id
         ]);
@@ -2215,6 +2247,13 @@ class EmpleadosController extends Controller
 
     function guardarActividad(Request $request)
     {
+        $request->validate([
+            'empleado'  => 'required|integer|exists:mysql2.empleados,id',
+            'actividad' => 'required|string|max:1000',
+        ], [
+            'actividad.required' => 'Escribe la actividad.',
+            'empleado.exists'    => 'El empleado no existe.',
+        ]);
         $actividadActual = $request->all();
         $actividad = DB::connection('mysql2')->table('actividades_empleado')->insert([
             'empleado' => $actividadActual['empleado'],
@@ -2237,6 +2276,12 @@ class EmpleadosController extends Controller
 
     function actualizarActividad($id, Request $request)
     {
+        if (!DB::connection('mysql2')->table('actividades_empleado')->where('id', $id)->exists()) {
+            return response()->json(['error' => 'Actividad no encontrada.'], 404);
+        }
+        $request->validate(['descripcion' => 'required|string|max:1000'], [
+            'descripcion.required' => 'Escribe la actividad.',
+        ]);
         $actividadActual = $request->all();
         $actividad = DB::connection('mysql2')->table('actividades_empleado')->where('id', $id)->update([
             'descripcion' => $actividadActual['descripcion']
@@ -2280,6 +2325,15 @@ class EmpleadosController extends Controller
         }
 
         $rechazada = (bool) $data['rechazada'];
+
+        // De «En Revisión» sólo se sale aceptando la entrega o devolviéndola
+        // (devolver exige decir qué corregir y deja constancia). Rechazar era
+        // una tercera salida sin observación ni registro.
+        if ($rechazada && $tarea->estado === self::EN_REVISION) {
+            return response()->json([
+                'error' => 'La tarea está en revisión: acéptala o devuélvela indicando qué corregir.',
+            ], 409);
+        }
 
         // Retirar un rechazo devuelve la tarea a Completada. Eso saltaría la
         // revisión: si la tarea no estaba ya cerrada, sólo se cierra
@@ -3884,8 +3938,14 @@ class EmpleadosController extends Controller
     function obtenerObservacion($id)
     {
         $observacion = DB::connection('mysql2')->table('observaciones_tareas')->where('id', $id)->first();
+        if (!$observacion) {
+            return response()->json(['error' => 'Observación no encontrada.'], 404);
+        }
         $usuario = DB::connection('mysql2')->table('users')->where('id', $observacion->creador)->first();
-        $receptor = DB::connection('mysql')->table('users')->where('email', $usuario->email)->first();
+        $receptor = $usuario ? DB::connection('mysql')->table('users')->where('email', $usuario->email)->first() : null;
+        if (!$receptor) {
+            return response()->json(['error' => 'Quien escribió la observación ya no está disponible.'], 404);
+        }
 
         return response()->json(['idReceptor' => $receptor->id]);
     }
@@ -4057,6 +4117,14 @@ class EmpleadosController extends Controller
         if (AccesoTareas::esRespuesta($tareaPadre)) {
             return $tareaPadre;
         }
+
+        // La columna es NOT NULL: sin título respondía 500.
+        $request->validate([
+            'titulo'            => 'required|string|max:255',
+            'fecha_vencimiento' => 'nullable|date',
+        ], [
+            'titulo.required' => 'Escribe el punto del checklist.',
+        ]);
 
         $id = DB::connection('mysql2')->table('subtareas')->insertGetId([
             'tarea_id'          => $request->tarea_id,
