@@ -293,7 +293,12 @@ class CriteriosAceptacionController extends Controller
         }
         // Un solo nombre de archivo dentro de la carpeta de evidencias: con
         // str_starts_with a secas, «evidencias_tareas/../.env» pasaba.
-        if ($datos['tipo'] === 'archivo' && !preg_match('#^evidencias_tareas/[^/\\]+$#', $datos['ruta'])) {
+        // Ojo con el escape: en comillas simples '\\\\' llega al patrón como \\
+        // (barra invertida literal). Con '\\' quedaba \] y la clase de
+        // caracteres no se cerraba: preg_match fallaba y todo daba 500.
+        // Tampoco valen «.» ni «..» como nombre.
+        $archivo = $datos['tipo'] === 'archivo' ? substr($datos['ruta'], strlen('evidencias_tareas/')) : '';
+        if ($datos['tipo'] === 'archivo' && (!preg_match('#^evidencias_tareas/[^/\\\\]+$#', $datos['ruta']) || in_array($archivo, ['.', '..'], true))) {
             return response()->json(['error' => 'El archivo no procede de la carga de evidencias.'], 422);
         }
 

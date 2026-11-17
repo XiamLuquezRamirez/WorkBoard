@@ -300,7 +300,6 @@ class EspacioEquipoSuiteTest extends TestCase
             $r->json('resumen'));
     }
 
-    #[Group('hallazgo')]
     public function test_puesto_no_muestra_tareas_eliminadas(): void
     {
         // El plano y el tablero filtran estado_reg = 'Activo'; el puesto no,
@@ -313,7 +312,6 @@ class EspacioEquipoSuiteTest extends TestCase
         $this->assertSame(['Viva'], collect($r->json('tareas'))->pluck('titulo')->all());
     }
 
-    #[Group('hallazgo')]
     public function test_puesto_no_cuenta_como_pausada_una_tarea_reanudada(): void
     {
         // Misma tarea, dos lecturas: el plano dice 0 pausadas y el puesto 1.
@@ -438,7 +436,6 @@ class EspacioEquipoSuiteTest extends TestCase
         $this->como($this->ajeno)->getJson('/api/equipo/llamada-entrante')->assertJsonPath('llamada', null);
     }
 
-    #[Group('hallazgo')]
     public function test_no_se_acepta_una_llamada_ya_colgada(): void
     {
         // responderLlamada no mira el estado actual: el receptor puede
@@ -565,7 +562,6 @@ class EspacioEquipoSuiteTest extends TestCase
         $this->assertSame(0, $canal['sin_leer']);
     }
 
-    #[Group('hallazgo')]
     public function test_chat_no_abre_directos_con_quien_no_existe(): void
     {
         // puedeVerConversacion() sólo comprueba que el usuario sea uno de los
@@ -581,7 +577,6 @@ class EspacioEquipoSuiteTest extends TestCase
         $this->assertSame(0, $this->db()->table('chat_conversaciones')->count());
     }
 
-    #[Group('hallazgo')]
     public function test_chat_un_directo_con_la_clave_al_reves_no_crea_otra_conversacion(): void
     {
         // «dir:B-A» y «dir:A-B» son la misma pareja, pero se guardan como dos

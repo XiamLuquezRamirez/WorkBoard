@@ -667,6 +667,8 @@ class EspacioEquipoController extends Controller
         $tareas = $conn->table('tareas_empleados as t')
             ->leftJoin('proyectos as p', 't.proyecto_id', '=', 'p.id')
             ->where('t.empleado', $empleado)
+            // Como el plano y el tablero: las eliminadas no se enseñan.
+            ->where('t.estado_reg', 'Activo')
             ->whereIn('t.estado', ['Pendiente', 'En Proceso', self::EN_REVISION])
             ->where(fn ($w) => $w->whereNull('t.archivar')->orWhere('t.archivar', '<>', 1))
             ->select(
@@ -693,7 +695,9 @@ class EspacioEquipoController extends Controller
                     'prioridad'     => $t->prioridad,
                     'proyecto'      => $t->proyecto,
                     'fecha_pactada' => $t->fecha_pactada,
-                    'pausada'       => (int) ($t->pausada ?? 0) === 1,
+                    // La marca se queda al reanudar (llevarla a En Proceso): cuenta
+                    // la pausa de verdad, igual que el plano.
+                    'pausada'       => \App\Support\IndiceDesempeno::estaPausada($t),
                     'bloqueada'     => (int) ($t->bloqueada ?? 0) === 1,
                     'sin_criterio'  => (int) $t->n_criterios === 0,
                     // En pausa el plazo está detenido: no va tarde.
@@ -933,6 +937,13 @@ class EspacioEquipoController extends Controller
             return response()->json(['error' => 'No puede responder esta llamada.'], 403);
         }
 
+        // Sólo se responde lo que todavía suena: antes el receptor podía
+        // convertir en «Aceptada» una llamada que ya habían colgado.
+        $caducada = Carbon::parse($l->created_at)->lt(now()->subSeconds(self::LLAMADA_VIVE));
+        if ($l->estado !== 'Sonando' || $caducada) {
+            return response()->json(['error' => 'La llamada ya terminó.', 'estado' => $caducada && $l->estado === 'Sonando' ? 'Cancelada' : $l->estado], 409);
+        }
+
         DB::connection('mysql2')->table('llamadas')->where('id', $id)->update([
             'estado'     => $datos['estado'],
             'updated_at' => now(),
@@ -1068,7 +1079,7 @@ class EspacioEquipoController extends Controller
     public function chatMensajes(Request $request)
     {
         $yo = $this->empleadoActual();
-        $clave = (string) $request->query('clave', '');
+        $clave = $this->claveValida((string) $request->query('clave', '')) ?? '';
 
         if (!$yo || !$this->puedeVerConversacion($yo, $clave)) {
             return response()->json(['error' => 'Conversación no disponible.'], 403);
@@ -1136,6 +1147,12 @@ class EspacioEquipoController extends Controller
             'clave'   => 'required|string|max:60',
             'mensaje' => 'required|string|max:4000',
         ]);
+
+        $clave = $this->claveValida($datos['clave']);
+        if ($clave === null) {
+            return response()->json(['error' => 'Conversación no disponible.'], 422);
+        }
+        $datos['clave'] = $clave;
 
         if (!$this->puedeVerConversacion($yo, $datos['clave'])) {
             return response()->json(['error' => 'Conversación no disponible.'], 403);
@@ -1328,6 +1345,35 @@ class EspacioEquipoController extends Controller
      * preguntar fuera de la propia. Los directos, sólo si él es uno de los
      * dos extremos.
      */
+    /**
+     * Clave canónica de una conversación, o null si no es válida.
+     *
+     *  - «dep:N» con un departamento que exista;
+     *  - «dir:A-B» con dos empleados que existan (aunque uno ya no esté
+     *    activo: su historial se sigue pudiendo leer), ordenada siempre de
+     *    menor a mayor: «dir:B-A» es la misma pareja y antes abría otra
+     *    conversación, partiendo el historial en dos.
+     *
+     * Antes «dir:5-99999999» o «dir:5-abc» (leído como 5-0) creaban
+     * conversaciones con nadie.
+     */
+    private function claveValida(string $clave): ?string
+    {
+        if (preg_match('/^dep:(\d+)$/', $clave, $m)) {
+            return (int) $m[1] > 0 ? 'dep:' . (int) $m[1] : null;
+        }
+        if (!preg_match('/^dir:(\d+)-(\d+)$/', $clave, $m)) {
+            return null;
+        }
+        [$a, $b] = [(int) $m[1], (int) $m[2]];
+        if ($a <= 0 || $b <= 0 || $a === $b) {
+            return null;
+        }
+        $existen = DB::connection('mysql2')->table('empleados')->whereIn('id', [$a, $b])->count();
+
+        return $existen === 2 ? $this->claveDirecto($a, $b) : null;
+    }
+
     private function puedeVerConversacion(int $yo, string $clave): bool
     {
         if (str_starts_with($clave, 'dep:')) {

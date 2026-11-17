@@ -311,7 +311,6 @@ class EvidenciasDeTareasTest extends TestCase
         $this->assertSame(0, $this->evidenciasVivas($criterio));
     }
 
-    #[Group('hallazgo')]
     public function test_el_responsable_aporta_un_archivo_subido_a_su_criterio(): void
     {
         // Es lo que hace CriteriosAceptacion.jsx: subirEvidencias y luego esta ruta.
@@ -337,7 +336,6 @@ class EvidenciasDeTareasTest extends TestCase
     }
 
     #[DataProvider('rutasDeArchivoAjenas')]
-    #[Group('hallazgo')]
     public function test_un_archivo_fuera_de_la_carpeta_de_evidencias_responde_422_y_no_500(string $ruta): void
     {
         [, $criterio] = $this->tareaConCriterio();
