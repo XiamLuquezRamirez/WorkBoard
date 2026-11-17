@@ -65,3 +65,45 @@ export const getAssetUrl = (path) => {
  * @returns {string} - URL completa de la imagen
  */
 export const getImageUrl = (imagePath) => getAssetUrl(imagePath);
+
+/**
+ * Ruta de la base dentro del servidor: «» en la raíz, «/work-board/public»
+ * bajo XAMPP. Es el basename del router.
+ */
+export const getRutaBase = () => {
+    try {
+        return new URL(`${getBaseUrl()}/`, window.location.href).pathname.replace(/\/+$/, '');
+    } catch (e) {
+        return '';
+    }
+};
+
+/**
+ * URL de una pantalla de la aplicación: «<base>/dashboard».
+ *
+ * @param {string} pantalla - p. ej. 'dashboard', 'login'
+ */
+export const getAppUrl = (pantalla = '') => `${getBaseUrl()}/${String(pantalla).replace(/^[#/]+/, '')}`;
+
+/**
+ * Convierte al arrancar las direcciones viejas con «#» («<base>/#/dashboard»,
+ * «<base>/dashboard#/dashboard») en la dirección limpia «<base>/dashboard»,
+ * para que sigan valiendo los marcadores y enlaces guardados. Sin recargar:
+ * sólo reescribe la barra de direcciones antes de que arranque el router.
+ */
+export const normalizarUrlDeLaApp = () => {
+    try {
+        const hash = window.location.hash;
+        if (!hash.startsWith('#/')) return;
+
+        const pantalla = hash.slice(2).replace(/^\/+/, '');
+        window.history.replaceState(null, '', `${getRutaBase()}/${pantalla}${window.location.search}`);
+    } catch (e) {
+        // Si algo falla se queda la URL como estaba.
+    }
+};
+
+/** Lleva al login cargando la página de nuevo, sin estado de la sesión. */
+export const irAlLogin = () => {
+    window.location.replace(getAppUrl('login'));
+};

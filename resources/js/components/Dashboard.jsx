@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import axiosInstance from '../axiosConfig';
-import { getImageUrl, getAssetUrl } from '../utils/assetHelper';
+import { getImageUrl, getAssetUrl, irAlLogin } from '../utils/assetHelper';
 import Header from './Header';
 import Sidebar from './Sidebar';
 import { useUser } from './UserContext';
@@ -487,9 +487,8 @@ const Dashboard = () => {
     const handleLogout = async () => {
         try {
             await axiosInstance.post('/logout');
-            window.location.href = getAssetUrl('/login');
             localStorage.clear();
-            window.location.reload();
+            irAlLogin();
 
         } catch (error) {
             setError('Error al cerrar sesión');

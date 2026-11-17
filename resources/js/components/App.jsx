@@ -1,6 +1,7 @@
 // App.jsx
 import { useEffect } from 'react';
-import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { getRutaBase } from '../utils/assetHelper';
 import Dashboard from './Dashboard';
 import LoginForm from './LoginForm';
 import { useUser } from './UserContext';
@@ -24,7 +25,10 @@ function App() {
     useDetectorActividad(Boolean(user?.empleado));
 
     return (
-        <HashRouter>
+        // Direcciones sin «#» («/dashboard»): Laravel sirve la app en cualquier
+        // ruta (catch-all de web.php). La base cubre XAMPP («/work-board/public»)
+        // y producción («/WorkBoard/public»).
+        <BrowserRouter basename={getRutaBase()}>
             <Routes>
                 {/* Ruta pública */}
                 <Route
@@ -72,7 +76,7 @@ function App() {
                 esté, no sólo en el plano. */}
             {user && <TimbreLlamada />}
             {user && <AvisoMensajes />}
-        </HashRouter>
+        </BrowserRouter>
     );
 }
 

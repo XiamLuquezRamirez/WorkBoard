@@ -8,7 +8,7 @@ import TableroLateral from './TableroLateral';
 import TableroCard from './TableroCard';
 import { DetalleTarea } from './ModalDestaque';
 import { AvataresProvider } from './AvataresContext';
-import { getImageUrl } from '../../utils/assetHelper';
+import { getImageUrl, getAppUrl } from '../../utils/assetHelper';
 import './tablero.css';
 
 const RELOJ_MS = 30000;
@@ -236,7 +236,7 @@ function TableroContenido({
                 <p className="tb-error">No fue posible cargar el tablero.</p>
                 {onCerrar
                     ? <button className="tb-btn" onClick={onCerrar}>Volver</button>
-                    : <a className="tb-btn" href="#/dashboard">Ir al tablero de trabajo</a>}
+                    : <a className="tb-btn" href={getAppUrl('dashboard')}>Ir al tablero de trabajo</a>}
             </div>
         );
     }
@@ -305,7 +305,7 @@ function TableroContenido({
                             <button className="tb-btn" onClick={() => setModoTv(true)}>Modo TV</button>
                             {onCerrar && <button className="tb-btn tb-btn-sec" onClick={onCerrar}>Salir</button>}
                             {enPestanaPropia && (
-                                <a className="tb-btn tb-btn-sec" href="#/dashboard">Ir al tablero de trabajo</a>
+                                <a className="tb-btn tb-btn-sec" href={getAppUrl('dashboard')}>Ir al tablero de trabajo</a>
                             )}
                         </>
                     )}

@@ -60,6 +60,9 @@ class LoginController extends Controller
 
             return response()->json([
                 'message' => 'Login exitoso',
+                // regenerate() cambia el token CSRF de la sesión: el front lo
+                // necesita para seguir sin recargar la página.
+                'csrf_token' => csrf_token(),
                 'user' => [
                     'id' => $user->id,
                     'name' => $user->name,

@@ -20,12 +20,8 @@ export const UserProvider = ({ children }) => {
 
     useEffect(() => {
         const fetchUser = async () => {
-            const token = localStorage.getItem('token');
-            if (!token) {
-                setLoading(false);
-                return;
-            }
-
+            // La sesión va por cookie: el login no entrega «token» (antes se
+            // guardaba el texto «undefined»), así que basta con el usuario.
             const storedUser = localStorage.getItem('userWorkBoard');
             if (!storedUser) {
                 setLoading(false);

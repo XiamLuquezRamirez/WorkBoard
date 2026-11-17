@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axiosInstance from '../axiosConfig';
+import axiosInstance, { actualizarCsrf } from '../axiosConfig';
 import Swal from 'sweetalert2';
 import { FaUser, FaLock, FaEye, FaEyeSlash, FaUnlock } from 'react-icons/fa';
-import { getImageUrl, getAssetUrl } from '../utils/assetHelper';
+import { getImageUrl } from '../utils/assetHelper';
 import { useUser } from './UserContext';
 
 const LoginForm = () => {
@@ -55,14 +55,18 @@ const LoginForm = () => {
                     showCloseButton: false
                 });
 
-                //guardar el token en el localStorage
-                localStorage.setItem('token', response.data.token);
+                // El login cambia el token CSRF de la sesión: se guarda el
+                // nuevo y se entra al tablero sin recargar la página (antes
+                // se recargaba: pantalla en blanco unos instantes).
+                actualizarCsrf(response.data.csrf_token);
+                if (response.data.token) {
+                    localStorage.setItem('token', response.data.token);
+                } else {
+                    localStorage.removeItem('token');
+                }
                 localStorage.setItem('userWorkBoard', JSON.stringify(response.data.user));
                 setUser(response.data.user); // Actualizar el contexto del usuario
-                setTimeout(() => {
-                    const fullPath = getAssetUrl('dashboard');
-                    window.location.href = fullPath;
-                }, 100);
+                navigate('/dashboard', { replace: true });
 
             } else {
                 Swal.fire({

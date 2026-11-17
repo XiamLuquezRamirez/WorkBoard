@@ -1,5 +1,13 @@
 import axios from 'axios';
-import { getAssetUrl } from './utils/assetHelper';
+import { getAssetUrl, irAlLogin } from './utils/assetHelper';
+
+/** Guarda el token CSRF nuevo que entrega el servidor tras el login. */
+export const actualizarCsrf = (token) => {
+    const meta = document.querySelector('meta[name="csrf-token"]');
+    if (token && meta) {
+        meta.setAttribute('content', token);
+    }
+};
 
 // La base de la API se deduce de la base pública real de la aplicación, no de
 // un host escrito a mano. Antes apuntaba fijo a «localhost:8000»: servido el
@@ -14,7 +22,6 @@ const axiosInstance = axios.create({
         'Content-Type': 'application/json',
         'Accept': 'application/json',
         'X-Requested-With': 'XMLHttpRequest',
-        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
     },
     withCredentials: true // Importante para las cookies de sesión
 });
@@ -22,6 +29,12 @@ const axiosInstance = axios.create({
 // Interceptor para agregar el token a las peticiones
 axiosInstance.interceptors.request.use(
     config => {
+        // El token CSRF se lee en cada petición: cambia al iniciar sesión
+        // (ver actualizarCsrf) y fijarlo al cargar obligaba a recargar.
+        const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+        if (csrf) {
+            config.headers['X-CSRF-TOKEN'] = csrf;
+        }
         const token = localStorage.getItem('token');
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
@@ -45,8 +58,8 @@ axiosInstance.interceptors.response.use(
             // Evitar redirecciones múltiples. La ruta de login también se
             // resuelve contra la base real: «/WorkBoard/public» sólo existe en
             // producción y en desarrollo llevaba a un 404.
-            if (!window.location.pathname.includes('/login')) {
-                window.location.href = getAssetUrl('login');
+            if (!/\/login\/?$/.test(window.location.pathname)) {
+                irAlLogin();
             }
         }
         return Promise.reject(error);

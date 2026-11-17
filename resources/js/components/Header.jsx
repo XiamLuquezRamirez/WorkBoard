@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FaBell, FaChevronDown, FaUserCircle, FaSignOutAlt, FaSignInAlt } from 'react-icons/fa';
-import { getImageUrl, getAssetUrl } from '../utils/assetHelper';
+import { getImageUrl, getAssetUrl, irAlLogin } from '../utils/assetHelper';
 import axiosInstance from '../axiosConfig';
 import { useUser } from './UserContext';
 import ProfileModal from './ProfileModal';
@@ -52,8 +52,7 @@ const Header = ({ currentUser, showUserMenu, setShowUserMenu, setIsSidebarOpen }
             localStorage.removeItem('userWorkBoard');
             // Redirigir inmediatamente a la página de login
             //obtener la url actual
-            const url = getAssetUrl('login');
-            window.location.href = url;
+            irAlLogin();
         } catch (error) {
             console.error("Error al cerrar sesión:", error);
         } finally {

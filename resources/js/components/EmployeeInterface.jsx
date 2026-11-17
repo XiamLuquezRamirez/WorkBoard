@@ -19,6 +19,7 @@ import BandejaDecisiones from './tareas/BandejaDecisiones';
 import { avisoDeEntrega } from '../utils/avisoDeEntrega';
 import { AvataresProvider } from './tablero/AvataresContext';
 import axiosInstance from '../axiosConfig';
+import { getAppUrl } from '../utils/assetHelper';
 import Swal from 'sweetalert2';
 import { FaCircleCheck, FaCircle, FaCircleXmark, FaListCheck } from 'react-icons/fa6';
 const EmployeeInterface = ({ user }) => {
@@ -468,7 +469,7 @@ const EmployeeInterface = ({ user }) => {
     // noopener/noreferrer evita que la pestaña nueva conserve acceso a window.opener.
     const abrirTableroSeguimiento = () => {
         setShowOptionsDropdown(false);
-        const url = `${window.location.origin}${window.location.pathname}#/tablero`;
+        const url = getAppUrl('tablero');
         window.open(url, '_blank', 'noopener,noreferrer');
     };
 

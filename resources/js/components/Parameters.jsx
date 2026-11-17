@@ -11,7 +11,7 @@ import LeaderModal from './LeaderModal';
 import DepartmentModal from './DepartmentModal';
 import CargosModal from './CargosModal';
 import VideosTableroModal from './VideosTableroModal';
-import { getImageUrl, getAssetUrl } from '../utils/assetHelper';
+import { getImageUrl, getAssetUrl, getAppUrl } from '../utils/assetHelper';
 
 
 
@@ -93,7 +93,7 @@ const Parameters = () => {
     }, []);
 
     const backDashboard = () => {
-        const fullPath = getAssetUrl('dashboard');              
+        const fullPath = getAppUrl('dashboard');              
         window.location.href = fullPath;
     };
 
