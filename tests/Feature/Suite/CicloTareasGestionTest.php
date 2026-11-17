@@ -142,7 +142,6 @@ class CicloTareasGestionTest extends CicloTareasCaso
         $this->assertCount(1, $this->avisos($this->lider, 'Observacion'));
     }
 
-    #[Group('hallazgo')]
     public function test_el_aviso_al_lider_dice_que_el_responsable_comento(): void
     {
         // En el caso «empleado» guardarNotificacion sólo redacta Tarea y

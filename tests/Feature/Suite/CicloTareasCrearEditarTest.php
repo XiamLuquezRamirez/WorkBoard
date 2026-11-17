@@ -117,7 +117,6 @@ class CicloTareasCrearEditarTest extends CicloTareasCaso
         $this->assertSame(0, $this->tareasDe($this->ajeno));
     }
 
-    #[Group('hallazgo')]
     public function test_el_responsable_se_entera_cuando_un_supervisor_le_asigna_tarea(): void
     {
         $sup = $this->supervisor();
@@ -128,7 +127,6 @@ class CicloTareasCrearEditarTest extends CicloTareasCaso
         $this->assertCount(1, $this->avisos($this->ajeno, 'Tarea'), 'El responsable debe enterarse de la tarea asignada.');
     }
 
-    #[Group('hallazgo')]
     public function test_una_tarea_creada_por_el_colaborador_avisa_a_todos_sus_lideres(): void
     {
         // Igual que al enviar a revisión: con dos líderes, los dos deben enterarse.

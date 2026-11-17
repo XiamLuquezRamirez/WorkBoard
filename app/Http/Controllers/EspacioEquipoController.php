@@ -699,7 +699,8 @@ class EspacioEquipoController extends Controller
                     // En pausa el plazo está detenido: no va tarde.
                     'atrasada'      => $pactada && $pactada->lt($hoy) && $t->estado !== self::EN_REVISION
                         && !\App\Support\IndiceDesempeno::estaPausada($t),
-                    'dias'          => $pactada ? $hoy->diffInDays($pactada, false) : null,
+                    // Entero: Carbon 3 devuelve float y «vence hoy» (dias === 0) no salía.
+                    'dias'          => $pactada ? (int) round($hoy->diffInDays($pactada, false)) : null,
                 ];
             });
 
@@ -816,7 +817,9 @@ class EspacioEquipoController extends Controller
             ->where('emisor', $yo)
             ->where('receptor', $receptor)
             ->where('estado', 'Sonando')
-            ->where('created_at', '>=', now()->subSeconds(self::LLAMADA_VIVE))
+            // El tope superior descarta horas «futuras» guardadas en UTC antes
+            // de pasar la aplicación a hora de Bogotá.
+            ->whereBetween('created_at', [now()->subSeconds(self::LLAMADA_VIVE), now()->addMinute()])
             ->first();
 
         if ($viva) {
@@ -859,7 +862,7 @@ class EspacioEquipoController extends Controller
             ->leftJoin('empleados as e', 'l.emisor', '=', 'e.id')
             ->where('l.receptor', $yo)
             ->where('l.estado', 'Sonando')
-            ->where('l.created_at', '>=', now()->subSeconds(self::LLAMADA_VIVE))
+            ->whereBetween('l.created_at', [now()->subSeconds(self::LLAMADA_VIVE), now()->addMinute()])
             ->orderByDesc('l.id')
             ->select(
                 'l.id',

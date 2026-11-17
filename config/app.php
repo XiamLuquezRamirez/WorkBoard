@@ -65,7 +65,11 @@ return [
     |
     */
 
-    'timezone' => 'UTC',
+    // La oficina y MySQL (time_zone = SYSTEM) están en Bogotá. Con la
+    // aplicación en UTC, desde las 7 p. m. «hoy» ya era mañana en el tablero,
+    // la agenda y el plano, y las horas que escribe Laravel quedaban 5 h
+    // corridas respecto a las que pone la base.
+    'timezone' => env('APP_TIMEZONE', 'America/Bogota'),
 
     /*
     |--------------------------------------------------------------------------

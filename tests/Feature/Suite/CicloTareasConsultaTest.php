@@ -158,7 +158,6 @@ class CicloTareasConsultaTest extends CicloTareasCaso
         $this->assertSame(0, $this->db()->table('notif_generales')->where('tipo', 'TareaAtrasada')->count());
     }
 
-    #[Group('hallazgo')]
     public function test_una_tarea_cancelada_no_se_avisa_como_atrasada(): void
     {
         $this->tareaVencida(['estado' => 'Cancelada']);
@@ -168,7 +167,6 @@ class CicloTareasConsultaTest extends CicloTareasCaso
         $this->assertCount(0, $this->avisos($this->lider, 'TareaAtrasada'));
     }
 
-    #[Group('hallazgo')]
     public function test_una_tarea_atrasada_avisa_a_todos_los_lideres(): void
     {
         $this->db()->table('lideres_empleados')->insert(['lider' => $this->verificador, 'empleado' => $this->colaborador]);

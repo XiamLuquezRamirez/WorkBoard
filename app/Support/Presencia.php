@@ -36,6 +36,13 @@ final class Presencia
     /** Un mensaje enviado hace menos que esto cuenta como «escribiendo». */
     private const ESCRIBIENDO_SEG = 90;
 
+    /**
+     * Margen para relojes: una hora más allá de esto en el futuro no es
+     * reciente sino una hora guardada en UTC antes de pasar la aplicación a
+     * hora de Bogotá (5 h por delante).
+     */
+    private const TOLERANCIA_SEG = 60;
+
     /** Lo que dura la animación de un saludo para los demás. */
     private const SALUDO_SEG = 25;
 
@@ -71,7 +78,11 @@ final class Presencia
 
         $tocadas = $conn->table('presencia_empleados')
             ->where('empleado', $empleado)
-            ->where(fn ($q) => $q->whereNull('visto_en')->orWhere('visto_en', '<', $ahora->copy()->subSeconds(self::LATIDO_SEG)))
+            // Una hora «futura» viene de cuando la aplicación guardaba en UTC:
+            // se corrige con el primer latido en vez de esperar 5 horas.
+            ->where(fn ($q) => $q->whereNull('visto_en')
+                ->orWhere('visto_en', '<', $ahora->copy()->subSeconds(self::LATIDO_SEG))
+                ->orWhere('visto_en', '>', $ahora->copy()->addSeconds(self::TOLERANCIA_SEG)))
             ->update(['visto_en' => $ahora]);
 
         if ($tocadas === 0) {
@@ -131,14 +142,14 @@ final class Presencia
 
         $escribiendo = array_flip($conn->table('chat_mensajes')
             ->whereIn('empleado', $empleados)
-            ->where('created_at', '>=', $ahora->copy()->subSeconds(self::ESCRIBIENDO_SEG))
+            ->whereBetween('created_at', [$ahora->copy()->subSeconds(self::ESCRIBIENDO_SEG), $ahora->copy()->addSeconds(self::TOLERANCIA_SEG)])
             ->distinct()->pluck('empleado')->map(fn ($i) => (int) $i)->all());
 
         $salida = [];
         foreach ($empleados as $id) {
             $f = $filas->get($id);
             $enLinea = $f && $f->visto_en
-                && Carbon::parse($f->visto_en)->gte($ahora->copy()->subSeconds(self::EN_LINEA_SEG));
+                && self::reciente($f->visto_en, $ahora, self::EN_LINEA_SEG);
             $manual = $f && $f->estado && $f->fecha === $hoy ? $f->estado : null;
 
             // «Disponible» u «ocupado» sólo valen con la aplicación abierta:
@@ -172,7 +183,7 @@ final class Presencia
                 'nota'      => $manual ? $f->nota : null,
                 'actividad' => $actividad,
                 'saluda'    => $f && $f->saludo_en
-                    && Carbon::parse($f->saludo_en)->gte($ahora->copy()->subSeconds(self::SALUDO_SEG)),
+                    && self::reciente($f->saludo_en, $ahora, self::SALUDO_SEG),
             ];
         }
 
@@ -187,6 +198,15 @@ final class Presencia
     public static function salaDeReunion(?string $lugar): string
     {
         return preg_match('/sal[oó]n|capacitaci/iu', (string) $lugar) ? 'salon' : 'juntas';
+    }
+
+    /** ¿La hora cae en los últimos $segundos, sin estar en el futuro? */
+    private static function reciente($hora, Carbon $ahora, int $segundos): bool
+    {
+        $h = Carbon::parse($hora);
+
+        return $h->gte($ahora->copy()->subSeconds($segundos))
+            && $h->lte($ahora->copy()->addSeconds(self::TOLERANCIA_SEG));
     }
 
     /**

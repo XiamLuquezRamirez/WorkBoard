@@ -655,9 +655,9 @@ class EmpleadosController extends Controller
             ->leftJoin('empleados', 'tareas_empleados.empleado', '=', 'empleados.id')
             ->leftJoin('users', 'tareas_empleados.empleado', '=', 'users.empleado')
             ->whereRaw('DATE(fecha_pactada) < CURDATE()')
-            ->where('tareas_empleados.estado', '!=', 'Completada')
-            // En revisión ya está entregada: lo que falta es la revisión.
-            ->where('tareas_empleados.estado', '!=', self::EN_REVISION)
+            // Cerradas o canceladas no tienen plazo que cumplir. En revisión
+            // ya está entregada: lo que falta es la revisión.
+            ->whereNotIn('tareas_empleados.estado', ['Completada', 'Cancelada', self::EN_REVISION])
             ->where('tareas_empleados.estado_reg', 'Activo')
             ->where('tareas_empleados.pausada', 0)
             ->where('tareas_empleados.aprobada', 1)
@@ -675,58 +675,21 @@ class EmpleadosController extends Controller
                 ->where('tarea_id', $tarea->id)
                 ->where('tipo', 'TareaAtrasada')
                 ->whereDate('fecha', now()->toDateString())
-                ->first();
+                ->exists();
+            if ($notificacionExistente) {
+                continue;
+            }
 
-            //fecha Formateada
             $fechaPactada = date('d/m/Y', strtotime($tarea->fecha_pactada));
+            $mensaje = 'El empleado ' . $tarea->nombre_empleado . ' tiene una tarea atrasada: ' . $tarea->titulo . ' (Fecha pactada: ' . $fechaPactada . ')';
 
-            if (!$notificacionExistente) {
-                // Obtener el líder del empleado
-                $lider = DB::connection('mysql2')->table('lideres_empleados')
-                    ->where('empleado', $tarea->empleado)
-                    ->first();
-
-                if ($lider) {
-                    // Obtener el usuario líder
-                    $usuarioLider = DB::connection('mysql2')->table('users')
-                        ->where('empleado', $lider->lider)
-                        ->first();
-
-                    if ($usuarioLider) {
-                        // Crear la notificación para el líder
-                        DB::connection('mysql2')->table('notif_generales')->insert([
-                            'id_emisor' => $tarea->empleado,
-                            'tipo_emisor' => 'empleado',
-                            'id_receptor' => $usuarioLider->id,
-                            'tipo_receptor' => 'usuario',
-                            'mensaje' => 'El empleado ' . $tarea->nombre_empleado . ' tiene una tarea atrasada: ' . $tarea->titulo . ' (Fecha pactada: ' . $fechaPactada . ')',
-                            'tarea_id' => $tarea->id,
-                            'leido' => 0,
-                            'fecha' => now(),
-                            'tipo' => 'TareaAtrasada'
-                        ]);
-                    }
-                } else {
-                    // Si no hay líder, notificar al administrador
-                    $admin = DB::connection('mysql2')->table('users')
-                        ->where('tipo_usuario', 'Administrador')
-                        ->where('lider_seguimiento', 'Si')
-                        ->first();
-
-                    if ($admin) {
-                        DB::connection('mysql2')->table('notif_generales')->insert([
-                            'id_emisor' => $tarea->empleado,
-                            'tipo_emisor' => 'empleado',
-                            'id_receptor' => $admin->id,
-                            'tipo_receptor' => 'usuario',
-                            'mensaje' => 'El empleado ' . $tarea->nombre_empleado . ' tiene una tarea atrasada: ' . $tarea->titulo . ' (Fecha pactada: ' . $fechaPactada . ')',
-                            'tarea_id' => $tarea->id,
-                            'leido' => 0,
-                            'fecha' => now(),
-                            'tipo' => 'TareaAtrasada'
-                        ]);
-                    }
-                }
+            // Todos sus líderes activos; sin ninguno, la administración de
+            // seguimiento. Antes sólo el primer líder, aunque estuviera inactivo.
+            $lideres = \App\Support\Avisos::lideresActivos((int) $tarea->empleado, [(int) $tarea->empleado]);
+            if ($lideres !== []) {
+                \App\Support\Avisos::campana($lideres, (int) $tarea->empleado, $mensaje, (int) $tarea->id, 'TareaAtrasada');
+            } else {
+                \App\Support\Avisos::campanaUsuarios(\App\Support\Avisos::administracionDeSeguimiento(), (int) $tarea->empleado, $mensaje, (int) $tarea->id, 'TareaAtrasada');
             }
         }
     }
@@ -1167,171 +1130,68 @@ class EmpleadosController extends Controller
         }
     }
 
+    /**
+     * Aviso en la campana de lo que pasó con una tarea.
+     *
+     *  - Si actúa el responsable (crea su tarea, cambia el estado, comenta):
+     *    se enteran TODOS sus líderes activos; sin líder, la administración
+     *    de seguimiento.
+     *  - Si actúa otra persona (líder, supervisor, administración): se entera
+     *    el responsable.
+     *
+     * Antes se decidía por el rol del que actuaba y sólo se miraba el primer
+     * líder: un supervisor que asignaba una tarea no avisaba a nadie, con dos
+     * líderes uno no se enteraba, y el comentario de un responsable llegaba
+     * como «El empleado X (tarea)» sin decir qué había hecho.
+     */
     function guardarNotificacion($idTarea, $tipo)
     {
-
         $tarea = DB::connection('mysql2')->table('tareas_empleados')->where('id', $idTarea)->first();
-        if (!$tarea) return;
+        if (!$tarea) {
+            return;
+        }
+        $actor = DB::connection('mysql2')->table('users')->where('email', Auth::user()->email ?? '')->first();
+        if (!$actor) {
+            return;
+        }
+
+        $actorEmpleado = $actor->empleado ? (int) $actor->empleado : null;
+        $responsable = (int) $tarea->empleado;
+        $nombreActor = ($actorEmpleado ? \App\Support\Avisos::nombreEmpleado($actorEmpleado) : '') ?: ($actor->name ?? 'Alguien');
         $titulo = $tarea->titulo;
-        $empleado = $tarea->empleado;
 
-        $usuarioActual = DB::connection('mysql2')->table('users')->where('email', Auth::user()->email)->first();
-        // CASO 1: Empleado crea tarea
+        if ($actorEmpleado !== null && $actorEmpleado === $responsable) {
+            $accion = match ($tipo) {
+                'Tarea'       => 'creó la tarea',
+                'Estado'      => "pasó a «{$tarea->estado}» la tarea",
+                'Observacion' => 'escribió una observación en la tarea',
+                default       => 'actualizó la tarea',
+            };
+            $mensaje = "{$nombreActor} {$accion} «{$titulo}».";
 
-       
-        if (
-            $usuarioActual->tipo_usuario == 'Empleado' &&
-            ($usuarioActual->lider == 'No' || is_null($usuarioActual->lider))
-        ) {
-
-            $empleado = DB::connection('mysql2')->table('empleados')
-                ->join('users', 'empleados.id', 'users.empleado')
-                ->select('empleados.*', 'users.id as id_usuario')
-                ->where('users.id', $usuarioActual->id)->first();
-
-            
-
-            $lider = DB::connection('mysql2')->table('lideres_empleados')
-                ->where('empleado', $empleado->id)
-                ->first();
-
-
-            if ($empleado && $lider && $lider->lider) {
-                // Tiene líder → notificar al líder
-                $receptor = DB::connection('mysql2')->table('empleados')
-                    ->join('users', 'empleados.id', 'users.empleado')
-                    ->select('users.*')
-                    ->where('empleados.id', $lider->lider)->first();
-                $tipoReceptor = 'empleado';
+            $lideres = \App\Support\Avisos::lideresActivos($responsable, [$responsable]);
+            if ($lideres !== []) {
+                \App\Support\Avisos::campana($lideres, $actorEmpleado, $mensaje, (int) $idTarea, $tipo);
             } else {
-                // No tiene líder → notificar a administrador
-                $receptor = DB::connection('mysql2')->table('users')
-                    ->where('tipo_usuario', 'Administrador')
-                    ->select('users.*')
-                    ->first();
-                $tipoReceptor = 'usuario';
+                \App\Support\Avisos::campanaUsuarios(
+                    \App\Support\Avisos::administracionDeSeguimiento()->reject(fn ($u) => (int) $u->id === (int) $actor->id),
+                    $actorEmpleado, $mensaje, (int) $idTarea, $tipo
+                );
             }
-
-            $tipoAccion = '';
-            if ($tipo == 'Tarea') {
-                $tipoAccion = ' ha creado una tarea.';
-            } else if ($tipo == 'Estado') {
-                $tipoAccion = ' ha actualizado el estado de la tarea a ' . $tarea->estado;
-            }
-
-            if ($receptor) {
-                $mensaje = 'El empleado ' . $empleado->nombres . ' ' . $empleado->apellidos . $tipoAccion . ' (' . $titulo . ')';
-                $notif = DB::connection('mysql2')->table('notif_generales')->insertGetId([
-                    'id_emisor' => $empleado->id_usuario,
-                    'tipo_emisor' => 'empleado',
-                    'id_receptor' => $receptor->id,
-                    'tipo_receptor' => $tipoReceptor,
-                    'mensaje' => $mensaje,
-                    'tarea_id' => $idTarea,
-                    'leido' => 0,
-                    'fecha' => now(),
-                    'tipo' => $tipo
-                ]);
-            }
-
-            // ----------------------------------------------
-            // CASO 2: Líder o Administrador asigna tarea a otro
-            // ----------------------------------------------
-        } else if ($usuarioActual->lider == 'Si' || $usuarioActual->tipo_usuario == 'Administrador') {
-            // $empleadoReceptor debe estar definido
-            // Validamos si la tarea fue asignada a otra persona
-            $empleadoReceptor = DB::connection('mysql2')->table('users')
-                ->where('empleado', $empleado)
-                ->first();
-
-            $tipoAccion = '';
-            if ($tipo == 'Tarea') {
-                $tipoAccion = ' te ha asignado una tarea.';
-            } else if ($tipo == 'Estado') {
-                $tipoAccion = ' te ha actualizado el estado de la tarea a ' . $tarea->estado;
-            } else if ($tipo == 'Aprobada') {
-                if ($tarea->aprobada == 1) {
-                    $tipoAccion = ' ha aprobado la tarea';
-                } else {
-                    $tipoAccion = ' ha definido la tarea como no aprobada';
-                }
-            } else if ($tipo == 'Rechazada') {
-                $tipoAccion = ' ha rechazado la tarea';
-            } else if ($tipo == 'VistoBueno') {
-                $tipoAccion = ' ha generado un visto bueno para la tarea';
-            } else if ($tipo == 'Observacion') {
-                $tipoAccion = ' ha realizado observaciones a la tarea';
-            } else if ($tipo == 'Reprogramada') {
-                $tipoAccion = ' ha reprogramado la tarea';
-            }
-
-
-            if ($empleadoReceptor->id != $usuarioActual->id) {
-                $mensaje = 'El usuario ' . $usuarioActual->name . $tipoAccion . ' (' . $titulo . ')';
-                $notif = DB::connection('mysql2')->table('notif_generales')->insertGetId([
-                    'id_emisor' => $usuarioActual->id,
-                    'tipo_emisor' => 'usuario',
-                    'id_receptor' => $empleadoReceptor->id,
-                    'tipo_receptor' => 'empleado',
-                    'mensaje' => $mensaje,
-                    'tarea_id' => $idTarea,
-                    'leido' => 0,
-                    'fecha' => now(),
-                    'tipo' => $tipo
-                ]);
-            } else {
-                // ----------------------------------------------
-                // CASO 3: Líder crea tarea para sí mismo
-                // ----------------------------------------------
-                $adminReceptor = DB::connection('mysql2')->table('users')
-                    ->where('tipo_usuario', 'Administrador')
-                    ->where('lider_seguimiento', 'Si')
-                    ->first();
-
-                $tipoAccion = '';
-                if ($tipo == 'Tarea') {
-                    $tipoAccion = ' ha creado una tarea.';
-                } else if ($tipo == 'Estado') {
-                    $tipoAccion = ' ha actualizado el estado de la tarea a ' . $tarea->estado;
-                } else if ($tipo == 'Aprobada') {
-                    if ($tarea->aprobada == 1) {
-                        $tipoAccion = ' ha aprobado la tarea';
-                    } else {
-                        $tipoAccion = ' ha definido la tarea como no aprobada';
-                    }
-                } else if ($tipo == 'Rechazada') {
-                    $tipoAccion = ' ha rechazado la tarea';
-                } else if ($tipo == 'VistoBueno') {
-                    $tipoAccion = ' ha generado un visto bueno para la tarea';
-                } else if ($tipo == 'Observacion') {
-                    $tipoAccion = ' ha realizado observaciones a la tarea';
-                } else if ($tipo == 'Reprogramada') {
-                    $tipoAccion = ' ha reprogramado la tarea';
-                }
-
-                if ($adminReceptor) {
-                    $mensaje = 'El usuario ' . $usuarioActual->name . ' (líder) ' . $tipoAccion . ' (' . $titulo . ')';
-                    $notif = DB::connection('mysql2')->table('notif_generales')->insertGetId([
-                        'id_emisor' => $usuarioActual->id,
-                        'tipo_emisor' => 'usuario',
-                        'id_receptor' => $adminReceptor->id,
-                        'tipo_receptor' => 'usuario',
-                        'mensaje' => $mensaje,
-                        'tarea_id' => $idTarea,
-                        'leido' => 0,
-                        'fecha' => now(),
-                        'tipo' => $tipo
-                    ]);
-                }
-            }
+            return;
         }
-    
 
-
-        //enviar notificacion a los usuarios
-        if ($tipo == 'Tarea' || ($tipo == 'Estado' && $tarea->estado == 'Completada') || $tipo == 'Aprobada' || $tipo == 'Rechazada' || $tipo == 'VistoBueno' || $tipo == 'Observacion' || $tipo == 'Reprogramada') {
-           // self::enviarNotificacion($notif);
-        }
+        $accion = match ($tipo) {
+            'Tarea'        => 'te asignó la tarea',
+            'Estado'       => "pasó a «{$tarea->estado}» tu tarea",
+            'Aprobada'     => (int) $tarea->aprobada === 1 ? 'aprobó la tarea' : 'marcó como no aprobada la tarea',
+            'Rechazada'    => 'rechazó la tarea',
+            'VistoBueno'   => 'dio el visto bueno a la tarea',
+            'Observacion'  => 'dejó observaciones en tu tarea',
+            'Reprogramada' => 'reprogramó tu tarea',
+            default        => 'actualizó tu tarea',
+        };
+        \App\Support\Avisos::campana([$responsable], $actorEmpleado, "{$nombreActor} {$accion} «{$titulo}».", (int) $idTarea, $tipo);
     }
 
     function enviarNotificacion($notif)
@@ -3126,7 +2986,10 @@ class EmpleadosController extends Controller
             return collect($rows)->map(function ($t) use ($hoy, $avances, $conDetalle) {
                 $dias = null;
                 if ($t->fecha_pactada) {
-                    $dias = $hoy->diffInDays(Carbon::parse($t->fecha_pactada)->startOfDay(), false);
+                    // Entero: con Carbon 3 diffInDays() devuelve float, y
+                    // «dias_restantes === 0» no se cumplía nunca, así que
+                    // «vencen hoy» marcaba siempre cero.
+                    $dias = (int) round($hoy->diffInDays(Carbon::parse($t->fecha_pactada)->startOfDay(), false));
                 }
 
                 // Avance sólo cuando la tarea tiene checklist; el resto queda en null
@@ -3791,92 +3654,45 @@ class EmpleadosController extends Controller
         $mensajeBase = $actorNombre . ' ha solicitado pausa para la tarea «' . $titulo . '» (asignada a ' . $nombreAsignado . '). '
             . 'Motivo: ' . $motivo . '. Fecha de reanudación prevista: ' . $fechaReanudacion . '.';
 
-        $receptor = null;
-        $tipoReceptor = 'usuario';
-        $idEmisor = (int) $usuarioActual->id;
-        $tipoEmisor = 'usuario';
-
         if (strcasecmp($usuarioActual->tipo_usuario ?? '', 'Administrador') === 0) {
             return;
         }
 
-        if ($this->usuarioEsLiderParaNotificaciones($usuarioActual)) {
-            $receptor = DB::connection('mysql2')->table('users')
-                ->where('tipo_usuario', 'Administrador')
-                ->where('lider_seguimiento', 'Si')
-                ->first();
-            if (!$receptor) {
-                $receptor = DB::connection('mysql2')->table('users')
-                    ->where('tipo_usuario', 'Administrador')
-                    ->orderBy('id')
-                    ->first();
-            }
-            $tipoReceptor = 'usuario';
+        // Quien pide la pausa es líder: la aprueba administración. Si no, la
+        // aprueban sus líderes: todos los activos, no sólo el primero (que
+        // podía estar inactivo y quedarse con el aviso).
+        $actorEmpleado = $usuarioActual->empleado ? (int) $usuarioActual->empleado : null;
+        $lideres = $this->usuarioEsLiderParaNotificaciones($usuarioActual)
+            ? []
+            : \App\Support\Avisos::lideresActivos((int) $tarea->empleado, [(int) $tarea->empleado, $actorEmpleado]);
+
+        if ($lideres !== []) {
+            $receptores = DB::connection('mysql2')->table('users')
+                ->whereIn('empleado', $lideres)
+                ->where(fn ($q) => $q->whereNull('estado')->orWhere('estado', '<>', 'Inactivo'))
+                ->get(['id', 'tipo_usuario', 'email', 'name']);
         } else {
-            $empleadoActor = null;
-            if ($usuarioActual->empleado) {
-                $empleadoActor = DB::connection('mysql2')->table('empleados')
-                    ->join('users', 'empleados.id', 'users.empleado')
-                    ->select('empleados.*', 'users.id as id_usuario')
-                    ->where('empleados.id', $usuarioActual->empleado)
-                    ->first();
-            }
-
-            if ($empleadoActor) {
-                $idEmisor = (int) $empleadoActor->id_usuario;
-                $tipoEmisor = 'empleado';
-            }
-
-            $liderRow = null;
-            if ($empleadoActor) {
-                $liderRow = DB::connection('mysql2')->table('lideres_empleados')
-                    ->where('empleado', $empleadoActor->id)
-                    ->first();
-            }
-
-            if ($liderRow && $liderRow->lider) {
-                $receptor = DB::connection('mysql2')->table('empleados')
-                    ->join('users', 'empleados.id', 'users.empleado')
-                    ->select('users.*')
-                    ->where('empleados.id', $liderRow->lider)
-                    ->first();
-                $tipoReceptor = 'empleado';
-            } else {
-                $receptor = DB::connection('mysql2')->table('users')
-                    ->where('tipo_usuario', 'Administrador')
-                    ->orderBy('id')
-                    ->first();
-                $tipoReceptor = 'usuario';
-            }
-        }
-
-        if (!$receptor || empty($receptor->email)) {
-            return;
+            $receptores = \App\Support\Avisos::administracionDeSeguimiento();
         }
 
         try {
-            DB::connection('mysql2')->table('notif_generales')->insert([
-                'id_emisor' => $idEmisor,
-                'tipo_emisor' => $tipoEmisor,
-                'id_receptor' => $receptor->id,
-                'tipo_receptor' => $tipoReceptor,
-                'mensaje' => $mensajeBase,
-                'tarea_id' => $tarea->id,
-                'leido' => 0,
-                'fecha' => now(),
-                'tipo' => 'PausaSolicitada',
-            ]);
+            \App\Support\Avisos::campanaUsuarios($receptores, $actorEmpleado, $mensajeBase, (int) $tarea->id, 'PausaSolicitada');
         } catch (\Exception $e) {
-            // Si el tipo no está permitido en ENUM, omitir notificación in-app pero intentar correo
+            // Sin aviso en la campana se intenta igual el correo.
         }
 
-        try {
-            Mail::to($receptor->email)->send(new NotificacionMailable([
-                'name' => $receptor->name ?? 'Usuario',
-                'message' => $mensajeBase,
-            ]));
-        } catch (\Exception $e) {
-            // No bloquear la solicitud de pausa si el correo falla
+        foreach ($receptores as $receptor) {
+            if (!filter_var(trim((string) $receptor->email), FILTER_VALIDATE_EMAIL)) {
+                continue;
+            }
+            try {
+                Mail::to(trim($receptor->email))->send(new NotificacionMailable([
+                    'name' => $receptor->name ?? 'Usuario',
+                    'message' => $mensajeBase,
+                ]));
+            } catch (\Exception $e) {
+                // No bloquear la solicitud de pausa si el correo falla
+            }
         }
     }
 

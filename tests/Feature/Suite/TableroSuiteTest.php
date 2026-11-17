@@ -214,7 +214,6 @@ class TableroSuiteTest extends TestCase
         $this->assertSame(5, $a['sin_criterio']);
     }
 
-    #[Group('hallazgo')]
     public function test_tablero_cuenta_lo_que_vence_hoy(): void
     {
         // Con Carbon 3 diffInDays() devuelve float: «dias_restantes === 0»
@@ -270,7 +269,6 @@ class TableroSuiteTest extends TestCase
         $this->assertNotContains($this->colaborador, collect($r->json('equipo'))->pluck('id')->all());
     }
 
-    #[Group('hallazgo')]
     public function test_tablero_a_las_nueve_de_la_noche_lo_de_hoy_aun_no_esta_vencido(): void
     {
         // 21:00 en Bogotá es ya el día siguiente en UTC (zona de la app).
@@ -358,7 +356,6 @@ class TableroSuiteTest extends TestCase
         $this->assertSame(-4, collect($r->json('dias'))->firstWhere('fecha', now()->subDays(4)->toDateString())['dias']);
     }
 
-    #[Group('hallazgo')]
     public function test_agenda_a_las_nueve_de_la_noche_hoy_sigue_siendo_hoy_en_la_oficina(): void
     {
         $this->enOficina('2026-11-12 21:00:00');
@@ -452,7 +449,6 @@ class TableroSuiteTest extends TestCase
         $this->assertSame('Carlos', $this->puesto($this->colaborador, $plano)['etiqueta']);
     }
 
-    #[Group('hallazgo')]
     public function test_plano_a_las_nueve_de_la_noche_lo_de_hoy_no_esta_atrasado(): void
     {
         $this->enOficina('2026-11-12 21:00:00');

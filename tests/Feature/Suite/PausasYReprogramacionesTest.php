@@ -388,7 +388,6 @@ class PausasYReprogramacionesTest extends TestCase
         Mail::assertNothingSent();
     }
 
-    #[Group('hallazgo')]
     public function test_la_solicitud_de_pausa_avisa_a_todos_los_lideres_activos(): void
     {
         // Carlos tiene dos líderes; el envío a revisión ya avisa a los dos.
@@ -401,7 +400,6 @@ class PausasYReprogramacionesTest extends TestCase
         $this->assertCount(1, $this->avisos($this->verificador, 'PausaSolicitada'));
     }
 
-    #[Group('hallazgo')]
     public function test_la_solicitud_de_pausa_no_avisa_a_un_lider_inactivo(): void
     {
         $this->db()->table('lideres_empleados')->insert(['lider' => $this->verificador, 'empleado' => $this->colaborador]);

@@ -42,6 +42,44 @@ final class Avisos
         self::campanaUsuarios($usuarios, $emisorEmpleado, $mensaje, $tareaId, $tipo);
     }
 
+    /**
+     * Todos los líderes activos de un empleado (ids de empleado), sin los
+     * excluidos. Antes cada aviso tomaba sólo el primero que apareciera en
+     * lideres_empleados, aunque estuviera inactivo: con dos líderes, uno no
+     * se enteraba, y a veces el aviso iba a quien ya no estaba.
+     *
+     * @return int[]
+     */
+    public static function lideresActivos(int $empleado, array $excluir = []): array
+    {
+        $excluir = array_map('intval', array_filter($excluir));
+
+        return DB::connection('mysql2')->table('lideres_empleados as le')
+            ->join('empleados as e', 'le.lider', '=', 'e.id')
+            ->where('le.empleado', $empleado)
+            ->where('e.estado_registro', 'Activo')
+            ->where('e.estado', 'Activo')
+            ->pluck('e.id')
+            ->map(fn ($i) => (int) $i)
+            ->reject(fn ($i) => in_array($i, $excluir, true))
+            ->unique()->values()->all();
+    }
+
+    /**
+     * Administración que recibe lo que no tiene líder: quien marcó «líder de
+     * seguimiento» y, si nadie lo hizo, todos los administradores activos.
+     */
+    public static function administracionDeSeguimiento()
+    {
+        $base = fn () => DB::connection('mysql2')->table('users')
+            ->whereRaw('LOWER(TRIM(tipo_usuario)) = ?', ['administrador'])
+            ->where(fn ($q) => $q->whereNull('estado')->orWhere('estado', '<>', 'Inactivo'));
+
+        $seguimiento = $base()->where('lider_seguimiento', 'Si')->get(['id', 'tipo_usuario', 'email', 'name']);
+
+        return $seguimiento->isNotEmpty() ? $seguimiento : $base()->get(['id', 'tipo_usuario', 'email', 'name']);
+    }
+
     /** Aviso en la campana para filas de users ya resueltas (id, tipo_usuario). */
     public static function campanaUsuarios($usuarios, ?int $emisorEmpleado, string $mensaje, ?int $tareaId, string $tipo): void
     {
@@ -133,15 +171,7 @@ final class Avisos
         $conn = DB::connection('mysql2');
         $responsable = self::nombreEmpleado((int) $tarea->empleado) ?: 'El responsable';
 
-        $lideres = $conn->table('lideres_empleados as le')
-            ->join('empleados as e', 'le.lider', '=', 'e.id')
-            ->where('le.empleado', $tarea->empleado)
-            ->where('e.estado_registro', 'Activo')
-            ->where('e.estado', 'Activo')
-            ->pluck('e.id')
-            ->map(fn ($i) => (int) $i)
-            ->reject(fn ($i) => $i === (int) $tarea->empleado || $i === $actorEmpleado)
-            ->unique()->values()->all();
+        $lideres = self::lideresActivos((int) $tarea->empleado, [(int) $tarea->empleado, $actorEmpleado]);
 
         $mensaje = "{$responsable} envió a revisión la tarea «{$tarea->titulo}». Revísala para aceptarla o devolverla con observaciones.";
 

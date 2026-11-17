@@ -327,7 +327,6 @@ class EspacioEquipoSuiteTest extends TestCase
         $this->assertSame($plano['conteos']['pausadas'], $puesto['resumen']['pausadas']);
     }
 
-    #[Group('hallazgo')]
     public function test_puesto_a_las_nueve_de_la_noche_lo_de_hoy_no_esta_atrasado(): void
     {
         Carbon::setTestNow(Carbon::parse('2026-11-12 21:00:00', 'America/Bogota'));
@@ -713,7 +712,6 @@ class EspacioEquipoSuiteTest extends TestCase
         ]))->assertCreated();
     }
 
-    #[Group('hallazgo')]
     public function test_reunion_de_esta_noche_sigue_en_proximas_a_las_nueve(): void
     {
         // La lista usa Carbon::today() en UTC: a las 21:00 de Bogotá la

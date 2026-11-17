@@ -351,7 +351,6 @@ class InformesSuiteTest extends TestCase
         $this->como($this->lider)->getJson('/api/informes/reprogramaciones?inicio=ayer&fin=2026-13-45')->assertStatus(422);
     }
 
-    #[Group('hallazgo')]
     public function test_informe_de_reprogramaciones_usa_el_dia_de_bogota_y_no_el_de_utc(): void
     {
         // 21:00 en Bogotá del 12 de noviembre = 02:00 UTC del 13.
@@ -595,7 +594,6 @@ class InformesSuiteTest extends TestCase
         $this->assertSame(0, $datos['metricas']['vencidas']);
     }
 
-    #[Group('hallazgo')]
     public function test_resumen_una_tarea_que_vence_hoy_no_figura_como_vencida(): void
     {
         // A media mañana en Bogotá. fecha() interpreta '2026-11-12' como
