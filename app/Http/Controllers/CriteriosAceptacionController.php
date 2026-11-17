@@ -425,6 +425,82 @@ class CriteriosAceptacionController extends Controller
 
     // ─── Aceptación final ───────────────────────────────────────────────────
 
+    /**
+     * El responsable con independencia completa su propia tarea: se acepta
+     * sola, sin quedarse esperando en revisión (decisión de la empresa).
+     *
+     * Las comprobaciones son las de siempre: los criterios obligatorios que
+     * siguen pendientes los da por verificados quien tiene independencia —es
+     * el único que podía verificarlos—, salvo los que exigen evidencia y no
+     * la tienen, y los que él mismo marcó «No cumplido». Si alguno bloquea,
+     * la tarea se queda en revisión y se devuelve qué falta.
+     *
+     * @return array{aceptada: bool, bloqueos: string[]}
+     */
+    public function aceptarPorIndependencia(int $tareaId): array
+    {
+        $tarea = $this->tarea($tareaId);
+        $u = $this->usuario();
+        if (!$tarea || $tarea->estado !== self::EN_REVISION
+            || !$this->esResponsable($u, $tarea) || !$this->esIndependiente($u)) {
+            return ['aceptada' => false, 'bloqueos' => []];
+        }
+
+        $conn = DB::connection('mysql2');
+        $conn->beginTransaction();
+        try {
+            $bloqueos = [];
+            foreach ($this->criteriosDe($tarea->id) as $c) {
+                if (!(int) $c->obligatorio) {
+                    continue;
+                }
+                if ($c->estado === 'No cumplido') {
+                    $bloqueos[] = "«{$this->corto($c->descripcion)}» está marcado como no cumplido.";
+                    continue;
+                }
+                if ((int) $c->requiere_evidencia === 1 && count($c->evidencias) === 0) {
+                    $bloqueos[] = "«{$this->corto($c->descripcion)}» exige evidencia.";
+                    continue;
+                }
+                if ($c->estado === 'Pendiente') {
+                    $conn->table('tarea_criterios')->where('id', $c->id)->update([
+                        'estado'             => 'Cumplido',
+                        'verificado_por'     => $u->id,
+                        'fecha_verificacion' => now(),
+                        'updated_at'         => now(),
+                    ]);
+                    $this->anotar($tarea->id, $c->id, 'verificado', ['estado' => 'Pendiente'], ['estado' => 'Cumplido'],
+                        'Verificado al completar la tarea: el responsable tiene independencia.', $u);
+                }
+            }
+
+            if ($bloqueos !== []) {
+                $conn->rollBack();
+                return ['aceptada' => false, 'bloqueos' => $bloqueos];
+            }
+
+            $r = $this->resolver($tarea->id, 'Aceptada', 'Aceptada al completarla: el responsable tiene independencia.');
+            if ($r->getStatusCode() !== 200) {
+                $conn->rollBack();
+                return ['aceptada' => false, 'bloqueos' => (array) ($r->getData(true)['bloqueos'] ?? [$r->getData(true)['error'] ?? 'No se pudo aceptar.'])];
+            }
+
+            $conn->commit();
+            return ['aceptada' => true, 'bloqueos' => []];
+        } catch (\Throwable $e) {
+            $conn->rollBack();
+            \Illuminate\Support\Facades\Log::error('Aceptación por independencia', ['tarea' => $tareaId, 'error' => $e->getMessage()]);
+            return ['aceptada' => false, 'bloqueos' => ['No fue posible cerrarla automáticamente; acéptala desde la tarea.']];
+        }
+    }
+
+    /** ¿Quien tiene la sesión completa sola sus tareas? (responsable con independencia) */
+    public function completaSola(object $tarea): bool
+    {
+        $u = $this->usuario();
+        return $this->esResponsable($u, $tarea) && $this->esIndependiente($u);
+    }
+
     /** Acepta la entrega: cierra la tarea. Exige todos los obligatorios cumplidos. */
     public function aceptar(Request $request, $tareaId)
     {

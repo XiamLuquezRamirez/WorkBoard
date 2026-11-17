@@ -1184,6 +1184,21 @@ class EmpleadosController extends Controller
             return $error;
         }
 
+        // Un responsable con independencia no espera revisión: al enviarla a
+        // revisión (o llevarla a Completada) se acepta sola si cumple.
+        $completaSola = $nuevo !== $actual->estado
+            && in_array($nuevo, [self::EN_REVISION, 'Completada'], true)
+            && app(CriteriosAceptacionController::class)->completaSola($actual);
+        if ($completaSola && $nuevo === 'Completada') {
+            if ($actual->estado === self::EN_REVISION) {
+                return $this->respuestaCompletaSola((int) $id, false);
+            }
+            // Pasa primero por revisión, como cualquier entrega: queda la
+            // fecha de entrega y el hito en el historial.
+            $nuevo = self::EN_REVISION;
+            $tarea['estado'] = $nuevo;
+        }
+
         $usuario = $this->usuarioAutenticado();
         $aRevision = $nuevo === self::EN_REVISION && $actual->estado !== self::EN_REVISION;
         $reabre = $actual->estado === 'Completada' && $nuevo !== 'Completada';
@@ -1252,6 +1267,10 @@ class EmpleadosController extends Controller
             DB::connection('mysql2')->commit();
 
             $despues = DB::connection('mysql2')->table('tareas_empleados')->where('id', $id)->first();
+            if ($aRevision && $completaSola) {
+                // Nadie más la revisa: no se avisa a líderes ni a administración.
+                return $this->respuestaCompletaSola((int) $id, true, $evidencias);
+            }
             if ($aRevision) {
                 \App\Support\Avisos::enviadaARevision($despues, $usuario->empleado ?? null);
             } elseif ($reabre) {
@@ -3720,6 +3739,28 @@ class EmpleadosController extends Controller
      *  - Una tarea cerrada sólo la reabre quien puede aceptarla (líder,
      *    administración o el propio responsable con independencia).
      */
+    /**
+     * Intenta la aceptación del independiente y responde qué pasó: cerrada,
+     * o en revisión con lo que falta para cerrarla.
+     */
+    private function respuestaCompletaSola(int $id, bool $enviada, $evidencias = null)
+    {
+        $r = app(CriteriosAceptacionController::class)->aceptarPorIndependencia($id);
+        if ($evidencias === null) {
+            $evidencias = DB::connection('mysql2')->table('evidencia_tarea')->where('tarea', $id)->get();
+        }
+
+        return response()->json([
+            'success'       => $r['aceptada']
+                ? 'Tarea completada: se aceptó sola porque tienes independencia.'
+                : 'La tarea quedó en revisión: falta lo siguiente para cerrarla.',
+            'estado_final'  => $r['aceptada'] ? 'Completada' : self::EN_REVISION,
+            'auto_aceptada' => $r['aceptada'],
+            'bloqueos'      => $r['bloqueos'],
+            'evidencias'    => $evidencias,
+        ], 200);
+    }
+
     private function reglaDeEstado(object $actual, string $nuevo): ?\Illuminate\Http\JsonResponse
     {
         if ($nuevo === $actual->estado) {
@@ -3736,6 +3777,13 @@ class EmpleadosController extends Controller
             return response()->json([
                 'error' => 'No puedes cambiar el estado de esta tarea: no es tuya ni de alguien de tu equipo.',
             ], 403);
+        }
+
+        // Responsable con independencia: completarla es entregarla y aceptarla
+        // (ver actualizarEstadoTarea). También desde «En Revisión».
+        if ($nuevo === 'Completada' && $actual->estado !== 'Completada'
+            && app(CriteriosAceptacionController::class)->completaSola($actual)) {
+            return null;
         }
 
         if ($nuevo === 'Completada') {

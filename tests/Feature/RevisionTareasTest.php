@@ -83,10 +83,23 @@ class RevisionTareasTest extends TestCase
         $this->assertCount(0, $this->avisos($this->lider, 'Estado'));
     }
 
+    public function test_la_tarea_de_un_independiente_se_cierra_sin_avisar_a_nadie(): void
+    {
+        $tarea = $this->tareaSinCriterios('En Proceso', $this->independiente);
+
+        $this->mover($this->independiente, $tarea, 'En Revisión')->assertOk()->assertJsonPath('auto_aceptada', true);
+
+        $this->assertSame('Completada', $this->estadoTarea($tarea));
+        $this->assertCount(0, $this->avisos($this->lider, 'Revision'));
+    }
+
     public function test_la_tarea_de_un_lider_avisa_a_su_propio_lider(): void
     {
         // Inés es líder (lider = Si) y la lidera Laura. Antes su envío a
-        // revisión no le llegaba a nadie.
+        // revisión no le llegaba a nadie. Sin independencia: con ella, su
+        // tarea se acepta sola y no hay revisión que avisar.
+        \Illuminate\Support\Facades\DB::connection('mysql2')->table('users')
+            ->where('empleado', $this->independiente)->update(['independencia' => 'No']);
         $tarea = $this->tareaSinCriterios('En Proceso', $this->independiente);
 
         $this->mover($this->independiente, $tarea, 'En Revisión')->assertOk();

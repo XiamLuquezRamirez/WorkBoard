@@ -16,6 +16,7 @@ import FormularioTarea from './tareas/FormularioTarea';
 import TableroEquipoModal from './equipo/TableroEquipoModal';
 import ReunionesPendientes from './equipo/ReunionesPendientes';
 import BandejaDecisiones from './tareas/BandejaDecisiones';
+import { avisoDeEntrega } from '../utils/avisoDeEntrega';
 import { AvataresProvider } from './tablero/AvataresContext';
 import axiosInstance from '../axiosConfig';
 import Swal from 'sweetalert2';
@@ -332,13 +333,18 @@ const EmployeeInterface = ({ user }) => {
                 });
                 return;
             }
+            // Con independencia la tarea se acepta sola al entregarla (si
+            // cumple sus criterios); sin ella, espera la revisión del líder.
+            const soyIndependiente = ['si', 'sí'].includes(String(user?.independencia ?? '').trim().toLowerCase());
             if (destinationId === 'Completada') {
                 Swal.fire({
-                    title: 'Se cierra al aceptar la entrega',
-                    text: 'Envíala a revisión: tu líder la revisará y, si está bien, la cerrará.',
+                    title: soyIndependiente ? 'Completar la tarea' : 'Se cierra al aceptar la entrega',
+                    text: soyIndependiente
+                        ? 'Tienes independencia: al entregarla se acepta sola si cumple sus criterios obligatorios.'
+                        : 'Envíala a revisión: tu líder la revisará y, si está bien, la cerrará.',
                     icon: 'info',
                     showCancelButton: true,
-                    confirmButtonText: 'Enviar a revisión',
+                    confirmButtonText: soyIndependiente ? 'Completar' : 'Enviar a revisión',
                     cancelButtonText: 'Cancelar',
                 }).then((r) => {
                     if (r.isConfirmed) {
@@ -351,10 +357,12 @@ const EmployeeInterface = ({ user }) => {
                 const total = tareaArrastrada?.subtareas_total || 0;
                 const hechas = tareaArrastrada?.subtareas_completadas || 0;
                 Swal.fire({
-                    title: 'Enviar a revisión',
+                    title: soyIndependiente ? 'Completar la tarea' : 'Enviar a revisión',
                     text: total > 0 && hechas < total
-                        ? `El checklist va ${hechas}/${total}. Tu líder revisará lo entregado y lo aceptará o te lo devolverá. ¿Enviar de todos modos?`
-                        : 'Tu líder revisará lo entregado y lo aceptará o te lo devolverá con observaciones. Para adjuntar evidencias, envíala desde el detalle de la tarea.',
+                        ? `El checklist va ${hechas}/${total}. ${soyIndependiente ? 'Con tu independencia se cerrará al entregarla.' : 'Tu líder revisará lo entregado y lo aceptará o te lo devolverá.'} ¿Enviar de todos modos?`
+                        : soyIndependiente
+                            ? 'Tienes independencia: se acepta sola si cumple sus criterios obligatorios. Para adjuntar evidencias, entrégala desde el detalle de la tarea.'
+                            : 'Tu líder revisará lo entregado y lo aceptará o te lo devolverá con observaciones. Para adjuntar evidencias, envíala desde el detalle de la tarea.',
                     icon: total > 0 && hechas < total ? 'warning' : 'question',
                     showCancelButton: true,
                     confirmButtonText: 'Enviar',
@@ -412,15 +420,19 @@ const EmployeeInterface = ({ user }) => {
             // de datos.
             const columnasPrevias = columns;
             axiosInstance.put(`/actualizarEstadoTarea/${draggableId}`, updateData)
-                .then(() => {
-                    if (destinationId === 'En Revisión') {
+                .then((r) => {
+                    if (destinationId === 'En Revisión' || destinationId === 'Completada') {
+                        const aviso = avisoDeEntrega(r.data);
                         Swal.fire({
-                            title: 'Enviada a revisión',
-                            text: 'Tu líder recibió el aviso en la plataforma y por correo.',
-                            icon: 'success',
-                            timer: 2500,
-                            showConfirmButton: false,
+                            title: aviso.titulo,
+                            text: aviso.texto,
+                            icon: aviso.icono,
+                            timer: aviso.icono === 'info' ? undefined : 2500,
+                            showConfirmButton: aviso.icono === 'info',
                         });
+                        // Con independencia la tarjeta termina en Completada
+                        // (o se queda en revisión): se recarga del servidor.
+                        if (r.data?.estado_final) loadTasks();
                     }
                 })
                 .catch(error => {

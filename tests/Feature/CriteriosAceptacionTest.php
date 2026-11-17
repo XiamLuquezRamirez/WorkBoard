@@ -238,14 +238,64 @@ class CriteriosAceptacionTest extends TestCase
         $this->como($this->ajeno)->putJson("/api/tareas/{$tarea}/aceptar")->assertStatus(403);
     }
 
-    public function test_con_independencia_acepta_su_propia_tarea(): void
+    public function test_con_independencia_su_tarea_se_acepta_sola_al_completarla(): void
     {
+        // Decisión de la empresa: quien tiene independencia no espera
+        // revisión. Al entregarla, sus criterios pendientes quedan verificados
+        // y la tarea se cierra.
         $tarea = $this->crearTarea([['descripcion' => 'Único criterio obligatorio']], $this->independiente);
         [$c] = $this->criterios($tarea);
-        $this->enviarARevision($tarea, $this->independiente);
 
-        $this->como($this->independiente)->putJson("/api/criterios/{$c}/verificar", ['estado' => 'Cumplido'])->assertOk();
-        $this->como($this->independiente)->putJson("/api/tareas/{$tarea}/aceptar")->assertOk();
+        $this->como($this->independiente)->putJson("/api/actualizarEstadoTarea/{$tarea}", ['estado' => 'En Revisión'])
+            ->assertOk()->assertJsonPath('auto_aceptada', true)->assertJsonPath('estado_final', 'Completada');
+
+        $this->assertSame('Completada', $this->estadoTarea($tarea));
+        $this->assertSame('Cumplido', $this->estadoCriterio($c));
+        $this->assertNotNull($this->campoTarea($tarea, 'fecha_entregada'));
+        $this->assertTrue(\Illuminate\Support\Facades\DB::connection('mysql2')->table('tarea_aceptaciones')
+            ->where('tarea_id', $tarea)->where('resultado', 'Aceptada')->exists());
+    }
+
+    public function test_con_independencia_tambien_se_completa_arrastrandola_a_completada(): void
+    {
+        $tarea = $this->crearTarea([['descripcion' => 'Único criterio obligatorio']], $this->independiente);
+
+        $this->como($this->independiente)->putJson("/api/actualizarEstadoTarea/{$tarea}", ['estado' => 'Completada'])
+            ->assertOk()->assertJsonPath('auto_aceptada', true);
+
+        $this->assertSame('Completada', $this->estadoTarea($tarea));
+    }
+
+    public function test_con_independencia_un_criterio_sin_su_evidencia_la_deja_en_revision(): void
+    {
+        $tarea = $this->crearTarea([['descripcion' => 'Adjuntar el acta firmada', 'requiere_evidencia' => true]], $this->independiente);
+
+        $r = $this->como($this->independiente)->putJson("/api/actualizarEstadoTarea/{$tarea}", ['estado' => 'En Revisión'])
+            ->assertOk()->assertJsonPath('auto_aceptada', false)->assertJsonPath('estado_final', 'En Revisión');
+
+        $this->assertStringContainsString('exige evidencia', $r->json('bloqueos.0'));
+        $this->assertSame('En Revisión', $this->estadoTarea($tarea));
+    }
+
+    public function test_sin_independencia_la_tarea_sigue_esperando_revision(): void
+    {
+        $tarea = $this->crearTarea([['descripcion' => 'Único criterio obligatorio']], $this->colaborador);
+
+        $this->como($this->colaborador)->putJson("/api/actualizarEstadoTarea/{$tarea}", ['estado' => 'En Revisión'])->assertOk();
+        $this->assertSame('En Revisión', $this->estadoTarea($tarea));
+
+        // Ni arrastrándola a Completada.
+        $otra = $this->crearTarea([['descripcion' => 'Único criterio obligatorio']], $this->colaborador);
+        $this->como($this->colaborador)->putJson("/api/actualizarEstadoTarea/{$otra}", ['estado' => 'Completada'])->assertStatus(409);
+    }
+
+    public function test_el_lider_de_un_independiente_no_cierra_su_tarea_al_moverla(): void
+    {
+        // La aceptación automática es del responsable, no de quien la mueve.
+        $tarea = $this->crearTarea([['descripcion' => 'Único criterio obligatorio']], $this->independiente);
+
+        $this->como($this->lider)->putJson("/api/actualizarEstadoTarea/{$tarea}", ['estado' => 'En Revisión'])->assertOk();
+        $this->assertSame('En Revisión', $this->estadoTarea($tarea));
     }
 
     public function test_el_responsable_de_verificacion_verifica_su_criterio_pero_no_acepta(): void

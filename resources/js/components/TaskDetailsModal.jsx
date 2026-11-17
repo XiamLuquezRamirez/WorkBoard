@@ -8,6 +8,7 @@ import {
 import axios from 'axios';
 import Swal from 'sweetalert2';
 import FileViewerModal from './FileViewerModal';
+import { avisoDeEntrega } from '../utils/avisoDeEntrega';
 import NotificationsModal from './NotificationsModal';
 import config from '../config';
 import { useUser } from './UserContext';
@@ -762,12 +763,13 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton, is
                 }
                 // Si se presiona "No, solo enviar"
                 if (result.isDismissed) {
-                    await axiosInstance.put(`/actualizarEstadoTarea/${task.id}`, {
+                    const r = await axiosInstance.put(`/actualizarEstadoTarea/${task.id}`, {
                         estado: newStatus,
                     });
-                    setCurrentStatus(newStatus);
+                    setCurrentStatus(r.data?.estado_final || newStatus);
                     onUpdate();
-                    fireSwal('Enviada a revisión', 'Tu líder recibió el aviso en la plataforma y por correo.', 'success');
+                    const aviso = avisoDeEntrega(r.data);
+                    fireSwal(aviso.titulo, aviso.texto, aviso.icono);
                     return;
                 }
 
@@ -989,16 +991,17 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton, is
                 }
             } else {
                 // Cambio a otros estados
-                await axiosInstance.put(`/actualizarEstadoTarea/${task.id}`, {
+                const r = await axiosInstance.put(`/actualizarEstadoTarea/${task.id}`, {
                     estado: newStatus
                 });
-                setCurrentStatus(newStatus);
+                setCurrentStatus(r.data?.estado_final || newStatus);
                 onUpdate();
-                fireSwal(
-                    newStatus === 'En Revisión' ? 'Enviada a revisión' : '¡Éxito!',
-                    newStatus === 'En Revisión' ? 'Tu líder recibió el aviso en la plataforma y por correo.' : 'Estado actualizado correctamente',
-                    'success'
-                );
+                if (newStatus === 'En Revisión' || newStatus === 'Completada') {
+                    const aviso = avisoDeEntrega(r.data);
+                    fireSwal(aviso.titulo, aviso.texto, aviso.icono);
+                } else {
+                    fireSwal('¡Éxito!', 'Estado actualizado correctamente', 'success');
+                }
             }
         } catch (error) {
             const d = error?.response?.data;
