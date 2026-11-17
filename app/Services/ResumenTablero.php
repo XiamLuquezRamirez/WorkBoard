@@ -257,7 +257,13 @@ class ResumenTablero
 
     private function vencidas(Collection $tareas): Collection
     {
+        // En revisión ya está entregada: no vence, espera la revisión (va en
+        // «Esperan verificación»).
+        // En pausa tampoco vence: la aprobó el líder y al reanudar se fija
+        // fecha nueva. Mismo criterio que el índice del dashboard.
         return $tareas
+            ->reject(fn ($t) => trim((string) $t->estado) === 'En Revisión')
+            ->reject(fn ($t) => \App\Support\IndiceDesempeno::estaPausada($t))
             ->filter(function ($tarea): bool {
                 $vence = $this->fecha($tarea->vencimiento);
 
@@ -317,6 +323,8 @@ class ResumenTablero
         $limite = $this->hoy->addDays($this->config['reglas']['dias_horizonte']);
 
         return $tareas
+            ->reject(fn ($t) => trim((string) $t->estado) === 'En Revisión')
+            ->reject(fn ($t) => \App\Support\IndiceDesempeno::estaPausada($t))
             ->filter(function ($tarea) use ($limite): bool {
                 $vence = $this->fecha($tarea->vencimiento);
 

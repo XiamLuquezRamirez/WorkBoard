@@ -2883,7 +2883,23 @@ body {
 .desempeno-badge--alto    { background: #dcfce7; color: #15803d; }
 .desempeno-badge--medio   { background: #fef9c3; color: #b45309; }
 .desempeno-badge--bajo    { background: #fee2e2; color: #b91c1c; }
-.desempeno-badge--sin-datos { background: #f1f5f9; color: #94a3b8; }
+.desempeno-badge--sin-datos { background: #f1f5f9; color: #64748b; }
+.desempeno-badge--sin-actividad { background: #f1f5f9; color: #64748b; }
+.desempeno-badge--en-curso { background: #dbeafe; color: #1d4ed8; }
+
+/* El índice mira una ventana reciente: decirlo evita leerlo como histórico. */
+.desempeno-ventana { font-weight: 500; color: #94a3b8; font-size: 0.72rem; }
+
+/* Último movimiento: si lleva más de dos semanas quieto, se destaca. */
+.desempeno-actividad {
+    margin: -0.5rem 0 0.8rem;
+    font-size: 0.75rem;
+    color: #64748b;
+    text-align: center;
+}
+.desempeno-actividad.es-quieto { color: #b45309; font-weight: 600; }
+
+.urgent-task-fecha { color: #94a3b8; font-weight: 500; white-space: nowrap; }
 
 .desempeno-score {
     font-size: 2.5rem;
@@ -3074,6 +3090,11 @@ body {
 .status-pending {
     background: #fee2e2;
     color: #dc2626;
+}
+
+.status-review {
+    background: #ccfbf1;
+    color: #0f766e;
 }
 
 /* Estilos para el header y contenido principal */
@@ -7902,6 +7923,147 @@ body {
     .dashboard-stats-panel {
         grid-template-columns: repeat(2, 1fr);
     }
+}
+
+/* ===== ADOPCIÓN: detalle de los indicadores ===== */
+.stat-kpi-de { font-size: 1.1rem; font-weight: 600; color: #94a3b8; }
+
+.stat-kpi-sub {
+    font-size: 0.72rem;
+    color: #64748b;
+    text-align: center;
+}
+
+/* Aviso suave: no es un fallo, pero conviene mirarlo. */
+.stat-kpi--aviso { border-color: #fcd34d; background: #fffbeb; }
+.stat-kpi--aviso .stat-kpi-number { color: #b45309; }
+
+/* ===== FILTROS Y ORDEN DE PERSONAS ===== */
+.dashboard-filtros {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6rem 1rem;
+    margin: 1rem 0;
+}
+
+/* En la retícula de 12 columnas de pantallas anchas ocupa la fila entera. */
+@media (min-width: 1600px) {
+    .dashboard-content-column .dashboard-filtros,
+    .dashboard-content-column .dashboard-vacio { grid-column: 1 / -1; margin: 0; }
+}
+
+.dashboard-chips { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+
+.dashboard-chip {
+    border: 1px solid #d1d5db;
+    background: #fff;
+    color: #374151;
+    border-radius: 999px;
+    padding: 0.35rem 0.8rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+}
+
+.dashboard-chip:hover { border-color: #2563eb; }
+
+.dashboard-chip.es-activo {
+    background: #1e40af;
+    border-color: #1e40af;
+    color: #fff;
+}
+
+.dashboard-chip-n {
+    display: inline-block;
+    min-width: 1.4em;
+    margin-left: 0.25rem;
+    padding: 0 0.35rem;
+    border-radius: 999px;
+    background: rgba(100, 116, 139, 0.15);
+    font-size: 0.72rem;
+    text-align: center;
+}
+
+.dashboard-chip.es-activo .dashboard-chip-n { background: rgba(255, 255, 255, 0.25); }
+
+.dashboard-orden {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    color: #6b7280;
+}
+
+.dashboard-orden select {
+    padding: 0.35rem 0.6rem;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    background: #fff;
+    font-size: 0.8rem;
+    color: #374151;
+}
+
+.dashboard-vacio {
+    padding: 2rem;
+    text-align: center;
+    color: #6b7280;
+    font-style: italic;
+}
+
+/* ===== MOTIVOS DE ATENCIÓN EN LA TARJETA ===== */
+.employee-card-motivos {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-bottom: 0.5rem;
+}
+
+.motivo {
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 0.15rem 0.55rem;
+    border-radius: 999px;
+    background: #f1f5f9;
+    color: #475569;
+}
+
+.motivo--vencidas { background: #fee2e2; color: #b91c1c; }
+.motivo--sin-movimiento { background: #fef3c7; color: #92400e; }
+.motivo--sin-tareas { background: #e0e7ff; color: #3730a3; }
+
+.mas-vencida { font-weight: 500; }
+
+/* ===== RESOLVER VENCIDAS ===== */
+.stat-kpi--accion { cursor: pointer; }
+.stat-kpi--accion:focus { outline: 2px solid #2563eb; outline-offset: 2px; }
+
+.employee-card-alert-banner .banner-resolver {
+    margin-left: auto;
+    flex: 0 0 auto;
+    border: 1px solid #b91c1c;
+    background: #fff;
+    color: #b91c1c;
+    border-radius: 6px;
+    padding: 0.15rem 0.55rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.employee-card-alert-banner .banner-resolver:hover { background: #b91c1c; color: #fff; }
+
+/* Sin foto: iniciales en un círculo del mismo tamaño que la foto. */
+.foto-iniciales {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #e0e7ff;
+    color: #3730a3;
+    font-weight: 700;
+    border-radius: 50%;
 }
 
 /* ===== FILTRO DEPARTAMENTO DASHBOARD ===== */

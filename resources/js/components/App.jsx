@@ -45,7 +45,7 @@ function App() {
                     element={
                         !user
                             ? <Navigate to="/login" />
-                            : user.tipo_usuario === "Supervisor"
+                            : user.tipo_usuario !== "Administrador"
                                 ? <Navigate to="/dashboard" />
                                 : <Parameters />
                     }

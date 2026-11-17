@@ -58,8 +58,10 @@ function textoRetraso(dias) {
 export function DetalleTarea({ tarea, cortes, onCerrar }) {
     const foto = useAvatar(tarea.empleado_id);
     const [items, setItems] = useState(null);
-    const nivel = nivelTemperatura(tarea.dias_restantes, tarea.fecha_entregada, cortes);
-    const retraso = textoRetraso(tarea.dias_restantes);
+    // En pausa el plazo está detenido: ni color de retraso ni «vencida hace».
+    const plazo = tarea.pausada ? null : tarea.dias_restantes;
+    const nivel = nivelTemperatura(plazo, tarea.fecha_entregada, cortes);
+    const retraso = tarea.pausada ? 'En pausa' : textoRetraso(plazo);
 
     useEffect(() => {
         let vivo = true;
@@ -159,8 +161,10 @@ export function DetalleTarea({ tarea, cortes, onCerrar }) {
 function FichaTarea({ tarea, cortes }) {
     const foto = useAvatar(tarea.empleado_id);
 
-    const nivel = nivelTemperatura(tarea.dias_restantes, tarea.fecha_entregada, cortes);
-    const retraso = textoRetraso(tarea.dias_restantes);
+    // En pausa el plazo está detenido: ni color de retraso ni «vencida hace».
+    const plazo = tarea.pausada ? null : tarea.dias_restantes;
+    const nivel = nivelTemperatura(plazo, tarea.fecha_entregada, cortes);
+    const retraso = tarea.pausada ? 'En pausa' : textoRetraso(plazo);
     const chk = tarea.checklist;
 
     return (

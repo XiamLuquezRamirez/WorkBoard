@@ -434,6 +434,15 @@
 
 .eq-invitado.es-activo .eq-av { background: #2563EB; color: #FFFFFF; }
 
+.eq-exito {
+    margin: 0 0 14px;
+    padding: 9px 12px;
+    border-radius: 8px;
+    background: #ECFDF5;
+    color: #047857;
+    font-size: 13px;
+}
+
 .eq-form-pie {
     grid-column: 1 / -1;
     display: flex;

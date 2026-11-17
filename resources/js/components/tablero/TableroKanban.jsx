@@ -76,7 +76,7 @@ export default function TableroKanban({ datos, previo, modoTv, interactivo }) {
     const cortes = useMemo(() => {
         const retrasos = UBICACIONES
             .flatMap((c) => items(datos.columnas, c))
-            .filter((t) => !t.fecha_entregada && t.dias_restantes !== null && t.dias_restantes < 0)
+            .filter((t) => !t.fecha_entregada && !t.pausada && t.dias_restantes !== null && t.dias_restantes < 0)
             .map((t) => Math.abs(t.dias_restantes))
             .sort((a, b) => a - b);
 

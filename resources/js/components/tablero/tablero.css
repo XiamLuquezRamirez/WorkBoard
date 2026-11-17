@@ -822,9 +822,16 @@ a.tb-btn-sec, a.tb-btn-sec:visited { color: var(--tb-txt); }
     padding: 1px 7px;
     border-radius: 5px;
     background: var(--temp);
-    color: #0B1220;
+    /* Cada nivel trae su color de texto: el texto oscuro sobre el rojo de
+       las tareas más atrasadas casi no se leía. */
+    color: var(--temp-txt, #0B1220);
     white-space: nowrap;
 }
+
+/* Sólo el rojo más oscuro (lo más atrasado) pide texto blanco: ahí el
+   oscuro quedaba en 3,3:1 y el blanco llega a 5,6:1. En el resto de
+   niveles el texto oscuro contrasta más que el blanco. */
+.tb-temp-r5 .tb-temp-chip { --temp-txt: #FFFFFF; }
 .tb-temp-chip.es-entregada {
     background: transparent;
     color: var(--tb-txt-tenue);
@@ -2794,4 +2801,330 @@ a.tb-btn-sec, a.tb-btn-sec:visited { color: var(--tb-txt); }
 
     .tb-pm-incrustado { padding: 8px; }
     .po-barra { gap: 6px; }
+}
+
+/* Piso sin personal: el plano sólo dibuja áreas con gente. */
+.po-lienzo { position: relative; }
+.po-vacio {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    margin: 0;
+    color: #E8F5E9;
+    font-size: .95rem;
+    font-weight: 600;
+    pointer-events: none;
+}
+
+/* Solicitar reunión desde el puesto: el formulario lleva su propio fondo. */
+.pp-cuerpo .fr-form { border-radius: 10px; }
+.pp-reunion-ok { padding: 16px 14px; text-align: center; }
+.pp-reunion-ok p { margin: 0 0 8px; font-size: 13px; }
+.pp-reunion-ok p:first-child { font-weight: 700; color: #10B981; font-size: 14px; }
+
+/* ========================= Presencia y vida en el plano =========================
+   Cada personaje dice si se le puede interrumpir (el punto junto a la cara),
+   qué está haciendo (la burbuja) y camina cuando cambia de sitio: a la sala
+   de juntas si está en reunión, a la cocina si está almorzando. */
+
+/* El cambio de sitio se anima: la posición va en el estilo del grupo. */
+.po-gente .po-puesto {
+    transition: transform 1.9s cubic-bezier(.45, .05, .35, 1), opacity .25s ease;
+}
+
+/* Respirar: sube y baja apenas, cada uno con su propio desfase. */
+@keyframes po-respirar {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-1.3px); }
+}
+
+.po-cuerpo { animation: po-respirar 3.6s ease-in-out infinite; }
+
+/* Caminar: el cuerpo rebota y las piernas se alternan. */
+@keyframes po-paso-cuerpo {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-2.6px); }
+}
+
+@keyframes po-paso-pie {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-3.5px); }
+}
+
+.po-puesto.es-caminando .po-cuerpo { animation: po-paso-cuerpo .36s ease-in-out infinite; }
+.po-puesto.es-caminando .po-pie-i { animation: po-paso-pie .36s ease-in-out infinite; }
+.po-puesto.es-caminando .po-pie-d { animation: po-paso-pie .36s ease-in-out -.18s infinite; }
+.po-puesto.es-caminando .po-burbuja { opacity: 0; }
+
+/* Teclear: las manos se alternan sobre el teclado. Más rápido si escribe
+   en el chat que si trabaja en una tarea. */
+@keyframes po-teclear {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-2.2px); }
+}
+
+.po-puesto.ac-tarea .po-brazo-i { animation: po-teclear .5s ease-in-out infinite; }
+.po-puesto.ac-tarea .po-brazo-d { animation: po-teclear .5s ease-in-out -.25s infinite; }
+.po-puesto.ac-escribiendo .po-brazo-i { animation: po-teclear .28s ease-in-out infinite; }
+.po-puesto.ac-escribiendo .po-brazo-d { animation: po-teclear .28s ease-in-out -.14s infinite; }
+
+/* Saludar: el brazo derecho sube y se agita. */
+@keyframes po-agitar {
+    0%, 100% { transform: rotate(-150deg); }
+    50%      { transform: rotate(-178deg); }
+}
+
+.po-brazo-d { transform-box: fill-box; transform-origin: 50% 10%; }
+.po-puesto.es-saludando .po-brazo-d { animation: po-agitar .45s ease-in-out infinite; }
+
+/* Quien no está se ve desvaído; quien cerró la aplicación, casi en gris. */
+.po-puesto.pr-ausente .po-cuerpo { opacity: .62; animation-duration: 6s; }
+.po-puesto.pr-desconectado .po-cuerpo {
+    opacity: .5;
+    filter: grayscale(.85);
+    animation: none;
+}
+
+/* Punto de presencia */
+.po-presencia { stroke: #FFFFFF; stroke-width: 2; fill: #64748B; }
+.po-puesto.pr-disponible   .po-presencia { fill: #22C55E; }
+.po-puesto.pr-ocupado      .po-presencia { fill: #EF4444; }
+.po-puesto.pr-reunion      .po-presencia { fill: #8B5CF6; }
+.po-puesto.pr-almuerzo     .po-presencia { fill: #F59E0B; }
+.po-puesto.pr-ausente      .po-presencia { fill: #94A3B8; }
+.po-puesto.pr-desconectado .po-presencia { fill: #475569; stroke: #CBD5E1; }
+
+/* El propio personaje lleva un anillo dorado en el suelo: es el que se
+   pulsa para cambiar el estado. */
+@keyframes po-anillo {
+    0%, 100% { stroke-opacity: .95; }
+    50%      { stroke-opacity: .35; }
+}
+
+.po-puesto.es-yo .po-sombra-suelo {
+    stroke: #FDE047;
+    stroke-width: 2.5;
+    animation: po-anillo 2.4s ease-in-out infinite;
+}
+
+/* Burbujas */
+@keyframes po-flotar {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-2.5px); }
+}
+
+@keyframes po-aparecer {
+    from { opacity: 0; transform: scale(.4); }
+    to   { opacity: 1; transform: scale(1); }
+}
+
+.po-burbuja { pointer-events: none; transition: opacity .2s ease; }
+.po-burbuja-flota {
+    transform-box: fill-box;
+    transform-origin: 50% 100%;
+    animation: po-aparecer .35s cubic-bezier(.3, 1.6, .6, 1) both, po-flotar 2.8s ease-in-out .35s infinite;
+}
+
+.po-globo { fill: #FFFFFF; stroke: rgba(15, 23, 42, .18); stroke-width: 1; }
+.po-globo-cola { fill: #FFFFFF; }
+.po-bu-emoji { font-size: 12.5px; }
+.po-bu-codigo {
+    font: 800 10px ui-monospace, SFMono-Regular, Consolas, monospace;
+    fill: #2563EB;
+}
+.bu-reunion .po-globo { fill: #EDE9FE; }
+.bu-reunion .po-globo-cola { fill: #EDE9FE; }
+.bu-ocupado .po-globo { fill: #FEE2E2; }
+.bu-ocupado .po-globo-cola { fill: #FEE2E2; }
+
+/* Tres puntos que saltan: está escribiendo. */
+@keyframes po-saltito {
+    0%, 60%, 100% { transform: translateY(0); }
+    30%           { transform: translateY(-3px); }
+}
+
+.po-punto { fill: #475569; animation: po-saltito 1s ease-in-out infinite; }
+.po-punto.p2 { animation-delay: .15s; }
+.po-punto.p3 { animation-delay: .3s; }
+
+/* Zetas que suben: ausente o desconectado. */
+@keyframes po-zeta {
+    0%   { opacity: 0; transform: translate(0, 4px); }
+    30%  { opacity: 1; }
+    100% { opacity: 0; transform: translate(5px, -9px); }
+}
+
+.po-zeta {
+    font: 800 9px system-ui, sans-serif;
+    fill: #E2E8F0;
+    stroke: rgba(15, 23, 42, .45);
+    stroke-width: .6px;
+    paint-order: stroke;
+    animation: po-zeta 2.7s ease-in-out infinite;
+}
+.po-zeta.z2 { animation-delay: .9s; font-size: 11px; }
+.po-zeta.z3 { animation-delay: 1.8s; font-size: 13px; }
+
+/* Vapor del café */
+@keyframes po-vapor {
+    0%   { opacity: 0; transform: translateY(2px); }
+    40%  { opacity: .9; }
+    100% { opacity: 0; transform: translateY(-5px); }
+}
+
+.po-vapor {
+    fill: none;
+    stroke: #94A3B8;
+    stroke-width: 1.4;
+    stroke-linecap: round;
+    animation: po-vapor 1.8s ease-out infinite;
+}
+.po-vapor.v2 { animation-delay: .9s; }
+
+/* Saludo: la mano de la burbuja también se mueve. */
+@keyframes po-mano-saludo {
+    0%, 100% { transform: rotate(-12deg); }
+    50%      { transform: rotate(14deg); }
+}
+
+.bu-saludo .po-bu-emoji {
+    transform-box: fill-box;
+    transform-origin: 70% 90%;
+    animation: po-mano-saludo .45s ease-in-out infinite;
+}
+
+/* Leyenda de presencia */
+.po-leyenda-presencia { margin-top: 4px; }
+.po-ley.pley-disponible   i { color: #22C55E; background: #22C55E; }
+.po-ley.pley-ocupado      i { color: #EF4444; background: #EF4444; }
+.po-ley.pley-reunion      i { color: #8B5CF6; background: #8B5CF6; }
+.po-ley.pley-almuerzo     i { color: #F59E0B; background: #F59E0B; }
+.po-ley.pley-ausente      i { color: #94A3B8; background: #94A3B8; }
+.po-ley.pley-desconectado i { color: #475569; background: #475569; }
+.po-ley.pley-act { font-family: ui-monospace, Consolas, monospace; }
+
+/* ---------- Panel: mi estado y el de la persona ---------- */
+
+.pp-presencia {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--tb-txt);
+}
+
+.pp-presencia i {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #64748B;
+}
+
+.pp-presencia.pr-disponible   i { background: #22C55E; }
+.pp-presencia.pr-ocupado      i { background: #EF4444; }
+.pp-presencia.pr-reunion      i { background: #8B5CF6; }
+.pp-presencia.pr-almuerzo     i { background: #F59E0B; }
+.pp-presencia.pr-ausente      i { background: #94A3B8; }
+.pp-presencia.pr-desconectado i { background: #475569; }
+
+.pp-presencia-nota {
+    margin: 2px 0 0;
+    font-size: 11px;
+    font-style: italic;
+    color: var(--tb-txt-tenue);
+    overflow-wrap: anywhere;
+}
+
+.pp-mi-estado {
+    padding: 10px 14px 12px;
+    border-bottom: 1px solid var(--tb-borde);
+}
+
+.pp-mi-estado h5 {
+    margin: 0 0 7px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    color: var(--tb-txt-tenue);
+}
+
+.pp-estados {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+}
+
+.pp-estado {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 7px 4px;
+    border: 1px solid var(--tb-borde);
+    border-radius: 8px;
+    background: var(--tb-panel-2);
+    color: var(--tb-txt);
+    font: 600 11px inherit;
+    font-family: inherit;
+    cursor: pointer;
+    transition: transform .12s ease, border-color .12s ease;
+}
+
+.pp-estado span { font-size: 16px; line-height: 1; }
+.pp-estado:hover { transform: translateY(-1px); border-color: var(--tb-marca-azul); }
+.pp-estado:disabled { opacity: .55; cursor: default; transform: none; }
+
+.pp-estado.es-activo {
+    border-color: var(--tb-marca-azul);
+    box-shadow: inset 0 0 0 1px var(--tb-marca-azul);
+    background: rgba(37, 99, 235, .14);
+}
+
+.pp-nota {
+    display: flex;
+    gap: 6px;
+    margin-top: 8px;
+}
+
+.pp-nota input {
+    flex: 1;
+    min-width: 0;
+    border: 1px solid var(--tb-borde);
+    border-radius: 7px;
+    background: var(--tb-panel-2);
+    color: var(--tb-txt);
+    padding: 6px 8px;
+    font: inherit;
+    font-size: 11.5px;
+}
+
+.pp-nota .pp-btn { flex: 0 0 auto; }
+
+.pp-mi-estado-pie {
+    margin: 6px 0 0;
+    font-size: 10.5px;
+    color: var(--tb-txt-tenue);
+}
+
+.pp-mi-estado-pie.es-error { color: #F87171; }
+
+/* Quien prefiere menos movimiento ve los estados quietos: el punto y la
+   burbuja siguen diciendo lo mismo sin animarse. */
+@media (prefers-reduced-motion: reduce) {
+    .po-gente .po-puesto { transition: none; }
+    .po-cuerpo,
+    .po-pie,
+    .po-brazo-g,
+    .po-burbuja-flota,
+    .po-punto,
+    .po-zeta,
+    .po-vapor,
+    .bu-saludo .po-bu-emoji,
+    .po-puesto.es-yo .po-sombra-suelo {
+        animation: none !important;
+    }
+    .po-zeta { opacity: .8; }
 }

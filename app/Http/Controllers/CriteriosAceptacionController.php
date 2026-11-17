@@ -514,6 +514,9 @@ class CriteriosAceptacionController extends Controller
                     'estado'              => 'En Proceso',
                     'criterio_cumplido'   => 0,
                     'observacion_entrega' => $observacion,
+                    // Devuelta no está entregada: la fecha de entrega será la
+                    // del próximo envío a revisión.
+                    'fecha_entregada'     => null,
                 ];
             }
 
@@ -542,16 +545,21 @@ class CriteriosAceptacionController extends Controller
                     : "{$actor} devolvió la entrega para corregir: {$observacion}"
             );
 
-            app(EmpleadosController::class)->guardarNotificacion(
-                $tarea->id,
-                $resultado === 'Aceptada' ? 'Aprobada' : 'Rechazada'
-            );
-
             $conn->commit();
         } catch (\Throwable $e) {
             $conn->rollBack();
             return response()->json(['error' => $e->getMessage()], 500);
         }
+
+        // Aviso al responsable con lo que pasó y, si se devolvió, qué corregir.
+        // Antes decía «rechazó» o «aprobó», que se confundían con la
+        // supervisión y no traían la observación.
+        \App\Support\Avisos::entregaResuelta(
+            $conn->table('tareas_empleados')->where('id', $tarea->id)->first(),
+            $resultado,
+            $observacion,
+            $u
+        );
 
         return response()->json([
             'success' => $resultado === 'Aceptada'

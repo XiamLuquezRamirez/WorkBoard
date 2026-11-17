@@ -1,6 +1,6 @@
 import React from 'react';
 import {
-    FaCalendarAlt, FaListUl, FaClipboardCheck, FaPaperclip, FaUser, FaFolder,
+    FaCalendarAlt, FaListUl, FaClipboardCheck, FaPaperclip,
     FaPause, FaBan, FaUndo, FaArchive, FaArrowRight, FaBullseye, FaCheck,
 } from 'react-icons/fa';
 import { plazoEnPalabras, hoyLocal } from './FormularioTarea';
@@ -85,7 +85,10 @@ export default function VisionGeneralTarea({
     const indice = ETAPAS.findIndex((e) => e.estado === estado);
     const pactada = ymd(task.fecha_pactada);
     const cerrada = estado === 'Completada';
-    const vencida = !cerrada && pactada && pactada < hoyLocal();
+    // Enviada a revisión ya está entregada: su fecha de entrega es la del
+    // envío, y la espera de la revisión no la vuelve vencida.
+    const entregada = (cerrada || estado === 'En Revisión') && Boolean(task.fecha_entregada);
+    const vencida = !cerrada && !entregada && pactada && pactada < hoyLocal();
     const devuelta = criterios?.aceptaciones?.[0]?.resultado === 'Devuelta' && !cerrada;
     const paso = siguientePaso({ task, estado, criterios, checklist, pausada, archivada, esResponsable, responsable });
     const pctChecklist = checklist.total ? Math.round((checklist.hechas * 100) / checklist.total) : 0;
@@ -119,8 +122,8 @@ export default function VisionGeneralTarea({
             <div className="vg-cifras">
                 <button type="button" className={`vg-cifra ${vencida ? 'c-mal' : ''}`} onClick={() => onIrA?.('fechas')}>
                     <span className="vg-cifra-tit"><FaCalendarAlt /> Plazo</span>
-                    <b>{cerrada && task.fecha_entregada ? `Entregada ${fechaCorta(task.fecha_entregada)}` : fechaCorta(pactada) || 'Sin fecha'}</b>
-                    <small>{cerrada ? (task.fecha_entregada && pactada ? (ymd(task.fecha_entregada) <= pactada ? 'a tiempo' : 'con retraso') : '') : plazoEnPalabras(pactada)}</small>
+                    <b>{entregada ? `Entregada ${fechaCorta(task.fecha_entregada)}` : fechaCorta(pactada) || 'Sin fecha'}</b>
+                    <small>{entregada ? (pactada ? (ymd(task.fecha_entregada) <= pactada ? 'a tiempo' : 'con retraso') : '') : cerrada ? '' : plazoEnPalabras(pactada)}</small>
                 </button>
 
                 <button type="button" className="vg-cifra c-checklist" onClick={() => onIrA?.('checklist')}>
@@ -146,11 +149,6 @@ export default function VisionGeneralTarea({
                     <small>{evidencias === 1 ? 'archivo o enlace' : 'archivos o enlaces'}</small>
                 </button>
 
-                <div className="vg-cifra vg-quien">
-                    {responsable && <span><FaUser /> {responsable}</span>}
-                    <span className={`vg-prioridad p-${String(task.prioridad || 'media').toLowerCase()}`}>Prioridad {task.prioridad || 'Media'}</span>
-                    {task.proyecto_nombre && <span><FaFolder /> {task.proyecto_nombre}</span>}
-                </div>
             </div>
 
             <p className={`vg-paso t-${paso.tono}`}>

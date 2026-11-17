@@ -25,7 +25,8 @@ Route::prefix('api')->group(function () {
 });
 
 // Rutas protegidas
-Route::middleware(['auth:sanctum'])->group(function () {
+// «activo» cierra la sesión de quien fue desactivado con la sesión abierta.
+Route::middleware(['auth:sanctum', 'activo'])->group(function () {
     Route::prefix('api')->group(function () {
         Route::get('/user', function () {
             return response()->json([
@@ -42,16 +43,16 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::post('/profile/update', [EmpleadosController::class, 'actualizarUsuario']);
 
         //cargar empleados
-        Route::post('/cargarEmpleados', [EmpleadosController::class, 'cargarEmpleados']);
+        Route::post('/cargarEmpleados', [EmpleadosController::class, 'cargarEmpleados'])->middleware('administracion');
 
         //buscar empleados
-        Route::post('/buscarEmpleados', [EmpleadosController::class, 'buscarEmpleados']);
+        Route::post('/buscarEmpleados', [EmpleadosController::class, 'buscarEmpleados'])->middleware('administracion');
 
         //cargar empresas
-        Route::get('/parametros/cargarEmpresas', [EmpleadosController::class, 'cargarEmpresas']);
+        Route::get('/parametros/cargarEmpresas', [EmpleadosController::class, 'cargarEmpresas'])->middleware('administracion');
 
         //cargar departamentos
-        Route::get('/parametros/cargarDepartamentos', [EmpleadosController::class, 'cargarDepartamentos']);
+        Route::get('/parametros/cargarDepartamentos', [EmpleadosController::class, 'cargarDepartamentos'])->middleware('administracion');
 
         // Gestión completa de departamentos
         Route::get('/parametros/departamentos', [EmpleadosController::class, 'cargarDepartamentosDetalle']);
@@ -60,25 +61,25 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::delete('/parametros/departamentos/{id}', [EmpleadosController::class, 'eliminarDepartamento']);
         Route::post('/parametros/departamentos/{id}/lider', [EmpleadosController::class, 'asignarLiderDepartamento']);
         Route::get('/parametros/departamentos/{id}/empleados', [EmpleadosController::class, 'empleadosDepartamento']);
-        Route::post('/parametros/usuarios/{id}/independencia', [EmpleadosController::class, 'toggleIndependencia']);
+        Route::post('/parametros/usuarios/{id}/independencia', [EmpleadosController::class, 'toggleIndependencia'])->middleware('administracion');
 
         //cargar cargos
-        Route::get('/parametros/cargarCargos', [EmpleadosController::class, 'cargarCargos']);
+        Route::get('/parametros/cargarCargos', [EmpleadosController::class, 'cargarCargos'])->middleware('administracion');
 
         //guardar empleado
-        Route::post('/guardarEmpleados', [EmpleadosController::class, 'guardarEmpleado']);
+        Route::post('/guardarEmpleados', [EmpleadosController::class, 'guardarEmpleado'])->middleware('administracion');
 
         //eliminar empleado
-        Route::delete('/eliminarEmpleado/{id}', [empleadosController::class, 'eliminarEmpleado']);
+        Route::delete('/eliminarEmpleado/{id}', [empleadosController::class, 'eliminarEmpleado'])->middleware('administracion');
 
         //cargar funciones
-        Route::get('/cargarFunciones/{id}', [EmpleadosController::class, 'cargarFunciones']);
+        Route::get('/cargarFunciones/{id}', [EmpleadosController::class, 'cargarFunciones'])->middleware('administracion');
 
         //guardar funcion
-        Route::post('/guardarFuncion', [EmpleadosController::class, 'guardarFuncion']);
+        Route::post('/guardarFuncion', [EmpleadosController::class, 'guardarFuncion'])->middleware('administracion');
 
         //actualizar funcion
-        Route::put('/actualizarFuncion/{id}', [EmpleadosController::class, 'actualizarFuncion']);
+        Route::put('/actualizarFuncion/{id}', [EmpleadosController::class, 'actualizarFuncion'])->middleware('administracion');
 
         //cargar tareas
         Route::get('/cargarTareas/{id}', [EmpleadosController::class, 'cargarTareas']);
@@ -121,6 +122,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
         //cargar empleados y tareas
         Route::get('/dashboard/cargarEmpleadosTareas', [EmpleadosController::class, 'cargarEmpleadosTareas']);
+        Route::get('/dashboard/tendencia', [EmpleadosController::class, 'tendenciaDashboard']);
+        // Resolver lo vencido desde el dashboard (administración o el líder).
+        Route::get('/dashboard/vencidas', [\App\Http\Controllers\DashboardController::class, 'vencidas']);
+        Route::post('/dashboard/vencidas/resolver', [\App\Http\Controllers\DashboardController::class, 'resolver']);
 
         //eliminar evidencia
         Route::delete('/eliminarEvidencia/{id}', [EmpleadosController::class, 'eliminarEvidencia']);
@@ -138,41 +143,41 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::put('/vistoBueno/{id}', [EmpleadosController::class, 'vistoBueno']);
 
         //cargar usuarios
-        Route::get('/cargarUsuarios', [EmpleadosController::class, 'cargarUsuarios']);
+        Route::get('/cargarUsuarios', [EmpleadosController::class, 'cargarUsuarios'])->middleware('administracion');
 
         //buscar usuarios
-        Route::get('/buscarUsuarios', [EmpleadosController::class, 'buscarUsuarios']);
+        Route::get('/buscarUsuarios', [EmpleadosController::class, 'buscarUsuarios'])->middleware('administracion');
 
         //lista de empleados
-        Route::get('/listaEmpleados', [EmpleadosController::class, 'listaEmpleados']);
+        Route::get('/listaEmpleados', [EmpleadosController::class, 'listaEmpleados'])->middleware('administracion');
 
         //guardar usuario
-        Route::post('/guardarUsuario', [EmpleadosController::class, 'guardarUsuario']);
+        Route::post('/guardarUsuario', [EmpleadosController::class, 'guardarUsuario'])->middleware('administracion');
 
         //eliminar usuario
-        Route::delete('/eliminarUsuario/{id}', [EmpleadosController::class, 'eliminarUsuario']);
-        Route::post('/usuarios/{id}/estado', [EmpleadosController::class, 'cambiarEstadoUsuario']);
+        Route::delete('/eliminarUsuario/{id}', [EmpleadosController::class, 'eliminarUsuario'])->middleware('administracion');
+        Route::post('/usuarios/{id}/estado', [EmpleadosController::class, 'cambiarEstadoUsuario'])->middleware('administracion');
 
         //cargar empresas
-        Route::get('/cargarEmpresas', [EmpleadosController::class, 'cargarEmpresas']);
+        Route::get('/cargarEmpresas', [EmpleadosController::class, 'cargarEmpresas'])->middleware('administracion');
 
         //buscar empresas
-        Route::get('/buscarEmpresas', [EmpleadosController::class, 'buscarEmpresas']);
+        Route::get('/buscarEmpresas', [EmpleadosController::class, 'buscarEmpresas'])->middleware('administracion');
 
         //guardar empresa
-        Route::post('/guardarEmpresa', [EmpleadosController::class, 'guardarEmpresa']);
+        Route::post('/guardarEmpresa', [EmpleadosController::class, 'guardarEmpresa'])->middleware('administracion');
 
         //eliminar empresa
-        Route::delete('/eliminarEmpresa/{id}', [EmpleadosController::class, 'eliminarEmpresa']);
+        Route::delete('/eliminarEmpresa/{id}', [EmpleadosController::class, 'eliminarEmpresa'])->middleware('administracion');
 
         //cargar lideres
-        Route::get('/cargarLideres', [EmpleadosController::class, 'cargarLideres']);
+        Route::get('/cargarLideres', [EmpleadosController::class, 'cargarLideres'])->middleware('administracion');
 
         //cargar empleados lider
-        Route::get('/cargarEmpleadosLider/{id}', [EmpleadosController::class, 'cargarEmpleadosLider']);
+        Route::get('/cargarEmpleadosLider/{id}', [EmpleadosController::class, 'cargarEmpleadosLider'])->middleware('administracion');
 
         //guardar asignaciones lider
-        Route::post('/guardarAsignacionesLider', [EmpleadosController::class, 'guardarAsignacionesLider']);
+        Route::post('/guardarAsignacionesLider', [EmpleadosController::class, 'guardarAsignacionesLider'])->middleware('administracion');
 
         // informe de tareas
         Route::get('/informes/tareas', [empleadosController::class, 'informeTareas']);
@@ -208,6 +213,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::get('/equipo/chat/mensajes', [EspacioEquipoController::class, 'chatMensajes']);
         Route::post('/equipo/chat/mensajes', [EspacioEquipoController::class, 'chatEnviar']);
         Route::get('/equipo/chat/avisos', [EspacioEquipoController::class, 'chatAvisos']);
+        // Presencia en el plano: el estado propio y los saludos.
+        Route::post('/equipo/presencia', [EspacioEquipoController::class, 'guardarPresencia']);
+        Route::post('/equipo/saludar/{empleado}', [EspacioEquipoController::class, 'saludar'])->whereNumber('empleado');
 
         // videos ambientales del tablero (se administran desde Parámetros)
         Route::get('/tablero/videos', [EmpleadosController::class, 'tableroVideos']);
@@ -215,21 +223,21 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::delete('/tablero/videos/{id}', [EmpleadosController::class, 'eliminarTableroVideo']);
 
         //verificar empleado lider
-        Route::get('/verificarEmpleadoLider/{id}', [empleadosController::class, 'verificarEmpleadoLider']);
+        Route::get('/verificarEmpleadoLider/{id}', [empleadosController::class, 'verificarEmpleadoLider'])->middleware('administracion');
         //eliminar funcion
-        Route::delete('/eliminarFuncion/{id}', [empleadosController::class, 'eliminarFuncion']);
+        Route::delete('/eliminarFuncion/{id}', [empleadosController::class, 'eliminarFuncion'])->middleware('administracion');
 
         //cargar actividades
-        Route::get('/cargarActividades/{id}', [empleadosController::class, 'cargarActividades']);
+        Route::get('/cargarActividades/{id}', [empleadosController::class, 'cargarActividades'])->middleware('administracion');
 
         //guardar actividad
-        Route::post('/guardarActividad', [empleadosController::class, 'guardarActividad']);
+        Route::post('/guardarActividad', [empleadosController::class, 'guardarActividad'])->middleware('administracion');
 
         //eliminar actividad
-        Route::delete('/eliminarActividad/{id}', [empleadosController::class, 'eliminarActividad']);
+        Route::delete('/eliminarActividad/{id}', [empleadosController::class, 'eliminarActividad'])->middleware('administracion');
 
         //actualizar actividad
-        Route::put('/actualizarActividad/{id}', [empleadosController::class, 'actualizarActividad']);
+        Route::put('/actualizarActividad/{id}', [empleadosController::class, 'actualizarActividad'])->middleware('administracion');
 
         //rechazar tarea
         Route::put('/rechazarTarea/{id}', [empleadosController::class, 'rechazarTarea']);
@@ -270,9 +278,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
         // proyectos
         Route::get('/cargarProyectos', [EmpleadosController::class, 'cargarProyectos']);
-        Route::post('/guardarProyecto', [EmpleadosController::class, 'guardarProyecto']);
-        Route::delete('/eliminarProyecto/{id}', [EmpleadosController::class, 'eliminarProyecto']);
-        Route::post('/proyectos/guardarProyecto', [EmpleadosController::class, 'guardarProyecto']);
+        Route::post('/guardarProyecto', [EmpleadosController::class, 'guardarProyecto'])->middleware('administracion');
+        Route::delete('/eliminarProyecto/{id}', [EmpleadosController::class, 'eliminarProyecto'])->middleware('administracion');
+        Route::post('/proyectos/guardarProyecto', [EmpleadosController::class, 'guardarProyecto'])->middleware('administracion');
         // subtareas
         Route::get('/subtareas/{tarea_id}', [EmpleadosController::class, 'cargarSubtareas']);
         Route::post('/subtareas', [EmpleadosController::class, 'guardarSubtarea']);
@@ -291,16 +299,16 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::get('/informes/reprogramaciones', [EmpleadosController::class, 'informeReprogramaciones']);
 
         // cargos
-        Route::get('/parametros/cargos', [EmpleadosController::class, 'cargarCargos']);
-        Route::post('/parametros/cargos', [EmpleadosController::class, 'crearCargo']);
-        Route::put('/parametros/cargos/{id}', [EmpleadosController::class, 'actualizarCargo']);
-        Route::delete('/parametros/cargos/{id}', [EmpleadosController::class, 'eliminarCargo']);
+        Route::get('/parametros/cargos', [EmpleadosController::class, 'cargarCargos'])->middleware('administracion');
+        Route::post('/parametros/cargos', [EmpleadosController::class, 'crearCargo'])->middleware('administracion');
+        Route::put('/parametros/cargos/{id}', [EmpleadosController::class, 'actualizarCargo'])->middleware('administracion');
+        Route::delete('/parametros/cargos/{id}', [EmpleadosController::class, 'eliminarCargo'])->middleware('administracion');
 
         // migración one-time: convierte fotos base64 almacenadas en BD a archivos en disco
-        Route::post('/admin/migrar-fotos', [EmpleadosController::class, 'migrarFotos']);
+        Route::post('/admin/migrar-fotos', [EmpleadosController::class, 'migrarFotos'])->middleware('administracion:Administrador');
 
         // importación one-time de proyectos iniciales
-        Route::post('/admin/importar-proyectos', [EmpleadosController::class, 'importarProyectosIniciales']);
+        Route::post('/admin/importar-proyectos', [EmpleadosController::class, 'importarProyectosIniciales'])->middleware('administracion:Administrador');
 
 
     });

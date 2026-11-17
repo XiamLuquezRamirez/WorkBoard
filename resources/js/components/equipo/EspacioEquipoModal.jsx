@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import axiosInstance from '../../axiosConfig';
 import Chat from './Chat';
+import FormularioReunion, { avisarCambioReuniones } from './FormularioReunion';
 import TableroPlano from '../tablero/TableroPlano';
 import { AvataresProvider } from '../tablero/AvataresContext';
 import './espacio.css';
@@ -168,20 +169,13 @@ function Actividad() {
 
 // ─── Reuniones ──────────────────────────────────────────────────────────────
 
-const FORMULARIO_VACIO = {
-    titulo: '', descripcion: '', fecha: '', hora_inicio: '', hora_fin: '',
-    enlace: '', lugar: '', asistentes: [],
-};
-
 function Reuniones() {
     const [datos, setDatos] = useState(null);
     const [error, setError] = useState(false);
     const [pasadas, setPasadas] = useState(false);
     const [creando, setCreando] = useState(false);
-    const [convocables, setConvocables] = useState([]);
-    const [form, setForm] = useState(FORMULARIO_VACIO);
-    const [guardando, setGuardando] = useState(false);
     const [aviso, setAviso] = useState('');
+    const [exito, setExito] = useState('');
     const [recarga, setRecarga] = useState(0);
 
     useEffect(() => {
@@ -195,60 +189,38 @@ function Reuniones() {
         return () => { vivo = false; };
     }, [pasadas, recarga]);
 
+    // Lo que se responde desde «Mis Tareas» también se ve aquí.
+    useEffect(() => {
+        const otra = () => setRecarga((n) => n + 1);
+        window.addEventListener('wb:reuniones-cambiaron', otra);
+        return () => window.removeEventListener('wb:reuniones-cambiaron', otra);
+    }, []);
+
     const abrirFormulario = () => {
         setCreando(true);
         setAviso('');
-        setForm(FORMULARIO_VACIO);
-        if (convocables.length === 0) {
-            axiosInstance.get('/equipo/convocables')
-                .then((r) => setConvocables(r.data || []))
-                .catch(() => { /* el formulario funciona sin invitados */ });
-        }
+        setExito('');
     };
 
-    const alternarAsistente = (id) => setForm((f) => ({
-        ...f,
-        asistentes: f.asistentes.includes(id)
-            ? f.asistentes.filter((x) => x !== id)
-            : [...f.asistentes, id],
-    }));
-
-    const guardar = (ev) => {
-        ev.preventDefault();
-        setGuardando(true);
-        setAviso('');
-
-        axiosInstance.post('/equipo/reuniones', {
-            ...form,
-            hora_fin: form.hora_fin || null,
-            enlace: form.enlace || null,
-            lugar: form.lugar || null,
-            descripcion: form.descripcion || null,
-        })
-            .then(() => {
-                setCreando(false);
-                setPasadas(false);
-                setRecarga((n) => n + 1);
-            })
-            .catch((err) => {
-                const errores = err.response?.data?.errors;
-                setAviso(errores
-                    ? Object.values(errores).flat().join(' ')
-                    : (err.response?.data?.error || 'No fue posible crear la reunión.'));
-            })
-            .finally(() => setGuardando(false));
+    const creada = (r) => {
+        setCreando(false);
+        setPasadas(false);
+        const n = r?.convocados || 0;
+        setExito(n === 1
+            ? 'Convocatoria enviada. El participante la verá en la plataforma y en su correo.'
+            : `Convocatoria enviada a ${n} participantes, en la plataforma y por correo.`);
     };
 
     const responder = (id, respuesta) => {
         axiosInstance.put(`/equipo/reuniones/${id}/respuesta`, { respuesta })
-            .then(() => setRecarga((n) => n + 1))
+            .then(() => avisarCambioReuniones())
             .catch(() => setAviso('No fue posible registrar la respuesta.'));
     };
 
     const cancelar = (id) => {
-        if (!window.confirm('¿Cancelar esta reunión? Los convocados verán que se canceló.')) return;
+        if (!window.confirm('¿Cancelar esta reunión? Los convocados recibirán el aviso en la plataforma y por correo.')) return;
         axiosInstance.delete(`/equipo/reuniones/${id}`)
-            .then(() => setRecarga((n) => n + 1))
+            .then(() => avisarCambioReuniones())
             .catch(() => setAviso('No fue posible cancelar la reunión.'));
     };
 
@@ -285,104 +257,17 @@ function Reuniones() {
                     </button>
                 </div>
                 {!creando && (
-                    <button className="eq-btn" onClick={abrirFormulario}>+ Nueva reunión</button>
+                    <button className="eq-btn" onClick={abrirFormulario}>+ Solicitar reunión</button>
                 )}
             </div>
 
             {aviso && <p className="eq-aviso">{aviso}</p>}
+            {exito && <p className="eq-exito">{exito}</p>}
 
             {creando && (
-                <form className="eq-form" onSubmit={guardar}>
-                    <label className="eq-campo eq-ancho">
-                        <span>Título *</span>
-                        <input
-                            required maxLength={200} value={form.titulo}
-                            onChange={(e) => setForm({ ...form, titulo: e.target.value })}
-                            placeholder="Revisión semanal del tablero"
-                        />
-                    </label>
-
-                    <label className="eq-campo">
-                        <span>Fecha *</span>
-                        <input
-                            type="date" required value={form.fecha}
-                            onChange={(e) => setForm({ ...form, fecha: e.target.value })}
-                        />
-                    </label>
-
-                    <label className="eq-campo">
-                        <span>Inicio *</span>
-                        <input
-                            type="time" required value={form.hora_inicio}
-                            onChange={(e) => setForm({ ...form, hora_inicio: e.target.value })}
-                        />
-                    </label>
-
-                    <label className="eq-campo">
-                        <span>Fin</span>
-                        <input
-                            type="time" value={form.hora_fin}
-                            onChange={(e) => setForm({ ...form, hora_fin: e.target.value })}
-                        />
-                    </label>
-
-                    <label className="eq-campo eq-ancho">
-                        <span>Enlace de videollamada</span>
-                        <input
-                            type="url" value={form.enlace} maxLength={500}
-                            onChange={(e) => setForm({ ...form, enlace: e.target.value })}
-                            placeholder="https://meet.google.com/…"
-                        />
-                    </label>
-
-                    <label className="eq-campo eq-ancho">
-                        <span>Lugar</span>
-                        <input
-                            value={form.lugar} maxLength={200}
-                            onChange={(e) => setForm({ ...form, lugar: e.target.value })}
-                            placeholder="Sala de juntas, oficina de Riohacha…"
-                        />
-                    </label>
-
-                    <label className="eq-campo eq-ancho">
-                        <span>Asunto</span>
-                        <textarea
-                            rows={2} value={form.descripcion}
-                            onChange={(e) => setForm({ ...form, descripcion: e.target.value })}
-                            placeholder="Qué se va a tratar."
-                        />
-                    </label>
-
-                    {convocables.length > 0 && (
-                        <div className="eq-campo eq-ancho">
-                            <span>Convocar a</span>
-                            <div className="eq-invitados">
-                                {convocables.map((p) => (
-                                    <button
-                                        type="button"
-                                        key={p.id}
-                                        className={`eq-invitado ${form.asistentes.includes(p.id) ? 'es-activo' : ''}`}
-                                        onClick={() => alternarAsistente(p.id)}
-                                        title={p.cargo || ''}
-                                    >
-                                        <span className="eq-av">{iniciales(p.nombre)}</span>
-                                        {p.nombre}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
-                    <div className="eq-form-pie">
-                        <button type="button" className="eq-btn-sec" onClick={() => setCreando(false)}>
-                            Cancelar
-                        </button>
-                        <button type="submit" className="eq-btn" disabled={guardando}>
-                            {guardando ? 'Creando…' : 'Crear reunión'}
-                        </button>
-                    </div>
-                </form>
+                <FormularioReunion onCreada={creada} onCancelar={() => setCreando(false)} />
             )}
+
 
             {porDia.length === 0 ? (
                 <p className="eq-vacio">

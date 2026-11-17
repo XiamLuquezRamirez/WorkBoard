@@ -1,0 +1,186 @@
+/* Panorama del dashboard: tendencia semanal y resumen por área.
+   Superficie clara, rejilla y ejes en gris tenue: los datos mandan. */
+
+.pd-panorama { margin: 1rem 0 0; }
+
+/* En la retícula de 12 columnas de pantallas anchas ocupa la fila entera. */
+@media (min-width: 1600px) {
+    .dashboard-content-column .pd-panorama { grid-column: 1 / -1; margin: 0; }
+}
+
+.pd-plegar {
+    border: none;
+    background: none;
+    padding: 0.25rem 0;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #374151;
+    cursor: pointer;
+}
+
+.pd-cuerpo {
+    display: grid;
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+    gap: 1rem;
+    margin-top: 0.5rem;
+}
+
+@media (max-width: 1200px) {
+    .pd-cuerpo { grid-template-columns: minmax(0, 1fr); }
+}
+
+.pd-tarjeta {
+    background: #fcfcfb;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 1rem 1.1rem;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+    min-width: 0;
+}
+
+.pd-cab {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 0.5rem 1rem;
+    margin-bottom: 0.6rem;
+}
+
+.pd-cab h2 { margin: 0; font-size: 1rem; color: #0b0b0b; }
+.pd-sub { margin: 0.2rem 0 0; font-size: 0.78rem; color: #52514e; }
+
+.pd-controles { display: flex; align-items: center; gap: 0.75rem; }
+
+.pd-segmentos {
+    display: inline-flex;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.pd-segmentos button {
+    border: none;
+    background: #fff;
+    padding: 0.3rem 0.6rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #374151;
+    cursor: pointer;
+}
+
+.pd-segmentos button + button { border-left: 1px solid #d1d5db; }
+.pd-segmentos button.es-activo { background: #1e40af; color: #fff; }
+
+.pd-enlace {
+    border: none;
+    background: none;
+    padding: 0;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #1d4ed8;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.pd-graficas {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+@media (max-width: 760px) {
+    .pd-graficas { grid-template-columns: minmax(0, 1fr); }
+}
+
+.pd-figura { margin: 0; min-width: 0; }
+
+.pd-figura figcaption {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #0b0b0b;
+}
+
+.pd-figura figcaption span { font-weight: 500; color: #52514e; }
+
+.pd-nota { margin: 0.15rem 0 0.3rem; font-size: 0.72rem; color: #6b6a66; }
+
+.pd-leyenda {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.2rem 0.9rem;
+    margin: 0.2rem 0 0.3rem;
+    padding: 0;
+    list-style: none;
+    font-size: 0.72rem;
+    color: #52514e;
+}
+
+.pd-leyenda li { display: inline-flex; align-items: center; gap: 0.35rem; }
+
+/* Clave de línea, no caja: así se dibujan las series. */
+.pd-leyenda i,
+.pd-globo-fila i {
+    display: inline-block;
+    width: 14px;
+    height: 2px;
+    border-radius: 1px;
+}
+
+.pd-globo {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 0.5rem 0.65rem;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+    font-size: 0.75rem;
+    color: #52514e;
+}
+
+.pd-globo-titulo { margin: 0 0 0.3rem; font-weight: 700; color: #0b0b0b; }
+.pd-globo-fila { margin: 0.1rem 0; display: flex; align-items: center; gap: 0.4rem; }
+.pd-globo-fila strong { color: #0b0b0b; font-size: 0.85rem; }
+
+.pd-vacio { padding: 1.5rem; text-align: center; color: #6b7280; font-size: 0.85rem; }
+
+.pd-tabla-caja { overflow-x: auto; max-height: 320px; overflow-y: auto; }
+
+.pd-tabla {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+    color: #1f2937;
+}
+
+.pd-tabla th,
+.pd-tabla td {
+    padding: 0.45rem 0.6rem;
+    border-bottom: 1px solid #eeede9;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.pd-tabla th:first-child,
+.pd-tabla td:first-child { text-align: left; }
+
+.pd-tabla thead th {
+    position: sticky;
+    top: 0;
+    background: #fcfcfb;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #52514e;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    white-space: normal;
+}
+
+.pd-tabla-areas tbody tr { cursor: pointer; }
+.pd-tabla-areas tbody tr:hover { background: #f3f6fc; }
+.pd-tabla-areas tbody tr:focus { outline: 2px solid #2a78d6; outline-offset: -2px; }
+.pd-tabla-areas tbody tr.es-elegida { background: #e8f0fb; }
+.pd-tabla-areas tbody th { font-weight: 600; white-space: normal; }
+
+.pd-mal { color: #b91c1c; font-weight: 700; }
+.pd-de { color: #6b6a66; font-weight: 400; }

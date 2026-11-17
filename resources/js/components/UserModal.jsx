@@ -24,6 +24,15 @@ const errorDe = (error, porDefecto) => {
 };
 
 const UserModal = ({ isOpen, onClose }) => {
+    // Solo un Administrador puede dar el rol de Administrador (el servidor
+    // también lo exige); a un Supervisor la opción se le muestra deshabilitada.
+    const soyAdministrador = (() => {
+        try {
+            return JSON.parse(localStorage.getItem('userWorkBoard') || '{}').tipo_usuario === 'Administrador';
+        } catch {
+            return false;
+        }
+    })();
     const [showAddForm, setShowAddForm] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [loading, setLoading] = useState(false);
@@ -533,8 +542,8 @@ const UserModal = ({ isOpen, onClose }) => {
                                         onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
                                     >
                                         <option value="">Seleccionar rol</option>
-                                        {ROLES.map(rol => (
-                                            <option key={rol} value={rol}>{rol}</option>
+                                        {ROLES.filter(rol => rol !== 'Administrador' || soyAdministrador || newUser.role === 'Administrador').map(rol => (
+                                            <option key={rol} value={rol} disabled={rol === 'Administrador' && !soyAdministrador}>{rol}</option>
                                         ))}
                                     </select>
                                 </div>

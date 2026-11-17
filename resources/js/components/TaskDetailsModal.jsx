@@ -15,6 +15,7 @@ import axiosInstance from '../axiosConfig';
 import { FaCircleCheck, FaCircle, FaCircleXmark } from 'react-icons/fa6';
 import CriteriosAceptacion from './criterios/CriteriosAceptacion';
 import VisionGeneralTarea from './tareas/VisionGeneralTarea';
+import './tareas/detalleTarea.css';
 
 /** Normaliza aprobada desde API (1, "1", true, etc.) */
 const esTareaAprobadaValor = (v) => {
@@ -113,6 +114,8 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton, is
     // y los botones de estado los leen de aquí, sin una segunda petición.
     const [criteriosDatos, setCriteriosDatos] = useState(null);
     const [abrirCriterios, setAbrirCriterios] = useState(0);
+    // Pestaña del cuerpo: resumen, criterios, checklist, evidencias o actividad.
+    const [pestana, setPestana] = useState('resumen');
     const seccionesRef = useRef({});
 
     // Ref del overlay para anclar SweetAlert2 dentro del modal.
@@ -624,27 +627,74 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton, is
         }
     };
 
+    // Desde la visión general: abre la pestaña de esa sección (las fechas
+    // viven en la columna lateral) y la señala con un destello.
     const irASeccion = (nombre) => {
         if (nombre === 'criterios') setAbrirCriterios((n) => n + 1);
-        const el = seccionesRef.current[nombre];
-        if (!el) return;
-        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        el.classList.remove('vg-destello');
-        void el.offsetWidth;
-        el.classList.add('vg-destello');
+        if (['criterios', 'checklist', 'evidencias'].includes(nombre)) setPestana(nombre);
+        setTimeout(() => {
+            const el = seccionesRef.current[nombre];
+            if (!el) return;
+            el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            el.classList.remove('vg-destello');
+            void el.offsetWidth;
+            el.classList.add('vg-destello');
+        }, 30);
     };
 
+    // Al editar se vuelve al resumen, que es donde está el formulario.
+    useEffect(() => {
+        if (isEditingTask) setPestana('resumen');
+    }, [isEditingTask]);
+
+    const claseEstado = {
+        'Pendiente': 'e-pendiente',
+        'En Proceso': 'e-proceso',
+        'En Revisión': 'e-revision',
+        'Completada': 'e-completada',
+    }[currentStatus] || '';
+
     const tieneCriterios = (criteriosDatos?.resumen?.total || 0) > 0;
+
+    // Pausa directa: sólo el líder con independencia sobre su propia tarea.
+    const pausarDirecto = async () => {
+                                            const result = await fireSwal({
+                                                title: 'Pausar tarea',
+                                                html: `<div style="text-align:left"><label style="display:block;margin-bottom:8px;font-weight:600;font-size:14px">Motivo de la pausa:</label><textarea id="motivo-pausa-lider" class="swal2-textarea" placeholder="Ingrese el motivo..." style="margin:0;width:100%;height:100px;padding:10px;border:2px solid #e1e5e9;border-radius:6px;font-size:14px;resize:vertical;font-family:inherit;"></textarea></div>`,
+                                                focusConfirm: false,
+                                                showCancelButton: true,
+                                                confirmButtonText: 'Pausar',
+                                                cancelButtonText: 'Cancelar',
+                                                confirmButtonColor: '#f97316',
+                                                preConfirm: () => {
+                                                    const m = document.getElementById('motivo-pausa-lider').value.trim();
+                                                    if (!m) { Swal.showValidationMessage('El motivo es obligatorio'); return false; }
+                                                    return m;
+                                                }
+                                            });
+                                            if (!result.isConfirmed) return;
+                                            try {
+                                                await axiosInstance.put(`/pausarTarea/${task.id}`, { pausada: true, motivo: result.value });
+                                                setPausada(true);
+                                                onUpdate();
+                                                await fireSwal('¡Éxito!', 'Tarea pausada correctamente.', 'success');
+                                            } catch { await fireSwal('Error', 'No se pudo pausar la tarea.', 'error'); }
+    };
+
+    // Entregada (en revisión) o ya aceptada: el responsable no la mueve.
+    const entregada = currentStatus === 'En Revisión' || currentStatus === 'Completada';
 
     const handleStatusChange = async (newStatus) => {
         if (newStatus === currentStatus) return;
 
-        // Con criterios de aceptación la tarea no se cierra desde aquí: se
-        // envía a revisión y la cierra quien acepta la entrega.
-        if (newStatus === 'Completada' && tieneCriterios) {
+        // Ninguna tarea se cierra desde aquí: se envía a revisión y la cierra
+        // quien acepta la entrega, tenga criterios o no.
+        if (newStatus === 'Completada') {
             const r = await fireSwal({
                 title: 'Esta tarea se cierra aceptando la entrega',
-                text: 'Tiene criterios de aceptación: envíala a revisión y tu líder verificará los criterios antes de cerrarla.',
+                text: tieneCriterios
+                    ? 'Envíala a revisión: tu líder verificará los criterios antes de cerrarla.'
+                    : 'Envíala a revisión: tu líder revisará lo entregado y, si está bien, la cerrará.',
                 icon: 'info',
                 showCancelButton: true,
                 confirmButtonText: 'Enviar a revisión',
@@ -663,7 +713,9 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton, is
             if (r && r.total > r.declarados) {
                 avisos.push(`Has declarado ${r.declarados} de ${r.total} criterios.`);
             }
-            const confirmacion = await fireSwal({
+            // Sin criterios, el paso siguiente ya pregunta por las evidencias
+            // y deja cancelar: no hace falta otra confirmación si no hay avisos.
+            const confirmacion = (!tieneCriterios && avisos.length === 0) ? { isConfirmed: true } : await fireSwal({
                 title: 'Enviar a revisión',
                 text: avisos.length
                     ? `${avisos.join(' ')} ¿Enviar de todos modos?`
@@ -676,22 +728,20 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton, is
             if (!confirmacion.isConfirmed) return;
         }
 
-        if (newStatus === 'Completada' && subtareas.length > 0 && subtareasCompletadas < subtareas.length) {
-            fireSwal('Checklist incompleto', `Debes completar todas las subtareas antes de cerrar la tarea. (${subtareasCompletadas}/${subtareas.length} completadas)`, 'warning');
-            return;
-        }
-
         setIsChangingStatus(true);
 
         try {
-            if (newStatus === 'Completada') {
+            // Sin criterios, las evidencias van con la entrega: se ofrece
+            // adjuntarlas al enviarla a revisión. Con criterios, cada criterio
+            // lleva las suyas.
+            if (newStatus === 'En Revisión' && !tieneCriterios) {
                 const result = await fireSwal({
-                    title: 'Completar tarea',
-                    text: '¿Desea agregar evidencias antes de completar la tarea?',
+                    title: 'Enviar a revisión',
+                    text: 'Tu líder revisará lo entregado y lo aceptará o te lo devolverá. ¿Quieres adjuntar evidencias?',
                     icon: 'question',
                     showCancelButton: true,
                     confirmButtonText: 'Sí, agregar evidencias',
-                    cancelButtonText: 'No, solo completar',
+                    cancelButtonText: 'No, solo enviar',
                     showDenyButton: true,
                     denyButtonText: 'Cancelar'
                 });
@@ -701,18 +751,14 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton, is
                     setIsChangingStatus(false);
                     return;
                 }
-                const fechaEntrega = new Date().toISOString().split('T')[0];
-
-                // Si se presiona "No, solo completar"
+                // Si se presiona "No, solo enviar"
                 if (result.isDismissed) {
-                    //agregar fecha de entrega
                     await axiosInstance.put(`/actualizarEstadoTarea/${task.id}`, {
                         estado: newStatus,
-                        fecha_entregada: fechaEntrega
                     });
                     setCurrentStatus(newStatus);
                     onUpdate();
-                    fireSwal('¡Éxito!', 'Estado actualizado correctamente', 'success');
+                    fireSwal('Enviada a revisión', 'Tu líder recibió el aviso en la plataforma y por correo.', 'success');
                     return;
                 }
 
@@ -841,7 +887,7 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton, is
                                 });
                             }
                         },
-                        confirmButtonText: 'Subir y completar',
+                        confirmButtonText: 'Subir y enviar',
                         cancelButtonText: 'Cancelar',
                         showCancelButton: true,
                         preConfirm: async () => {
@@ -912,12 +958,10 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton, is
                                 await axiosInstance.put(`/actualizarEstadoTarea/${task.id}`, {
                                     estado: newStatus,
                                     evidencias: nuevasEvidencias,
-                                    fecha_entregada: fechaEntrega
                                 });
 
                                 setCurrentStatus(newStatus);
                                 onUpdate();
-                                fireSwal('¡Éxito!', 'Tarea completada con evidencias', 'success');
                                 //actualizar la lista de evidencias
                                 setEvidencias(prevEvidencias => [...prevEvidencias, ...nuevasEvidencias]);
                                 return true;
@@ -931,7 +975,7 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton, is
                     });
 
                     if (uploadConfirmed) {
-                        fireSwal('¡Éxito!', 'Tarea completada con evidencias', 'success');
+                        fireSwal('Enviada a revisión', 'Con sus evidencias. Tu líder recibió el aviso en la plataforma y por correo.', 'success');
                     }
                 }
             } else {
@@ -941,11 +985,19 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton, is
                 });
                 setCurrentStatus(newStatus);
                 onUpdate();
-                fireSwal('¡Éxito!', 'Estado actualizado correctamente', 'success');
+                fireSwal(
+                    newStatus === 'En Revisión' ? 'Enviada a revisión' : '¡Éxito!',
+                    newStatus === 'En Revisión' ? 'Tu líder recibió el aviso en la plataforma y por correo.' : 'Estado actualizado correctamente',
+                    'success'
+                );
             }
         } catch (error) {
             const d = error?.response?.data;
-            fireSwal(d?.requiere_verificacion ? 'Requiere aceptación' : 'Error', d?.error || 'Error al actualizar el estado', 'error');
+            fireSwal(
+                d?.requiere_verificacion ? 'Requiere aceptación' : d?.en_revision ? 'En revisión' : 'Error',
+                d?.error || 'Error al actualizar el estado',
+                d?.en_revision || d?.requiere_verificacion ? 'info' : 'error'
+            );
         } finally {
             setIsChangingStatus(false);
         }
@@ -1796,112 +1848,55 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton, is
                                 📁 Tarea Archivada
                             </div>
                         )}
-                        <div className="modal-header">
-                            <h2 className='modal-title'>
-                                Detalles de la Tarea
-                                {/* Mostrar Aprobación */}
-                                {aprobada ? (
-                                    <FaCircleCheck color='green' title='Aprobada' style={{ marginRight: '0.5rem' }} />
-                                ) : (
-                                    <FaCircleCheck color='grey' title='No aprobada' style={{ marginRight: '0.5rem', opacity: 0.5 }} />
-                                )}
+                        <header className="modal-header td-cab">
+                            <div className="td-cab-texto">
+                                <div className="td-chips">
+                                    <span className={`td-chip td-estado ${claseEstado}`}>{currentStatus}</span>
+                                    {task.prioridad && (
+                                        <span className={`td-chip td-prioridad p-${String(task.prioridad).toLowerCase()}`}>Prioridad {task.prioridad}</span>
+                                    )}
+                                    <span className={`td-chip ${aprobada ? 'td-ok' : 'td-gris'}`} title={aprobada ? 'Aprobada por el líder' : 'Pendiente de aprobación del líder'}>
+                                        <FaCircleCheck /> {aprobada ? 'Aprobada' : 'Sin aprobar'}
+                                    </span>
+                                    {currentStatus === 'Completada' && vistoBueno && !rechazada && (
+                                        <span className="td-chip td-ok"><FaEye /> Visto bueno</span>
+                                    )}
+                                    {rechazada && (currentStatus === 'Completada' || currentStatus === 'En Proceso') && (
+                                        <span className="td-chip td-mal"><FaCircleXmark /> Rechazada</span>
+                                    )}
+                                </div>
+                                <h2 className="modal-title td-titulo">{task.titulo}</h2>
+                                <p className="td-sub">
+                                    <span>Tarea #{task.id}</span>
+                                    {(isOwnTask || task.nombre_empleado) && <span>{isOwnTask ? 'Asignada a ti' : task.nombre_empleado}</span>}
+                                    {task.fecha_creacion && <span>Creada el {new Date(String(task.fecha_creacion).slice(0, 10) + 'T00:00:00').toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' })}</span>}
+                                    {task.proyecto_nombre && <span><FaFolder /> {task.proyecto_nombre}</span>}
+                                </p>
+                            </div>
 
-                                {/* Mostrar Visto Bueno */}
-                                {(currentStatus === 'Completada' && vistoBueno && !rechazada) ? (
-                                    <FaEye color='green' title='Visto bueno' style={{ marginRight: '0.5rem' }} />
-                                ) : (
-                                    <FaEye color='grey' title='Pendiente de visto bueno' style={{ marginRight: '0.5rem', opacity: 0.5 }} />
-                                )}
-
-                                {/* Mostrar Rechazada */}
-                                {(currentStatus === 'Completada' || currentStatus === 'En Proceso') && rechazada ? (
-                                    <FaCircleXmark color='red' title='Rechazada' style={{ marginRight: '0.5rem' }} />
+                            <div className="td-cab-acciones">
+                                {/* Pausa: reanudar, pausar o pedirla, según quién mira. */}
+                                {pausada && isOwnTask && !isAdmin && !isArchived ? (
+                                    <button type="button" className="td-btn td-btn-aviso" onClick={openReanudarForm}>
+                                        <FaPlay /> Reanudar
+                                    </button>
+                                ) : !pausada && isOwnTask && isLider && isIndependiente && !isArchived ? (
+                                    <button type="button" className="td-btn" onClick={pausarDirecto}>
+                                        <FaPause /> Pausar
+                                    </button>
+                                ) : !pausada && isOwnTask && !isAdmin && !isArchived ? (
+                                    pausaPendiente ? (
+                                        <span className="td-chip td-aviso" title="Pendiente de aprobación">
+                                            <FaPause /> Pausa solicitada
+                                        </span>
+                                    ) : (
+                                        <button type="button" className="td-btn" onClick={openSolicitudPausaModal}>
+                                            <FaPause /> Solicitar pausa
+                                        </button>
+                                    )
                                 ) : null}
 
-                                {/* Mostrar / solicitar pausa (solo asignado: envía solicitud a líder o admin) */}
-                                {pausada && isOwnTask && !isAdmin && !isArchived ? (
-                                    <FaPause
-                                        color="orange"
-                                        title="Tarea pausada — clic para reanudar"
-                                        onClick={openReanudarForm}
-                                        style={{ marginRight: '0.5rem', cursor: 'pointer' }}
-                                    />
-                                ) : pausada ? (
-                                    <FaPause color="orange" title="Pausada" style={{ marginRight: '0.5rem' }} />
-                                ) : isOwnTask && isLider && isIndependiente && !isArchived ? (
-                                    <FaPause
-                                        color="#64748b"
-                                        title="Pausar tarea directamente"
-                                        onClick={async () => {
-                                            const result = await fireSwal({
-                                                title: 'Pausar tarea',
-                                                html: `<div style="text-align:left"><label style="display:block;margin-bottom:8px;font-weight:600;font-size:14px">Motivo de la pausa:</label><textarea id="motivo-pausa-lider" class="swal2-textarea" placeholder="Ingrese el motivo..." style="margin:0;width:100%;height:100px;padding:10px;border:2px solid #e1e5e9;border-radius:6px;font-size:14px;resize:vertical;font-family:inherit;"></textarea></div>`,
-                                                focusConfirm: false,
-                                                showCancelButton: true,
-                                                confirmButtonText: 'Pausar',
-                                                cancelButtonText: 'Cancelar',
-                                                confirmButtonColor: '#f97316',
-                                                preConfirm: () => {
-                                                    const m = document.getElementById('motivo-pausa-lider').value.trim();
-                                                    if (!m) { Swal.showValidationMessage('El motivo es obligatorio'); return false; }
-                                                    return m;
-                                                }
-                                            });
-                                            if (!result.isConfirmed) return;
-                                            try {
-                                                await axiosInstance.put(`/pausarTarea/${task.id}`, { pausada: true, motivo: result.value });
-                                                setPausada(true);
-                                                onUpdate();
-                                                await fireSwal('¡Éxito!', 'Tarea pausada correctamente.', 'success');
-                                            } catch { await fireSwal('Error', 'No se pudo pausar la tarea.', 'error'); }
-                                        }}
-                                        style={{ marginRight: '0.5rem', cursor: 'pointer' }}
-                                    />
-                                ) : isOwnTask && !isAdmin && !isArchived ? (
-                                    pausaPendiente ? (
-                                        <FaPause color="#f97316" title="Solicitud de pausa pendiente de aprobación" style={{ marginRight: '0.5rem', opacity: 0.7 }} />
-                                    ) : (
-                                    <FaPause
-                                        color="#64748b"
-                                        title="Solicitar pausa"
-                                        onClick={openSolicitudPausaModal}
-                                        style={{ marginRight: '0.5rem', cursor: 'pointer' }}
-                                    />
-                                    )
-
-                                ) : (
-                                    <FaPause
-                                        color="grey"
-                                        title="No pausada"
-                                        style={{ marginRight: '0.5rem', opacity: 0.45 }}
-                                    />
-                                )}
-                            </h2>
-
-                            <button className="close-button" onClick={onClose}>&times;</button>
-
-                        </div>
-
-                        <div className="modal-body">
-                            {!isEditingTask && (
-                                <VisionGeneralTarea
-                                    task={task}
-                                    estado={currentStatus}
-                                    criterios={criteriosDatos}
-                                    checklist={{ hechas: subtareasCompletadas, total: subtareas.length }}
-                                    evidencias={evidencias.length}
-                                    pausada={pausada}
-                                    rechazada={rechazada}
-                                    archivada={isArchived}
-                                    esResponsable={isOwnTask}
-                                    reprogramacionPendiente={!!reprgPendiente}
-                                    onIrA={irASeccion}
-                                />
-                            )}
-
-                            {/* Panel izquierdo: Información de la tarea */}
-                            <div className="task-info-panel">
-                                <div className="edit-buttons">
+<div className="edit-buttons">
                                     {/* Botón para desarchivar tarea */}
                                     {isArchived && onUnarchive && (
                                         <button className="unarchive-button" onClick={onUnarchive}>
@@ -1998,6 +1993,60 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton, is
                                     )}
 
                                 </div>
+                            </div>
+
+                            <button className="close-button" onClick={onClose} title="Cerrar">&times;</button>
+                        </header>
+
+                        <div className="modal-body td-cuerpo">
+                            {!isEditingTask && (
+                                <VisionGeneralTarea
+                                    task={task}
+                                    estado={currentStatus}
+                                    criterios={criteriosDatos}
+                                    checklist={{ hechas: subtareasCompletadas, total: subtareas.length }}
+                                    evidencias={evidencias.length}
+                                    pausada={pausada}
+                                    rechazada={rechazada}
+                                    archivada={isArchived}
+                                    esResponsable={isOwnTask}
+                                    reprogramacionPendiente={!!reprgPendiente}
+                                    onIrA={irASeccion}
+                                />
+                            )}
+
+                            <div className="td-rejilla">
+                                <main className="td-principal">
+                                    <nav className="td-pestanas" role="tablist" aria-label="Secciones de la tarea">
+                                        {[
+                                            ['resumen', 'Resumen', null],
+                                            ['criterios', 'Criterios', criteriosDatos?.resumen?.total ? `${criteriosDatos.resumen.cumplidos}/${criteriosDatos.resumen.total}` : null],
+                                            ['checklist', 'Checklist', subtareas.length ? `${subtareasCompletadas}/${subtareas.length}` : null],
+                                            ['evidencias', 'Evidencias', evidencias.length || null],
+                                            ['actividad', 'Actividad', actividadesComentarios.length || null],
+                                        ].map(([id, texto, cuenta]) => (
+                                            <button
+                                                key={id}
+                                                type="button"
+                                                role="tab"
+                                                aria-selected={pestana === id}
+                                                className={pestana === id ? 'es-activa' : ''}
+                                                onClick={() => {
+                                                    setPestana(id);
+                                                    // En su propia pestaña los criterios se ven desplegados.
+                                                    if (id === 'criterios') setAbrirCriterios((n) => n + 1);
+                                                }}
+                                            >
+                                                {texto}
+                                                {cuenta !== null && <span>{cuenta}</span>}
+                                            </button>
+                                        ))}
+                                    </nav>
+
+                                    {/* Los paneles se ocultan, no se desmontan: los criterios
+                                        alimentan la visión general y el checklist conserva
+                                        lo que se esté escribiendo. */}
+                                    <section className="td-panel" hidden={pestana !== 'resumen'}>
                                 <div className="task-header">
                                     {isEditingTask ? (
                                         <div className="edit-form">
@@ -2079,16 +2128,7 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton, is
                                                 </select>
                                             </div>
                                         </div>
-                                    ) : (
-                                        <>
-                                            <h3>{task.titulo}</h3>
-                                            <div className="priority-container">
-                                                <span className={`prioridad-badge ${task.prioridad.toLowerCase()}`}>
-                                                    Prioridad: <strong>{task.prioridad}</strong>
-                                                </span>
-                                            </div>
-                                        </>
-                                    )}
+                                    ) : null}
                                 </div>
 
                                 {!isEditingTask && (
@@ -2097,49 +2137,9 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton, is
                                     </div>
                                 )}
 
-                                {/* Si algo detiene la tarea, a la vista sin tener que
-                                    entrar a editar. El propósito encabeza la visión
-                                    general; los criterios van en su sección, debajo. */}
-                                {!isEditingTask && (
-                                    <div className="task-metodo">
-                                        {/* El impedimento va arriba: si algo detiene
-                                            la tarea, es lo primero que hay que ver. */}
-                                        {Number(task.bloqueada) === 1 && (
-                                            <div className="metodo-item metodo-bloqueo">
-                                                <span className="metodo-label">
-                                                    Bloqueada
-                                                    {!isArchived && (
-                                                        <button
-                                                            type="button"
-                                                            className="metodo-accion"
-                                                            disabled={bloqueando}
-                                                            onClick={() => handleBloquear(false)}
-                                                        >
-                                                            Levantar
-                                                        </button>
-                                                    )}
-                                                </span>
-                                                <p>{task.motivo_bloqueo}</p>
-                                            </div>
-                                        )}
+                                    </section>
 
-                                        {/* Lo declara quien hace el trabajo, sin pedir
-                                            permiso: exigir un trámite para reconocer un
-                                            impedimento desalienta reportarlo. */}
-                                        {Number(task.bloqueada) !== 1 && !isArchived
-                                            && task.estado !== 'Completada' && (
-                                            <button
-                                                type="button"
-                                                className="btn-declarar-bloqueo"
-                                                disabled={bloqueando}
-                                                onClick={() => handleBloquear(true)}
-                                            >
-                                                Algo impide avanzar
-                                            </button>
-                                        )}
-                                    </div>
-                                )}
-
+                                    <section className="td-panel" hidden={pestana !== 'criterios'}>
                                 {/* Criterios de aceptación: independientes del
                                     checklist. Miden si el resultado cumple lo
                                     pactado; el checklist, cuánto se ejecutó. */}
@@ -2154,149 +2154,9 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton, is
                                     </div>
                                 )}
 
-                                <div className="task-dates" ref={(el) => { seccionesRef.current.fechas = el; }}>
-                                    {/* Fecha creación */}
-                                    <div className="date-item">
-                                        <FaCalendar />
-                                        <span>  Fecha creación: {new Date(task.fecha_creacion + 'T00:00:00').toLocaleDateString()}</span>
-                                    </div>
+                                    </section>
 
-                                    {/* Fecha límite */}
-                                    <div className="date-item">
-                                        <FaClock />
-                                        <span>  Fecha límite: {new Date(task.fecha_pactada + 'T00:00:00').toLocaleDateString()}</span>
-                                    </div>
-
-                                    {/* Fecha aprobación */}
-                                    {task.fecha_aprobacion && (
-                                    <div className="date-item">
-                                        <FaCheck />
-                                        <span>  Fecha aprobación: {new Date(task.fecha_aprobacion + 'T00:00:00').toLocaleDateString()}</span>
-                                    </div>
-                                    )}
-
-                                    {/* Fecha entrega */}
-                                    {task.fecha_entregada && (
-                                        <div className="date-item">
-                                            <FaCheck />
-                                            <span>Entregado: {new Date(task.fecha_entregada + 'T00:00:00').toLocaleDateString()}</span>
-                                        </div>
-                                    )}
-                                </div>
-
-                                {pausada && (task.fecha_reprogramacion || task.motivo_reprogramacion) && (
-                                    <div className="task-pausa-info-panel" aria-label="Información de pausa">
-                                        <h4 className="task-pausa-info-heading">
-                                            <FaPause /> Pausa
-                                        </h4>
-                                        {task.fecha_reprogramacion && (
-                                            <div className="task-pausa-info-row">
-                                                <span className="task-pausa-info-label">Reanudación prevista</span>
-                                                <span className="task-pausa-info-value">
-                                                    {new Date(
-                                                        String(task.fecha_reprogramacion).includes('T')
-                                                            ? task.fecha_reprogramacion
-                                                            : String(task.fecha_reprogramacion).slice(0, 10) + 'T12:00:00'
-                                                    ).toLocaleDateString()}
-                                                </span>
-                                            </div>
-                                        )}
-                                        {task.motivo_reprogramacion && (
-                                            <div className="task-pausa-info-row task-pausa-info-motivo">
-                                                <span className="task-pausa-info-label">Motivo</span>
-                                                <p className="task-pausa-info-motivo-text">{task.motivo_reprogramacion}</p>
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
-
-                                {task.proyecto_nombre && (
-                                    <div className="task-proyecto-panel" aria-label="Proyecto asociado">
-                                        <div className="task-proyecto-icon" aria-hidden="true">
-                                            <FaFolder />
-                                        </div>
-                                        <div className="task-proyecto-content">
-                                            <span className="task-proyecto-label">Proyecto</span>
-                                            <p className="task-proyecto-nombre">{task.proyecto_nombre}</p>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* Pausa: badge pendiente para el dueño */}
-                                {isOwnTask && !isArchived && !pausada && pausaPendiente && (
-                                    <div className="repr-owner-section">
-                                        <div className="repr-pending-badge" style={{ background: '#fff7ed', borderColor: '#f97316', color: '#c2410c' }}>
-                                            <FaPause style={{ marginRight: '0.4rem' }} />
-                                            Solicitud de pausa pendiente de aprobación
-                                            <span className="repr-pending-date"> — reanudación: {fmtFecha(pausaPendiente.fecha_reanudacion)}</span>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* Reprogramación: solicitud y estado para el dueño */}
-                                {isOwnTask && !isArchived && (
-                                    <div className="repr-owner-section">
-                                        {reprgPendiente ? (
-                                            <div className="repr-pending-badge">
-                                                <FaClock style={{ marginRight: '0.4rem' }} />
-                                                Solicitud de reprogramación pendiente de aprobación
-                                                <span className="repr-pending-date"> — {fmtFecha(reprgPendiente.fecha_nueva)}</span>
-                                            </div>
-                                        ) : (
-                                            <button
-                                                className="repr-solicitar-btn"
-                                                onClick={() => setShowReprgForm(true)}
-                                            >
-                                                <FaCalendar style={{ marginRight: '0.4rem' }} />
-                                                {isLider && isIndependiente ? 'Reprogramar tarea' : 'Solicitar reprogramación'}
-                                            </button>
-                                        )}
-                                    </div>
-                                )}
-
-                                {/* Solo mostrar controles de estado si es el dueño de la tarea */}
-                                {isOwnTask && (
-                                    <div className={"status-control"} style={{ marginTop: '1rem' }}>
-                                        <h4>Cambiar estado de la tarea</h4>
-                                        <div className={`status-buttons ${task.aprobada ? '' : 'disabled-status'}`}>
-                                            <button
-                                                className={`status-button pending ${currentStatus === 'Pendiente' ? 'active' : ''}`}
-                                                onClick={() => handleStatusChange('Pendiente')}
-                                                disabled={isChangingStatus || currentStatus === 'Pendiente'}
-                                            >
-                                                <FaClock /> Pendiente
-                                            </button>
-                                            <button
-                                                className={`status-button in-progress ${currentStatus === 'En Proceso' ? 'active' : ''}`}
-                                                onClick={() => handleStatusChange('En Proceso')}
-                                                disabled={isChangingStatus || currentStatus === 'En Proceso'}
-                                            >
-                                                <FaSpinner /> En Proceso
-                                            </button>
-                                            {(tieneCriterios || currentStatus === 'En Revisión') && (
-                                                <button
-                                                    className={`status-button review ${currentStatus === 'En Revisión' ? 'active' : ''}`}
-                                                    onClick={() => handleStatusChange('En Revisión')}
-                                                    disabled={isChangingStatus || currentStatus === 'En Revisión' || currentStatus === 'Completada'}
-                                                    title="Entregar para que verifiquen los criterios y acepten la tarea"
-                                                >
-                                                    <FaPaperPlane /> {currentStatus === 'En Revisión' ? 'En Revisión' : 'Enviar a revisión'}
-                                                </button>
-                                            )}
-                                            <button
-                                                className={`status-button completed ${currentStatus === 'Completada' ? 'active' : ''} ${tieneCriterios ? 'es-por-aceptacion' : ''}`}
-                                                onClick={() => handleStatusChange('Completada')}
-                                                disabled={isChangingStatus || currentStatus === 'Completada'}
-                                                title={tieneCriterios ? 'Se cierra al aceptar la entrega' : undefined}
-                                            >
-                                                <FaCheck /> Completada
-                                            </button>
-                                        </div>
-                                    </div>
-                                )}
-
-
-
+                                    <section className="td-panel" hidden={pestana !== 'checklist'}>
                                 {/* ── Checklist (misma UX que EmployeeModal) ─ */}
                                 <div className="subtareas-section" ref={(el) => { seccionesRef.current.checklist = el; }}>
                                     <h4 className="subtareas-title">
@@ -2512,8 +2372,9 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton, is
                                                 </div>
                                             )}
                                 </div>
-                            </div>
+                                    </section>
 
+                                    <section className="td-panel" hidden={pestana !== 'evidencias'}>
                             {/* Panel derecho: Evidencias */}
                             <div className="evidence-panel " ref={(el) => { seccionesRef.current.evidencias = el; }}>
                                 <h4>Evidencias de la tarea</h4>
@@ -2765,6 +2626,299 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton, is
                                 </div>
                             </div>
 
+                                    </section>
+
+                                    <section className="td-panel" hidden={pestana !== 'actividad'}>
+                            {/* ── Actividades y Comentarios ── */}
+                            <div className="act-feed-section">
+                                <h4 className="act-feed-title">💬 Actividades y Comentarios</h4>
+
+                                {/* Input para nuevo comentario */}
+                                {(isOwnTask || isLider || isAdmin) && !isArchived && (
+                                    <div className="act-comment-box">
+                                        <textarea
+                                            className="act-comment-input"
+                                            rows={2}
+                                            placeholder="Escribe un comentario..."
+                                            value={comentarioNuevo}
+                                            onChange={e => setComentarioNuevo(e.target.value)}
+                                            onKeyDown={e => {
+                                                if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) handleGuardarComentario();
+                                            }}
+                                            disabled={guardandoComentario}
+                                        />
+                                        <button
+                                            className="act-comment-send"
+                                            onClick={handleGuardarComentario}
+                                            disabled={guardandoComentario || !comentarioNuevo.trim()}
+                                        >
+                                            {guardandoComentario ? <FaSpinner className="spinner" /> : <FaComment />}
+                                            {guardandoComentario ? ' Enviando...' : ' Comentar'}
+                                        </button>
+                                    </div>
+                                )}
+
+                                {/* Feed */}
+                                <div className="act-feed-list">
+                                    {actividadesComentarios.length === 0 ? (
+                                        <p className="act-feed-empty">Sin actividades registradas aún.</p>
+                                    ) : (
+                                        actividadesComentarios.map(entry => {
+                                            const esComentario = entry.tipo_entrada === 'comentario';
+                                            const iconoActividad = {
+                                                'Aprobada': '✅', 'VistoBueno': '👁️', 'Rechazada': '❌',
+                                                'Estado': '🔄', 'Tarea': '📋', 'Reprogramada': '📅',
+                                                'Observacion': '💬', 'Pausada': '⏸️', 'Reanudada': '▶️',
+                                                'Pausa solicitada': '⏸️', 'Pausa aprobada': '✅', 'Pausa rechazada': '❌',
+                                                'Reprogramación solicitada': '📤', 'Reprogramación aprobada': '✅',
+                                                'Reprogramación rechazada': '❌',
+                                            }[entry.tipo] || '⚡';
+
+                                            const fechaStr = (() => {
+                                                if (!entry.fecha) return '';
+                                                const d = new Date(entry.fecha.includes('T') ? entry.fecha : entry.fecha.replace(' ', 'T'));
+                                                return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+                                            })();
+
+                                            return (
+                                                <div key={entry.id} className={`act-feed-item ${esComentario ? 'act-feed-item--comentario' : 'act-feed-item--actividad'}`}>
+                                                    <div className="act-feed-icon">
+                                                        {esComentario ? <FaComment size={13} /> : <span>{iconoActividad}</span>}
+                                                    </div>
+                                                    <div className="act-feed-body">
+                                                        {esComentario && (
+                                                            <span className="act-feed-autor">{entry.autor}</span>
+                                                        )}
+                                                        <p className="act-feed-texto">{entry.texto}</p>
+                                                        <span className="act-feed-fecha">{fechaStr}</span>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })
+                                    )}
+                                </div>
+                            </div>
+
+                            {historialReprg.length > 0 && (
+                                <div className="repr-history-section">
+                                    <h4 className="repr-history-title">📅 Historial de reprogramaciones</h4>
+                                    <div className="repr-history-list">
+                                        {historialReprg.map(r => (
+                                            <div key={r.id} className={`repr-history-item repr-history-item--${r.estado.toLowerCase()}`}>
+                                                <div className="repr-history-header">
+                                                    <span className={`repr-estado-badge repr-estado-${r.estado.toLowerCase()}`}>{r.estado}</span>
+                                                    <span className="repr-history-date">{fmtFecha(r.fecha_solicitud?.split(' ')[0] || r.fecha_solicitud)}</span>
+                                                </div>
+                                                <p className="repr-history-row"><strong>Solicitada por:</strong> {r.nombre_solicitante}</p>
+                                                <p className="repr-history-row"><strong>Fecha anterior:</strong> {fmtFecha(r.fecha_actual)} → <strong>Nueva:</strong> {fmtFecha(r.fecha_nueva)}</p>
+                                                <p className="repr-history-row"><strong>Motivo:</strong> {r.motivo}</p>
+                                                {r.nombre_aprobador && (
+                                                    <p className="repr-history-row"><strong>{r.estado === 'Aprobada' ? 'Aprobada' : 'Rechazada'} por:</strong> {r.nombre_aprobador}</p>
+                                                )}
+                                                {r.observacion_rechazo && (
+                                                    <p className="repr-history-row repr-rechazo-obs"><strong>Motivo rechazo:</strong> {r.observacion_rechazo}</p>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                                    </section>
+                                </main>
+
+                                {/* Lo que se decide va siempre a la vista: estado,
+                                    fechas y, para quien supervisa, la aprobación. */}
+                                <aside className="td-lateral">
+                                    <div className="td-tarjeta">
+                                        <h4 className="td-tarjeta-tit">Estado</h4>
+                                {/* Solo mostrar controles de estado si es el dueño de la tarea */}
+                                {isOwnTask && (
+                                    <div className={"status-control"} style={{ marginTop: '1rem' }}>
+                                        <h4>Cambiar estado de la tarea</h4>
+                                        <div className={`status-buttons ${task.aprobada ? '' : 'disabled-status'}`}>
+                                            {/* En revisión o cerrada, el responsable ya no la mueve:
+                                                sale de revisión cuando el líder decide, y una
+                                                cerrada sólo la reabre él. */}
+                                            <button
+                                                className={`status-button pending ${currentStatus === 'Pendiente' ? 'active' : ''}`}
+                                                onClick={() => handleStatusChange('Pendiente')}
+                                                disabled={isChangingStatus || currentStatus === 'Pendiente' || entregada}
+                                            >
+                                                <FaClock /> Pendiente
+                                            </button>
+                                            <button
+                                                className={`status-button in-progress ${currentStatus === 'En Proceso' ? 'active' : ''}`}
+                                                onClick={() => handleStatusChange('En Proceso')}
+                                                disabled={isChangingStatus || currentStatus === 'En Proceso' || entregada}
+                                            >
+                                                <FaSpinner /> En Proceso
+                                            </button>
+                                            <button
+                                                className={`status-button review ${currentStatus === 'En Revisión' ? 'active' : ''}`}
+                                                onClick={() => handleStatusChange('En Revisión')}
+                                                disabled={isChangingStatus || entregada}
+                                                title="Entregar para que tu líder la revise y la acepte"
+                                            >
+                                                <FaPaperPlane /> {currentStatus === 'En Revisión' ? 'En Revisión' : 'Enviar a revisión'}
+                                            </button>
+                                            <button
+                                                className={`status-button completed es-por-aceptacion ${currentStatus === 'Completada' ? 'active' : ''}`}
+                                                onClick={() => handleStatusChange('Completada')}
+                                                disabled={isChangingStatus || entregada}
+                                                title="Se cierra cuando tu líder acepta la entrega"
+                                            >
+                                                <FaCheck /> Completada
+                                            </button>
+                                        </div>
+                                        {currentStatus === 'En Revisión' && (
+                                            <p className="td-nota-estado">Entregada{task.fecha_entregada ? ` el ${new Date(task.fecha_entregada + 'T00:00:00').toLocaleDateString('es-CO')}` : ''}. Tu líder la aceptará o te la devolverá con observaciones.</p>
+                                        )}
+                                        {currentStatus === 'Completada' && (
+                                            <p className="td-nota-estado">Entrega aceptada. Sólo tu líder puede reabrirla.</p>
+                                        )}
+                                    </div>
+                                )}
+
+
+
+                                {/* Si algo detiene la tarea, a la vista sin tener que
+                                    entrar a editar. El propósito encabeza la visión
+                                    general; los criterios van en su sección, debajo. */}
+                                {!isEditingTask && (
+                                    <div className="task-metodo">
+                                        {/* El impedimento va arriba: si algo detiene
+                                            la tarea, es lo primero que hay que ver. */}
+                                        {Number(task.bloqueada) === 1 && (
+                                            <div className="metodo-item metodo-bloqueo">
+                                                <span className="metodo-label">
+                                                    Bloqueada
+                                                    {!isArchived && (
+                                                        <button
+                                                            type="button"
+                                                            className="metodo-accion"
+                                                            disabled={bloqueando}
+                                                            onClick={() => handleBloquear(false)}
+                                                        >
+                                                            Levantar
+                                                        </button>
+                                                    )}
+                                                </span>
+                                                <p>{task.motivo_bloqueo}</p>
+                                            </div>
+                                        )}
+
+                                        {/* Lo declara quien hace el trabajo, sin pedir
+                                            permiso: exigir un trámite para reconocer un
+                                            impedimento desalienta reportarlo. */}
+                                        {Number(task.bloqueada) !== 1 && !isArchived
+                                            && task.estado !== 'Completada' && (
+                                            <button
+                                                type="button"
+                                                className="btn-declarar-bloqueo"
+                                                disabled={bloqueando}
+                                                onClick={() => handleBloquear(true)}
+                                            >
+                                                Algo impide avanzar
+                                            </button>
+                                        )}
+                                    </div>
+                                )}
+
+                                {/* Pausa: badge pendiente para el dueño */}
+                                {isOwnTask && !isArchived && !pausada && pausaPendiente && (
+                                    <div className="repr-owner-section">
+                                        <div className="repr-pending-badge" style={{ background: '#fff7ed', borderColor: '#f97316', color: '#c2410c' }}>
+                                            <FaPause style={{ marginRight: '0.4rem' }} />
+                                            Solicitud de pausa pendiente de aprobación
+                                            <span className="repr-pending-date"> — reanudación: {fmtFecha(pausaPendiente.fecha_reanudacion)}</span>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {pausada && (task.fecha_reprogramacion || task.motivo_reprogramacion) && (
+                                    <div className="task-pausa-info-panel" aria-label="Información de pausa">
+                                        <h4 className="task-pausa-info-heading">
+                                            <FaPause /> Pausa
+                                        </h4>
+                                        {task.fecha_reprogramacion && (
+                                            <div className="task-pausa-info-row">
+                                                <span className="task-pausa-info-label">Reanudación prevista</span>
+                                                <span className="task-pausa-info-value">
+                                                    {new Date(
+                                                        String(task.fecha_reprogramacion).includes('T')
+                                                            ? task.fecha_reprogramacion
+                                                            : String(task.fecha_reprogramacion).slice(0, 10) + 'T12:00:00'
+                                                    ).toLocaleDateString()}
+                                                </span>
+                                            </div>
+                                        )}
+                                        {task.motivo_reprogramacion && (
+                                            <div className="task-pausa-info-row task-pausa-info-motivo">
+                                                <span className="task-pausa-info-label">Motivo</span>
+                                                <p className="task-pausa-info-motivo-text">{task.motivo_reprogramacion}</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
+                                    </div>
+
+                                    <div className="td-tarjeta">
+                                        <h4 className="td-tarjeta-tit">Fechas</h4>
+                                <div className="task-dates" ref={(el) => { seccionesRef.current.fechas = el; }}>
+                                    {/* Fecha creación */}
+                                    <div className="date-item">
+                                        <FaCalendar />
+                                        <span>  Fecha creación: {new Date(task.fecha_creacion + 'T00:00:00').toLocaleDateString()}</span>
+                                    </div>
+
+                                    {/* Fecha límite */}
+                                    <div className="date-item">
+                                        <FaClock />
+                                        <span>  Fecha límite: {new Date(task.fecha_pactada + 'T00:00:00').toLocaleDateString()}</span>
+                                    </div>
+
+                                    {/* Fecha aprobación */}
+                                    {task.fecha_aprobacion && (
+                                    <div className="date-item">
+                                        <FaCheck />
+                                        <span>  Fecha aprobación: {new Date(task.fecha_aprobacion + 'T00:00:00').toLocaleDateString()}</span>
+                                    </div>
+                                    )}
+
+                                    {/* Fecha entrega */}
+                                    {task.fecha_entregada && (
+                                        <div className="date-item">
+                                            <FaCheck />
+                                            <span>Entregado: {new Date(task.fecha_entregada + 'T00:00:00').toLocaleDateString()}</span>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Reprogramación: solicitud y estado para el dueño */}
+                                {isOwnTask && !isArchived && (
+                                    <div className="repr-owner-section">
+                                        {reprgPendiente ? (
+                                            <div className="repr-pending-badge">
+                                                <FaClock style={{ marginRight: '0.4rem' }} />
+                                                Solicitud de reprogramación pendiente de aprobación
+                                                <span className="repr-pending-date"> — {fmtFecha(reprgPendiente.fecha_nueva)}</span>
+                                            </div>
+                                        ) : (
+                                            <button
+                                                className="repr-solicitar-btn"
+                                                onClick={() => setShowReprgForm(true)}
+                                            >
+                                                <FaCalendar style={{ marginRight: '0.4rem' }} />
+                                                {isLider && isIndependiente ? 'Reprogramar tarea' : 'Solicitar reprogramación'}
+                                            </button>
+                                        )}
+                                    </div>
+                                )}
+
+                                    </div>
+
                             {/* Panel de supervisión - Para líderes, admins, y líderes independientes sobre sus propias tareas */}
                             {((isLider && !isOwnTask) || isAdmin || canSupervisarPropia) && (
                                 <>
@@ -2888,101 +3042,8 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton, is
                                 </>
                             )}
 
-                            {historialReprg.length > 0 && (
-                                <div className="repr-history-section">
-                                    <h4 className="repr-history-title">📅 Historial de reprogramaciones</h4>
-                                    <div className="repr-history-list">
-                                        {historialReprg.map(r => (
-                                            <div key={r.id} className={`repr-history-item repr-history-item--${r.estado.toLowerCase()}`}>
-                                                <div className="repr-history-header">
-                                                    <span className={`repr-estado-badge repr-estado-${r.estado.toLowerCase()}`}>{r.estado}</span>
-                                                    <span className="repr-history-date">{fmtFecha(r.fecha_solicitud?.split(' ')[0] || r.fecha_solicitud)}</span>
-                                                </div>
-                                                <p className="repr-history-row"><strong>Solicitada por:</strong> {r.nombre_solicitante}</p>
-                                                <p className="repr-history-row"><strong>Fecha anterior:</strong> {fmtFecha(r.fecha_actual)} → <strong>Nueva:</strong> {fmtFecha(r.fecha_nueva)}</p>
-                                                <p className="repr-history-row"><strong>Motivo:</strong> {r.motivo}</p>
-                                                {r.nombre_aprobador && (
-                                                    <p className="repr-history-row"><strong>{r.estado === 'Aprobada' ? 'Aprobada' : 'Rechazada'} por:</strong> {r.nombre_aprobador}</p>
-                                                )}
-                                                {r.observacion_rechazo && (
-                                                    <p className="repr-history-row repr-rechazo-obs"><strong>Motivo rechazo:</strong> {r.observacion_rechazo}</p>
-                                                )}
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* ── Actividades y Comentarios ── */}
-                            <div className="act-feed-section">
-                                <h4 className="act-feed-title">💬 Actividades y Comentarios</h4>
-
-                                {/* Input para nuevo comentario */}
-                                {(isOwnTask || isLider || isAdmin) && !isArchived && (
-                                    <div className="act-comment-box">
-                                        <textarea
-                                            className="act-comment-input"
-                                            rows={2}
-                                            placeholder="Escribe un comentario..."
-                                            value={comentarioNuevo}
-                                            onChange={e => setComentarioNuevo(e.target.value)}
-                                            onKeyDown={e => {
-                                                if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) handleGuardarComentario();
-                                            }}
-                                            disabled={guardandoComentario}
-                                        />
-                                        <button
-                                            className="act-comment-send"
-                                            onClick={handleGuardarComentario}
-                                            disabled={guardandoComentario || !comentarioNuevo.trim()}
-                                        >
-                                            {guardandoComentario ? <FaSpinner className="spinner" /> : <FaComment />}
-                                            {guardandoComentario ? ' Enviando...' : ' Comentar'}
-                                        </button>
-                                    </div>
-                                )}
-
-                                {/* Feed */}
-                                <div className="act-feed-list">
-                                    {actividadesComentarios.length === 0 ? (
-                                        <p className="act-feed-empty">Sin actividades registradas aún.</p>
-                                    ) : (
-                                        actividadesComentarios.map(entry => {
-                                            const esComentario = entry.tipo_entrada === 'comentario';
-                                            const iconoActividad = {
-                                                'Aprobada': '✅', 'VistoBueno': '👁️', 'Rechazada': '❌',
-                                                'Estado': '🔄', 'Tarea': '📋', 'Reprogramada': '📅',
-                                                'Observacion': '💬', 'Pausada': '⏸️', 'Reanudada': '▶️',
-                                                'Pausa solicitada': '⏸️', 'Pausa aprobada': '✅', 'Pausa rechazada': '❌',
-                                                'Reprogramación solicitada': '📤', 'Reprogramación aprobada': '✅',
-                                                'Reprogramación rechazada': '❌',
-                                            }[entry.tipo] || '⚡';
-
-                                            const fechaStr = (() => {
-                                                if (!entry.fecha) return '';
-                                                const d = new Date(entry.fecha.includes('T') ? entry.fecha : entry.fecha.replace(' ', 'T'));
-                                                return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
-                                            })();
-
-                                            return (
-                                                <div key={entry.id} className={`act-feed-item ${esComentario ? 'act-feed-item--comentario' : 'act-feed-item--actividad'}`}>
-                                                    <div className="act-feed-icon">
-                                                        {esComentario ? <FaComment size={13} /> : <span>{iconoActividad}</span>}
-                                                    </div>
-                                                    <div className="act-feed-body">
-                                                        {esComentario && (
-                                                            <span className="act-feed-autor">{entry.autor}</span>
-                                                        )}
-                                                        <p className="act-feed-texto">{entry.texto}</p>
-                                                        <span className="act-feed-fecha">{fechaStr}</span>
-                                                    </div>
-                                                </div>
-                                            );
-                                        })
-                                    )}
-                                </div>
+                                </aside>
                             </div>
-
                         </div>
                     </div>
                 </div>

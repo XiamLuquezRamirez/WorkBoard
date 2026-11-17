@@ -14,6 +14,7 @@ import VideosTableroModal from './VideosTableroModal';
 import EspacioEquipoModal from './equipo/EspacioEquipoModal';
 import FormularioTarea from './tareas/FormularioTarea';
 import TableroEquipoModal from './equipo/TableroEquipoModal';
+import ReunionesPendientes from './equipo/ReunionesPendientes';
 import { AvataresProvider } from './tablero/AvataresContext';
 import axiosInstance from '../axiosConfig';
 import Swal from 'sweetalert2';
@@ -83,6 +84,14 @@ const EmployeeInterface = ({ user }) => {
     const [showVideosModal, setShowVideosModal] = useState(false);
     // Guarda la pestaña con la que abrir el espacio de equipo, o null si está cerrado.
     const [espacioEquipo, setEspacioEquipo] = useState(null);
+
+    // Una notificación de reunión en la campana abre directamente la pestaña
+    // Reuniones del Espacio de Equipo.
+    useEffect(() => {
+        const abrir = () => setEspacioEquipo('reuniones');
+        window.addEventListener('wb:abrir-reuniones', abrir);
+        return () => window.removeEventListener('wb:abrir-reuniones', abrir);
+    }, []);
     const [verTableroEquipo, setVerTableroEquipo] = useState(false);
     const [showCalendarModal, setShowCalendarModal] = useState(false);
     const [calendarMonthAnchor, setCalendarMonthAnchor] = useState(() => {
@@ -300,6 +309,60 @@ const EmployeeInterface = ({ user }) => {
                 });
                 return;
             }
+
+            // Toda tarea pasa por revisión: de «En Revisión» sale cuando el
+            // líder acepta o devuelve la entrega, y una cerrada sólo la reabre
+            // él. El servidor lo exige igual; aquí se explica sin mover nada.
+            if (sourceId === 'En Revisión') {
+                Swal.fire({
+                    title: 'En revisión',
+                    text: 'Tu líder está revisando esta entrega. Saldrá de aquí cuando la acepte o te la devuelva con observaciones.',
+                    icon: 'info',
+                    confirmButtonText: 'Entendido',
+                });
+                return;
+            }
+            if (sourceId === 'Completada') {
+                Swal.fire({
+                    title: 'Tarea cerrada',
+                    text: 'La entrega ya fue aceptada. Sólo tu líder puede reabrirla.',
+                    icon: 'info',
+                    confirmButtonText: 'Entendido',
+                });
+                return;
+            }
+            if (destinationId === 'Completada') {
+                Swal.fire({
+                    title: 'Se cierra al aceptar la entrega',
+                    text: 'Envíala a revisión: tu líder la revisará y, si está bien, la cerrará.',
+                    icon: 'info',
+                    showCancelButton: true,
+                    confirmButtonText: 'Enviar a revisión',
+                    cancelButtonText: 'Cancelar',
+                }).then((r) => {
+                    if (r.isConfirmed) {
+                        onDragEnd({ ...result, destination: { droppableId: 'En Revisión', index: 0 } });
+                    }
+                });
+                return;
+            }
+            if (destinationId === 'En Revisión' && !result.confirmado) {
+                const total = tareaArrastrada?.subtareas_total || 0;
+                const hechas = tareaArrastrada?.subtareas_completadas || 0;
+                Swal.fire({
+                    title: 'Enviar a revisión',
+                    text: total > 0 && hechas < total
+                        ? `El checklist va ${hechas}/${total}. Tu líder revisará lo entregado y lo aceptará o te lo devolverá. ¿Enviar de todos modos?`
+                        : 'Tu líder revisará lo entregado y lo aceptará o te lo devolverá con observaciones. Para adjuntar evidencias, envíala desde el detalle de la tarea.',
+                    icon: total > 0 && hechas < total ? 'warning' : 'question',
+                    showCancelButton: true,
+                    confirmButtonText: 'Enviar',
+                    cancelButtonText: 'Cancelar',
+                }).then((r) => {
+                    if (r.isConfirmed) onDragEnd({ ...result, confirmado: true });
+                });
+                return;
+            }
         }
 
         // Crear copias profundas para evitar mutaciones
@@ -322,23 +385,14 @@ const EmployeeInterface = ({ user }) => {
             const destItems = Array.from(destColumn.items);
             const [moved] = sourceItems.splice(source.index, 1);
 
-            // Validar checklist antes de mover a Completada
-            if (destinationId === 'Completada' && (moved.subtareas_total || 0) > 0 && (moved.subtareas_completadas || 0) < moved.subtareas_total) {
-                Swal.fire({
-                    title: 'Checklist incompleto',
-                    text: `Debes completar todas las subtareas antes de mover la tarea a Completada. (${moved.subtareas_completadas || 0}/${moved.subtareas_total} completadas)`,
-                    icon: 'warning',
-                    confirmButtonText: 'Entendido'
-                });
-                return;
-            }
-
             // Actualizar el estado de la tarea
             moved.estado = destinationId;
 
-            // Si se mueve a Completada, agregar la fecha de finalización
-            if (destinationId === "Completada") {
-                moved.fecha_entregada = new Date().toISOString().split('T')[0];
+            // La fecha de entrega es la del envío a revisión (la fija el
+            // servidor; aquí sólo se refleja sin esperar a recargar).
+            if (destinationId === 'En Revisión') {
+                const d = new Date();
+                moved.fecha_entregada = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
             }
 
             destItems.splice(destination.index, 0, moved);
@@ -351,27 +405,34 @@ const EmployeeInterface = ({ user }) => {
                 estado: destinationId
             };
 
-            // Si se mueve a Completada, incluir la fecha de finalización
-            if (destinationId === "Completada") {
-                updateData.fecha_entregada = new Date().toISOString().split('T')[0];
-            }
-
             // Actualizar en el servidor. Si lo rechaza —por ejemplo porque la
             // tarea está pausada— hay que devolver la tarjeta a su columna: de
             // lo contrario quedaría movida en pantalla sin estarlo en la base
             // de datos.
             const columnasPrevias = columns;
             axiosInstance.put(`/actualizarEstadoTarea/${draggableId}`, updateData)
+                .then(() => {
+                    if (destinationId === 'En Revisión') {
+                        Swal.fire({
+                            title: 'Enviada a revisión',
+                            text: 'Tu líder recibió el aviso en la plataforma y por correo.',
+                            icon: 'success',
+                            timer: 2500,
+                            showConfirmButton: false,
+                        });
+                    }
+                })
                 .catch(error => {
                     console.error('Error al actualizar estado:', error);
                     setColumns(columnasPrevias);
                     const msg = error?.response?.data?.error
                         || 'No fue posible actualizar el estado de la tarea.';
-                    // El 409 tiene dos causas: la pausa, o que la tarea tiene
-                    // criterios de aceptación y sólo se cierra aceptándola.
-                    const titulo409 = error?.response?.data?.requiere_verificacion
+                    // El 409 tiene varias causas: la pausa, que sólo se cierra
+                    // aceptándola, o que está en revisión.
+                    const d409 = error?.response?.data || {};
+                    const titulo409 = d409.requiere_verificacion
                         ? 'Requiere aceptación'
-                        : 'Tarea en pausa';
+                        : d409.en_revision ? 'En revisión' : 'Tarea en pausa';
                     Swal.fire({
                         title: error?.response?.status === 409 ? titulo409 : 'Error',
                         text: msg,
@@ -512,10 +573,11 @@ const EmployeeInterface = ({ user }) => {
                 <h2>Mis Tareas</h2>
 
                 <div className="header-right">
-                    {/* Las dos vistas de equipo salen del menú y quedan a la
-                        vista: son lo que un líder abre a diario. */}
-                    {user.lider == 'Si' && (
-                        <div className="acciones-equipo">
+                    {/* El Espacio de Equipo (plano, reuniones y chat) es de
+                        todos: cualquiera escribe, llama o convoca a un
+                        compañero. El tablero del equipo sigue siendo del líder. */}
+                    <div className="acciones-equipo">
+                        {user.lider == 'Si' && (
                             <button
                                 className="btn-equipo es-tablero"
                                 onClick={() => setVerTableroEquipo(true)}
@@ -523,6 +585,7 @@ const EmployeeInterface = ({ user }) => {
                             >
                                 <FaColumns /> <span>Tablero de Equipo</span>
                             </button>
+                        )}
                             <button
                                 className="btn-equipo es-espacio"
                                 onClick={() => setEspacioEquipo('actividad')}
@@ -530,8 +593,7 @@ const EmployeeInterface = ({ user }) => {
                             >
                                 <FaUsers /> <span>Espacio de Equipo</span>
                             </button>
-                        </div>
-                    )}
+                    </div>
 
                     <div className="task-options-dropdown" ref={optionsDropdownRef}>
                         <button
@@ -833,6 +895,8 @@ const EmployeeInterface = ({ user }) => {
                     </div>
                 </div>
             )}
+
+            <ReunionesPendientes onVerTodas={() => setEspacioEquipo('reuniones')} />
 
             {/* Sólo se ven en móvil y tablet: en escritorio caben las cuatro columnas. */}
             <nav className="kanban-pestanas" aria-label="Columnas del tablero" ref={pestanasRef}>

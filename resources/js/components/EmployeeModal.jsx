@@ -593,12 +593,8 @@ const EmployeeModal = ({ isOpen, onClose }) => {
     };
 
     const handleActualizarEstadoTarea = (tarea, nuevoEstado) => {
-        if (nuevoEstado === 'Completada') {
-            setTareaActual(tarea);
-            setShowEvidenciasModal(true);
-        } else {
-            actualizarEstadoTarea(tarea.id, nuevoEstado);
-        }
+        // Completada ya no se elige: la tarea se cierra aceptando la entrega.
+        actualizarEstadoTarea(tarea.id, nuevoEstado);
     };
 
     const actualizarEstadoTarea = (tareaId, nuevoEstado, evidencias = []) => {
@@ -1328,15 +1324,20 @@ const EmployeeModal = ({ isOpen, onClose }) => {
 
                                                     <div className="tarea-item-empleado-acciones">
                                                         <div className="tarea-estado tarea-item-empleado-estado">
+                                                            {/* Toda tarea se cierra aceptando la entrega desde
+                                                                su detalle; en revisión sólo sale aceptándola o
+                                                                devolviéndola. */}
                                                             <select
                                                                 value={tarea.estado}
                                                                 onChange={(e) => handleActualizarEstadoTarea(tarea, e.target.value)}
                                                                 className={`estado-select ${tarea.estado.toLowerCase()}`}
+                                                                disabled={tarea.estado === 'En Revisión'}
+                                                                title={tarea.estado === 'En Revisión' ? 'En revisión: ábrela para aceptar o devolver la entrega' : undefined}
                                                             >
                                                                 <option value="Pendiente">Pendiente</option>
                                                                 <option value="En Proceso">En Proceso</option>
                                                                 <option value="En Revisión">En Revisión</option>
-                                                                <option value="Completada">Completada</option>
+                                                                <option value="Completada" disabled={tarea.estado !== 'Completada'}>Completada (al aceptar)</option>
                                                                 <option value="Cancelada">Cancelada</option>
                                                             </select>
                                                         </div>

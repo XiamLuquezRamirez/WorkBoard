@@ -28,6 +28,82 @@ import {
 } from 'react-icons/fa';
 import { FaCircleCheck, FaCircle, FaCircleXmark } from 'react-icons/fa6';
 import FormularioTarea from './tareas/FormularioTarea';
+import PanoramaDashboard from './dashboard/PanoramaDashboard';
+import ResolverVencidas from './dashboard/ResolverVencidas';
+import { AvataresProvider, useAvatar, resolverFoto } from './tablero/AvataresContext';
+
+/**
+ * Foto de la persona. En la carga liviana no viaja (es base64 y pesaba
+ * más que todo lo demás junto): se toma del diccionario de avatares, que se
+ * pide una sola vez.
+ */
+const FotoEmpleado = ({ empleado, className }) => {
+    const delDiccionario = useAvatar(empleado.id);
+    const src = delDiccionario || resolverFoto(empleado.foto);
+    if (!src) {
+        const ini = String(empleado.nombre || '?').trim().split(/\s+/).slice(0, 2).map((p) => p[0]).join('').toUpperCase();
+        return <span className={`${className} foto-iniciales`} aria-hidden="true">{ini}</span>;
+    }
+    return <img src={src} alt={empleado.nombre} className={className} />;
+};
+
+/**
+ * Fechas de la base ('2026-05-12'): se leen como fecha local. Antes se hacía
+ * new Date(fecha) + 24 h para compensar que JavaScript las lee como UTC; el
+ * parche fallaba con fechas que traen hora y es innecesario así.
+ */
+const fechaLocal = (txt) => {
+    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(txt || ''));
+    if (!m || txt.startsWith('0000')) return null;
+    return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+};
+
+const fechaCorta = (txt) => {
+    const d = fechaLocal(txt);
+    return d ? d.toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+};
+
+/** Clasificación del índice que calcula el servidor (IndiceDesempeno). */
+const NIVELES = {
+    alto:            { label: '🟢 Alto',          color: '#16a34a' },
+    medio:           { label: '🟡 Medio',         color: '#f59e0b' },
+    bajo:            { label: '🔴 Bajo',          color: '#dc2626' },
+    'en-curso':      { label: 'En curso',         color: '#2563eb' },
+    'sin-actividad': { label: 'Sin actividad',    color: '#9ca3af' },
+    'sin-datos':     { label: 'Sin datos',        color: '#9ca3af' },
+};
+
+/** Filtros del dashboard: qué tarjetas mostrar según lo que piden. */
+const FILTROS = [
+    { id: 'todos',          etiqueta: 'Todos' },
+    { id: 'atencion',       etiqueta: 'Necesitan atención', cumple: (i) => (i.atencion || []).length > 0 },
+    { id: 'vencidas',       etiqueta: 'Vencidas +7 días',   cumple: (i) => (i.atencion || []).includes('vencidas') },
+    { id: 'sin-movimiento', etiqueta: 'Sin movimiento',     cumple: (i) => (i.atencion || []).includes('sin-movimiento') },
+    { id: 'sin-tareas',     etiqueta: 'Sin tareas abiertas', cumple: (i) => (i.atencion || []).includes('sin-tareas') },
+    { id: 'al-dia',         etiqueta: 'Al día',             cumple: (i) => (i.atencion || []).length === 0 },
+];
+
+const ORDENES = {
+    atencion: (a, b) => (b.indicadores?.prioridad_atencion || 0) - (a.indicadores?.prioridad_atencion || 0)
+        || a.nombre.localeCompare(b.nombre),
+    nombre: (a, b) => a.nombre.localeCompare(b.nombre),
+    indice: (a, b) => (a.indicadores?.indice ?? 101) - (b.indicadores?.indice ?? 101)
+        || a.nombre.localeCompare(b.nombre),
+};
+
+/** Etiqueta corta de cada motivo de atención, para la tarjeta. */
+const MOTIVOS = {
+    vencidas: '⏰ Vencidas +7 días',
+    'sin-movimiento': '💤 Sin movimiento esta semana',
+    'sin-tareas': '📭 Sin tareas abiertas',
+};
+
+const haceDias = (n) => {
+    if (n === null || n === undefined) return 'sin movimientos registrados';
+    if (n === 0) return 'hoy';
+    if (n === 1) return 'ayer';
+    return `hace ${n} días`;
+};
 
 // Definidos fuera de `Dashboard` para evitar remount del modal
 // en cada cambio de estado del Dashboard (se percibe como "recarga").
@@ -51,11 +127,7 @@ const ProfileModal = ({ employee, onClose }) => {
                     <div className="profile-section">
                         <div className="profile-header">
                             <div className="profile-photo-container">
-                                <img
-                                    src={employee.foto}
-                                    alt={employee.nombre}
-                                    className="profile-photo"
-                                />
+                                <FotoEmpleado empleado={employee} className="profile-photo" />
                             </div>
                             <div className="profile-info">
                                 <h3 style={{ textTransform: 'capitalize' }}>{employee.nombre}</h3>
@@ -215,7 +287,9 @@ const TasksModal = ({
                     </div>
                 </div>
                 <div className="modal-body">
-                    {mostrarFormTarea ? (
+                    {employee.detalle === false && !mostrarFormTarea ? (
+                        <p className="no-tareas">Cargando tareas…</p>
+                    ) : mostrarFormTarea ? (
                         <FormularioTarea
                             empleadoId={employee.id}
                             empleadoNombre={employee.nombre}
@@ -270,21 +344,19 @@ const TasksModal = ({
                                                 <span className="tarea-fechas">
                                                     {tarea.fecha_asignacion && (
                                                         <span>
-                                                            {" "} <FaCalendar style={{ color: '#1D4ED8', backgroundColor: '#dceffb', borderRadius: '50%', padding: '2px' }} size={13} /> <label style={{ fontSize: '14px', fontWeight: 'bold' }}>Fecha asignación:</label> {new Date(new Date(tarea.fecha_asignacion).getTime() + 24 * 60 * 60 * 1000).toLocaleDateString()}
+                                                            {" "} <FaCalendar style={{ color: '#1D4ED8', backgroundColor: '#dceffb', borderRadius: '50%', padding: '2px' }} size={13} /> <label style={{ fontSize: '14px', fontWeight: 'bold' }}>Fecha asignación:</label> {fechaCorta(tarea.fecha_asignacion)}
                                                         </span>
                                                     )}
                                                     {tarea.fecha_aprobacion && (
                                                         <span>
                                                             {" "} <FaCheck style={{ color: '#008000' }} size={13} /> <label style={{ fontSize: '14px', fontWeight: 'bold' }}>Fecha aprobación:</label> {
-                                                            tarea.fecha_aprobacion !== '0000-00-00'
-                                                                ? new Date(new Date(tarea.fecha_aprobacion).getTime() + 24 * 60 * 60 * 1000).toLocaleDateString()
-                                                                : "No aprobada"
+                                                            fechaCorta(tarea.fecha_aprobacion) || "No aprobada"
                                                             }
                                                         </span>
                                                     )}
                                                     {tarea.fecha_pactada && (
                                                         <span>
-                                                            {" "} <FaClock style={{ color: '#C2410C', backgroundColor: '#f9cccf', borderRadius: '50%', padding: '2px' }} size={13} /> <label style={{ fontSize: '14px', fontWeight: 'bold' }}>Fecha pactada:</label> {new Date(new Date(tarea.fecha_pactada).getTime() + 24 * 60 * 60 * 1000).toLocaleDateString()}
+                                                            {" "} <FaClock style={{ color: '#C2410C', backgroundColor: '#f9cccf', borderRadius: '50%', padding: '2px' }} size={13} /> <label style={{ fontSize: '14px', fontWeight: 'bold' }}>Fecha pactada:</label> {fechaCorta(tarea.fecha_pactada)}
                                                         </span>
                                                     )}
                                                 </span>
@@ -319,7 +391,7 @@ const TasksModal = ({
                 overlayZIndex={10000}
                 onUpdate={() => {
                     axiosInstance
-                        .get("/dashboard/cargarEmpleadosTareas")
+                        .get("/dashboard/cargarEmpleadosTareas", { params: { empleado: selectedEmployee.id } })
                         .then((response) => {
                             const empleadoActualizado = response.data.find(emp => emp.id === selectedEmployee.id);
                             if (empleadoActualizado) {
@@ -373,6 +445,12 @@ const Dashboard = () => {
     const [mostrarFormTarea, setMostrarFormTarea] = useState(false);
     const [proyectos, setProyectos] = useState([]);
     const [filterDepartamento, setFilterDepartamento] = useState('');
+    const [filtro, setFiltro] = useState('todos');
+    // Resolver vencidas: { departamento } o { empleado: { id, nombre } }.
+    const [resolver, setResolver] = useState(null);
+    // Por defecto, lo que necesita atención arriba: antes las tarjetas no
+    // tenían un orden útil y había que recorrerlas todas para encontrarlo.
+    const [orden, setOrden] = useState('atencion');
 
 
 
@@ -431,9 +509,10 @@ const Dashboard = () => {
     const cargarEmpleados = async () => {
         setIsLoading2(true);
         axiosInstance
-            .get("/dashboard/cargarEmpleadosTareas")
+            // Liviana: sólo lo que muestran las tarjetas. El detalle de cada
+            // tarea se pide al abrir a la persona.
+            .get("/dashboard/cargarEmpleadosTareas", { params: { ligero: 1 } })
             .then((response) => {
-                console.log(response.data);
                 setEmpleados(response.data);
                 setIsLoading2(false);
             })
@@ -446,117 +525,37 @@ const Dashboard = () => {
             });
     };
 
-    const calcularIndiceDesempeno = (empleado) => {
-        const tareas = (empleado.tareas || []).filter(t => t.estado_reg === 'Activo' && t.pausada !== 1);
-        const hoy = new Date().toISOString().split('T')[0];
-        const asignadas = tareas.length;
-        if (asignadas === 0) return null;
-
-        const completadas   = tareas.filter(t => t.estado === 'Completada').length;
-        const atrasadas     = tareas.filter(t => t.fecha_pactada && t.fecha_pactada < hoy && t.estado !== 'Completada').length;
-        const aTiempo       = tareas.filter(t =>
-            t.estado === 'Completada' && t.fecha_entregada && t.fecha_entregada <= t.fecha_pactada
-        ).length;
-        const reprocesadas  = tareas.filter(t => t.rechazada == 1).length;
-
-        // 4 tasas (0–1), cada una protegida contra división por cero y datos corruptos
-        const tasaCompletitud = completadas / asignadas;
-        const tasaPuntualidad = aTiempo / Math.max(completadas, 1);
-        const tasaVigencia    = 1 - Math.min(atrasadas / asignadas, 1);
-        const tasaCalidad     = 1 - Math.min(reprocesadas / Math.max(completadas, 1), 1);
-
-        // Pesos: 40 + 25 + 20 + 15 = 100
-        const score =
-            tasaCompletitud * 40 +
-            tasaPuntualidad * 25 +
-            tasaVigencia    * 20 +
-            tasaCalidad     * 15;
-
-        return Math.max(0, Math.min(100, Math.round(score)));
-    };
-
-    const clasificarEmpleado = (id) => {
-        if (id === null)  return { nivel: 'sin-datos', label: 'Sin datos',  color: '#9ca3af' };
-        if (id >= 75)     return { nivel: 'alto',      label: '🟢 Alto',    color: '#16a34a' };
-        if (id >= 50)     return { nivel: 'medio',     label: '🟡 Medio',   color: '#f59e0b' };
-        return                  { nivel: 'bajo',       label: '🔴 Bajo',    color: '#dc2626' };
-    };
-
-    const generarMensaje = (emp, id) => {
-        if (id === null) return 'Sin tareas asignadas.';
-        const hoy = new Date().toISOString().split('T')[0];
-        const tareas = (emp.tareas || []).filter(t => t.estado_reg === 'Activo' && t.pausada !== 1);
-        const completadas   = tareas.filter(t => t.estado === 'Completada').length;
-        const atrasadas     = tareas.filter(t => t.fecha_pactada && t.fecha_pactada < hoy && t.estado !== 'Completada').length;
-        const reprocesadas  = tareas.filter(t => t.rechazada == 1).length;
-        const proximas      = tareas.filter(t => {
-            if (t.estado === 'Completada') return false;
-            const dias = Math.ceil((new Date(t.fecha_pactada) - new Date(hoy)) / 86400000);
-            return dias >= 0 && dias <= 3;
-        }).length;
-
-        const pluralT = (n) => `${n} tarea${n !== 1 ? 's' : ''}`;
-
-        if (id >= 75) {
-            if (reprocesadas > 0)
-                return `Buen rendimiento. ${pluralT(reprocesadas)} con reproceso afectan la calidad.`;
-            if (atrasadas === 0 && proximas === 0)
-                return '¡Excelente rendimiento! Al día con todas las tareas.';
-            if (proximas > 0)
-                return `Buen rendimiento. ${pluralT(proximas)} por vencer pronto.`;
-            return 'Buen rendimiento general.';
-        }
-        if (id >= 50) {
-            if (atrasadas > 0 && reprocesadas > 0)
-                return `Rendimiento medio. ${pluralT(atrasadas)} atrasada${atrasadas !== 1 ? 's' : ''} y ${pluralT(reprocesadas)} con reproceso.`;
-            if (atrasadas > 0)
-                return `Rendimiento medio. ${pluralT(atrasadas)} atrasada${atrasadas !== 1 ? 's' : ''}.`;
-            if (reprocesadas > 0)
-                return `Rendimiento medio. ${pluralT(reprocesadas)} con reproceso reducen la calidad.`;
-            return 'Rendimiento aceptable. Puede mejorar la puntualidad.';
-        }
-        if (atrasadas > 0 && reprocesadas > 0)
-            return `Rendimiento crítico: ${pluralT(atrasadas)} atrasada${atrasadas !== 1 ? 's' : ''} y ${pluralT(reprocesadas)} con reproceso.`;
-        if (atrasadas > 0)
-            return `Rendimiento crítico. ${pluralT(atrasadas)} atrasada${atrasadas !== 1 ? 's' : ''}.`;
-        if (reprocesadas > 0)
-            return `Rendimiento bajo. ${pluralT(reprocesadas)} requirieron rehacerse.`;
-        return 'Rendimiento bajo. Revisar carga de trabajo.';
-    };
-
+    /*
+     * El índice, las vencidas y el mensaje los calcula el servidor
+     * (App\Support\IndiceDesempeno): ventana de 90 días, hora de Bogotá y el
+     * mismo criterio de «vencida» que el tablero de equipo. Antes se calculaba
+     * aquí con todo el historial y en UTC, y quien llevaba meses sin registrar
+     * nada podía salir «Alto».
+     */
     const calcularStatsGlobales = (listaEmpleados) => {
-        let tareasActivas = 0;
-        let tareasAtrasadas = 0;
-        let sumaEficiencia = 0;
-        const hoy = new Date().toISOString().split('T')[0];
-
-        listaEmpleados.forEach(emp => {
-            const tareas = emp.tareas || [];
-            tareasActivas += tareas.filter(t => t.estado === 'Pendiente' || t.estado === 'En Proceso').length;
-            tareasAtrasadas += tareas.filter(t =>
-                t.fecha_pactada && t.fecha_pactada < hoy &&
-                t.estado !== 'Completada' && t.pausada !== 1
-            ).length;
-            sumaEficiencia += calcularIndiceDesempeno(emp) ?? 0;
-        });
-
+        const conIndice = listaEmpleados.filter((e) => e.indicadores?.indice != null);
+        const suma = (campo) => listaEmpleados.reduce((a, e) => a + (e.indicadores?.[campo] || 0), 0);
+        const completadas30 = suma('completadas_30');
         return {
+            // Adopción: ¿se está usando la plataforma para trabajar?
+            activosSemana: listaEmpleados.filter((e) => e.indicadores?.activo_semana).length,
+            vencidasGraves: suma('vencidas_graves'),
+            completadas30,
+            pctATiempo30: completadas30 > 0 ? Math.round((suma('a_tiempo_30') / completadas30) * 100) : null,
+            sinCriterio: suma('sin_criterio'),
             totalEmpleados: listaEmpleados.length,
-            tareasActivas,
-            tareasAtrasadas,
-            eficienciaPromedio: listaEmpleados.length > 0
-                ? Math.round(sumaEficiencia / listaEmpleados.length)
-                : 0,
+            tareasActivas: listaEmpleados.reduce((a, e) => a + (e.indicadores?.pendientes || 0) + (e.indicadores?.en_proceso || 0), 0),
+            tareasAtrasadas: listaEmpleados.reduce((a, e) => a + (e.indicadores?.vencidas || 0), 0),
+            // Sólo promedia a quien tiene algo que evaluar: contar como 0 a
+            // quien no tiene tareas hundía el promedio sin medir nada.
+            eficienciaPromedio: conIndice.length
+                ? Math.round(conIndice.reduce((a, e) => a + e.indicadores.indice, 0) / conIndice.length)
+                : null,
+            evaluados: conIndice.length,
         };
     };
 
-    const contarTareasAtrasadas = (empleado) => {
-        const hoy = new Date().toISOString().split('T')[0];
-        return (empleado.tareas || []).filter(t =>
-            t.fecha_pactada && t.fecha_pactada < hoy &&
-            t.estado !== 'Completada' && t.pausada !== 1
-        ).length;
-    };
+    const contarTareasAtrasadas = (empleado) => empleado.indicadores?.vencidas || 0;
 
     const getStatusIcon = (status) => {
         switch (status) {
@@ -566,6 +565,8 @@ const Dashboard = () => {
                 return <FaSpinner color="#377AED" />;
             case "Pendiente":
                 return <FaClock color="#c2410c" />;
+            case "En Revisión":
+                return <FaSearch color="#0d9488" />;
             default:
                 return null;
         }
@@ -579,6 +580,8 @@ const Dashboard = () => {
                 return "status-progress";
             case "Pendiente":
                 return "status-pending";
+            case "En Revisión":
+                return "status-review";
             default:
                 return "";
         }
@@ -635,9 +638,20 @@ const Dashboard = () => {
         );
     }
 
+    // Al abrir las tareas de alguien se pide su detalle completo.
+    const abrirDetalle = async (id) => {
+        try {
+            const r = await axiosInstance.get('/dashboard/cargarEmpleadosTareas', { params: { empleado: id } });
+            const emp = r.data.find((e) => e.id === id);
+            if (emp) setSelectedEmployee((actual) => (actual && actual.id === id ? emp : actual));
+        } catch (e) {
+            setSelectedEmployee((actual) => (actual && actual.id === id ? { ...actual, detalle: true, tareas: [] } : actual));
+        }
+    };
+
     // Tras crear una tarea se recarga el empleado para ver la tarea nueva.
     const refrescarEmpleadoSeleccionado = async () => {
-        const updated = await axiosInstance.get('/dashboard/cargarEmpleadosTareas');
+        const updated = await axiosInstance.get('/dashboard/cargarEmpleadosTareas', { params: { empleado: selectedEmployee.id } });
         const emp = updated.data.find(e => e.id === selectedEmployee.id);
         if (emp) {
             setSelectedEmployee(emp);
@@ -654,6 +668,25 @@ const Dashboard = () => {
         const matchDept = !filterDepartamento || empleado.departamento === filterDepartamento;
         return matchSearch && matchDept;
     });
+
+    // Los indicadores de arriba miran el área elegida y la búsqueda, pero no
+    // el filtro de atención: si no, al elegir «Al día» saldría 0 vencidas.
+    const filtroActual = FILTROS.find((f) => f.id === filtro) || FILTROS[0];
+    const tarjetas = filteredEmpleados
+        .filter((e) => !filtroActual.cumple || filtroActual.cumple(e.indicadores || {}))
+        .sort(ORDENES[orden] || ORDENES.atencion);
+    // El resumen por área mira la búsqueda pero no el filtro de área: así
+    // siempre se ven todas y se puede saltar de una a otra.
+    const porBusqueda = empleados.filter((e) => {
+        const t = searchTerm.toLowerCase();
+        return e.nombre.toLowerCase().includes(t)
+            || (e.departamento || '').toLowerCase().includes(t)
+            || (e.empresa || '').toLowerCase().includes(t);
+    });
+
+    const cuentaFiltro = (f) => (f.cumple
+        ? filteredEmpleados.filter((e) => f.cumple(e.indicadores || {})).length
+        : filteredEmpleados.length);
 
     const renderContent = () => {
         switch (currentView) {
@@ -719,40 +752,102 @@ const Dashboard = () => {
                                     </div>
                                 </div>
                                 <div className="dashboard-content-column">
+                                    {/* Adopción primero: antes de medir el desempeño hay que
+                                        saber si la plataforma se está usando para trabajar. */}
                                     <div className="dashboard-stats-panel">
-                                        <div className="stat-kpi">
-                                            <span className="stat-kpi-number">{stats.totalEmpleados}</span>
-                                            <span className="stat-kpi-label">Empleados activos</span>
-                                        </div>
-                                        <div className="stat-kpi">
-                                            <span className="stat-kpi-number">{stats.tareasActivas}</span>
-                                            <span className="stat-kpi-label">Tareas en curso</span>
+                                        <div
+                                            className={`stat-kpi ${stats.totalEmpleados > 0 && stats.activosSemana / stats.totalEmpleados < 0.5 ? 'stat-kpi--alert' : ''}`}
+                                            title="Personas con algún movimiento en sus tareas en los últimos 7 días: crear, mover, comentar, entregar…"
+                                        >
+                                            <span className="stat-kpi-number">
+                                                {stats.activosSemana}<small className="stat-kpi-de"> / {stats.totalEmpleados}</small>
+                                            </span>
+                                            <span className="stat-kpi-label">Movieron trabajo esta semana</span>
                                         </div>
                                         <div
-                                            className={`stat-kpi ${stats.tareasAtrasadas > 0 ? 'stat-kpi--alert' : ''}`}
+                                            className={`stat-kpi ${stats.vencidasGraves > 0 ? 'stat-kpi--alert stat-kpi--accion' : ''}`}
+                                            title="Tareas abiertas que pasaron su fecha pactada hace más de 7 días (sin contar En Revisión ni pausadas). Pulsa para resolverlas."
+                                            role={stats.tareasAtrasadas > 0 ? 'button' : undefined}
+                                            tabIndex={stats.tareasAtrasadas > 0 ? 0 : undefined}
+                                            onClick={() => stats.tareasAtrasadas > 0 && setResolver({ departamento: filterDepartamento })}
+                                            onKeyDown={(e) => {
+                                                if ((e.key === 'Enter' || e.key === ' ') && stats.tareasAtrasadas > 0) {
+                                                    e.preventDefault();
+                                                    setResolver({ departamento: filterDepartamento });
+                                                }
+                                            }}
                                         >
-                                            <span className="stat-kpi-number">{stats.tareasAtrasadas}</span>
-                                            <span className="stat-kpi-label">Tareas atrasadas</span>
+                                            <span className="stat-kpi-number">{stats.vencidasGraves}</span>
+                                            <span className="stat-kpi-label">Vencidas hace +7 días</span>
+                                            {stats.tareasAtrasadas > stats.vencidasGraves && (
+                                                <span className="stat-kpi-sub">{stats.tareasAtrasadas} vencidas en total</span>
+                                            )}
                                         </div>
-                                        <div className="stat-kpi">
-                                            <span className="stat-kpi-number">{stats.eficienciaPromedio}%</span>
-                                            <span className="stat-kpi-label">Eficiencia promedio</span>
+                                        <div className="stat-kpi" title="Entregas de los últimos 30 días que llegaron en su fecha pactada o antes">
+                                            <span className="stat-kpi-number">
+                                                {stats.pctATiempo30 === null ? '—' : `${stats.pctATiempo30}%`}
+                                            </span>
+                                            <span className="stat-kpi-label">Entregado a tiempo · 30 días</span>
+                                            <span className="stat-kpi-sub">
+                                                {stats.completadas30 === 0
+                                                    ? 'Ninguna entrega en 30 días'
+                                                    : `${stats.completadas30} entrega${stats.completadas30 === 1 ? '' : 's'}`}
+                                                {' · eficiencia 90 días: '}
+                                                {stats.eficienciaPromedio === null ? '—' : `${stats.eficienciaPromedio}%`}
+                                            </span>
+                                        </div>
+                                        <div
+                                            className={`stat-kpi ${stats.sinCriterio > 0 ? 'stat-kpi--aviso' : ''}`}
+                                            title="Tareas abiertas sin criterio de aceptación: no se sabe cuándo están terminadas"
+                                        >
+                                            <span className="stat-kpi-number">{stats.sinCriterio}</span>
+                                            <span className="stat-kpi-label">Abiertas sin criterio</span>
                                         </div>
                                     </div>
+
+                                    <PanoramaDashboard
+                                        empleados={porBusqueda}
+                                        departamento={filterDepartamento}
+                                        onElegirDepartamento={setFilterDepartamento}
+                                    />
+
+                                    <div className="dashboard-filtros" role="toolbar" aria-label="Filtrar y ordenar personas">
+                                        <div className="dashboard-chips">
+                                            {FILTROS.map((f) => (
+                                                <button
+                                                    key={f.id}
+                                                    type="button"
+                                                    className={`dashboard-chip ${filtro === f.id ? 'es-activo' : ''}`}
+                                                    onClick={() => setFiltro(f.id)}
+                                                    aria-pressed={filtro === f.id}
+                                                >
+                                                    {f.etiqueta} <span className="dashboard-chip-n">{cuentaFiltro(f)}</span>
+                                                </button>
+                                            ))}
+                                        </div>
+                                        <label className="dashboard-orden">
+                                            Ordenar
+                                            <select value={orden} onChange={(e) => setOrden(e.target.value)}>
+                                                <option value="atencion">Necesitan atención primero</option>
+                                                <option value="indice">Índice más bajo primero</option>
+                                                <option value="nombre">Nombre</option>
+                                            </select>
+                                        </label>
+                                    </div>
                                     <div className="cards-grid">
-                                    {filteredEmpleados.map((empleado) => {
+                                    {tarjetas.length === 0 && (
+                                        <p className="dashboard-vacio">Nadie cumple este filtro.</p>
+                                    )}
+                                    {tarjetas.map((empleado) => {
                                         const atrasadas = contarTareasAtrasadas(empleado);
+                                        const ind = empleado.indicadores || {};
                                         return (
                                         <div
                                             key={empleado.id}
                                             className="employee-card"
                                         >
                                             <div className="employee-main-info">
-                                                <img
-                                                    src={empleado.foto}
-                                                    alt={empleado.nombre}
-                                                    className="employee-photo"
-                                                />
+                                                <FotoEmpleado empleado={empleado} className="employee-photo" />
                                                 <div className="employee-details">
                                                     <h3>{empleado.nombre}</h3>
                                                     <p className="cargo">
@@ -762,17 +857,37 @@ const Dashboard = () => {
                                                         <FaBuilding size={13} /> {" "}   {empleado.empresa} -{" "}
                                                         {empleado.departamento}
                                                     </p>
-                                                    <p className="contacto">
-                                                        <FaEnvelope />{" "}
-                                                        {empleado.contacto?.email}
-                                                    </p>
+                                                    {/* El correo está en «Perfil»: aquí ocupaba
+                                                        el sitio de lo que sí ayuda a decidir. */}
                                                 </div>
 
                                             </div>
+                                            {(ind.atencion || []).length > 0 && (
+                                                <div className="employee-card-motivos">
+                                                    {ind.atencion.map((m) => (
+                                                        <span key={m} className={`motivo motivo--${m}`}>{MOTIVOS[m] || m}</span>
+                                                    ))}
+                                                </div>
+                                            )}
                                             {atrasadas > 0 && (
                                                 <div className="employee-card-alert-banner">
                                                     <span className="alert-icon">⚠</span>
-                                                    <span>{atrasadas} tarea{atrasadas > 1 ? 's' : ''} atrasada{atrasadas > 1 ? 's' : ''}</span>
+                                                    <span>
+                                                        {atrasadas} tarea{atrasadas > 1 ? 's' : ''} vencida{atrasadas > 1 ? 's' : ''}
+                                                        {ind.mas_vencida && (
+                                                            <span className="mas-vencida" title={ind.mas_vencida.titulo}>
+                                                                {' · la más antigua: «'}{ind.mas_vencida.titulo}{'», '}
+                                                                {ind.mas_vencida.dias === 1 ? 'hace 1 día' : `hace ${ind.mas_vencida.dias} días`}
+                                                            </span>
+                                                        )}
+                                                    </span>
+                                                    <button
+                                                        type="button"
+                                                        className="banner-resolver"
+                                                        onClick={() => setResolver({ empleado: { id: empleado.id, nombre: empleado.nombre } })}
+                                                    >
+                                                        Resolver
+                                                    </button>
                                                 </div>
                                             )}
                                             <div className="employee-actions">
@@ -795,6 +910,7 @@ const Dashboard = () => {
                                                         );
                                                         setShowTasksModal(true);
                                                         setSelectedEstado(null);
+                                                        abrirDetalle(empleado.id);
                                                     }}
                                                 >
                                                     <FaTasks /> Tareas
@@ -802,20 +918,22 @@ const Dashboard = () => {
                                             </div>
                                             <div className="performance-section">
                                                 {(() => {
-                                                    const id = calcularIndiceDesempeno(empleado);
-                                                    const cls = clasificarEmpleado(id);
-                                                    const msg = generarMensaje(empleado, id);
-                                                    const r = empleado.rendimiento;
-                                                    const tareas = (empleado.tareas || []).filter(t => t.estado_reg === 'Activo' && t.pausada !== 1);
-                                                    const completadas = r?.tareas?.completadas || 0;
-                                                    const aTiempo = tareas.filter(t => t.estado === 'Completada' && t.fecha_entregada && t.fecha_entregada <= t.fecha_pactada).length;
-                                                    const reprocesos = tareas.filter(t => t.rechazada == 1).length;
+                                                    const ind = empleado.indicadores || {};
+                                                    const id = ind.indice ?? null;
+                                                    const nivel = ind.nivel || 'sin-datos';
+                                                    const cls = NIVELES[nivel] || NIVELES['sin-datos'];
+                                                    const completadas = ind.completadas || 0;
+                                                    const aTiempo = ind.a_tiempo || 0;
                                                     const pctATiempo = completadas > 0 ? Math.round((aTiempo / completadas) * 100) : 0;
+                                                    const quieto = (ind.dias_sin_actividad ?? Infinity) > 14;
                                                     return (
                                                         <>
                                                             <div className="desempeno-header">
-                                                                <span className="desempeno-title">Índice de Desempeño</span>
-                                                                <span className={`desempeno-badge desempeno-badge--${cls.nivel}`}>{cls.label}</span>
+                                                                <span className="desempeno-title">
+                                                                    Índice de Desempeño
+                                                                    <small className="desempeno-ventana"> · últimos {ind.ventana_dias || 90} días</small>
+                                                                </span>
+                                                                <span className={`desempeno-badge desempeno-badge--${nivel}`}>{cls.label}</span>
                                                             </div>
                                                             {id !== null ? (
                                                                 <>
@@ -823,32 +941,35 @@ const Dashboard = () => {
                                                                     <div className="desempeno-bar-wrap">
                                                                         <div className="desempeno-bar" style={{ width: `${id}%`, backgroundColor: cls.color }} />
                                                                     </div>
-                                                                    <p className="desempeno-msg">{msg}</p>
+                                                                    <p className="desempeno-msg">{ind.mensaje}</p>
                                                                 </>
                                                             ) : (
-                                                                <p className="desempeno-msg desempeno-msg--empty">Sin tareas asignadas.</p>
+                                                                <p className="desempeno-msg desempeno-msg--empty">{ind.mensaje || 'Sin tareas asignadas.'}</p>
                                                             )}
+                                                            <p className={`desempeno-actividad${quieto ? ' es-quieto' : ''}`}>
+                                                                Último movimiento: {haceDias(ind.dias_sin_actividad)}
+                                                            </p>
                                                             <div className="task-stats-grid">
                                                                 <div className="stat-item">
-                                                                    <span className="stat-number">{r?.tareasAsignadas || 0}</span>
-                                                                    <span className="stat-label">Asignadas</span>
+                                                                    <span className="stat-number">{ind.abiertas || 0}</span>
+                                                                    <span className="stat-label">Abiertas</span>
                                                                 </div>
                                                                 <div className="stat-item">
                                                                     <span className="stat-number">{completadas}</span>
                                                                     <span className="stat-label">✅ Completadas</span>
                                                                 </div>
                                                                 <div className="stat-item">
-                                                                    <span className="stat-number">{r?.tareas?.enProceso || 0}</span>
+                                                                    <span className="stat-number">{ind.en_proceso || 0}</span>
                                                                     <span className="stat-label">⏳ En Proceso</span>
                                                                 </div>
                                                                 <div className="stat-item urgent">
                                                                     <span className="stat-number">{atrasadas}</span>
-                                                                    <span className="stat-label">⚠️ Atrasadas</span>
+                                                                    <span className="stat-label">⚠️ Vencidas</span>
                                                                 </div>
                                                             </div>
                                                             <div className="desempeno-secundario">
                                                                 <span>A tiempo: {aTiempo}/{completadas} ({pctATiempo}%)</span>
-                                                                <span>Reprocesos: {reprocesos}</span>
+                                                                <span>Reprocesos: {ind.reprocesos || 0}</span>
                                                             </div>
                                                         </>
                                                     );
@@ -864,6 +985,9 @@ const Dashboard = () => {
                                                             >
                                                                 <span>
                                                                     {tarea.titulo}
+                                                                    {tarea.fecha_creacion && (
+                                                                        <small className="urgent-task-fecha"> · {fechaCorta(tarea.fecha_creacion)}</small>
+                                                                    )}
                                                                 </span>
                                                                 <span
                                                                     className={`status ${getStatusClass(
@@ -892,88 +1016,8 @@ const Dashboard = () => {
         }
     };
 
-    const renderInterface = () => {
-        if (!currentUser) return null;
-
-        if (currentUser.tipo_usuario === "Administrador") {
-            return (
-                <div className="dashboard-layout">
-                    <div className={`sidebar ${isSidebarOpen ? "active" : ""}`}>
-                        <Sidebar />
-                    </div>
-                    <div className="content-area">{renderContent()}</div>
-                </div>
-            );
-        } else {
-            //Si el usuario no es administrador, se quita el sidebar
-            return <EmployeeInterface user={currentUser} />;
-        }
-    };
-
-    // Componente Modal de Perfil (legacy; mantenido sin uso)
-    const _ProfileModal = ({ employee, onClose }) => (
-        <div className="modal-overlay">
-            <div className="profile-modal">
-                <div className="modal-header">
-                    <h2>PERFIL DE {employee.nombre}</h2>
-                    <button className="close-button" onClick={onClose}>
-                        <FaTimes />
-                    </button>
-                </div>
-                <div className="modal-content">
-                    <div className="profile-section">
-                        <div className="profile-header">
-                            <div className="profile-photo-container">
-                                <img
-                                    src={employee.foto}
-                                    alt={employee.nombre}
-                                    className="profile-photo"
-                                />
-                            </div>
-                            <div className="profile-info">
-                                <h3 style={{ textTransform: 'capitalize' }}>{employee.nombre}</h3>
-                                <p className="cargo">{employee.cargo}</p>
-                                <p className="empresa">
-                                    {employee.empresa} - {employee.departamento}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="profile-sections">
-                        <div className="profile-details">
-                            <div className="info-section">
-                                <h4>Información de Contacto</h4>
-                                <div className="contact-info">
-                                    <p>
-                                        <strong>Email:</strong>{" "}
-                                        {employee.contacto?.email}
-                                    </p>
-                                    <p>
-                                        <strong>Teléfono:</strong>{" "}
-                                        {employee.contacto?.telefono}
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="info-funciones">
-                            <h4>Funciones activas</h4>
-                            <ul className="funciones-list">
-                                {employee.funciones?.map(
-                                    (funciones, index) => (
-                                        <li key={index}>{funciones.descripcion}</li>
-                                    )
-                                )}
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
-
     return (
+        <AvataresProvider todaLaOrganizacion>
         <div className="dashboard-container">
             <Sidebar
                 activeMenu={activeMenu}
@@ -1021,7 +1065,16 @@ const Dashboard = () => {
                     esSupervisor={user?.tipo_usuario === "Supervisor"}
                 />
             )}
+            {resolver && (
+                <ResolverVencidas
+                    departamento={resolver.departamento}
+                    empleado={resolver.empleado}
+                    onCerrar={() => setResolver(null)}
+                    onResuelto={cargarEmpleados}
+                />
+            )}
         </div>
+        </AvataresProvider>
     );
 };
 

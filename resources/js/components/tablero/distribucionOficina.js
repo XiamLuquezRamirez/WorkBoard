@@ -96,6 +96,8 @@ export const PISOS = [
             // ── Franja central ─────────────────────────────────────────────
             {
                 id: 'juntas',
+                // Adonde camina quien está en reunión (ver repartirEnPlano).
+                destino: 'reunion',
                 nombre: 'Sala de Juntas',
                 corto: 'Sala de Juntas',
                 x: 1, y: 10.5, ancho: 7, alto: 10,
@@ -168,6 +170,7 @@ export const PISOS = [
             },
             {
                 id: 'cocina',
+                destino: 'almuerzo',
                 nombre: 'Cocina',
                 corto: 'Cocina',
                 x: 14, y: 21, ancho: 7, alto: 8,
@@ -278,6 +281,7 @@ export const PISOS = [
 
             {
                 id: 'salon',
+                destino: 'reunion',
                 nombre: 'Salón de capacitación',
                 corto: 'Salón',
                 x: 1, y: 13.5, ancho: 12, alto: 10.5,
@@ -356,13 +360,14 @@ function ladoDeMesa(px, py, muebles) {
     return { lado: 'n', mesa: null };
 }
 
-/** Mueve una sala entera —paredes, muebles, gente— `dx` unidades. */
-function desplazar(sala, dx) {
-    if (!dx) return sala;
-    const mover = (o) => ({ ...o, x: o.x + dx });
+/** Mueve una sala entera —paredes, muebles, gente— `dx` y `dy` unidades. */
+function desplazar(sala, dx, dy = 0) {
+    if (!dx && !dy) return sala;
+    const mover = (o) => ({ ...o, x: o.x + dx, y: o.y + dy });
     return {
         ...sala,
         x: sala.x + dx,
+        y: sala.y + dy,
         muebles: (sala.muebles || []).map(mover),
         puestos: sala.puestos.map(mover),
         sillasLibres: sala.sillasLibres.map(mover),
@@ -371,16 +376,22 @@ function desplazar(sala, dx) {
 }
 
 /**
- * Quita las oficinas de departamento sin nadie dentro y cierra el hueco que
- * dejan: las salas de la misma franja que quedaban a su derecha se corren a
- * la izquierda. Un hueco de césped en mitad del edificio parecía una sala
- * derribada; así la planta sigue leyéndose como un edificio continuo.
+ * Deja en el plano sólo las áreas con personal y cierra los huecos que dejan
+ * las demás: en cada franja, las salas de la derecha se corren a la
+ * izquierda, y las franjas que se quedan sin nada desaparecen y las de abajo
+ * suben. Un hueco de césped en mitad del edificio parecía una sala derribada;
+ * así la planta sigue leyéndose como un edificio continuo.
  *
- * Las salas de servicio (cocina, baños…) se quedan siempre: son el edificio y
- * sirven para orientarse.
+ * Las salas de servicio (cocina, baños, escaleras, salas de reuniones…) no
+ * tienen personal propio, así que tampoco se dibujan: el plano muestra dónde
+ * está la gente, sin relleno alrededor.
  */
 function compactar(salas, piso) {
-    const vacia = (s) => s.depto && s.puestos.length === 0;
+    // Las salas adonde se camina (juntas, cocina) siempre se ven: si
+    // aparecieran sólo con alguien dentro, la franja entera daría un salto
+    // cada vez que alguien entra a una reunión. Un área con toda su gente
+    // fuera tampoco desaparece: sus sillas esperan a que vuelvan.
+    const vacia = (s) => s.puestos.length === 0 && !s.destino && !s.retenida;
 
     const filas = new Map();
     for (const s of salas) {
@@ -403,7 +414,22 @@ function compactar(salas, piso) {
         });
     }
 
-    const visibles = salas.filter((s) => !vacia(s)).map((s) => desplazar(s, -corrimiento.get(s.id)));
+    // Franjas enteras sin nadie: se quitan y las de debajo suben lo que
+    // ocupaba la franja más su pasillo.
+    const ys = [...filas.keys()].sort((a, b) => a - b);
+    const subida = new Map();
+    let acumuladoY = 0;
+    ys.forEach((y, i) => {
+        if (filas.get(y).some((s) => !vacia(s))) {
+            subida.set(y, acumuladoY);
+        } else if (i + 1 < ys.length) {
+            acumuladoY += ys[i + 1] - y;
+        }
+    });
+
+    const visibles = salas
+        .filter((s) => !vacia(s))
+        .map((s) => desplazar(s, -corrimiento.get(s.id), -subida.get(s.y)));
 
     // Las ventanas van en los muros que dan a la calle: arriba, a la
     // izquierda y en la última sala de cada franja.
@@ -420,23 +446,70 @@ function compactar(salas, piso) {
 
     // Cada franja apoya sobre un piso de pasillo; la unión de todas es la
     // huella del edificio, y entre sala y sala se ve pasillo, no césped.
-    const franjas = [...filas.keys()].map((y) => {
+    // Se agrupan por la posición ya desplazada, no por la original.
+    const franjas = [...new Set(conVentanas.map((s) => s.y))].map((y) => {
         const fila = conVentanas.filter((s) => s.y === y);
-        if (fila.length === 0) return null;
         const x0 = Math.min(...fila.map((s) => s.x));
         const x1 = Math.max(...fila.map((s) => s.x + s.ancho));
         const y1 = Math.max(...fila.map((s) => s.y + s.alto));
         return { x: x0, y, ancho: x1 - x0, alto: y1 - y };
-    }).filter(Boolean);
+    });
 
     const derecha = Math.max(0, ...conVentanas.map((s) => s.x + s.ancho));
+    const abajo = Math.max(0, ...conVentanas.map((s) => s.y + s.alto));
 
     return {
         salas: conVentanas,
         franjas,
         ancho: Math.min(piso.ancho, derecha + 1),
+        alto: Math.min(piso.alto, abajo + 1),
         ocultas: salas.filter(vacia).length,
     };
+}
+
+/**
+ * Sitios para quien llega de visita (a una reunión, a almorzar): alrededor
+ * de la mesa redonda si la sala tiene una, a lo largo de las mesas largas si
+ * no, y en cuadrícula como último recurso. Con más gente que sitio se abre
+ * un segundo anillo, para que nadie quede encima de otro.
+ */
+function plazasDeVisita(sala, n) {
+    const muebles = sala.muebles || [];
+    const redonda = muebles.find((m) => m.tipo === 'mesa-redonda');
+    if (redonda) {
+        const cx = redonda.x + redonda.ancho / 2;
+        const cy = redonda.y + redonda.alto / 2;
+        const porAnillo = Math.max(4, Math.floor((redonda.ancho + 2) * 1.6));
+        return Array.from({ length: n }, (_, i) => {
+            const anillo = Math.floor(i / porAnillo);
+            const enAnillo = Math.min(porAnillo, n - anillo * porAnillo);
+            const ang = -Math.PI / 2 + (2 * Math.PI * (i % porAnillo)) / enAnillo + anillo * 0.4;
+            const r = redonda.ancho / 2 + 0.9 + anillo * 1.9;
+            return [cx + Math.cos(ang) * r, cy + Math.sin(ang) * r * 0.92];
+        });
+    }
+
+    const largas = muebles.filter((m) => m.tipo === 'mesa-larga');
+    if (largas.length) {
+        const sitios = [];
+        for (const m of largas) {
+            for (let x = m.x + 1; x < m.x + m.ancho - 0.4; x += 2.1) {
+                sitios.push([x, m.y - 0.9], [x, m.y + m.alto + 1.1]);
+            }
+        }
+        // Si sobrara gente, la tanda siguiente se corre un poco.
+        return Array.from({ length: n }, (_, i) => {
+            const [x, y] = sitios[i % sitios.length];
+            const tanda = Math.floor(i / sitios.length);
+            return [x + tanda * 0.8, y + tanda * 0.6];
+        });
+    }
+
+    const cols = Math.max(1, Math.floor((sala.ancho - 1) / 2.4));
+    return Array.from({ length: n }, (_, i) => [
+        sala.x + 1.5 + (i % cols) * 2.4,
+        sala.y + 2.5 + Math.floor(i / cols) * 2.6,
+    ]);
 }
 
 /**
@@ -444,13 +517,50 @@ function compactar(salas, piso) {
  *
  * Los puestos llegan agrupados por departamento (`zonas`); se colocan en la
  * sala cuyo `depto` coincide. Quien no tenga sala en ningún piso va a una
- * lista aparte, visible, en vez de perderse. Las oficinas que quedan sin
- * nadie no se dibujan (ver `compactar`).
+ * lista aparte, visible, en vez de perderse. Las áreas sin personal no se
+ * dibujan (ver `compactar`).
  */
 export function repartirEnPlano(piso, zonas) {
     const porDepto = new Map();
     for (const z of zonas) {
         porDepto.set(Number(z.id), [...z.puestos]);
+    }
+
+    // Adónde camina cada quien. Una reunión de la agenda trae su sala y
+    // reúne ahí a todos sus asistentes, aunque trabajen en el otro piso: en
+    // éste se dibuja sólo si la sala es de este piso, y si es del otro, la
+    // persona no está en su puesto. Sin sala explícita (en reunión elegido a
+    // mano, almorzando) se usa la sala de ese tipo de su mismo piso; si el
+    // piso no la tiene, se queda en su puesto.
+    const destinos = new Map();
+    for (const s of piso.salas) {
+        if (s.destino && !destinos.has(s.destino)) destinos.set(s.destino, s);
+    }
+    const salasDelPiso = new Set(piso.salas.map((s) => s.id));
+    const enOtroPiso = new Set(PISOS.flatMap((p) => p.salas.map((s) => s.id)).filter((id) => !salasDelPiso.has(id)));
+    const visitas = new Map();
+    const visitar = (salaId, p) => {
+        if (!visitas.has(salaId)) visitas.set(salaId, []);
+        visitas.get(salaId).push(p);
+    };
+    // Devuelve la sala de este piso adonde va, OTRO_PISO, o null si se queda.
+    const OTRO_PISO = '__otro_piso__';
+    const fuera = (p) => {
+        const explicita = p.presencia?.sala;
+        if (explicita && salasDelPiso.has(explicita)) return explicita;
+        if (explicita && enOtroPiso.has(explicita)) return OTRO_PISO;
+        const sala = destinos.get(p.presencia?.estado);
+        return sala ? sala.id : null;
+    };
+
+    // Quien trabaja en otro piso pero tiene su reunión en éste, llega aquí.
+    const deptosDelPiso = new Set(piso.salas.map((s) => s.depto).filter(Boolean));
+    for (const z of zonas) {
+        if (deptosDelPiso.has(Number(z.id))) continue;
+        for (const p of z.puestos) {
+            const sala = p.presencia?.sala;
+            if (sala && salasDelPiso.has(sala)) visitar(sala, p);
+        }
     }
 
     const colocadas = piso.salas.map((sala) => {
@@ -459,9 +569,9 @@ export function repartirEnPlano(piso, zonas) {
 
         const plazas = sala.plazas || [];
         const muebles = sala.muebles || [];
-        const puestos = gente.map((p, i) => {
+        const enSuSitio = gente.map((p, i) => {
             if (i < plazas.length) {
-                return { puesto: p, x: plazas[i][0], y: plazas[i][1] };
+                return { puesto: p, x: plazas[i][0], y: plazas[i][1], plaza: i };
             }
             // Más gente que plazas dibujadas: se añaden en fila al pie de la
             // sala, dentro de sus paredes, en vez de dejarlas fuera.
@@ -470,31 +580,55 @@ export function repartirEnPlano(piso, zonas) {
                 puesto: p,
                 x: sala.x + 1.6 + (sobra % 3) * 3.4,
                 y: sala.y + sala.alto - 1.6 - Math.floor(sobra / 3) * 2.8,
+                plaza: -1,
             };
         });
 
+        const puestos = [];
+        const sillasFuera = [];
+        for (const c of enSuSitio) {
+            const destino = fuera(c.puesto);
+            if (!destino) { puestos.push(c); continue; }
+            if (destino !== OTRO_PISO) visitar(destino, c.puesto);
+            // Su silla queda vacía mientras tanto, con el portátil apagado.
+            if (c.plaza >= 0) sillasFuera.push(c.plaza);
+        }
+        const ocupada = (i) => i < gente.length && !sillasFuera.includes(i);
+
         // Las plazas sin nadie se ven como sillas vacías: dicen cuánto sitio
         // libre queda en el área sin tener que contar.
-        const sillasLibres = plazas.slice(gente.length).map(([x, y]) => ({
-            x, y, lado: ladoDeMesa(x, y, muebles).lado,
-        }));
+        const sillasLibres = plazas
+            .map(([x, y], i) => ({ x, y, i }))
+            .filter(({ i }) => !ocupada(i))
+            .map(({ x, y }) => ({ x, y, lado: ladoDeMesa(x, y, muebles).lado }));
 
         // Un portátil en la mesa delante de cada plaza: encendido si alguien
         // se sienta ahí, cerrado si no. Los escritorios ya traen monitor.
         const portatiles = plazas.map(([px, py], i) => {
             const r = ladoDeMesa(px, py, muebles);
             if (!r.mesa || r.mesa.tipo !== 'mesa-larga') return null;
-            return { x: r.x, y: r.y, lado: r.lado, encendido: i < gente.length };
+            return { x: r.x, y: r.y, lado: r.lado, encendido: ocupada(i) };
         }).filter(Boolean);
 
         return {
             ...sala,
             puestos,
+            retenida: gente.length > 0,
             sillasLibres,
             portatiles,
             zona: zonas.find((z) => Number(z.id) === sala.depto) || null,
         };
     });
+
+    // Los visitantes se sientan alrededor de la mesa de la sala de destino.
+    for (const sala of colocadas) {
+        const llegados = visitas.get(sala.id);
+        if (!llegados) continue;
+        // Los de una misma reunión, juntos alrededor de la mesa.
+        const gente = [...llegados].sort((a, b) => (a.presencia?.reunion || 0) - (b.presencia?.reunion || 0));
+        const sitios = plazasDeVisita(sala, gente.length);
+        gente.forEach((p, i) => sala.puestos.push({ puesto: p, x: sitios[i][0], y: sitios[i][1], visita: true }));
+    }
 
     // Sólo son «sin sala» los departamentos que NINGÚN piso contempla: los
     // del otro piso no faltan, simplemente no están en éste.

@@ -18,6 +18,8 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'verified' => \App\Http\Middleware\EnsureEmailIsVerified::class,
+            'administracion' => \App\Http\Middleware\SoloAdministracion::class,
+            'activo' => \App\Http\Middleware\UsuarioActivo::class,
         ]);
 
         // La cookie del token CSRF se llama «XSRF-TOKEN» en todas las

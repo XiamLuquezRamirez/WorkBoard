@@ -1,0 +1,427 @@
+/* Detalle de la tarea.
+   Una ficha de trabajo: el encabezado dice qué tarea es y en qué punto
+   está; el cuerpo separa lo que se consulta (pestañas) de lo que se decide
+   (columna lateral, siempre a la vista). Paleta de WorkBoard: azul de
+   acción, pizarra para la estructura y el color propio de cada estado. */
+
+.task-details-modal {
+    --td-borde: #e2e8f0;
+    --td-tenue: #64748b;
+    --td-texto: #0f172a;
+    --td-fondo: #f6f8fb;
+    --td-color: #64748b;
+    --td-tinte: #f8fafc;
+    width: 94%;
+    max-width: 1240px;
+}
+
+/* El color del estado tiñe el encabezado: se sabe dónde está la tarea
+   antes de leer nada. */
+.task-details-modal:has(.td-estado.e-pendiente)  { --td-color: #ea580c; --td-tinte: #fff7ed; }
+.task-details-modal:has(.td-estado.e-proceso)    { --td-color: #2563eb; --td-tinte: #eff6ff; }
+.task-details-modal:has(.td-estado.e-revision)   { --td-color: #0d9488; --td-tinte: #f0fdfa; }
+.task-details-modal:has(.td-estado.e-completada) { --td-color: #16a34a; --td-tinte: #f0fdf4; }
+
+/* ─── Encabezado ──────────────────────────────────────────────────────── */
+
+.task-details-modal .td-cab {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    align-items: start;
+    gap: .75rem 1rem;
+    padding: 1.15rem 1.4rem 1rem 1.6rem;
+    border-bottom: 1px solid var(--td-borde);
+    background: linear-gradient(180deg, var(--td-tinte) 0%, #ffffff 100%);
+    /* La cabecera genérica de los modales pone Mayúscula En Cada Palabra
+       y centra el título; aquí se lee como texto normal. */
+    text-transform: none;
+    text-align: left;
+}
+
+.task-details-modal .td-cab::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 5px;
+    background: var(--td-color);
+}
+
+.td-cab-texto { min-width: 0; }
+
+.td-chips { display: flex; flex-wrap: wrap; gap: .35rem; margin-bottom: .5rem; }
+
+.td-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+    padding: .2rem .6rem;
+    border-radius: 999px;
+    font-size: .72rem;
+    font-weight: 700;
+    line-height: 1.3;
+    background: #f1f5f9;
+    color: #475569;
+    white-space: nowrap;
+}
+.td-chip svg { font-size: .75rem; }
+
+.td-estado.e-pendiente  { background: #ffedd5; color: #c2410c; }
+.td-estado.e-proceso    { background: #dbeafe; color: #1d4ed8; }
+.td-estado.e-revision   { background: #ccfbf1; color: #0f766e; }
+.td-estado.e-completada { background: #dcfce7; color: #15803d; }
+
+.td-prioridad.p-alta  { background: #fee2e2; color: #b91c1c; }
+.td-prioridad.p-media { background: #fef3c7; color: #92400e; }
+.td-prioridad.p-baja  { background: #e0f2fe; color: #0369a1; }
+
+.td-ok    { background: #dcfce7; color: #15803d; }
+.td-gris  { background: #f1f5f9; color: #64748b; }
+.td-mal   { background: #fee2e2; color: #b91c1c; }
+.td-aviso { background: #ffedd5; color: #c2410c; }
+
+.task-details-modal .td-titulo {
+    margin: 0;
+    font-size: 1.35rem;
+    font-weight: 800;
+    line-height: 1.3;
+    letter-spacing: -.01em;
+    color: var(--td-texto);
+    text-transform: none;
+    text-align: left;
+    overflow-wrap: anywhere;
+    display: block;
+}
+
+.td-sub {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .2rem 0;
+    margin: .4rem 0 0;
+    font-size: .8rem;
+    color: var(--td-tenue);
+}
+.td-sub > span { display: inline-flex; align-items: center; gap: .3rem; }
+.td-sub > span + span::before {
+    content: '';
+    width: 4px;
+    height: 4px;
+    margin: 0 .65rem;
+    border-radius: 50%;
+    background: #cbd5e1;
+}
+
+/* Acciones: compactas y del mismo tamaño. Los botones vienen de varias
+   clases antiguas; aquí se igualan. */
+.td-cab-acciones {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    align-items: center;
+    gap: .4rem;
+    max-width: 460px;
+    padding-top: .15rem;
+}
+.td-cab-acciones .edit-buttons { display: contents; }
+
+.td-cab-acciones :is(.td-btn, .edit-button, .delete-button, .archive-button, .unarchive-button, .save-button, .cancel-button) {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    width: auto;
+    height: auto;
+    margin: 0;
+    padding: .42rem .8rem;
+    border: 1px solid var(--td-borde);
+    border-radius: 8px;
+    background: #fff;
+    color: #334155;
+    font: inherit;
+    font-size: .8rem;
+    font-weight: 600;
+    line-height: 1.2;
+    box-shadow: none;
+    cursor: pointer;
+    transition: background .15s ease, border-color .15s ease, color .15s ease;
+}
+.td-cab-acciones :is(.td-btn, .edit-button, .archive-button, .unarchive-button, .cancel-button):hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+    transform: none;
+}
+.td-cab-acciones .delete-button { color: #b91c1c; border-color: #fecaca; }
+.td-cab-acciones .delete-button:hover { background: #fef2f2; transform: none; }
+.td-cab-acciones .save-button { background: #2563eb; border-color: #2563eb; color: #fff; }
+.td-cab-acciones .save-button:hover { background: #1d4ed8; }
+.td-cab-acciones .archive-button,
+.td-cab-acciones .unarchive-button { color: #15803d; border-color: #bbf7d0; }
+.td-cab-acciones .td-btn-aviso { color: #c2410c; border-color: #fed7aa; background: #fff7ed; }
+.td-cab-acciones .habilitar-checkbox { margin: 0; font-size: .78rem; }
+.td-cab-acciones .habilitar-checkbox label { display: inline-flex; align-items: center; gap: .35rem; margin: 0; }
+
+.task-details-modal .td-cab .close-button { align-self: start; }
+
+/* ─── Cuerpo ──────────────────────────────────────────────────────────── */
+
+.task-details-modal .td-cuerpo {
+    padding: 1.1rem 1.4rem 1.4rem;
+    background: var(--td-fondo);
+}
+
+.td-cuerpo > .vg { background: #fff; }
+
+.td-rejilla {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 330px;
+    gap: 1.1rem;
+    align-items: start;
+}
+
+.td-principal {
+    min-width: 0;
+    background: #fff;
+    border: 1px solid var(--td-borde);
+    border-radius: 14px;
+}
+
+/* Pestañas: se quedan arriba al desplazar el contenido largo. */
+.td-pestanas {
+    position: sticky;
+    top: -1.1rem;
+    z-index: 3;
+    display: flex;
+    gap: .15rem;
+    padding: .25rem .6rem 0;
+    border-bottom: 1px solid var(--td-borde);
+    border-radius: 14px 14px 0 0;
+    background: #fff;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+.td-pestanas::-webkit-scrollbar { display: none; }
+
+.td-pestanas button {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    padding: .75rem .85rem;
+    border: 0;
+    background: none;
+    color: var(--td-tenue);
+    font: inherit;
+    font-size: .88rem;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+}
+.td-pestanas button:hover { color: var(--td-texto); }
+.td-pestanas button span {
+    min-width: 1.3rem;
+    padding: .05rem .4rem;
+    border-radius: 999px;
+    background: #f1f5f9;
+    color: #475569;
+    font-size: .7rem;
+    text-align: center;
+}
+.td-pestanas button.es-activa { color: #1d4ed8; }
+.td-pestanas button.es-activa span { background: #dbeafe; color: #1d4ed8; }
+.td-pestanas button.es-activa::after {
+    content: '';
+    position: absolute;
+    left: .6rem;
+    right: .6rem;
+    bottom: -1px;
+    height: 3px;
+    border-radius: 3px 3px 0 0;
+    background: #2563eb;
+}
+
+.td-panel { padding: 1.15rem 1.3rem 1.3rem; animation: td-aparece .2s ease; }
+.td-panel[hidden] { display: none; }
+
+@keyframes td-aparece {
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: none; }
+}
+
+/* Resumen: la descripción se lee como texto, no como Título De Cada Palabra. */
+.td-panel .task-description {
+    margin: 0;
+    padding: 1rem 1.15rem;
+    border-radius: 12px;
+    background: #f8fafc;
+    border: 1px solid #eef2f7;
+    color: #1e293b;
+    font-size: .95rem;
+    line-height: 1.65;
+    text-transform: none !important;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+.td-panel .task-description::before {
+    content: 'Descripción';
+    display: block;
+    margin-bottom: .35rem;
+    font-size: .7rem;
+    font-weight: 800;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--td-tenue);
+}
+.td-panel .task-description p { margin: 0; text-transform: none; }
+.td-panel .task-header { margin: 0 0 1rem; }
+.td-panel .task-header:not(:has(.edit-form)) { display: none; }
+
+/* Los títulos de sección repiten el de la pestaña: se ocultan. */
+.td-panel > .evidence-panel > h4,
+.td-panel > .act-feed-section > .act-feed-title { display: none; }
+
+.td-panel .ca-caja,
+.td-panel .subtareas-section,
+.td-panel .evidence-panel,
+.td-panel .act-feed-section { margin: 0; padding: 0; border: 0; box-shadow: none; background: none; }
+.td-panel .act-feed-section { padding-top: 0; }
+.td-panel .repr-history-section { margin-top: 1.25rem; }
+
+/* ─── Columna lateral: lo que se decide ───────────────────────────────── */
+
+.td-lateral {
+    position: sticky;
+    top: 0;
+    display: flex;
+    flex-direction: column;
+    gap: .85rem;
+    min-width: 0;
+}
+
+.td-tarjeta,
+.td-lateral .aprobacion-vistoBueno-container {
+    margin: 0;
+    padding: .95rem 1rem 1rem;
+    border: 1px solid var(--td-borde);
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: none;
+}
+
+.td-tarjeta-tit,
+.td-lateral .aprobacion-vistoBueno-container::before {
+    display: block;
+    margin: 0 0 .7rem;
+    font-size: .7rem;
+    font-weight: 800;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--td-tenue);
+}
+.td-lateral .aprobacion-vistoBueno-container::before { content: 'Supervisión'; }
+
+.td-lateral .aprobacion-vistoBueno-container {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: .5rem;
+}
+
+/* Una tarjeta sin contenido para quien mira (p. ej. «Estado» para el
+   administrador, que no cambia el estado de tareas ajenas) no se muestra. */
+.td-tarjeta:not(:has(> :not(.td-tarjeta-tit):not(:empty))) { display: none; }
+.td-lateral :is(.aprobacion-panel, .vistoBueno-panel) {
+    margin: 0;
+    padding: .6rem .75rem;
+    border: 1px solid #eef2f7;
+    border-radius: 10px;
+    background: #f8fafc;
+    box-shadow: none;
+    width: auto;
+}
+.td-lateral :is(.aprobacion-panel, .vistoBueno-panel) h4 { margin: 0 0 .35rem; font-size: .82rem; }
+.td-lateral .revision-opciones { display: flex; flex-wrap: wrap; gap: .4rem 1rem; }
+
+/* Estado: los botones en rejilla de dos y sin el título repetido. */
+.td-tarjeta .status-control { margin: 0 !important; padding: 0; background: none; border: 0; box-shadow: none; }
+.td-tarjeta .status-control > h4 { display: none; }
+.td-tarjeta .status-buttons {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .4rem;
+    padding: 0;
+}
+.td-tarjeta .status-button { width: 100%; padding: .55rem .5rem; font-size: .8rem; justify-content: center; }
+.td-tarjeta .task-metodo { margin: .75rem 0 0; }
+.td-tarjeta .task-metodo:empty { display: none; }
+.td-tarjeta .btn-declarar-bloqueo { width: 100%; }
+.td-tarjeta .repr-owner-section { margin: .75rem 0 0; }
+.td-tarjeta .repr-solicitar-btn { width: 100%; justify-content: center; }
+.td-tarjeta .task-pausa-info-panel { margin: .75rem 0 0; }
+
+.td-tarjeta .task-dates {
+    display: flex;
+    flex-direction: column;
+    gap: .45rem;
+    margin: 0;
+    padding: 0;
+    background: none;
+    border: 0;
+}
+.td-tarjeta .task-dates .date-item {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    margin: 0;
+    font-size: .85rem;
+    color: #334155;
+}
+.td-tarjeta .task-dates .date-item svg { flex: none; color: var(--td-tenue); }
+
+/* ─── Pantallas medianas y móvil ──────────────────────────────────────── */
+
+@media (max-width: 1000px) {
+    .td-rejilla { grid-template-columns: minmax(0, 1fr); }
+    .td-lateral { position: static; }
+}
+
+@media (max-width: 640px) {
+    .task-details-modal .td-cab {
+        grid-template-columns: minmax(0, 1fr) auto;
+        padding: .9rem 1rem .85rem 1.15rem;
+    }
+    .task-details-modal .td-cab .close-button { grid-column: 2; grid-row: 1; }
+    .td-cab-acciones {
+        grid-column: 1 / -1;
+        justify-content: flex-start;
+        max-width: none;
+    }
+    .task-details-modal .td-titulo {
+        font-size: 1.12rem !important;
+        white-space: normal !important;
+        overflow: visible !important;
+    }
+    /* En el teléfono la cabecera se va con el contenido: fija ocupaba casi
+       un cuarto de la pantalla. Lo que se queda arriba son las pestañas. */
+    .task-details-modal { overflow-y: auto !important; }
+    .task-details-modal .td-cuerpo {
+        padding: .75rem;
+        overflow: visible;
+        flex: none;
+    }
+    .td-panel { padding: .9rem .85rem 1rem; }
+    .td-pestanas { top: 0; padding: 0 .3rem; }
+    .td-pestanas button { padding: .7rem .6rem; font-size: .84rem; }
+}
+
+/* Nota bajo los botones de estado cuando la tarea ya se entregó. */
+.td-nota-estado {
+    margin: 8px 0 0;
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: #F0FDFA;
+    color: #0F766E;
+    font-size: 12.5px;
+    line-height: 1.4;
+}

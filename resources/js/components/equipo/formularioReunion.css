@@ -1,0 +1,249 @@
+/* Formulario de reunión. Lleva fondo propio para leerse igual en el Espacio
+   de Equipo (claro) y en el lateral del plano del televisor (oscuro). */
+
+.fr-form {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 12px;
+    padding: 16px;
+    margin-bottom: 18px;
+    border: 1px solid #E5E7EB;
+    border-radius: 12px;
+    background: #FFFFFF;
+    color: #111827;
+    text-align: left;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, .04);
+}
+
+.fr-campo {
+    grid-column: span 2;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    min-width: 0;
+}
+
+.fr-mitad { grid-column: span 3; }
+.fr-ancho { grid-column: 1 / -1; }
+
+.fr-campo > span {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .4px;
+    text-transform: uppercase;
+    color: #4B5563;
+}
+
+.fr-cuenta {
+    font-style: normal;
+    font-weight: 600;
+    text-transform: none;
+    letter-spacing: 0;
+    color: #2563EB;
+    margin-left: 6px;
+}
+
+.fr-form input,
+.fr-form textarea {
+    border: 1px solid #D1D5DB;
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 13.5px;
+    font-family: inherit;
+    color: #111827;
+    background: #FFFFFF;
+    width: 100%;
+    box-sizing: border-box;
+    min-height: 38px;
+}
+
+.fr-form textarea { resize: vertical; }
+
+.fr-form input:focus,
+.fr-form textarea:focus {
+    outline: none;
+    border-color: #2563EB;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, .14);
+}
+
+.fr-error { color: #B91C1C; font-size: 12px; }
+
+.fr-aviso {
+    margin: 0;
+    padding: 9px 12px;
+    border-radius: 8px;
+    background: #FEF2F2;
+    color: #B91C1C;
+    font-size: 13px;
+}
+
+/* ---------- Participantes ---------- */
+
+.fr-elegidos {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.fr-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid #93C5FD;
+    background: #EFF6FF;
+    color: #1D4ED8;
+    border-radius: 999px;
+    padding: 3px 10px 3px 3px;
+    font-size: 12.5px;
+    cursor: pointer;
+    max-width: 100%;
+}
+
+.fr-chip b { font-size: 15px; line-height: 1; opacity: .7; }
+.fr-chip:hover b { opacity: 1; }
+
+.fr-av {
+    flex: none;
+    display: inline-grid;
+    place-items: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #E5E7EB;
+    color: #374151;
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.fr-chip .fr-av { background: #2563EB; color: #FFFFFF; }
+
+.fr-lista {
+    max-height: 260px;
+    overflow-y: auto;
+    border: 1px solid #E5E7EB;
+    border-radius: 9px;
+    background: #F9FAFB;
+    overscroll-behavior: contain;
+}
+
+.fr-vacio { margin: 0; padding: 14px; font-size: 13px; color: #6B7280; text-align: center; }
+
+.fr-grupo + .fr-grupo { border-top: 1px solid #E5E7EB; }
+
+.fr-grupo header {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 7px 10px;
+    background: #F3F4F6;
+}
+
+.fr-grupo h5 {
+    margin: 0;
+    font-size: 12px;
+    font-weight: 700;
+    color: #374151;
+    text-transform: none;
+}
+
+.fr-grupo h5 em { font-style: normal; font-weight: 500; color: #9CA3AF; margin-left: 4px; }
+
+.fr-grupo header button {
+    border: none;
+    background: none;
+    color: #2563EB;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 2px 4px;
+}
+
+.fr-persona {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    width: 100%;
+    padding: 7px 10px;
+    border: none;
+    background: transparent;
+    text-align: left;
+    cursor: pointer;
+    color: #111827;
+}
+
+.fr-persona:hover { background: #EEF2FF; }
+.fr-persona.es-elegida { background: #EFF6FF; }
+
+.fr-marca {
+    flex: none;
+    display: inline-grid;
+    place-items: center;
+    width: 18px;
+    height: 18px;
+    border: 1.5px solid #9CA3AF;
+    border-radius: 5px;
+    background: #FFFFFF;
+    color: #FFFFFF;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.fr-persona.es-elegida .fr-marca { background: #2563EB; border-color: #2563EB; }
+
+.fr-persona-txt { display: flex; flex-direction: column; min-width: 0; }
+.fr-persona-txt b { font-size: 13px; font-weight: 600; }
+.fr-persona-txt small { font-size: 11.5px; color: #6B7280; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ---------- Pie ---------- */
+
+.fr-pie {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.fr-pie p { margin: 0; font-size: 12.5px; color: #6B7280; flex: 1 1 220px; }
+.fr-pie > div { display: flex; gap: 8px; margin-left: auto; }
+
+.fr-btn,
+.fr-btn-sec {
+    border-radius: 8px;
+    padding: 9px 15px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.fr-btn { border: none; background: #2563EB; color: #FFFFFF; }
+.fr-btn:hover { background: #1D4ED8; }
+.fr-btn:disabled { opacity: .6; cursor: default; }
+
+.fr-btn-sec { border: 1px solid #D1D5DB; background: #FFFFFF; color: #374151; }
+.fr-btn-sec:hover { background: #F9FAFB; }
+
+/* En el lateral del plano y en el móvil, una sola columna. */
+.fr-form.es-compacto { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 12px; gap: 10px; margin: 0; border: none; box-shadow: none; border-radius: 0; }
+.fr-form.es-compacto .fr-campo { grid-column: span 1; }
+.fr-form.es-compacto .fr-campo:first-child,
+.fr-form.es-compacto .fr-mitad,
+.fr-form.es-compacto .fr-ancho,
+.fr-form.es-compacto .fr-fecha { grid-column: 1 / -1; }
+.fr-form.es-compacto .fr-lista { max-height: 200px; }
+.fr-form.es-compacto .fr-pie > div { width: 100%; }
+.fr-form.es-compacto .fr-pie > div > * { flex: 1; }
+
+@media (max-width: 640px) {
+    .fr-form { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 12px; }
+    .fr-campo { grid-column: span 1; }
+    .fr-campo:first-child, .fr-mitad, .fr-ancho, .fr-fecha { grid-column: 1 / -1; }
+    .fr-form input, .fr-form textarea { font-size: 16px; } /* evita el zoom de iOS */
+    .fr-pie > div { width: 100%; }
+    .fr-pie > div > * { flex: 1; }
+}

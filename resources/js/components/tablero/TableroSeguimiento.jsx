@@ -123,9 +123,10 @@ function PanelAlerta({ alerta, datos, onCerrar }) {
     ];
 
     const criterios = {
-        vencidas: (t) => t.dias_restantes !== null && t.dias_restantes < 0,
-        hoy: (t) => t.dias_restantes === 0,
-        semana: (t) => t.dias_restantes !== null && t.dias_restantes > 0 && t.dias_restantes <= 7,
+        // En pausa el plazo está detenido: no vence (igual que en el servidor).
+        vencidas: (t) => !t.pausada && t.dias_restantes !== null && t.dias_restantes < 0,
+        hoy: (t) => !t.pausada && t.dias_restantes === 0,
+        semana: (t) => !t.pausada && t.dias_restantes !== null && t.dias_restantes > 0 && t.dias_restantes <= 7,
         pausa: (t) => t.pausada,
     };
 

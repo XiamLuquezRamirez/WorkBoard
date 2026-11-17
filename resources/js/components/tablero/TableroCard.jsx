@@ -74,7 +74,9 @@ export default function TableroCard({ tarea, estadoVisual, innerRef, cortes, onA
     const foto = fotoFallida ? null : fotoOriginal;
 
     const dias = tarea.dias_restantes;
-    const temp = calcularTemperatura(dias, tarea.fecha_entregada, cortes);
+    // En pausa el plazo está detenido: sin termómetro de retraso (ya lleva
+    // su marca de pausa).
+    const temp = calcularTemperatura(tarea.pausada ? null : dias, tarea.fecha_entregada, cortes);
 
     // El avance sólo aporta información mientras la tarea se está trabajando.
     const mostrarAvance = Boolean(tarea.checklist)

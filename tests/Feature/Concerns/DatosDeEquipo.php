@@ -30,7 +30,7 @@ trait DatosDeEquipo
         // Salvaguarda: si la configuración estuviera en caché y apuntara a
         // workboard, se detiene aquí antes de tocar un solo dato real.
         $base = DB::connection('mysql2')->getDatabaseName();
-        if ($base !== 'workboard_test') {
+        if (!preg_match('/^workboard_test(_\d+)?$/', $base)) {
             $this->fail("Las pruebas deben correr contra workboard_test, no contra «{$base}». Ejecuta php artisan config:clear.");
         }
 

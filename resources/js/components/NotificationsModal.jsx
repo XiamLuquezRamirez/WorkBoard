@@ -39,6 +39,23 @@ const NotificationModal = ({ isOpen, onClose, notifications, setNotifications, c
                 return {
                     icon: <FaComment />
                 };
+            case 'Reunion':
+                return {
+                    icon: <FaCalendar />
+                };
+            case 'Revision':
+                return {
+                    icon: <FaClipboardList />
+                };
+            case 'Aceptada':
+                return {
+                    icon: <FaCheckCircle />
+                };
+            case 'Devuelta':
+            case 'Reabierta':
+                return {
+                    icon: <FaExclamationTriangle />
+                };
             case 'TareaAtrasada':
                 return {
                     icon: <FaExclamationTriangle />
@@ -80,6 +97,13 @@ const NotificationModal = ({ isOpen, onClose, notifications, setNotifications, c
             } catch (error) {
                 console.error('Error al marcar la notificación como leída:', error);
             }
+        }
+
+        // Una reunión no tiene tarea que abrir: se va a la pestaña Reuniones.
+        if (notification.tipo === 'Reunion' || !notification.tarea_id) {
+            window.dispatchEvent(new Event('wb:abrir-reuniones'));
+            onClose();
+            return;
         }
 
         // Abrir el detalle de la tarea

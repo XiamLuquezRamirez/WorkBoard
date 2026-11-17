@@ -7,6 +7,13 @@ import PanelPuesto from './PanelPuesto';
 import './tablero.css';
 
 /**
+ * Cada cuánto se vuelve a pedir el plano con la pestaña a la vista: lo justo
+ * para que un cambio de estado o una reunión que empieza se vean caminar sin
+ * recargar, sin martillear el servidor.
+ */
+const SONDEO_MS = 20000;
+
+/**
  * Plano de la oficina: planta 2D.
  *
  * El tablero ordena el trabajo por estado; aquí se ordena por lugar. Cada
@@ -40,11 +47,46 @@ export default function TableroPlano({
 
     useEffect(() => {
         let vivo = true;
-        axiosInstance.get('/tablero/plano')
+        const pedir = (primera) => axiosInstance.get('/tablero/plano')
             .then((r) => vivo && setDatos(r.data))
-            .catch(() => vivo && setError(true));
-        return () => { vivo = false; };
+            // Si falla un sondeo se conserva lo que ya se veía; sólo la
+            // primera carga fallida enseña el error.
+            .catch(() => vivo && primera && setError(true));
+
+        pedir(true);
+        const tic = setInterval(() => {
+            if (document.visibilityState === 'visible') pedir(false);
+        }, SONDEO_MS);
+        const alVolver = () => { if (document.visibilityState === 'visible') pedir(false); };
+        document.addEventListener('visibilitychange', alVolver);
+
+        return () => {
+            vivo = false;
+            clearInterval(tic);
+            document.removeEventListener('visibilitychange', alVolver);
+        };
     }, []);
+
+    /**
+     * Mi presencia cambió (elegí un estado o saludé): se refleja en el plano
+     * enseguida, sin esperar al siguiente sondeo, para ver caminar al propio
+     * personaje en cuanto se pulsa.
+     */
+    const cambiarMiPresencia = (presencia, extra) => {
+        setDatos((d) => {
+            if (!d?.yo) return d;
+            return {
+                ...d,
+                zonas: d.zonas.map((z) => ({
+                    ...z,
+                    puestos: z.puestos.map((p) => (p.id !== d.yo ? p : {
+                        ...p,
+                        presencia: { ...(p.presencia || {}), ...(presencia || {}), ...(extra || {}) },
+                    })),
+                })),
+            };
+        });
+    };
 
     useEffect(() => {
         const onKey = (ev) => {
@@ -103,6 +145,7 @@ export default function TableroPlano({
                     <PlanoOficina
                         zonas={zonas}
                         miEquipoTotal={datos.mi_equipo_total}
+                        yo={datos.yo ?? null}
                         elegido={elegido}
                         onElegir={(p) => setElegido(p.id)}
                         soloMios={soloMios}
@@ -115,6 +158,8 @@ export default function TableroPlano({
                             interactivo={interactivo && Boolean(datosTablero)}
                             onAbrirTarea={abrirTarea}
                             onCerrar={() => setElegido(null)}
+                            onPresencia={cambiarMiPresencia}
+                            esYo={datos.yo != null && puestoElegido.id === datos.yo}
                         />
                     )}
                 </div>

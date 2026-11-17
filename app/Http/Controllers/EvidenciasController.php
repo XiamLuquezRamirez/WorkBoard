@@ -6,124 +6,193 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Exception;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+use App\Support\AccesoTareas;
 
 class EvidenciasController extends Controller
 {
+    /**
+     * Extensiones que se aceptan como evidencia. Es una lista blanca a
+     * propósito: la carpeta está dentro de public/, así que cualquier cosa que
+     * el servidor sepa ejecutar o interpretar (php, html, svg, js…) no entra.
+     */
+    private const EXTENSIONES_PERMITIDAS = [
+        // Imágenes
+        'jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'heic', 'tif', 'tiff',
+        // Documentos
+        'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'odt', 'ods', 'odp', 'rtf', 'txt', 'csv',
+        // Diseño y planos
+        'psd', 'ai', 'eps', 'dwg', 'dxf', 'fig', 'xd', 'sketch',
+        // Comprimidos
+        'zip', 'rar', '7z',
+        // Audio y video
+        'mp3', 'wav', 'm4a', 'ogg', 'mp4', 'mov', 'avi', 'mkv', 'webm',
+    ];
+
+    /** Tamaño máximo por archivo, en kilobytes (64 MB, igual que el .htaccess). */
+    private const TAMANO_MAXIMO_KB = 65536;
+
+    private const CARPETA = 'evidencias_tareas';
+
+    /**
+     * Respaldo por si algún día se colara un archivo peligroso: Apache no
+     * ejecuta ni sirve scripts desde la carpeta de evidencias. public/storage
+     * no se versiona, por eso se crea desde aquí en lugar de vivir en el repo.
+     */
+    private const HTACCESS = <<<'HTACCESS'
+# Creado por WorkBoard (EvidenciasController). No borrar.
+# En esta carpeta solo se guardan evidencias: nada se ejecuta ni se interpreta.
+<FilesMatch "(?i)\.(php[0-9]?|phtml|phar|pht|phps|cgi|pl|py|rb|sh|asp|aspx|jsp|exe|bat|cmd|com|ps1|html?|xhtml|shtml|svg|svgz|js|mjs|htaccess)$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+</IfModule>
+
+HTACCESS;
+
     public function subirEvidencias(Request $request)
     {
+        $request->validate([
+            'evidencias'   => 'required|array|min:1',
+            'evidencias.*' => 'required|file|max:' . self::TAMANO_MAXIMO_KB,
+        ], [
+            'evidencias.required'   => 'No se han enviado archivos.',
+            'evidencias.array'      => 'No se han enviado archivos.',
+            'evidencias.min'        => 'No se han enviado archivos.',
+            'evidencias.*.required' => 'Uno de los archivos no llegó completo. Intenta subirlo de nuevo.',
+            'evidencias.*.file'     => 'Uno de los archivos no llegó completo. Intenta subirlo de nuevo.',
+            'evidencias.*.uploaded' => 'Uno de los archivos no llegó completo. Intenta subirlo de nuevo.',
+            'evidencias.*.max'      => 'Cada archivo puede pesar como máximo 64 MB.',
+        ]);
+
+        // Se revisan todos antes de guardar ninguno: o entran todos o ninguno.
+        $rechazados = [];
+        foreach ($request->file('evidencias') as $file) {
+            if (!in_array($this->extension($file), self::EXTENSIONES_PERMITIDAS, true)) {
+                $rechazados[] = $file->getClientOriginalName();
+            }
+        }
+        if ($rechazados) {
+            $mensaje = 'Este tipo de archivo no se acepta como evidencia: ' . implode(', ', $rechazados)
+                . '. Sube imágenes, PDF, documentos de Office, comprimidos o video; para otros formatos usa un enlace de Drive.';
+
+            return response()->json([
+                'message'  => $mensaje,
+                'mensajes' => [$mensaje],
+                'errors'   => ['evidencias' => [$mensaje]],
+            ], 422);
+        }
+
+        $carpeta = public_path('storage' . DIRECTORY_SEPARATOR . self::CARPETA);
+        try {
+            $this->prepararCarpeta($carpeta);
+        } catch (Exception $e) {
+            Log::error('Evidencias: no se pudo preparar la carpeta. ' . $e->getMessage());
+            $mensaje = 'No se pudo guardar la evidencia en el servidor. Avisa al administrador.';
+
+            return response()->json(['error' => true, 'message' => $mensaje, 'mensajes' => [$mensaje]], 500);
+        }
+
         $evidencias = [];
         $errores = [];
-        
-        try {
-            if ($request->hasFile('evidencias')) {
-                foreach ($request->file('evidencias') as $file) {
-                    try {
-                        // Verificar si el archivo es válido
-                        if (!$file->isValid()) {
-                            throw new Exception("Archivo no válido: " . $file->getErrorMessage());
-                        }
-
-                        // Generar nombre único para el archivo
-                        $nombreArchivo = uniqid() . '_' . $file->getClientOriginalName();
-                        
-                        // Verificar si el directorio existe
-                        $directorio = 'evidencias_tareas';
-                        $rutaBase = public_path('storage');
-                        $rutaCompleta = $rutaBase . '/' . $directorio;
-                        
-                        Log::info("Intentando crear directorio en: " . $rutaCompleta);
-                        
-                        // Verificar si el directorio base existe
-                        if (!file_exists($rutaBase)) {
-                            Log::error("El directorio base no existe: " . $rutaBase);
-                            throw new Exception("El directorio base no existe. Por favor, ejecute 'php artisan storage:link'");
-                        }
-                        
-                        // Verificar permisos del directorio base
-                        if (!is_writable($rutaBase)) {
-                            Log::error("El directorio base no tiene permisos de escritura: " . $rutaBase);
-                            throw new Exception("El directorio base no tiene permisos de escritura");
-                        }
-                        
-                        if (!file_exists($rutaCompleta)) {
-                            // Intentar crear el directorio con permisos más permisivos
-                            if (!@mkdir($rutaCompleta, 0777, true)) {
-                                $error = error_get_last();
-                                Log::error("Error al crear directorio: " . $error['message']);
-                                Log::error("Ruta completa: " . $rutaCompleta);
-                                Log::error("Permisos del directorio base: " . substr(sprintf('%o', fileperms($rutaBase)), -4));
-                                throw new Exception("No se pudo crear el directorio: " . $rutaCompleta . ". Error: " . $error['message']);
-                            }
-                            // Asegurar que el directorio tenga los permisos correctos
-                            chmod($rutaCompleta, 0777);
-                        }
-
-                        // Obtener la ruta temporal del archivo
-                        $rutaTemporal = $file->getPathname();
-                        
-                        // Verificar si el archivo temporal existe y es readable
-                        if (!file_exists($rutaTemporal) || !is_readable($rutaTemporal)) {
-                            Log::error("Archivo temporal no existe o no es readable: " . $rutaTemporal);
-                            throw new Exception("Error al acceder al archivo temporal");
-                        }
-
-                        // Intentar guardar el archivo directamente
-                        $rutaDestino = $rutaCompleta . '/' . $nombreArchivo;
-                        
-                        // Intentar copiarjhkjghgfh el archivo en lugar de moverlo
-                        if (!copy($rutaTemporal, $rutaDestino)) {
-                            $error = error_get_last();
-                            Log::error("Error al copiar archivo: " . $error['message']);
-                            Log::error("Ruta origen: " . $rutaTemporal);
-                            Log::error("Ruta destino: " . $rutaDestino);
-                            throw new Exception("Error al guardar el archivo: " . ($error ? $error['message'] : 'Error desconocido'));
-                        }
-                        
-                        $evidencias[] = [
-                            'nombre_original' => $file->getClientOriginalName(),
-                            'ruta' => $directorio . '/' . $nombreArchivo,
-                            'tipo' => $file->getMimeType()
-                        ];
-                    } catch (Exception $e) {
-                        $errores[] = "Error con archivo {$file->getClientOriginalName()}: " . $e->getMessage();
-                        Log::error("Error al subir archivo: " . $e->getMessage());
-                    }
+        foreach ($request->file('evidencias') as $file) {
+            $nombreArchivo = $this->nombreSeguro($file);
+            try {
+                if (!$file->isValid()) {
+                    throw new Exception($file->getErrorMessage());
                 }
-            } else {
-                $errores[] = "No se han enviado archivos";
+                if (!copy($file->getPathname(), $carpeta . DIRECTORY_SEPARATOR . $nombreArchivo)) {
+                    throw new Exception(error_get_last()['message'] ?? 'copy() falló');
+                }
+                $evidencias[] = [
+                    'nombre_original' => $file->getClientOriginalName(),
+                    'ruta' => self::CARPETA . '/' . $nombreArchivo,
+                    'tipo' => $file->getMimeType(),
+                ];
+            } catch (Exception $e) {
+                Log::error("Evidencias: no se pudo guardar {$file->getClientOriginalName()}. " . $e->getMessage());
+                $errores[] = "No se pudo guardar {$file->getClientOriginalName()}.";
             }
-            
-            if (empty($evidencias) && !empty($errores)) {
-                return response()->json([
-                    'error' => true,
-                    'mensajes' => $errores
-                ], 500);
-            }
-            
-            return response()->json([
-                'success' => true,
-                'evidencias' => $evidencias,
-                'errores' => $errores
-            ]);
-            
-        } catch (Exception $e) {
-            Log::error("Error general: " . $e->getMessage());
+        }
+
+        if (empty($evidencias)) {
             return response()->json([
                 'error' => true,
-                'mensaje' => "Error general: " . $e->getMessage()
+                'message' => $errores[0] ?? 'No se pudo guardar la evidencia.',
+                'mensajes' => $errores,
             ], 500);
+        }
+
+        return response()->json([
+            'success' => true,
+            'evidencias' => $evidencias,
+            'errores' => $errores,
+        ]);
+    }
+
+    /** Extensión en minúsculas tal como la trae el nombre del archivo. */
+    private function extension($file): string
+    {
+        return strtolower((string) $file->getClientOriginalExtension());
+    }
+
+    /**
+     * Nombre con el que se guarda: un prefijo único, el nombre original
+     * reducido a letras, números y guiones bajos (sin puntos, para que no haya
+     * dobles extensiones como «foto.php.jpg») y la extensión ya validada.
+     */
+    private function nombreSeguro($file): string
+    {
+        $base = pathinfo((string) $file->getClientOriginalName(), PATHINFO_FILENAME);
+        $base = Str::limit(Str::slug($base, '_'), 80, '');
+        if ($base === '') {
+            $base = 'evidencia';
+        }
+
+        return uniqid() . '_' . $base . '.' . $this->extension($file);
+    }
+
+    /** Crea la carpeta si falta y se asegura de que tenga su .htaccess. */
+    private function prepararCarpeta(string $carpeta): void
+    {
+        if (!is_dir(public_path('storage'))) {
+            throw new Exception("No existe public/storage. Ejecuta 'php artisan storage:link'.");
+        }
+        if (!is_dir($carpeta) && !@mkdir($carpeta, 0755, true)) {
+            throw new Exception('No se pudo crear la carpeta ' . $carpeta);
+        }
+
+        $htaccess = $carpeta . DIRECTORY_SEPARATOR . '.htaccess';
+        if (!is_file($htaccess) || file_get_contents($htaccess) !== self::HTACCESS) {
+            if (file_put_contents($htaccess, self::HTACCESS) === false) {
+                throw new Exception('No se pudo escribir ' . $htaccess);
+            }
         }
     }
 
     public function guardarEvidenciaLink(Request $request)
     {
+        // Fuera del try: la ValidationException debe llegar como 422 y no
+        // quedar atrapada como un error 500.
+        $request->validate([
+            'tarea_id' => 'required|integer',
+            'evidencia' => 'required|url:https',
+            'nombre' => 'required|string|max:255',
+            'tipo' => 'required|string|max:50'
+        ], [
+            'evidencia.required' => 'Pega el enlace de Drive.',
+            'evidencia.url' => 'El enlace no es válido: debe empezar por https://.',
+            'nombre.required' => 'Ponle un nombre a la evidencia.',
+        ]);
+
+        $tarea = AccesoTareas::exigir($request->input('tarea_id'), 'modificar');
+        if (AccesoTareas::esRespuesta($tarea)) {
+            return $tarea;
+        }
+
         try {
-            $request->validate([
-                'tarea_id' => 'required|integer',
-                'evidencia' => 'required|url',
-                'nombre' => 'required|string',
-                'tipo' => 'required|string'
-            ]);
 
             // Validar que sea un link de Google Drive
             $drivePatterns = [

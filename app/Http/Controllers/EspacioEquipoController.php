@@ -209,7 +209,14 @@ class EspacioEquipoController extends Controller
         return response()->json(['reuniones' => $salida, 'yo' => $yo]);
     }
 
-    /** Crea una reunión y convoca a sus asistentes. */
+    /**
+     * Crea una reunión y convoca a sus asistentes.
+     *
+     * Se puede convocar a cualquier colaborador activo, sea del departamento
+     * que sea: una reunión junta a quien haga falta, no sólo al equipo de un
+     * líder. Cada convocado recibe el aviso en la campana, la copia por correo
+     * y la ve como pendiente en «Mis Tareas» hasta que responda.
+     */
     public function crearReunion(Request $request)
     {
         $yo = $this->empleadoActual();
@@ -219,55 +226,79 @@ class EspacioEquipoController extends Controller
 
         $datos = $request->validate([
             'titulo'      => 'required|string|max:200',
-            'descripcion' => 'nullable|string',
-            'fecha'       => 'required|date',
+            'descripcion' => 'nullable|string|max:4000',
+            'fecha'       => 'required|date_format:Y-m-d|after_or_equal:' . Carbon::today(\App\Mail\ConvocatoriaReunionCorreo::ZONA)->toDateString(),
             'hora_inicio' => 'required|date_format:H:i',
             'hora_fin'    => 'nullable|date_format:H:i|after:hora_inicio',
             'enlace'      => 'nullable|url|max:500',
             'lugar'       => 'nullable|string|max:200',
-            'asistentes'  => 'array',
+            'asistentes'  => 'required|array|min:1',
             'asistentes.*' => 'integer',
+        ], [
+            'asistentes.required' => 'Elige al menos un participante.',
+            'asistentes.min'      => 'Elige al menos un participante.',
+            'fecha.after_or_equal' => 'La fecha ya pasó.',
+            'hora_fin.after'      => 'La hora de fin debe ser posterior a la de inicio.',
+            'enlace.url'          => 'El enlace debe empezar por https://',
         ]);
 
-        // Sólo se convoca a gente que el usuario puede ver: sin esto, un id
-        // cualquiera en la petición metería a un desconocido en la reunión.
-        $permitidos = $this->empleadosVisibles();
-        $invitados = collect($datos['asistentes'] ?? [])
+        // Sólo colaboradores activos: un id cualquiera en la petición no debe
+        // meter en la reunión a alguien dado de baja o inexistente.
+        $pedidos = collect($datos['asistentes'])->map(fn ($i) => (int) $i)->unique();
+        $validos = DB::connection('mysql2')->table('empleados')
+            ->whereIn('id', $pedidos->all())
+            ->where('estado_registro', 'Activo')
+            ->where('estado', 'Activo')
+            ->pluck('id')
             ->map(fn ($i) => (int) $i)
-            ->filter(fn ($i) => $permitidos === null || in_array($i, $permitidos, true))
-            ->push($yo)                 // el organizador siempre asiste
-            ->unique()
+            ->reject(fn ($i) => $i === $yo)
             ->values();
 
-        $id = DB::connection('mysql2')->table('reuniones')->insertGetId([
-            'titulo'      => $datos['titulo'],
-            'descripcion' => $datos['descripcion'] ?? null,
-            'fecha'       => $datos['fecha'],
-            'hora_inicio' => $datos['hora_inicio'],
-            'hora_fin'    => $datos['hora_fin'] ?? null,
-            'enlace'      => $datos['enlace'] ?? null,
-            'lugar'       => $datos['lugar'] ?? null,
-            'organizador' => $yo,
-            'estado'      => 'Programada',
-            'created_at'  => now(),
-            'updated_at'  => now(),
-        ]);
+        if ($validos->isEmpty()) {
+            return response()->json(['errors' => ['asistentes' => ['Elige al menos un participante activo.']]], 422);
+        }
 
-        DB::connection('mysql2')->table('reuniones_asistentes')->insert(
-            $invitados->map(fn ($e) => [
-                'reunion'    => $id,
-                'empleado'   => $e,
-                // El organizador no se invita a sí mismo: ya ha aceptado.
-                'respuesta'  => $e === $yo ? 'Acepta' : 'Pendiente',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ])->all()
-        );
+        $conn = DB::connection('mysql2');
+        $id = $conn->transaction(function () use ($conn, $datos, $yo, $validos) {
+            $id = $conn->table('reuniones')->insertGetId([
+                'titulo'      => trim($datos['titulo']),
+                'descripcion' => $datos['descripcion'] ?? null,
+                'fecha'       => $datos['fecha'],
+                'hora_inicio' => $datos['hora_inicio'],
+                'hora_fin'    => $datos['hora_fin'] ?? null,
+                'enlace'      => $datos['enlace'] ?? null,
+                'lugar'       => $datos['lugar'] ?? null,
+                'organizador' => $yo,
+                'estado'      => 'Programada',
+                'created_at'  => now(),
+                'updated_at'  => now(),
+            ]);
 
-        return response()->json(['success' => 'Reunión creada', 'id' => $id], 201);
+            $conn->table('reuniones_asistentes')->insert(
+                $validos->push($yo)->map(fn ($e) => [
+                    'reunion'    => $id,
+                    'empleado'   => $e,
+                    // El organizador no se invita a sí mismo: ya ha aceptado.
+                    'respuesta'  => $e === $yo ? 'Acepta' : 'Pendiente',
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ])->all()
+            );
+
+            return $id;
+        });
+
+        $enviados = $this->avisarConvocados($id, 'convocatoria');
+
+        return response()->json([
+            'success'   => 'Reunión creada',
+            'id'        => $id,
+            'convocados' => $validos->count() - 1,
+            'correos'   => $enviados,
+        ], 201);
     }
 
-    /** Acepta o rechaza una convocatoria. */
+    /** Acepta o rechaza una convocatoria; el organizador se entera en la campana. */
     public function responderReunion(Request $request, $id)
     {
         $yo = $this->empleadoActual();
@@ -279,7 +310,25 @@ class EspacioEquipoController extends Controller
             'respuesta' => 'required|in:Acepta,Rechaza,Pendiente',
         ]);
 
-        $filas = DB::connection('mysql2')->table('reuniones_asistentes')
+        $conn = DB::connection('mysql2');
+        $reunion = $conn->table('reuniones')->where('id', $id)->first();
+        if (!$reunion) {
+            return response()->json(['error' => 'La reunión no existe.'], 404);
+        }
+        if ($reunion->estado === 'Cancelada') {
+            return response()->json(['error' => 'La reunión fue cancelada.'], 409);
+        }
+
+        $antes = $conn->table('reuniones_asistentes')
+            ->where('reunion', $id)
+            ->where('empleado', $yo)
+            ->value('respuesta');
+
+        if ($antes === null) {
+            return response()->json(['error' => 'No está convocado a esta reunión.'], 403);
+        }
+
+        $conn->table('reuniones_asistentes')
             ->where('reunion', $id)
             ->where('empleado', $yo)
             ->update([
@@ -287,8 +336,12 @@ class EspacioEquipoController extends Controller
                 'updated_at' => now(),
             ]);
 
-        if ($filas === 0) {
-            return response()->json(['error' => 'No está convocado a esta reunión.'], 403);
+        if ($antes !== $datos['respuesta'] && $datos['respuesta'] !== 'Pendiente' && (int) $reunion->organizador !== $yo) {
+            $quien = $this->nombreEmpleado($yo);
+            $texto = $datos['respuesta'] === 'Acepta'
+                ? "{$quien} confirmó que asistirá a la reunión «{$reunion->titulo}»."
+                : "{$quien} no podrá asistir a la reunión «{$reunion->titulo}».";
+            $this->notificarEnCampana([(int) $reunion->organizador], $yo, $texto);
         }
 
         return response()->json(['success' => 'Respuesta registrada']);
@@ -308,6 +361,10 @@ class EspacioEquipoController extends Controller
             return response()->json(['error' => 'Sólo el organizador puede cancelarla.'], 403);
         }
 
+        if ($reunion->estado === 'Cancelada') {
+            return response()->json(['success' => 'Reunión cancelada']);
+        }
+
         // Se marca cancelada en vez de borrarla: los convocados deben poder
         // ver que se canceló, no que desapareció sin explicación.
         DB::connection('mysql2')->table('reuniones')->where('id', $id)->update([
@@ -315,33 +372,223 @@ class EspacioEquipoController extends Controller
             'updated_at' => now(),
         ]);
 
+        // Sólo se avisa a quien aún podía ir: a quien ya dijo que no, la
+        // cancelación no le cambia nada.
+        $this->avisarConvocados((int) $id, 'cancelacion');
+
         return response()->json(['success' => 'Reunión cancelada']);
     }
 
-    /** Empleados a los que se puede convocar: el alcance del usuario. */
+    /**
+     * Colaboradores que se pueden convocar: toda la organización activa,
+     * con su departamento para poder agruparlos y buscarlos.
+     */
     public function convocables()
     {
-        $alcance = $this->empleadosVisibles();
+        $yo = $this->empleadoActual();
+        $conn = DB::connection('mysql2');
 
-        $q = DB::connection('mysql2')->table('empleados as e')
+        $q = $conn->table('empleados as e')
             ->leftJoin('cargos as c', 'e.cargo', '=', 'c.id')
+            ->leftJoin('departamentos as d', 'e.departamento', '=', 'd.id')
             ->where('e.estado_registro', 'Activo')
             ->where('e.estado', 'Activo');
 
-        if ($alcance !== null) {
-            if ($alcance === []) {
-                return response()->json([]);
-            }
-            $q->whereIn('e.id', $alcance);
+        if ($yo) {
+            $q->where('e.id', '<>', $yo);
         }
 
         return response()->json(
             $q->select(
                 'e.id',
                 'c.nombre as cargo',
-                DB::connection('mysql2')->raw('CONCAT(e.nombres, " ", e.apellidos) as nombre')
-            )->orderBy('nombre')->get()
+                'd.id as departamento_id',
+                'd.nombre as departamento',
+                $conn->raw('CONCAT(e.nombres, " ", e.apellidos) as nombre')
+            )
+                ->orderByRaw('d.nombre IS NULL, d.nombre')
+                ->orderBy('nombre')
+                ->get()
+                ->map(fn ($p) => [
+                    'id'              => (int) $p->id,
+                    'nombre'          => $p->nombre,
+                    'cargo'           => $p->cargo,
+                    'departamento_id' => $p->departamento_id ? (int) $p->departamento_id : null,
+                    'departamento'    => $p->departamento ?: 'Sin departamento',
+                ])
         );
+    }
+
+    /**
+     * Avisa a los convocados de una reunión: en la campana de WorkBoard y con
+     * copia por correo. Devuelve a cuántos se les intentó enviar el correo.
+     *
+     * El correo sale después de responder (defer): con varios convocados y un
+     * SMTP lento, la persona que crea la reunión no debe quedarse esperando.
+     * Un fallo de correo no deshace la reunión: el aviso en la plataforma ya
+     * quedó guardado.
+     */
+    private function avisarConvocados(int $id, string $tipo): int
+    {
+        $conn = DB::connection('mysql2');
+        $r = $conn->table('reuniones')->where('id', $id)->first();
+        if (!$r) {
+            return 0;
+        }
+
+        $gente = $conn->table('reuniones_asistentes as ra')
+            ->join('empleados as e', 'ra.empleado', '=', 'e.id')
+            ->where('ra.reunion', $id)
+            ->select(
+                'ra.empleado',
+                'ra.respuesta',
+                'e.email',
+                'e.nombres',
+                $conn->raw('CONCAT(e.nombres, " ", e.apellidos) as nombre')
+            )
+            ->orderBy('nombre')
+            ->get();
+
+        $organizador = $this->nombreEmpleado((int) $r->organizador);
+        $destino = $gente->filter(fn ($g) => (int) $g->empleado !== (int) $r->organizador);
+        if ($tipo === 'cancelacion') {
+            $destino = $destino->where('respuesta', '<>', 'Rechaza');
+        }
+        if ($destino->isEmpty()) {
+            return 0;
+        }
+
+        $fecha = \App\Mail\ConvocatoriaReunionCorreo::fechaEnPalabras($r->fecha);
+        $hora = substr((string) $r->hora_inicio, 0, 5);
+        $texto = $tipo === 'cancelacion'
+            ? "{$organizador} canceló la reunión «{$r->titulo}» del {$fecha} a las {$hora}."
+            : "{$organizador} te convocó a la reunión «{$r->titulo}» el {$fecha} a las {$hora}. Confirma tu asistencia en Mis Tareas.";
+
+        $this->notificarEnCampana($destino->pluck('empleado')->map(fn ($i) => (int) $i)->all(), (int) $r->organizador, $texto);
+
+        // El correo del empleado manda; si no tiene, el de su usuario.
+        $usuarios = $conn->table('users')
+            ->whereIn('empleado', $destino->pluck('empleado')->all())
+            ->pluck('email', 'empleado');
+
+        $datos = [
+            'id'          => (int) $r->id,
+            'titulo'      => $r->titulo,
+            'descripcion' => $r->descripcion,
+            'fecha'       => $r->fecha,
+            'hora_inicio' => $hora,
+            'hora_fin'    => $r->hora_fin ? substr((string) $r->hora_fin, 0, 5) : null,
+            'lugar'       => $r->lugar,
+            'enlace'      => $r->enlace,
+            'organizador' => $organizador,
+            'asistentes'  => $gente->pluck('nombre')->all(),
+        ];
+
+        $envios = $destino->map(function ($g) use ($usuarios) {
+            $correo = trim((string) ($g->email ?: ($usuarios[$g->empleado] ?? '')));
+            return filter_var($correo, FILTER_VALIDATE_EMAIL)
+                ? ['correo' => $correo, 'nombre' => trim(strtok((string) $g->nombres, ' ')) ?: $g->nombre]
+                : null;
+        })->filter()->values()->all();
+
+        if ($envios === []) {
+            return 0;
+        }
+
+        \Illuminate\Support\defer(function () use ($envios, $datos, $tipo) {
+            foreach ($envios as $e) {
+                try {
+                    \Illuminate\Support\Facades\Mail::to($e['correo'])
+                        ->send(new \App\Mail\ConvocatoriaReunionCorreo($datos, $e['nombre'], $tipo));
+                } catch (\Throwable $ex) {
+                    \Illuminate\Support\Facades\Log::warning('No se envió la convocatoria de la reunión ' . $datos['id'] . ': ' . $ex->getMessage());
+                }
+            }
+        });
+
+        return count($envios);
+    }
+
+    /** Aviso de reunión en la campana de cada empleado. */
+    private function notificarEnCampana(array $empleados, int $emisor, string $mensaje): void
+    {
+        \App\Support\Avisos::campana($empleados, $emisor, $mensaje, null, 'Reunion');
+    }
+
+    private function nombreEmpleado(int $id): string
+    {
+        return (string) DB::connection('mysql2')->table('empleados')
+            ->where('id', $id)
+            ->selectRaw('CONCAT(nombres, " ", apellidos) as n')
+            ->value('n');
+    }
+
+    // ─── Presencia en el plano ──────────────────────────────────────────────
+
+    /**
+     * El estado que la persona elige para que los demás lo vean en el plano.
+     * Sin estado (null) vuelve a lo automático: disponible con la aplicación
+     * abierta, en reunión si la agenda lo dice.
+     */
+    public function guardarPresencia(Request $request)
+    {
+        $yo = $this->empleadoActual();
+        if (!$yo) {
+            return response()->json(['error' => 'Tu usuario no tiene ficha de empleado.'], 422);
+        }
+        if (!\App\Support\Presencia::disponible()) {
+            return response()->json(['error' => 'La presencia aún no está instalada (falta ejecutar las migraciones).'], 503);
+        }
+
+        $datos = $request->validate([
+            'estado' => ['present', 'nullable', \Illuminate\Validation\Rule::in(\App\Support\Presencia::ESTADOS)],
+            'nota'   => 'nullable|string|max:80',
+        ], [
+            'estado.in' => 'Ese estado no existe.',
+            'nota.max'  => 'La nota admite hasta 80 caracteres.',
+        ]);
+
+        \App\Support\Presencia::elegir($yo, $datos['estado'] ?? null, $datos['nota'] ?? null);
+
+        $presencia = \App\Support\Presencia::delPlano([$yo], []);
+
+        return response()->json(['success' => true, 'presencia' => $presencia[$yo]]);
+    }
+
+    /**
+     * Saluda a un compañero desde el plano: le llega a la campana y, durante
+     * unos segundos, el personaje de quien saluda agita la mano para todos.
+     */
+    public function saludar($empleado)
+    {
+        $yo = $this->empleadoActual();
+        $empleado = (int) $empleado;
+        if (!$yo) {
+            return response()->json(['error' => 'Tu usuario no tiene ficha de empleado.'], 422);
+        }
+        if ($empleado === $yo) {
+            return response()->json(['error' => 'No puedes saludarte a ti mismo.'], 422);
+        }
+
+        $existe = DB::connection('mysql2')->table('empleados')
+            ->where('id', $empleado)->where('estado_registro', 'Activo')->where('estado', 'Activo')->exists();
+        if (!$existe) {
+            return response()->json(['error' => 'Empleado no disponible.'], 404);
+        }
+
+        // Un saludo por persona cada cinco minutos: es un gesto, no un timbre.
+        if (!\Illuminate\Support\Facades\Cache::add("saludo:{$yo}:{$empleado}", 1, now()->addMinutes(5))) {
+            return response()->json(['error' => 'Ya lo saludaste hace un momento.'], 429);
+        }
+
+        $quien = $this->nombreEmpleado($yo);
+        \App\Support\Avisos::campana([$empleado], $yo, "👋 {$quien} te saludó desde el plano de la oficina.", null, 'Saludo');
+
+        if (\App\Support\Presencia::disponible()) {
+            \App\Support\Presencia::saludar($yo, $empleado);
+        }
+
+        return response()->json(['success' => true]);
     }
 
     // ─── Detalle de un puesto ───────────────────────────────────────────────
@@ -393,6 +640,28 @@ class EspacioEquipoController extends Controller
 
         $hoy = Carbon::today();
 
+        // El trabajo de otro sólo se enseña a quien lo sigue: administración,
+        // supervisión y líderes. Un colaborador entra al plano para escribir,
+        // llamar o convocar a un compañero, no para revisar sus tareas.
+        $verTrabajo = $yo === $empleado || $this->veTrabajoAjeno();
+        if (!$verTrabajo) {
+            return response()->json([
+                'persona' => [
+                    'id'           => (int) $persona->id,
+                    'nombre'       => $persona->nombre,
+                    'cargo'        => $persona->cargo,
+                    'departamento' => $persona->departamento,
+                ],
+                'chat'        => $yo ? $this->claveDirecto($yo, $empleado) : null,
+                'sala'        => $yo ? $this->salaDeVideo($yo, $empleado) : null,
+                'soy_yo'      => false,
+                'ver_trabajo' => false,
+                'tareas'      => [],
+                'resumen'     => ['vivas' => 0, 'proceso' => 0, 'revision' => 0, 'atrasadas' => 0, 'bloqueadas' => 0, 'pausadas' => 0],
+                'actividad'   => [],
+            ]);
+        }
+
         // Las tareas vivas: lo que explica el estado del puesto. Las
         // completadas quedan fuera porque ya no dicen nada del ahora.
         $tareas = $conn->table('tareas_empleados as t')
@@ -427,7 +696,9 @@ class EspacioEquipoController extends Controller
                     'pausada'       => (int) ($t->pausada ?? 0) === 1,
                     'bloqueada'     => (int) ($t->bloqueada ?? 0) === 1,
                     'sin_criterio'  => (int) $t->n_criterios === 0,
-                    'atrasada'      => $pactada && $pactada->lt($hoy) && $t->estado !== self::EN_REVISION,
+                    // En pausa el plazo está detenido: no va tarde.
+                    'atrasada'      => $pactada && $pactada->lt($hoy) && $t->estado !== self::EN_REVISION
+                        && !\App\Support\IndiceDesempeno::estaPausada($t),
                     'dias'          => $pactada ? $hoy->diffInDays($pactada, false) : null,
                 ];
             });
@@ -464,6 +735,7 @@ class EspacioEquipoController extends Controller
             'chat'  => $yo && $yo !== $empleado ? $this->claveDirecto($yo, $empleado) : null,
             'sala'  => $yo && $yo !== $empleado ? $this->salaDeVideo($yo, $empleado) : null,
             'soy_yo' => $yo === $empleado,
+            'ver_trabajo' => true,
             'tareas' => $tareas,
             'resumen' => [
                 'vivas'      => $tareas->count(),
@@ -576,7 +848,9 @@ class EspacioEquipoController extends Controller
     {
         $yo = $this->empleadoActual();
         if (!$yo) {
-            return response()->json(['llamada' => null]);
+            // Sin ficha de empleado (un administrador) nadie puede llamarle:
+            // «activo» le dice al timbre que deje de preguntar.
+            return response()->json(['llamada' => null, 'activo' => false]);
         }
 
         $conn = DB::connection('mysql2');
@@ -912,8 +1186,13 @@ class EspacioEquipoController extends Controller
     {
         $yo = $this->empleadoActual();
         if (!$yo) {
-            return response()->json(['ultimo' => 0, 'mensajes' => []]);
+            // Sin ficha de empleado no hay directos ni canal propio.
+            return response()->json(['ultimo' => 0, 'mensajes' => [], 'activo' => false]);
         }
+
+        // Esta consulta llega cada pocos segundos mientras la aplicación está
+        // abierta, en cualquier pantalla: sirve de latido para el plano.
+        \App\Support\Presencia::latido($yo);
 
         $conn = DB::connection('mysql2');
         $ultimo = (int) $conn->table('chat_mensajes')->max('id');
@@ -1078,6 +1357,28 @@ class EspacioEquipoController extends Controller
     }
 
     // ─── Alcance ────────────────────────────────────────────────────────────
+
+    /**
+     * Si el usuario puede ver el trabajo de otros: administración, supervisión
+     * y líderes. El resto ve el plano y la gente, no sus tareas.
+     */
+    private function veTrabajoAjeno(): bool
+    {
+        $email = Auth::user()->email ?? null;
+        if (!$email) {
+            return false;
+        }
+
+        $u = DB::connection('mysql2')->table('users')->where('email', $email)->first();
+        if (!$u) {
+            return false;
+        }
+
+        $tipo = strtolower(trim((string) ($u->tipo_usuario ?? '')));
+
+        return in_array($tipo, ['administrador', 'supervisor'], true)
+            || strtolower(trim((string) ($u->lider ?? ''))) === 'si';
+    }
 
     /** Id de empleado del usuario autenticado, o null. */
     private function empleadoActual(): ?int

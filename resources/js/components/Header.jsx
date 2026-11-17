@@ -71,9 +71,12 @@ const Header = ({ currentUser, showUserMenu, setShowUserMenu, setIsSidebarOpen }
         setNotifications(response.data);
     };
 
+    // El servidor devuelve solo los datos del perfil: se mezclan con los de la
+    // sesión para no perder lo que trajo el login (equipo asignado, chat…).
     const handleUpdateUser = (updatedUser) => {
-        setUser(updatedUser);
-        localStorage.setItem("userWorkBoard", JSON.stringify(updatedUser));
+        const combinado = { ...(user || {}), ...updatedUser };
+        setUser(combinado);
+        localStorage.setItem("userWorkBoard", JSON.stringify(combinado));
     };
 
     // El listado incluye también las leídas recientes (para la pestaña "Leídas"

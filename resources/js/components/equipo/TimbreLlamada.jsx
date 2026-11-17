@@ -44,6 +44,7 @@ export default function TimbreLlamada() {
 
     useEffect(() => {
         let vivo = true;
+        let tic = null;
 
         const mirar = () => {
             // En una llamada ya aceptada el timbre sobra. Con la pestaña
@@ -54,6 +55,8 @@ export default function TimbreLlamada() {
             axiosInstance.get('/equipo/llamada-entrante')
                 .then((r) => {
                     if (!vivo) return;
+                    // Sin ficha de empleado nadie puede llamarle: se deja de preguntar.
+                    if (r.data?.activo === false) { clearInterval(tic); return; }
                     const l = r.data.llamada;
 
                     // Una llamada ya rechazada no debe volver a sonar mientras
@@ -75,7 +78,7 @@ export default function TimbreLlamada() {
         };
 
         mirar();
-        const tic = setInterval(mirar, SONDEO_MS);
+        tic = setInterval(mirar, SONDEO_MS);
         return () => { vivo = false; clearInterval(tic); };
     }, [enSala]);
 

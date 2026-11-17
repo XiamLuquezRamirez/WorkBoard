@@ -56,12 +56,16 @@ export default function AvisoMensajes() {
 
     useEffect(() => {
         let vivo = true;
+        let tic = null;
 
         const mirar = () => {
             const params = ultimoRef.current === null ? {} : { desde: ultimoRef.current };
             axiosInstance.get('/equipo/chat/avisos', { params })
                 .then((r) => {
                     if (!vivo) return;
+                    // Un usuario sin ficha de empleado no recibe mensajes:
+                    // seguir preguntando sólo cargaría el servidor.
+                    if (r.data?.activo === false) { clearInterval(tic); return; }
                     const { ultimo = 0, mensajes = [] } = r.data || {};
 
                     // La primera consulta sólo fija el punto de partida.
@@ -108,7 +112,7 @@ export default function AvisoMensajes() {
         };
 
         mirar();
-        const tic = setInterval(mirar, SONDEO_MS);
+        tic = setInterval(mirar, SONDEO_MS);
         return () => { vivo = false; clearInterval(tic); };
     }, []);
 

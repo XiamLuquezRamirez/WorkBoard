@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import axiosInstance from '../../axiosConfig';
 import { registrarChatAbierto } from '../equipo/chatAbierto';
 import { useAvatar } from './AvataresContext';
+import FormularioReunion from '../equipo/FormularioReunion';
+import { PRESENCIA } from './PlanoOficina';
 
 /** Cada cuánto se piden mensajes nuevos con el panel de chat abierto. */
 const SONDEO_MS = 5000;
@@ -243,6 +245,101 @@ function ChatPuesto({ clave, nombre }) {
     );
 }
 
+// ─── Mi estado ──────────────────────────────────────────────────────────────
+
+const OPCIONES_ESTADO = ['disponible', 'ocupado', 'reunion', 'almuerzo', 'ausente'];
+
+/**
+ * Lo que uno elige para que los demás lo vean en el plano. Vale por hoy:
+ * mañana se vuelve a lo automático (disponible con la aplicación abierta, en
+ * reunión si la agenda lo dice).
+ */
+function MiEstado({ presencia, onPresencia }) {
+    const [nota, setNota] = useState(presencia?.nota || '');
+    const [enviando, setEnviando] = useState(false);
+    const [error, setError] = useState('');
+
+    useEffect(() => { setNota(presencia?.nota || ''); }, [presencia?.nota]);
+
+    const elegido = presencia?.elegido ? presencia.estado : null;
+
+    const guardar = (estado, conNota = nota) => {
+        setEnviando(true);
+        setError('');
+        axiosInstance.post('/equipo/presencia', { estado, nota: estado ? (conNota.trim() || null) : null })
+            .then((r) => onPresencia(r.data.presencia))
+            .catch((e) => setError(e.response?.data?.error || e.response?.data?.message || 'No fue posible guardar tu estado.'))
+            .finally(() => setEnviando(false));
+    };
+
+    return (
+        <section className="pp-mi-estado">
+            <h5>Mi estado para el equipo</h5>
+            <div className="pp-estados">
+                {OPCIONES_ESTADO.map((k) => (
+                    <button
+                        key={k}
+                        className={`pp-estado ${elegido === k ? 'es-activo' : ''}`}
+                        onClick={() => guardar(k)}
+                        disabled={enviando}
+                    >
+                        <span>{PRESENCIA[k].icono}</span>
+                        {PRESENCIA[k].etiqueta}
+                    </button>
+                ))}
+                <button
+                    className={`pp-estado ${elegido ? '' : 'es-activo'}`}
+                    onClick={() => guardar(null)}
+                    disabled={enviando}
+                    title="Disponible mientras tengas la aplicación abierta; en reunión si la agenda lo dice"
+                >
+                    <span>✨</span>
+                    Automático
+                </button>
+            </div>
+
+            {elegido && (
+                <form
+                    className="pp-nota"
+                    onSubmit={(e) => { e.preventDefault(); guardar(elegido); }}
+                >
+                    <input
+                        value={nota}
+                        maxLength={80}
+                        placeholder="Nota opcional: «vuelvo a las 3»"
+                        onChange={(e) => setNota(e.target.value)}
+                    />
+                    <button className="pp-btn" disabled={enviando}>Guardar</button>
+                </form>
+            )}
+
+            <p className={`pp-mi-estado-pie ${error ? 'es-error' : ''}`}>
+                {error || (presencia?.estado === 'reunion' && !elegido
+                    ? 'Tu agenda dice que estás en una reunión.'
+                    : 'Lo ven todos en el plano. Vale por hoy.')}
+            </p>
+        </section>
+    );
+}
+
+/** Estado de la persona bajo su nombre, con la nota si dejó una. */
+function EstadoPersona({ presencia }) {
+    if (!presencia?.estado) return null;
+    const info = PRESENCIA[presencia.estado];
+    if (!info) return null;
+
+    return (
+        <>
+            <span className={`pp-presencia pr-${presencia.estado}`}>
+                <i />{info.etiqueta}
+                {presencia.actividad === 'tarea' && ' · trabajando'}
+                {presencia.actividad === 'escribiendo' && ' · escribiendo'}
+            </span>
+            {presencia.nota && <p className="pp-presencia-nota">«{presencia.nota}»</p>}
+        </>
+    );
+}
+
 // ─── Panel ──────────────────────────────────────────────────────────────────
 
 /**
@@ -256,7 +353,7 @@ function ChatPuesto({ clave, nombre }) {
  * de APP_KEY: no es adivinable desde fuera. Aun así, el vídeo pasa por un
  * tercero —no hay servidor propio— y eso conviene saberlo.
  */
-export default function PanelPuesto({ puesto, interactivo, onAbrirTarea, onCerrar }) {
+export default function PanelPuesto({ puesto, interactivo, onAbrirTarea, onCerrar, onPresencia, esYo = false }) {
     const foto = useAvatar(puesto.id);
     const [datos, setDatos] = useState(null);
     const [error, setError] = useState(false);
@@ -265,6 +362,20 @@ export default function PanelPuesto({ puesto, interactivo, onAbrirTarea, onCerra
     // Estado de la llamada en curso: 'llamando' mientras suena al otro lado,
     // 'Aceptada' cuando contesta, o el motivo por el que se cortó.
     const [llamada, setLlamada] = useState(null);
+    const [reunionEnviada, setReunionEnviada] = useState(false);
+    // Saludo: null, 'enviando', 'ok' o el texto del error.
+    const [saludo, setSaludo] = useState(null);
+
+    const saludar = () => {
+        setSaludo('enviando');
+        axiosInstance.post(`/equipo/saludar/${puesto.id}`)
+            .then(() => {
+                setSaludo('ok');
+                // El propio personaje saluda enseguida, sin esperar al sondeo.
+                onPresencia?.(null, { saluda: true });
+            })
+            .catch((e) => setSaludo(e.response?.data?.error || 'No fue posible saludar.'));
+    };
 
     useEffect(() => {
         let vivo = true;
@@ -273,9 +384,15 @@ export default function PanelPuesto({ puesto, interactivo, onAbrirTarea, onCerra
         setVista('tareas');
         setEnLlamada(false);
         setLlamada(null);
+        setSaludo(null);
 
         axiosInstance.get(`/equipo/puesto/${puesto.id}`)
-            .then((r) => vivo && setDatos(r.data))
+            .then((r) => {
+                if (!vivo) return;
+                setDatos(r.data);
+                // Quien no sigue el trabajo de esa persona llega para hablarle.
+                if (r.data.ver_trabajo === false) setVista('chat');
+            })
             .catch(() => vivo && setError(true));
 
         return () => { vivo = false; };
@@ -345,8 +462,13 @@ export default function PanelPuesto({ puesto, interactivo, onAbrirTarea, onCerra
                     {datos?.persona?.departamento && (
                         <p className="pp-depto">{datos.persona.departamento}</p>
                     )}
+                    <EstadoPersona presencia={puesto.presencia} />
                 </div>
             </header>
+
+            {(esYo || datos?.soy_yo) && (
+                <MiEstado presencia={puesto.presencia} onPresencia={(p) => onPresencia?.(p)} />
+            )}
 
             {datos?.chat && (
                 <div className="pp-acciones">
@@ -362,7 +484,25 @@ export default function PanelPuesto({ puesto, interactivo, onAbrirTarea, onCerra
                     >
                         {enLlamada ? '✕ Colgar' : '📹 Llamar'}
                     </button>
+                    <button
+                        className={`pp-btn ${vista === 'reunion' ? 'es-activo' : ''}`}
+                        onClick={() => { setReunionEnviada(false); setVista(vista === 'reunion' ? 'chat' : 'reunion'); }}
+                        title="Solicitar una reunión"
+                    >
+                        📅 Reunión
+                    </button>
+                    <button
+                        className={`pp-btn ${saludo === 'ok' ? 'es-activo' : ''}`}
+                        onClick={saludar}
+                        disabled={saludo === 'enviando' || saludo === 'ok'}
+                        title={saludo && saludo !== 'enviando' && saludo !== 'ok' ? saludo : 'Le llega a su campana y tu personaje lo saluda en el plano'}
+                    >
+                        {saludo === 'ok' ? '✓ Saludado' : '👋 Saludar'}
+                    </button>
                 </div>
+            )}
+            {saludo && saludo !== 'enviando' && saludo !== 'ok' && (
+                <p className="pp-mi-estado-pie es-error" style={{ padding: '0 14px' }}>{saludo}</p>
             )}
 
             {enLlamada && urlJitsi && (
@@ -392,18 +532,22 @@ export default function PanelPuesto({ puesto, interactivo, onAbrirTarea, onCerra
             )}
 
             <nav className="pp-pestanas">
-                <button
-                    className={vista === 'tareas' ? 'es-activa' : ''}
-                    onClick={() => setVista('tareas')}
-                >
-                    Tareas
-                </button>
-                <button
-                    className={vista === 'actividad' ? 'es-activa' : ''}
-                    onClick={() => setVista('actividad')}
-                >
-                    Actividad
-                </button>
+                {datos?.ver_trabajo !== false && (
+                    <>
+                        <button
+                            className={vista === 'tareas' ? 'es-activa' : ''}
+                            onClick={() => setVista('tareas')}
+                        >
+                            Tareas
+                        </button>
+                        <button
+                            className={vista === 'actividad' ? 'es-activa' : ''}
+                            onClick={() => setVista('actividad')}
+                        >
+                            Actividad
+                        </button>
+                    </>
+                )}
                 {datos?.chat && (
                     <button
                         className={vista === 'chat' ? 'es-activa' : ''}
@@ -425,6 +569,21 @@ export default function PanelPuesto({ puesto, interactivo, onAbrirTarea, onCerra
                 {datos && vista === 'chat' && datos.chat && (
                     <ChatPuesto clave={datos.chat} nombre={puesto.nombre} />
                 )}
+                {datos && vista === 'reunion' && datos.chat && (reunionEnviada ? (
+                    <div className="pp-reunion-ok">
+                        <p>✓ Convocatoria enviada a {puesto.nombre}.</p>
+                        <p>Le llega a la plataforma y al correo; la verá como pendiente en sus tareas.</p>
+                        <button className="pp-btn" onClick={() => setVista('chat')}>Volver al chat</button>
+                    </div>
+                ) : (
+                    <FormularioReunion
+                        key={puesto.id}
+                        compacto
+                        invitadosIniciales={[puesto.id]}
+                        onCreada={() => setReunionEnviada(true)}
+                        onCancelar={() => setVista('chat')}
+                    />
+                ))}
             </div>
         </aside>
     );

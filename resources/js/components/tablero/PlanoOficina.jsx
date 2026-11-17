@@ -18,6 +18,27 @@ const SENALES = {
     libre:        { peso: 0, etiqueta: 'Sin trabajo abierto', icono: '' },
 };
 
+/**
+ * Presencia: lo que cada quien eligió (o lo que se deduce) para que los demás
+ * sepan si pueden interrumpirle. El punto de color va junto a la cara.
+ */
+export const PRESENCIA = {
+    disponible:   { etiqueta: 'Disponible',   icono: '🟢' },
+    ocupado:      { etiqueta: 'Ocupado',      icono: '🔴' },
+    reunion:      { etiqueta: 'En reunión',   icono: '📅' },
+    almuerzo:     { etiqueta: 'Almorzando',   icono: '☕' },
+    ausente:      { etiqueta: 'Ausente',      icono: '🌙' },
+    desconectado: { etiqueta: 'Desconectado', icono: '⚪' },
+};
+
+const ACTIVIDAD = {
+    tarea:       'trabajando en una tarea',
+    escribiendo: 'escribiendo en el chat',
+};
+
+/** Lo que dura el paseo de un sitio a otro; igual que la transición del CSS. */
+const PASEO_MS = 1900;
+
 const iniciales = (nombre) => String(nombre || '?')
     .trim().split(/\s+/).slice(0, 2).map((p) => p[0]).join('').toUpperCase();
 
@@ -258,19 +279,104 @@ const ROPA = {
 const PIEL = '#E8B48C';
 
 /**
+ * Lo que flota sobre la cabeza: qué está haciendo o dónde anda. Una sola a
+ * la vez, por orden de interés: un saludo, luego dónde está, luego qué hace.
+ */
+function Burbuja({ estado, actividad, saluda }) {
+    let contenido = null;
+    let clase = '';
+
+    if (saluda) {
+        clase = 'bu-saludo';
+        contenido = <text className="po-bu-emoji" x="0" y="5" textAnchor="middle">👋</text>;
+    } else if (estado === 'ausente' || estado === 'desconectado') {
+        clase = 'bu-dormido';
+        contenido = (
+            <>
+                <text className="po-zeta z1" x="-3" y="4">z</text>
+                <text className="po-zeta z2" x="3" y="-2">z</text>
+                <text className="po-zeta z3" x="8" y="-8">Z</text>
+            </>
+        );
+        // Sin globo: las zetas flotan solas.
+        return <g className={`po-burbuja ${clase}`} transform="translate(-20 -50)">{contenido}</g>;
+    } else if (estado === 'reunion') {
+        clase = 'bu-reunion';
+        contenido = <text className="po-bu-emoji" x="0" y="5" textAnchor="middle">🗣️</text>;
+    } else if (estado === 'almuerzo') {
+        clase = 'bu-almuerzo';
+        contenido = (
+            <>
+                <text className="po-bu-emoji" x="0" y="5" textAnchor="middle">☕</text>
+                <path className="po-vapor v1" d="M -3 -7 q 2 -3 0 -6" />
+                <path className="po-vapor v2" d="M 2 -7 q 2 -3 0 -6" />
+            </>
+        );
+    } else if (actividad === 'escribiendo') {
+        clase = 'bu-escribe';
+        contenido = (
+            <>
+                <circle className="po-punto p1" cx="-6" cy="0" r="2.4" />
+                <circle className="po-punto p2" cx="0" cy="0" r="2.4" />
+                <circle className="po-punto p3" cx="6" cy="0" r="2.4" />
+            </>
+        );
+    } else if (actividad === 'tarea') {
+        clase = 'bu-tarea';
+        contenido = <text className="po-bu-codigo" x="0" y="4" textAnchor="middle">{'</>'}</text>;
+    } else if (estado === 'ocupado') {
+        clase = 'bu-ocupado';
+        contenido = <text className="po-bu-emoji" x="0" y="5" textAnchor="middle">🎧</text>;
+    }
+
+    if (!contenido) return null;
+
+    return (
+        <g className={`po-burbuja ${clase}`} transform="translate(-22 -52)">
+            <g className="po-burbuja-flota">
+                <rect className="po-globo" x="-13" y="-10" width="26" height="20" rx="10" />
+                <path className="po-globo-cola" d="M 4 9 L 10 16 L 9 8 Z" />
+                {contenido}
+            </g>
+        </g>
+    );
+}
+
+/**
  * Una persona de cuerpo entero, vista desde arriba en perspectiva de juego:
  * se le ven los hombros, los brazos y los pies, y la cara es su foto real.
  *
  * Antes era una cabeza flotando sobre una silla; así parece un personaje y
  * el plano se lee como una oficina con gente dentro.
  */
-function Puesto({ colocado, resaltarEquipo, seleccionado, onElegir }) {
+function Puesto({ colocado, resaltarEquipo, seleccionado, esYo, onElegir }) {
     const { puesto, x, y } = colocado;
     const foto = useAvatar(puesto.id);
     const senal = SENALES[puesto.senal] || SENALES.libre;
     const c = puesto.conteos;
+    const pr = puesto.presencia || null;
+    const estado = pr?.estado || null;
+    const actividad = pr?.actividad || null;
 
-    const atenuado = resaltarEquipo && !puesto.mi_equipo;
+    // Al cambiar de sitio (va a una reunión, vuelve de almorzar) el
+    // personaje camina: la transición del CSS lo desplaza y, mientras dura,
+    // mueve las piernas. Sin esto aparecería de golpe en la otra sala.
+    const [caminando, setCaminando] = useState(false);
+    const antes = useRef({ x, y });
+    useEffect(() => {
+        const a = antes.current;
+        antes.current = { x, y };
+        if (Math.hypot(a.x - x, a.y - y) < 0.5) return undefined;
+        setCaminando(true);
+        const t = setTimeout(() => setCaminando(false), PASEO_MS);
+        return () => clearTimeout(t);
+    }, [x, y]);
+
+    // Cada uno respira a su ritmo: con la misma fase, toda la oficina
+    // subía y bajaba a la vez como un coro.
+    const desfase = { animationDelay: `-${(puesto.id % 9) * 0.37}s` };
+
+    const atenuado = resaltarEquipo && !puesto.mi_equipo && !esYo;
     const [camisa, sombra] = ROPA[puesto.departamento_id] || ['#64748B', '#475569'];
 
     const detalle = [
@@ -291,22 +397,38 @@ function Puesto({ colocado, resaltarEquipo, seleccionado, onElegir }) {
     return (
         <g
             className={`po-puesto se-${puesto.senal}`
+                + (estado ? ` pr-${estado}` : '')
+                + (actividad ? ` ac-${actividad}` : '')
+                + (pr?.saluda ? ' es-saludando' : '')
+                + (caminando ? ' es-caminando' : '')
+                + (colocado.visita ? ' es-visita' : '')
+                + (esYo ? ' es-yo' : '')
                 + (puesto.mi_equipo ? ' es-mio' : '')
                 + (atenuado ? ' es-atenuado' : '')
                 + (seleccionado ? ' es-elegido' : '')}
-            transform={`translate(${U(x)} ${U(y)})`}
+            // Por estilo y no por atributo: así el CSS puede animar el
+            // cambio de sitio (el atributo transform no tiene transición).
+            style={{ transform: `translate(${U(x)}px, ${U(y)}px)` }}
             onClick={(e) => { e.stopPropagation(); onElegir(puesto); }}
             role="button"
             tabIndex={0}
             onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onElegir(puesto); }
             }}
-            aria-label={`${puesto.nombre}, ${senal.etiqueta}`}
+            aria-label={`${puesto.nombre}, ${estado ? `${PRESENCIA[estado]?.etiqueta}, ` : ''}${senal.etiqueta}`}
         >
-            <title>{`${puesto.nombre} — ${senal.etiqueta}${detalle ? `
-${detalle}` : ''}`}</title>
+            <title>{[
+                `${puesto.nombre}${esYo ? ' (tú)' : ''}`,
+                estado && `${PRESENCIA[estado]?.etiqueta}${pr?.nota ? `: «${pr.nota}»` : ''}`,
+                actividad && `Ahora: ${ACTIVIDAD[actividad]}`,
+                senal.etiqueta,
+                detalle,
+            ].filter(Boolean).join('\n')}</title>
 
             <g className="po-figura">
+            {/* El cuerpo respira (sube y baja apenas) y es lo que se anima al
+                caminar; la cinta del nombre queda fuera para leerse quieta. */}
+            <g className="po-cuerpo" style={desfase}>
 
             {/* Halo: late sólo en quien trabaja o está bloqueado. */}
             <circle className="po-halo" cx="0" cy="-6" r="26" />
@@ -316,10 +438,14 @@ ${detalle}` : ''}`}</title>
             <ellipse className="po-sombra-suelo" cx="0" cy="20" rx="17" ry="6" />
 
             {/* Piernas y pies */}
-            <rect className="po-pierna" x="-8" y="6" width="6.5" height="15" rx="3" />
-            <rect className="po-pierna" x="1.5" y="6" width="6.5" height="15" rx="3" />
-            <ellipse className="po-zapato" cx="-4.8" cy="21" rx="4.6" ry="3" />
-            <ellipse className="po-zapato" cx="4.8" cy="21" rx="4.6" ry="3" />
+            <g className="po-pie po-pie-i">
+                <rect className="po-pierna" x="-8" y="6" width="6.5" height="15" rx="3" />
+                <ellipse className="po-zapato" cx="-4.8" cy="21" rx="4.6" ry="3" />
+            </g>
+            <g className="po-pie po-pie-d">
+                <rect className="po-pierna" x="1.5" y="6" width="6.5" height="15" rx="3" />
+                <ellipse className="po-zapato" cx="4.8" cy="21" rx="4.6" ry="3" />
+            </g>
 
             {/* Torso con camiseta del color de su departamento */}
             <path
@@ -330,10 +456,15 @@ ${detalle}` : ''}`}</title>
             <path className="po-camisa-sombra" d="M -13 2 L 13 2 L 13 6 Q 13 9 10 9 L -10 9 Q -13 9 -13 6 Z" fill={sombra} />
 
             {/* Brazos a los lados */}
-            <rect className="po-brazo" x="-18" y="-12" width="6" height="17" rx="3" fill={camisa} />
-            <rect className="po-brazo" x="12" y="-12" width="6" height="17" rx="3" fill={camisa} />
-            <circle className="po-mano" cx="-15" cy="6" r="3.4" fill={PIEL} />
-            <circle className="po-mano" cx="15" cy="6" r="3.4" fill={PIEL} />
+            {/* Cada brazo con su mano, para poder teclear o saludar. */}
+            <g className="po-brazo-g po-brazo-i">
+                <rect className="po-brazo" x="-18" y="-12" width="6" height="17" rx="3" fill={camisa} />
+                <circle className="po-mano" cx="-15" cy="6" r="3.4" fill={PIEL} />
+            </g>
+            <g className="po-brazo-g po-brazo-d">
+                <rect className="po-brazo" x="12" y="-12" width="6" height="17" rx="3" fill={camisa} />
+                <circle className="po-mano" cx="15" cy="6" r="3.4" fill={PIEL} />
+            </g>
 
             {/* Cuello y cabeza: la foto real recortada en círculo */}
             <rect className="po-cuello" x="-4" y="-18" width="8" height="6" rx="3" fill={PIEL} />
@@ -359,6 +490,13 @@ ${detalle}` : ''}`}</title>
                 </>
             )}
 
+            {/* Punto de presencia junto a la barbilla, como en un chat. */}
+            {estado && <circle className="po-presencia" cx="-12" cy="-16" r="5.5" />}
+
+            </g>
+
+            <Burbuja estado={estado} actividad={actividad} saluda={pr?.saluda} />
+
             {senal.icono && (
                 <>
                     <circle className="po-chincheta" cx="14" cy="-36" r="10" />
@@ -382,7 +520,7 @@ ${detalle}` : ''}`}</title>
 
 // ─── Sala ───────────────────────────────────────────────────────────────────
 
-function Sala({ sala, resaltarEquipo, elegido, onElegir }) {
+function Sala({ sala }) {
     // La sala toma el color de la señal más grave que contenga, para que una
     // sala trabada se reconozca sin leer un solo nombre.
     const peor = useMemo(() => (sala.puestos || []).reduce((acc, c) => {
@@ -439,16 +577,6 @@ function Sala({ sala, resaltarEquipo, elegido, onElegir }) {
             {(sala.portatiles || []).map((p, i) => <Portatil key={`p${i}`} p={p} />)}
             {(sala.sillasLibres || []).map((s, i) => <SillaLibre key={`s${i}`} s={s} />)}
 
-            {(sala.puestos || []).map((c) => (
-                <Puesto
-                    key={c.puesto.id}
-                    colocado={c}
-                    resaltarEquipo={resaltarEquipo}
-                    seleccionado={elegido === c.puesto.id}
-                    onElegir={onElegir}
-                />
-            ))}
-
             {sala.corto && (
                 <>
                     <rect className="po-rotulo" x={x + 7} y={y + 7} width={Math.max(80, w - 14)} height="30" rx="7" />
@@ -480,7 +608,7 @@ const ZOOM_MAX = 3;
  * a tamaño fijo en el lienzo, así que al acercarse se ven con detalle en vez
  * de quedar diminutos como en una vista general.
  */
-export default function PlanoOficina({ zonas, miEquipoTotal, elegido, onElegir, soloMios, onSoloMios }) {
+export default function PlanoOficina({ zonas, miEquipoTotal, yo, elegido, onElegir, soloMios, onSoloMios }) {
     const [piso, setPiso] = useState(0);
     const [zoom, setZoom] = useState(1);
     const [desp, setDesp] = useState({ x: 0, y: 0 });
@@ -499,7 +627,7 @@ export default function PlanoOficina({ zonas, miEquipoTotal, elegido, onElegir, 
             .filter((z) => z.puestos.length > 0);
     }, [zonas, soloMios]);
 
-    const { salas, sinSala, franjas, ancho, ocultas } = useMemo(
+    const { salas, sinSala, franjas, ancho, alto, ocultas } = useMemo(
         () => repartirEnPlano(datosPiso, filtradas),
         [datosPiso, filtradas]
     );
@@ -585,6 +713,15 @@ export default function PlanoOficina({ zonas, miEquipoTotal, elegido, onElegir, 
     const hayEquipo = (miEquipoTotal || 0) > 0;
     const gentePiso = salas.reduce((a, s) => a + s.puestos.length, 0);
 
+    // La gente se dibuja en una capa propia, encima de todas las salas y
+    // siempre con la misma clave: así, al pasar de su área a la sala de
+    // juntas, es el mismo personaje el que camina y no uno nuevo que aparece.
+    // Se ordena por altura para que quien está más abajo tape al de arriba.
+    const gente = useMemo(
+        () => salas.flatMap((s) => s.puestos).sort((a, b) => a.y - b.y || a.x - b.x),
+        [salas]
+    );
+
     return (
         <div className="po-marco">
             <div className="po-barra">
@@ -603,8 +740,8 @@ export default function PlanoOficina({ zonas, miEquipoTotal, elegido, onElegir, 
                 <span className="po-cuenta">
                     {gentePiso} {gentePiso === 1 ? 'persona' : 'personas'}
                     {ocultas > 0 && (ocultas === 1
-                        ? ' · 1 oficina vacía oculta'
-                        : ` · ${ocultas} oficinas vacías ocultas`)}
+                        ? ' · 1 área sin personal oculta'
+                        : ` · ${ocultas} áreas sin personal ocultas`)}
                 </span>
 
                 <div className="po-herramientas">
@@ -635,7 +772,7 @@ export default function PlanoOficina({ zonas, miEquipoTotal, elegido, onElegir, 
             >
                 <svg
                     className="po-svg"
-                    viewBox={`0 0 ${U(ancho)} ${U(datosPiso.alto)}`}
+                    viewBox={`0 0 ${U(Math.max(ancho, 1))} ${U(Math.max(alto, 1))}`}
                     preserveAspectRatio="xMidYMid meet"
                     style={{
                         transform: `translate(${desp.x}px, ${desp.y}px) scale(${zoom})`,
@@ -672,7 +809,7 @@ export default function PlanoOficina({ zonas, miEquipoTotal, elegido, onElegir, 
 
                     {/* La clase no puede ser po-planta: ésa es la de las
                         macetas, y el césped entero se mecía con ellas. */}
-                    <rect className="po-exterior" x="0" y="0" width={U(ancho)} height={U(datosPiso.alto)} />
+                    <rect className="po-exterior" x="0" y="0" width={U(ancho)} height={U(alto)} />
 
                     {/* Pasillo: la huella del edificio bajo las salas. */}
                     {franjas.map((f) => (
@@ -686,16 +823,29 @@ export default function PlanoOficina({ zonas, miEquipoTotal, elegido, onElegir, 
                         />
                     ))}
 
-                    {salas.map((s) => (
-                        <Sala
-                            key={s.id}
-                            sala={s}
-                            resaltarEquipo={hayEquipo && !soloMios}
-                            elegido={elegido}
-                            onElegir={onElegir}
-                        />
-                    ))}
+                    {salas.map((s) => <Sala key={s.id} sala={s} />)}
+
+                    <g className="po-gente">
+                        {gente.map((c) => (
+                            <Puesto
+                                key={c.puesto.id}
+                                colocado={c}
+                                resaltarEquipo={hayEquipo && !soloMios}
+                                seleccionado={elegido === c.puesto.id}
+                                esYo={yo != null && c.puesto.id === yo}
+                                onElegir={onElegir}
+                            />
+                        ))}
+                    </g>
                 </svg>
+
+                {/* Sólo se dibujan áreas con personal: un piso sin nadie
+                    quedaría en blanco sin explicación. */}
+                {salas.length === 0 && (
+                    <p className="po-vacio">
+                        {soloMios ? 'Nadie de tu equipo en este piso.' : 'No hay personal en este piso.'}
+                    </p>
+                )}
             </div>
 
             {sinSala.length > 0 && (
@@ -713,8 +863,16 @@ export default function PlanoOficina({ zonas, miEquipoTotal, elegido, onElegir, 
                 <span className="po-ley ley-silla"><i />Puesto libre</span>
             </div>
 
+            <div className="po-leyenda po-leyenda-presencia">
+                {['disponible', 'ocupado', 'reunion', 'almuerzo', 'ausente', 'desconectado'].map((k) => (
+                    <span key={k} className={`po-ley pley-${k}`}><i />{PRESENCIA[k].etiqueta}</span>
+                ))}
+                <span className="po-ley pley-act">{'</>'} trabajando · ••• escribiendo</span>
+            </div>
+
             <p className="po-ayuda">
                 Rueda o pellizco para acercar · arrastra para moverte · pulsa un puesto para ver a esa persona
+                {yo != null && ' · pulsa tu personaje para cambiar tu estado'}
             </p>
         </div>
     );

@@ -129,13 +129,14 @@ class SupervisionTareasTest extends TestCase
         $this->assertSame('En Revisión', $this->estadoTarea($tarea));
     }
 
-    public function test_retirar_el_rechazo_de_una_tarea_heredada_sigue_cerrandola(): void
+    public function test_retirar_el_rechazo_tampoco_cierra_una_tarea_sin_criterios(): void
     {
-        // Sin criterios, el comportamiento anterior se conserva.
+        // Toda tarea pasa por revisión: también las heredadas sin criterios.
         $tarea = $this->tareaSinCriterios('En Proceso');
 
-        $this->como($this->lider)->putJson("/api/rechazarTarea/{$tarea}", ['rechazada' => false])->assertOk();
-        $this->assertSame('Completada', $this->estadoTarea($tarea));
+        $this->como($this->lider)->putJson("/api/rechazarTarea/{$tarea}", ['rechazada' => false])
+            ->assertStatus(409)->assertJson(['requiere_verificacion' => true]);
+        $this->assertSame('En Proceso', $this->estadoTarea($tarea));
     }
 
     public function test_rechazar_una_tarea_aceptada_la_reabre_y_queda_constancia(): void
