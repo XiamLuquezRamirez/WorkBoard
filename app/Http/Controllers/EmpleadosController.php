@@ -4585,9 +4585,12 @@ class EmpleadosController extends Controller
             'solicitado_por'       => 'nullable|integer',
             'solicitado_por_user'  => 'nullable|integer',
             'fecha_actual'         => 'nullable|date',
-            'fecha_nueva'          => 'required|date',
+            // La nueva fecha no puede estar en el pasado (día de Bogotá).
+            'fecha_nueva'          => 'required|date|after_or_equal:' . \App\Support\IndiceDesempeno::hoy()->toDateString(),
             'motivo'               => 'required|string|min:5',
             'tipo_aprobador'       => 'nullable|in:lider,admin',
+        ], [
+            'fecha_nueva.after_or_equal' => 'La nueva fecha no puede ser anterior a hoy.',
         ]);
 
         $usuarioActual = DB::connection('mysql2')->table('users')->where('email', Auth::user()->email)->first();
@@ -4598,6 +4601,10 @@ class EmpleadosController extends Controller
         $tarea = DB::connection('mysql2')->table('tareas_empleados')->where('id', $data['tarea_id'])->first();
         if (!$tarea) {
             return response()->json(['message' => 'Tarea no encontrada'], 404);
+        }
+        // Aceptada ya está cerrada: no hay plazo que mover.
+        if ($tarea->estado === 'Completada') {
+            return response()->json(['message' => 'La tarea ya fue aceptada: no se puede reprogramar.'], 409);
         }
 
         $esDueño = $usuarioActual->empleado && (int) $usuarioActual->empleado === (int) $tarea->empleado;
@@ -4639,7 +4646,10 @@ class EmpleadosController extends Controller
 
         $solicitante = $usuarioActual->name ?? 'Usuario';
         $fechaNuevaFmt = Carbon::parse($data['fecha_nueva'])->format('d/m/Y');
-        $fechaActualFmt = $data['fecha_actual'] ? Carbon::parse($data['fecha_actual'])->format('d/m/Y') : 'N/A';
+        // fecha_actual es opcional: sin ella se toma la pactada de la tarea
+        // (antes daba error 500 al formatearla).
+        $fechaActual = $data['fecha_actual'] ?? $tarea->fecha_pactada;
+        $fechaActualFmt = $fechaActual ? Carbon::parse($fechaActual)->format('d/m/Y') : 'N/A';
         $this->registrarActividad(
             $data['tarea_id'],
             'Reprogramación solicitada',

@@ -660,7 +660,6 @@ class PausasYReprogramacionesTest extends TestCase
         $this->assertSame($this->hoy()->addDays(5)->toDateString(), $this->campoTarea($tarea, 'fecha_pactada'));
     }
 
-    #[Group('hallazgo')]
     public function test_sin_fecha_actual_la_solicitud_de_reprogramacion_no_rompe_ni_queda_a_medias(): void
     {
         // fecha_actual es opcional (nullable) y tiene valor por defecto: omitirla
@@ -727,7 +726,6 @@ class PausasYReprogramacionesTest extends TestCase
         $this->assertSame(1, $this->db()->table('reprogramaciones_tareas')->where('tarea_id', $tarea)->count());
     }
 
-    #[Group('hallazgo')]
     public function test_no_se_solicita_reprogramar_a_una_fecha_pasada(): void
     {
         $tarea = $this->tarea();
@@ -738,7 +736,6 @@ class PausasYReprogramacionesTest extends TestCase
         $this->assertFalse($this->db()->table('reprogramaciones_tareas')->where('tarea_id', $tarea)->exists());
     }
 
-    #[Group('hallazgo')]
     public function test_no_se_solicita_reprogramar_una_tarea_ya_aceptada(): void
     {
         $tarea = $this->tarea('Completada');

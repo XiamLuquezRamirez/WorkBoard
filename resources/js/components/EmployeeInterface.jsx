@@ -15,6 +15,7 @@ import EspacioEquipoModal from './equipo/EspacioEquipoModal';
 import FormularioTarea from './tareas/FormularioTarea';
 import TableroEquipoModal from './equipo/TableroEquipoModal';
 import ReunionesPendientes from './equipo/ReunionesPendientes';
+import BandejaDecisiones from './tareas/BandejaDecisiones';
 import { AvataresProvider } from './tablero/AvataresContext';
 import axiosInstance from '../axiosConfig';
 import Swal from 'sweetalert2';
@@ -470,6 +471,16 @@ const EmployeeInterface = ({ user }) => {
         setShowTaskDetails(true);
     };
 
+    // La bandeja «Necesita tu decisión» se recarga cuando el tablero cambia:
+    // entregar una tarea desde su detalle la saca de la bandeja.
+    const [recargaBandeja, setRecargaBandeja] = useState(0);
+
+    // «Entregarla» desde la bandeja abre la tarea, que ya está en el tablero.
+    const abrirTareaPorId = (id) => {
+        const tarea = Object.values(columns).flatMap((c) => c.items || []).find((t) => Number(t.id) === Number(id));
+        if (tarea) handleTaskClick(tarea);
+    };
+
     const handleTaskUpdate = async () => {
         // Si estamos viendo las tareas de un empleado específico
         if (showTareasEmpleado && empleadoSeleccionado) {
@@ -483,6 +494,7 @@ const EmployeeInterface = ({ user }) => {
             // Si estamos en la vista principal, actualizar todas las tareas
             await loadTasks();
         }
+        setRecargaBandeja((n) => n + 1);
     };
 
     const abrirListaEmpleadosAsignados = async () => {
@@ -895,6 +907,12 @@ const EmployeeInterface = ({ user }) => {
                     </div>
                 </div>
             )}
+
+            <BandejaDecisiones
+                onAbrirTarea={abrirTareaPorId}
+                onCambio={loadTasks}
+                recarga={recargaBandeja}
+            />
 
             <ReunionesPendientes onVerTodas={() => setEspacioEquipo('reuniones')} />
 

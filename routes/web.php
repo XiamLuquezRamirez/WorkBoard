@@ -126,6 +126,9 @@ Route::middleware(['auth:sanctum', 'activo'])->group(function () {
         // Resolver lo vencido desde el dashboard (administración o el líder).
         Route::get('/dashboard/vencidas', [\App\Http\Controllers\DashboardController::class, 'vencidas']);
         Route::post('/dashboard/vencidas/resolver', [\App\Http\Controllers\DashboardController::class, 'resolver']);
+        // Bandeja «Necesita tu decisión»: las vencidas propias sin decidir.
+        Route::get('/mis-decisiones', [\App\Http\Controllers\BandejaDecisionController::class, 'index']);
+        Route::post('/mis-decisiones/{id}/ya-no-aplica', [\App\Http\Controllers\BandejaDecisionController::class, 'yaNoAplica'])->whereNumber('id');
 
         //eliminar evidencia
         Route::delete('/eliminarEvidencia/{id}', [EmpleadosController::class, 'eliminarEvidencia']);
