@@ -48,6 +48,36 @@ final class Presencia
 
     private static ?bool $hayTabla = null;
 
+    private static ?bool $hayUsoEquipo = null;
+
+    /** Lo que el navegador informa del uso del equipo. */
+    public const USOS_EQUIPO = ['activo', 'inactivo', 'bloqueado'];
+
+    /** Un aviso de uso del equipo vale esto; el navegador lo repite cada minuto. */
+    private const USO_VIGENTE_SEG = 150;
+
+    /** Si la columna de uso del equipo existe (llega con su propia migración). */
+    public static function conUsoEquipo(): bool
+    {
+        return self::$hayUsoEquipo ??= self::disponible()
+            && Schema::connection('mysql2')->hasColumn('presencia_empleados', 'uso_equipo');
+    }
+
+    /**
+     * El navegador informa si la persona usa el equipo, lleva un rato sin
+     * tocarlo (5 min) o tiene la pantalla bloqueada. Sólo ese estado: nunca
+     * qué programas usa ni qué escribe. Cuenta también como latido.
+     */
+    public static function usoEquipo(int $empleado, string $uso): void
+    {
+        DB::connection('mysql2')->table('presencia_empleados')->upsert([[
+            'empleado'      => $empleado,
+            'uso_equipo'    => $uso,
+            'uso_equipo_en' => now(),
+            'visto_en'      => now(),
+        ]], ['empleado'], ['uso_equipo', 'uso_equipo_en', 'visto_en']);
+    }
+
     /**
      * La tabla llega con una migración; hasta que se ejecute, el plano sigue
      * funcionando sin presencia en vez de fallar.
@@ -152,6 +182,12 @@ final class Presencia
                 && self::reciente($f->visto_en, $ahora, self::EN_LINEA_SEG);
             $manual = $f && $f->estado && $f->fecha === $hoy ? $f->estado : null;
 
+            // Uso del equipo informado hace poco (si no, no se sabe nada).
+            $uso = $f && ($f->uso_equipo ?? null) && ($f->uso_equipo_en ?? null)
+                && self::reciente($f->uso_equipo_en, $ahora, self::USO_VIGENTE_SEG)
+                ? $f->uso_equipo : null;
+            $motivo = null;
+
             // «Disponible» u «ocupado» sólo valen con la aplicación abierta:
             // quien cerró y se fue no está disponible aunque lo dijera a las 8.
             // Una reunión de la agenda gana a lo elegido, salvo a «ausente».
@@ -159,6 +195,12 @@ final class Presencia
                 $estado = 'reunion';
             } elseif ($manual && (!in_array($manual, ['disponible', 'ocupado'], true) || $enLinea)) {
                 $estado = $manual;
+            } elseif ($enLinea && in_array($uso, ['inactivo', 'bloqueado'], true)) {
+                // En automático, sin tocar el equipo un rato o con la pantalla
+                // bloqueada se está ausente; al volver a usarlo, disponible.
+                // Lo elegido a mano manda: esto sólo actúa sin estado elegido.
+                $estado = 'ausente';
+                $motivo = $uso === 'bloqueado' ? 'Pantalla bloqueada' : 'Sin usar el equipo hace unos minutos';
             } else {
                 $estado = $enLinea ? 'disponible' : 'desconectado';
             }
@@ -169,6 +211,9 @@ final class Presencia
                 $actividad = 'escribiendo';
             } elseif ($enSuPuesto && isset($enCurso[$id])) {
                 $actividad = 'tarea';
+            } elseif ($enSuPuesto && $uso === 'activo') {
+                // Usa el equipo aunque no tenga una tarea En Proceso.
+                $actividad = 'equipo';
             }
 
             // Con una reunión de la agenda en curso, todos sus asistentes van
@@ -180,8 +225,9 @@ final class Presencia
                 'reunion'   => $deAgenda ? $enReunion[$id]['reunion'] : null,
                 'sala'      => $deAgenda ? $enReunion[$id]['sala'] : null,
                 'elegido'   => $manual !== null,
-                'nota'      => $manual ? $f->nota : null,
+                'nota'      => $manual ? $f->nota : $motivo,
                 'actividad' => $actividad,
+                'uso_equipo'=> $uso,
                 'saluda'    => $f && $f->saludo_en
                     && self::reciente($f->saludo_en, $ahora, self::SALUDO_SEG),
             ];

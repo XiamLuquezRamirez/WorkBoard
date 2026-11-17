@@ -10,6 +10,7 @@ import TableroSeguimiento from './tablero/TableroSeguimiento';
 import TimbreLlamada from './equipo/TimbreLlamada';
 import AvisoMensajes from './equipo/AvisoMensajes';
 import { observarTablas } from '../utils/tablasMoviles';
+import { useDetectorActividad } from '../utils/detectorActividad';
 
 function App() {
     const { user } = useUser();
@@ -17,6 +18,10 @@ function App() {
     // Etiqueta las celdas de todas las tablas para que en móvil se lean
     // como fichas (ver utils/tablasMoviles.js y app.css).
     useEffect(() => observarTablas(), []);
+
+    // Uso del equipo para la presencia del plano: activo, inactivo o
+    // bloqueado. Sólo con ficha de empleado, que es quien tiene presencia.
+    useDetectorActividad(Boolean(user?.empleado));
 
     return (
         <HashRouter>

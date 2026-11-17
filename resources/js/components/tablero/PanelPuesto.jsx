@@ -4,6 +4,50 @@ import { registrarChatAbierto } from '../equipo/chatAbierto';
 import { useAvatar } from './AvataresContext';
 import FormularioReunion from '../equipo/FormularioReunion';
 import { PRESENCIA } from './PlanoOficina';
+import {
+    soportaEquipoCompleto, deteccionActivada, activarDeteccionEquipo, desactivarDeteccionEquipo,
+} from '../../utils/detectorActividad';
+
+/**
+ * Interruptor de la detección del equipo completo. El navegador pide permiso
+ * la primera vez; sin él (o en Firefox/Safari) se usa sólo la actividad
+ * dentro de WorkBoard.
+ */
+function DeteccionEquipo() {
+    const [activa, setActiva] = useState(deteccionActivada());
+    const [aviso, setAviso] = useState('');
+    const soporta = soportaEquipoCompleto();
+
+    const activar = async () => {
+        setAviso('');
+        const r = await activarDeteccionEquipo();
+        setActiva(r === 'granted');
+        if (r === 'denied') setAviso('El navegador no dio permiso. Puedes concederlo desde el candado de la barra de direcciones.');
+    };
+
+    const desactivar = () => {
+        desactivarDeteccionEquipo();
+        setActiva(false);
+    };
+
+    return (
+        <div className="pp-deteccion">
+            <p className="pp-deteccion-txt">
+                <strong>Uso del equipo:</strong>{' '}
+                {!soporta
+                    ? 'tu navegador sólo permite detectar la actividad dentro de WorkBoard (usa Chrome o Edge para el equipo completo).'
+                    : activa
+                        ? 'activado. Con 5 minutos sin usar el equipo o la pantalla bloqueada pasas a «Ausente».'
+                        : 'sólo se mira la actividad dentro de WorkBoard. Actívalo para contar también otros programas.'}
+                {' '}Sólo se informa si lo usas, no qué haces en él.
+            </p>
+            {soporta && (activa
+                ? <button type="button" className="pp-btn" onClick={desactivar}>Desactivar</button>
+                : <button type="button" className="pp-btn" onClick={activar}>Activar</button>)}
+            {aviso && <p className="pp-mi-estado-pie es-error">{aviso}</p>}
+        </div>
+    );
+}
 
 /** Cada cuánto se piden mensajes nuevos con el panel de chat abierto. */
 const SONDEO_MS = 5000;
@@ -259,7 +303,9 @@ function MiEstado({ presencia, onPresencia }) {
     const [enviando, setEnviando] = useState(false);
     const [error, setError] = useState('');
 
-    useEffect(() => { setNota(presencia?.nota || ''); }, [presencia?.nota]);
+    // Sólo la nota que uno escribió: sin estado elegido, la «nota» es el
+    // motivo automático («Pantalla bloqueada») y no debe prellenarse.
+    useEffect(() => { setNota(presencia?.elegido ? (presencia?.nota || '') : ''); }, [presencia?.nota, presencia?.elegido]);
 
     const elegido = presencia?.elegido ? presencia.estado : null;
 
@@ -318,6 +364,7 @@ function MiEstado({ presencia, onPresencia }) {
                     ? 'Tu agenda dice que estás en una reunión.'
                     : 'Lo ven todos en el plano. Vale por hoy.')}
             </p>
+            <DeteccionEquipo />
         </section>
     );
 }
@@ -334,6 +381,7 @@ function EstadoPersona({ presencia }) {
                 <i />{info.etiqueta}
                 {presencia.actividad === 'tarea' && ' · trabajando'}
                 {presencia.actividad === 'escribiendo' && ' · escribiendo'}
+                {presencia.actividad === 'equipo' && ' · usando el equipo'}
             </span>
             {presencia.nota && <p className="pp-presencia-nota">«{presencia.nota}»</p>}
         </>

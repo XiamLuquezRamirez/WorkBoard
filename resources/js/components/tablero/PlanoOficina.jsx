@@ -34,6 +34,7 @@ export const PRESENCIA = {
 const ACTIVIDAD = {
     tarea:       'trabajando en una tarea',
     escribiendo: 'escribiendo en el chat',
+    equipo:      'usando el equipo',
 };
 
 /** Lo que dura el paseo de un sitio a otro; igual que la transición del CSS. */
@@ -867,7 +868,7 @@ export default function PlanoOficina({ zonas, miEquipoTotal, yo, elegido, onEleg
                 {['disponible', 'ocupado', 'reunion', 'almuerzo', 'ausente', 'desconectado'].map((k) => (
                     <span key={k} className={`po-ley pley-${k}`}><i />{PRESENCIA[k].etiqueta}</span>
                 ))}
-                <span className="po-ley pley-act">{'</>'} trabajando · ••• escribiendo</span>
+                <span className="po-ley pley-act">{'</>'} trabajando · ••• escribiendo · manos en el teclado: usando el equipo</span>
             </div>
 
             <p className="po-ayuda">

@@ -556,6 +556,30 @@ class EspacioEquipoController extends Controller
     }
 
     /**
+     * El navegador informa del uso del equipo: activo, inactivo (5 min sin
+     * tocarlo) o bloqueado. Sólo ese estado; nunca qué se hace en él.
+     */
+    public function usoEquipo(Request $request)
+    {
+        $yo = $this->empleadoActual();
+        if (!$yo) {
+            return response()->json(['error' => 'Tu usuario no tiene ficha de empleado.'], 422);
+        }
+        $datos = $request->validate([
+            'uso' => ['required', \Illuminate\Validation\Rule::in(\App\Support\Presencia::USOS_EQUIPO)],
+        ]);
+        // Sin la migración se acepta y se descarta: el navegador no debe fallar.
+        if (!\App\Support\Presencia::conUsoEquipo()) {
+            \App\Support\Presencia::latido($yo);
+            return response()->json(['success' => true, 'guardado' => false]);
+        }
+
+        \App\Support\Presencia::usoEquipo($yo, $datos['uso']);
+
+        return response()->json(['success' => true, 'guardado' => true]);
+    }
+
+    /**
      * Saluda a un compañero desde el plano: le llega a la campana y, durante
      * unos segundos, el personaje de quien saluda agita la mano para todos.
      */

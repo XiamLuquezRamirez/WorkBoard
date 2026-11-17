@@ -282,6 +282,62 @@ class PresenciaPlanoTest extends TestCase
         $this->como($this->colaborador)->postJson('/api/equipo/saludar/99999999')->assertStatus(404);
     }
 
+    private function uso(int $quien, string $uso): void
+    {
+        $this->como($quien)->postJson('/api/equipo/presencia/uso', ['uso' => $uso])->assertOk()->assertJsonPath('guardado', true);
+    }
+
+    public function test_usar_el_equipo_anima_aunque_no_haya_tarea_en_curso(): void
+    {
+        $this->uso($this->colaborador, 'activo');
+
+        $p = $this->presencia($this->colaborador);
+        $this->assertSame('disponible', $p['estado']);
+        $this->assertSame('equipo', $p['actividad']);
+        $this->assertSame('activo', $p['uso_equipo']);
+    }
+
+    public function test_sin_usar_el_equipo_o_con_la_pantalla_bloqueada_pasa_a_ausente_y_vuelve_solo(): void
+    {
+        $this->uso($this->colaborador, 'inactivo');
+        $p = $this->presencia($this->colaborador);
+        $this->assertSame('ausente', $p['estado']);
+        $this->assertFalse($p['elegido']);
+        $this->assertSame('Sin usar el equipo hace unos minutos', $p['nota']);
+
+        $this->uso($this->colaborador, 'bloqueado');
+        $this->assertSame('Pantalla bloqueada', $this->presencia($this->colaborador)['nota']);
+
+        // Vuelve a usarlo: disponible otra vez, sin hacer nada más.
+        $this->uso($this->colaborador, 'activo');
+        $this->assertSame('disponible', $this->presencia($this->colaborador)['estado']);
+    }
+
+    public function test_lo_elegido_a_mano_manda_sobre_el_uso_del_equipo(): void
+    {
+        $this->como($this->colaborador)->postJson('/api/equipo/presencia', ['estado' => 'ocupado'])->assertOk();
+        $this->uso($this->colaborador, 'bloqueado');
+
+        $this->assertSame('ocupado', $this->presencia($this->colaborador)['estado']);
+    }
+
+    public function test_un_aviso_de_uso_viejo_ya_no_cuenta(): void
+    {
+        $this->uso($this->colaborador, 'inactivo');
+        $this->travel(4)->minutes();
+        $this->latido($this->colaborador);
+
+        $p = $this->presencia($this->colaborador);
+        $this->assertSame('disponible', $p['estado']);
+        $this->assertNull($p['uso_equipo']);
+    }
+
+    public function test_el_uso_del_equipo_solo_admite_tres_valores(): void
+    {
+        $this->como($this->colaborador)->postJson('/api/equipo/presencia/uso', ['uso' => 'jugando'])->assertStatus(422);
+        $this->como($this->colaborador)->postJson('/api/equipo/presencia/uso', [])->assertStatus(422);
+    }
+
     public function test_el_plano_dice_quien_soy(): void
     {
         $this->como($this->colaborador)->getJson('/api/tablero/plano')->assertOk()->assertJsonPath('yo', $this->colaborador);

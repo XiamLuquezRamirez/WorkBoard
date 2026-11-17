@@ -218,6 +218,7 @@ Route::middleware(['auth:sanctum', 'activo'])->group(function () {
         Route::get('/equipo/chat/avisos', [EspacioEquipoController::class, 'chatAvisos']);
         // Presencia en el plano: el estado propio y los saludos.
         Route::post('/equipo/presencia', [EspacioEquipoController::class, 'guardarPresencia']);
+        Route::post('/equipo/presencia/uso', [EspacioEquipoController::class, 'usoEquipo']);
         Route::post('/equipo/saludar/{empleado}', [EspacioEquipoController::class, 'saludar'])->whereNumber('empleado');
 
         // videos ambientales del tablero (se administran desde Parámetros)

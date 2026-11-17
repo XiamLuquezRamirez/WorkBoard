@@ -2867,6 +2867,9 @@ a.tb-btn-sec, a.tb-btn-sec:visited { color: var(--tb-txt); }
 .po-puesto.ac-tarea .po-brazo-i { animation: po-teclear .5s ease-in-out infinite; }
 .po-puesto.ac-tarea .po-brazo-d { animation: po-teclear .5s ease-in-out -.25s infinite; }
 .po-puesto.ac-escribiendo .po-brazo-i { animation: po-teclear .28s ease-in-out infinite; }
+/* Usa el equipo sin tarea en curso: teclea más despacio y sin globo. */
+.po-puesto.ac-equipo .po-brazo-i { animation: po-teclear .8s ease-in-out infinite; }
+.po-puesto.ac-equipo .po-brazo-d { animation: po-teclear .8s ease-in-out -.4s infinite; }
 .po-puesto.ac-escribiendo .po-brazo-d { animation: po-teclear .28s ease-in-out -.14s infinite; }
 
 /* Saludar: el brazo derecho sube y se agita. */
@@ -3110,6 +3113,26 @@ a.tb-btn-sec, a.tb-btn-sec:visited { color: var(--tb-txt); }
 }
 
 .pp-mi-estado-pie.es-error { color: #F87171; }
+
+.pp-deteccion {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 10px;
+    margin-top: 10px;
+    padding-top: 9px;
+    border-top: 1px dashed var(--tb-borde);
+}
+
+.pp-deteccion-txt {
+    flex: 1 1 200px;
+    margin: 0;
+    font-size: 10.5px;
+    line-height: 1.4;
+    color: var(--tb-txt-tenue);
+}
+
+.pp-deteccion .pp-btn { flex: 0 0 auto; }
 
 /* Quien prefiere menos movimiento ve los estados quietos: el punto y la
    burbuja siguen diciendo lo mismo sin animarse. */
