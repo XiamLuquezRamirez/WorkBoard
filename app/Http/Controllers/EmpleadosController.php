@@ -411,6 +411,20 @@ class EmpleadosController extends Controller
         return $v->validated();
     }
 
+    /**
+     * Una sola fila de users por empleado (su nombre), para respaldar el
+     * nombre de quien ya no está en empleados. Con un LEFT JOIN directo a
+     * users, una persona con dos cuentas duplicaba cada una de sus tareas en
+     * los informes y en los avisos de atraso.
+     */
+    private function usuarioPorEmpleado()
+    {
+        return DB::connection('mysql2')->table('users')
+            ->whereNotNull('empleado')
+            ->groupBy('empleado')
+            ->selectRaw('empleado, MIN(name) as name');
+    }
+
     /** Error inesperado al guardar: se anota y al cliente sólo va un texto genérico. */
     private function errorAlGuardar(\Throwable $e, string $que)
     {
@@ -765,7 +779,7 @@ class EmpleadosController extends Controller
         // a quién corresponde la tarea.
         $tareasAtrasadas = DB::connection('mysql2')->table('tareas_empleados')
             ->leftJoin('empleados', 'tareas_empleados.empleado', '=', 'empleados.id')
-            ->leftJoin('users', 'tareas_empleados.empleado', '=', 'users.empleado')
+            ->leftJoinSub($this->usuarioPorEmpleado(), 'users', 'tareas_empleados.empleado', '=', 'users.empleado')
             ->whereRaw('DATE(fecha_pactada) < CURDATE()')
             // Cerradas o canceladas no tienen plazo que cumplir. En revisión
             // ya está entregada: lo que falta es la revisión.
@@ -1509,6 +1523,7 @@ class EmpleadosController extends Controller
                     ROUND(SUM(CASE WHEN fecha_entregada <= fecha_pactada THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) as eficiencia
                 ')
                 ->where('estado', 'Completada')
+                ->where('estado_reg', 'Activo')
                 ->where('empleado', $empleado->id)
                 ->whereBetween('fecha_entregada', [$inicioMes, $finMes])
                 ->first();
@@ -2080,7 +2095,7 @@ class EmpleadosController extends Controller
                      ->where('empleados.estado_registro', 'Activo')
                      ->where('empleados.estado', 'Activo');
             })
-            ->leftJoin('users', 'tareas_empleados.empleado', '=', 'users.empleado')
+            ->leftJoinSub($this->usuarioPorEmpleado(), 'users', 'tareas_empleados.empleado', '=', 'users.empleado')
             ->leftJoin('empresas', 'empleados.empresa', '=', 'empresas.id')
             ->leftJoin('departamentos', 'empleados.departamento', '=', 'departamentos.id')
             ->leftJoin('cargos', 'empleados.cargo', '=', 'cargos.id')
@@ -2116,7 +2131,7 @@ class EmpleadosController extends Controller
                      ->where('empleados.estado_registro', 'Activo')
                      ->where('empleados.estado', 'Activo');
             })
-            ->leftJoin('users', 'tareas_empleados.empleado', '=', 'users.empleado')
+            ->leftJoinSub($this->usuarioPorEmpleado(), 'users', 'tareas_empleados.empleado', '=', 'users.empleado')
             ->leftJoin('cargos', 'empleados.cargo', '=', 'cargos.id')
             ->leftJoin('departamentos', 'empleados.departamento', '=', 'departamentos.id')
             ->select(
@@ -4857,17 +4872,23 @@ class EmpleadosController extends Controller
 
     function informeReprogramaciones(Request $request)
     {
+        $request->validate([
+            'inicio' => 'nullable|date_format:Y-m-d',
+            'fin'    => 'nullable|date_format:Y-m-d|after_or_equal:inicio',
+        ], [
+            'inicio.date_format'  => 'La fecha de inicio no es válida (AAAA-MM-DD).',
+            'fin.date_format'     => 'La fecha de fin no es válida (AAAA-MM-DD).',
+            'fin.after_or_equal'  => 'La fecha de fin no puede ser anterior a la de inicio.',
+        ]);
         $inicio = $request->query('inicio');
         $fin    = $request->query('fin');
         $alcance = $this->alcanceEmpleadosInformes();
 
         $query = DB::connection('mysql2')->table('reprogramaciones_tareas as r')
             ->join('tareas_empleados as t', 'r.tarea_id', '=', 't.id')
-            ->join('empleados as e', function ($join) {
-                $join->on('r.solicitado_por', '=', 'e.id')
-                     ->where('e.estado_registro', 'Activo')
-                     ->where('e.estado', 'Activo');
-            })
+            // LEFT y sin filtrar por estado: si quien la pidió salió de la
+            // empresa, la solicitud sigue siendo parte del histórico.
+            ->leftJoin('empleados as e', 'r.solicitado_por', '=', 'e.id')
             ->leftJoin('departamentos as d', 'e.departamento', '=', 'd.id')
             ->leftJoin('users as ua', 'r.aprobado_por', '=', 'ua.id')
             ->leftJoin('empleados as ea', 'ua.empleado', '=', 'ea.id')

@@ -229,7 +229,6 @@ class InformesSuiteTest extends TestCase
         $this->assertSame('colaborador@prueba.test', $fila['empleado']);
     }
 
-    #[Group('hallazgo')]
     public function test_informe_de_tareas_no_duplica_filas_si_el_empleado_tiene_dos_usuarios(): void
     {
         // Nada impide dos cuentas para la misma ficha (guardarUsuario no lo
@@ -343,7 +342,6 @@ class InformesSuiteTest extends TestCase
         $this->assertSame([$antes, $primero, $ultimo], $this->como($this->lider)->idsReprogramaciones('?fin=2026-11-30'));
     }
 
-    #[Group('hallazgo')]
     public function test_informe_de_reprogramaciones_rechaza_fechas_invalidas_con_422(): void
     {
         $this->reprogramacion($this->tarea($this->colaborador, 'R'), $this->colaborador);
@@ -367,7 +365,6 @@ class InformesSuiteTest extends TestCase
             'Se pidió el 12 en hora de la oficina; filtrar por el 12 debe encontrarla.');
     }
 
-    #[Group('hallazgo')]
     public function test_informe_de_reprogramaciones_no_pierde_las_de_quien_ya_salio(): void
     {
         // Carlos pidió una reprogramación y después se dio de baja. Su tarea
@@ -455,7 +452,6 @@ class InformesSuiteTest extends TestCase
         $this->assertSame(0, $carlos['rendimiento']['tareas']['atrasadas']);
     }
 
-    #[Group('hallazgo')]
     public function test_dashboard_la_eficiencia_operativa_ignora_las_tareas_eliminadas(): void
     {
         $hoy = now()->toDateString();
@@ -625,7 +621,6 @@ class InformesSuiteTest extends TestCase
         $this->assertSame(0, $datos['metricas']['sin_responsable']);
     }
 
-    #[Group('hallazgo')]
     public function test_resumen_no_marca_sin_criterio_a_una_tarea_con_criterios_de_aceptacion(): void
     {
         // Las tareas nuevas guardan sus criterios en tarea_criterios; el
@@ -640,7 +635,6 @@ class InformesSuiteTest extends TestCase
             'Una tarea con tres criterios pactados figura como «sin criterio» en el correo.');
     }
 
-    #[Group('hallazgo')]
     public function test_resumen_no_cuenta_como_pausada_una_tarea_reanudada(): void
     {
         // La bandera «pausada» no se limpia al reanudar; el tablero ya lo

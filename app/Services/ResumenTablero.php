@@ -132,7 +132,9 @@ class ResumenTablero
                 'sin_responsable' => $sinResponsable->count(),
                 'vencen_pronto'   => $vencenPronto->count(),
                 'sin_fecha'       => $sinFecha->count(),
-                'pausadas'        => $abiertas->where('pausada', 1)->count(),
+                // La marca «pausada» se queda puesta al reanudar (llevarla a En
+                // Proceso): se cuenta sólo la pausa de verdad, como el tablero.
+                'pausadas'        => $abiertas->filter(fn ($t) => \App\Support\IndiceDesempeno::estaPausada($t))->count(),
                 'ficha_faltante'  => $huerfanas->count(),
                 'bloqueadas'      => $bloqueadas->count(),
                 'por_verificar'   => $porVerificar->count(),
@@ -175,7 +177,14 @@ class ResumenTablero
             // desaparece pero las tareas conservan el id. Sin este join saldrían
             // como "sin responsable" y el informe pediría reasignar tareas que
             // sí tienen dueño.
-            ->leftJoin($this->tablas['usuarios'].' as usu', 'usu.empleado', '=', $t.'.'.$c['responsable'])
+            // Una fila por empleado: con dos cuentas para la misma persona, el
+            // join directo duplicaba cada una de sus tareas en el resumen.
+            ->leftJoinSub(
+                DB::connection($this->conexion)->table($this->tablas['usuarios'])
+                    ->whereNotNull('empleado')->groupBy('empleado')
+                    ->selectRaw('empleado, MIN(id) as id, MIN(name) as name'),
+                'usu', 'usu.empleado', '=', $t.'.'.$c['responsable']
+            )
             ->leftJoin($this->tablas['proyectos'].' as pro', 'pro.id', '=', $t.'.'.$c['proyecto'])
             ->whereNotIn($t.'.'.$c['estado'], $this->config['mapeo']['estados_cerrados'])
             ->where($t.'.estado_reg', 'Activo')
@@ -194,6 +203,9 @@ class ResumenTablero
                 $t.'.motivo_bloqueo',
                 $t.'.criterio',
                 $t.'.criterio_cumplido',
+                // Los criterios nuevos viven en tarea_criterios; el texto único
+                // heredado sólo existe en tareas antiguas.
+                DB::raw(\App\Http\Controllers\CriteriosAceptacionController::sqlConteo($t) . ' as n_criterios'),
                 DB::raw("NULLIF(TRIM(CONCAT(COALESCE(emp.nombres,''),' ',COALESCE(emp.apellidos,''))),'') as responsable_emp"),
                 DB::raw('usu.name as responsable_usu'),
                 DB::raw('CASE WHEN emp.id IS NULL AND usu.id IS NOT NULL THEN 1 ELSE 0 END as responsable_huerfano'),
@@ -382,7 +394,7 @@ class ResumenTablero
     private function sinCriterio(Collection $tareas): Collection
     {
         return $tareas
-            ->filter(fn ($t) => trim((string) ($t->criterio ?? '')) === '')
+            ->filter(fn ($t) => trim((string) ($t->criterio ?? '')) === '' && (int) ($t->n_criterios ?? 0) === 0)
             ->values();
     }
 
