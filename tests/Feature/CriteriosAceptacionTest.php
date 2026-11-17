@@ -195,6 +195,13 @@ class CriteriosAceptacionTest extends TestCase
         $this->como($this->lider)->putJson("/api/tareas/{$tarea}/aceptar")->assertOk();
         $this->assertSame('Completada', $this->estadoTarea($tarea));
 
+        // La pantalla toma el estado de aquí: ya no ofrece aceptar otra vez.
+        $this->como($this->lider)->getJson("/api/tareas/{$tarea}/criterios")
+            ->assertOk()->assertJsonPath('estado_tarea', 'Completada');
+
+        // Un segundo clic en «Aceptar entrega» no vuelve a cerrarla.
+        $this->como($this->lider)->putJson("/api/tareas/{$tarea}/aceptar")->assertStatus(409);
+
         // Las dos decisiones quedan registradas, sin sobrescribirse.
         $this->assertSame(['Devuelta', 'Aceptada'], DB::connection('mysql2')->table('tarea_aceptaciones')
             ->where('tarea_id', $tarea)->orderBy('id')->pluck('resultado')->all());

@@ -2162,6 +2162,7 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton, is
                                             onUpdate={onUpdate}
                                             onCargado={setCriteriosDatos}
                                             abrirSenal={abrirCriterios}
+                                            onEstadoCambiado={setCurrentStatus}
                                         />
                                     </div>
                                 )}

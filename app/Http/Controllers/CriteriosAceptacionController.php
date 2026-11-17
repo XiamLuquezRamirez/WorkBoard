@@ -54,6 +54,10 @@ class CriteriosAceptacionController extends Controller
         $criterios = $this->criteriosDe($tarea->id);
 
         return response()->json([
+            // Estado vigente de la tarea: tras aceptar o devolver, la pantalla
+            // lo toma de aquí y no del que tenía al abrir el detalle (con el
+            // viejo seguía ofreciendo «Aceptar entrega» en una ya Completada).
+            'estado_tarea' => $tarea->estado,
             'criterios'   => $criterios,
             'resumen'     => $this->resumen($criterios, $tarea),
             'aceptaciones' => $this->aceptacionesDe($tarea->id),

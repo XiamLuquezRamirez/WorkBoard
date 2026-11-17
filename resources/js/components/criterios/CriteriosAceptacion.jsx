@@ -67,7 +67,7 @@ const errorDe = (e, porDefecto) => {
  * abrirSenal: al cambiar, despliega la sección (la visión general la usa
  * para llevar al usuario hasta aquí).
  */
-export default function CriteriosAceptacion({ task, onUpdate, onCargado, abrirSenal }) {
+export default function CriteriosAceptacion({ task, onUpdate, onCargado, abrirSenal, onEstadoCambiado }) {
     const [datos, setDatos] = useState(null);
     const [error, setError] = useState(false);
     const [abierto, setAbierto] = useState(task?.estado === 'En Revisión');
@@ -87,6 +87,14 @@ export default function CriteriosAceptacion({ task, onUpdate, onCargado, abrirSe
     useEffect(() => { cargar(); }, [cargar, task?.estado]);
 
     useEffect(() => { if (datos && onCargado) onCargado(datos); }, [datos]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    // Si el servidor dice que la tarea cambió de estado (aceptada, devuelta),
+    // el detalle se entera para actualizar su cabecera.
+    useEffect(() => {
+        if (datos?.estado_tarea && datos.estado_tarea !== task?.estado && onEstadoCambiado) {
+            onEstadoCambiado(datos.estado_tarea);
+        }
+    }, [datos?.estado_tarea]); // eslint-disable-line react-hooks/exhaustive-deps
 
     useEffect(() => { if (abrirSenal) setAbierto(true); }, [abrirSenal]);
 
@@ -234,6 +242,7 @@ export default function CriteriosAceptacion({ task, onUpdate, onCargado, abrirSe
     };
 
     const aceptar = async () => {
+        if (ocupado) return;
         const { isConfirmed } = await Swal.fire({
             title: '¿Aceptar la entrega?',
             text: 'La tarea quedará cerrada como Completada.',
@@ -244,6 +253,7 @@ export default function CriteriosAceptacion({ task, onUpdate, onCargado, abrirSe
     };
 
     const devolver = async () => {
+        if (ocupado) return;
         const { value, isConfirmed } = await Swal.fire({
             title: 'Devolver la entrega',
             input: 'textarea',
@@ -261,8 +271,10 @@ export default function CriteriosAceptacion({ task, onUpdate, onCargado, abrirSe
     if (!datos) return <div className="ca-caja"><p className="ca-vacio">Cargando criterios…</p></div>;
 
     const { criterios, resumen, permisos, aceptaciones } = datos;
-    const enRevision = task.estado === 'En Revisión';
-    const cerrada = enRevision || task.estado === 'Completada';
+    // El estado que manda es el que devolvió el servidor en la última carga.
+    const estado = datos.estado_tarea || task.estado;
+    const enRevision = estado === 'En Revisión';
+    const cerrada = enRevision || estado === 'Completada';
     const puedeVerificar = (c) => enRevision && permisos.verificar.includes(c.id);
     const puedeDeclarar = permisos.declarar && !cerrada;
 
@@ -354,7 +366,7 @@ export default function CriteriosAceptacion({ task, onUpdate, onCargado, abrirSe
                                                             {ev.tipo === 'archivo' ? <FaFileUpload /> : <FaLink />} {ev.nombre || ev.ruta}
                                                         </a>
                                                         <span className="ca-ev-quien">{ev.subido_por}</span>
-                                                        {task.estado !== 'Completada' && (permisos.gestionar || ev.subido_id === permisos.yo) && (
+                                                        {estado !== 'Completada' && (permisos.gestionar || ev.subido_id === permisos.yo) && (
                                                             <button type="button" className="ca-mini" title="Quitar evidencia" onClick={() => quitarEvidencia(ev)}>
                                                                 <FaTimes />
                                                             </button>
@@ -387,7 +399,7 @@ export default function CriteriosAceptacion({ task, onUpdate, onCargado, abrirSe
                                                 </button>
                                             )}
 
-                                            {(puedeDeclarar || puedeVerificar(c)) && task.estado !== 'Completada' && (
+                                            {(puedeDeclarar || puedeVerificar(c)) && estado !== 'Completada' && (
                                                 <>
                                                     <button type="button" className="ca-btn" disabled={ocupado} onClick={() => evidenciaEnlace(c)}>
                                                         <FaLink /> Enlace
@@ -438,7 +450,7 @@ export default function CriteriosAceptacion({ task, onUpdate, onCargado, abrirSe
                         </form>
                     )}
 
-                    {!permisos.gestionar && cerrada && task.estado !== 'Completada' && criterios.length > 0 && (
+                    {!permisos.gestionar && cerrada && estado !== 'Completada' && criterios.length > 0 && (
                         <p className="ca-nota">La tarea está en revisión: sus criterios ya no se modifican.</p>
                     )}
 
