@@ -380,8 +380,80 @@ class EmpleadosController extends Controller
         return $foto;
     }
 
+    /**
+     * Valida y, si falla, responde 422 con el primer mensaje en «error», que
+     * es lo que muestran los modales de Parámetros (además de «errors»).
+     * Devuelve los datos validados o la respuesta lista para devolver.
+     */
+    private function validarParametro(Request $request, array $reglas, array $mensajes = [])
+    {
+        $v = \Illuminate\Support\Facades\Validator::make($request->all(), $reglas, $mensajes);
+        if ($v->fails()) {
+            $primero = $v->errors()->first();
+            return response()->json(['error' => $primero, 'message' => $primero, 'errors' => $v->errors()], 422);
+        }
+
+        return $v->validated();
+    }
+
+    /** Error inesperado al guardar: se anota y al cliente sólo va un texto genérico. */
+    private function errorAlGuardar(\Throwable $e, string $que)
+    {
+        Log::error("Error al guardar {$que}", ['error' => $e->getMessage()]);
+
+        return response()->json(['error' => "No fue posible guardar {$que}. Inténtalo de nuevo."], 500);
+    }
+
     function guardarEmpleado(Request $request)
     {
+        $editar = $request->input('accion') === 'editar';
+        $id = $editar ? (int) $request->input('id') : null;
+        if ($editar && !DB::connection('mysql2')->table('empleados')->where('id', $id)->exists()) {
+            return response()->json(['error' => 'Empleado no encontrado.'], 404);
+        }
+        // El usuario del propio empleado no cuenta como «correo de otro».
+        $suUsuario = $editar ? DB::connection('mysql2')->table('users')->where('empleado', $id)->value('id') : null;
+
+        $validos = $this->validarParametro($request, [
+            'accion'           => 'required|in:guardar,editar',
+            'identificacion'   => ['required', 'string', 'max:15',
+                Rule::unique('mysql2.empleados', 'identificacion')->ignore($id)
+                    ->where(fn ($q) => $q->where('estado_registro', '<>', 'Eliminado'))],
+            'nombres'          => 'required|string|max:100',
+            'apellidos'        => 'required|string|max:100',
+            'email'            => ['required', 'email', 'max:150',
+                Rule::unique('mysql2.empleados', 'email')->ignore($id)
+                    ->where(fn ($q) => $q->where('estado_registro', '<>', 'Eliminado')),
+                Rule::unique('mysql2.users', 'email')->ignore($suUsuario)],
+            'departamento'     => 'required|integer|exists:mysql2.departamentos,id',
+            'empresa'          => 'required|integer|exists:mysql2.empresas,id',
+            'cargo'            => 'required|integer|exists:mysql2.cargos,id',
+            'telefono'         => 'nullable|string|max:30',
+            'fecha_nacimiento' => 'nullable|date',
+            'fecha_ingreso'    => 'nullable|date',
+            'tipo_contrato'    => 'nullable|string|max:50',
+            'direccion'        => 'nullable|string|max:200',
+            'estado'           => 'required|in:Activo,Inactivo',
+        ], [
+            'identificacion.required' => 'La identificación es obligatoria.',
+            'identificacion.unique'   => 'Ya hay un empleado con esa identificación.',
+            'nombres.required'        => 'Los nombres son obligatorios.',
+            'apellidos.required'      => 'Los apellidos son obligatorios.',
+            'email.required'          => 'El correo es obligatorio.',
+            'email.email'             => 'El correo no es válido.',
+            'email.unique'            => 'Ese correo ya lo usa otra persona.',
+            'departamento.required'   => 'Elige el departamento.',
+            'departamento.exists'     => 'El departamento no existe.',
+            'empresa.required'        => 'Elige la empresa.',
+            'empresa.exists'          => 'La empresa no existe.',
+            'cargo.required'          => 'Elige el cargo.',
+            'cargo.exists'            => 'El cargo no existe.',
+            'estado.in'               => 'El estado debe ser Activo o Inactivo.',
+        ]);
+        if ($validos instanceof \Illuminate\Http\JsonResponse) {
+            return $validos;
+        }
+
         $empleado = $request->all();
 
         // «Es líder» se decide en la ficha del empleado, pero el líder de un
@@ -508,7 +580,9 @@ class EmpleadosController extends Controller
 
         } catch (\Exception $e) {
             DB::connection('mysql2')->rollBack();
-            return response()->json(['error' => $e->getMessage()], 500);
+            // Antes se devolvía $e->getMessage(): la consulta completa, con el
+            // hash de la contraseña inicial y los datos personales.
+            return $this->errorAlGuardar($e, 'el empleado');
         }
 
         return response()->json(['success' => 'Empleado guardado correctamente'], 200);
@@ -516,6 +590,9 @@ class EmpleadosController extends Controller
 
     function eliminarEmpleado($id)
     {
+        if (!DB::connection('mysql2')->table('empleados')->where('id', $id)->where('estado_registro', '<>', 'Eliminado')->exists()) {
+            return response()->json(['error' => 'Empleado no encontrado.'], 404);
+        }
         $empleado = DB::connection('mysql2')->table('empleados')
             ->where('id', $id)
             ->update([
@@ -537,6 +614,17 @@ class EmpleadosController extends Controller
 
     function guardarFuncion(Request $request)
     {
+        $validos = $this->validarParametro($request, [
+            'empleado' => ['required', 'integer', Rule::exists('mysql2.empleados', 'id')->where('estado_registro', 'Activo')],
+            'funcion'  => 'required|string|max:1000',
+        ], [
+            'empleado.required' => 'Falta el empleado.',
+            'empleado.exists'   => 'El empleado no existe.',
+            'funcion.required'  => 'Escribe la función.',
+        ]);
+        if ($validos instanceof \Illuminate\Http\JsonResponse) {
+            return $validos;
+        }
         $funcionEmpleado = $request->all();
         DB::connection('mysql2')->beginTransaction();
         try {
@@ -550,7 +638,7 @@ class EmpleadosController extends Controller
             DB::connection('mysql2')->commit();
         } catch (\Exception $e) {
             DB::connection('mysql2')->rollBack();
-            return response()->json(['error' => $e->getMessage()], 500);
+            return $this->errorAlGuardar($e, 'la función');
         }
         //obtener la ultima funcion insertada
         $funcion = DB::connection('mysql2')->table('funciones_empleado')
@@ -566,6 +654,15 @@ class EmpleadosController extends Controller
 
     function actualizarFuncion(Request $request, $id)
     {
+        if (!DB::connection('mysql2')->table('funciones_empleado')->where('id', $id)->exists()) {
+            return response()->json(['error' => 'Función no encontrada.'], 404);
+        }
+        $validos = $this->validarParametro($request, ['descripcion' => 'required|string|max:1000'], [
+            'descripcion.required' => 'Escribe la función.',
+        ]);
+        if ($validos instanceof \Illuminate\Http\JsonResponse) {
+            return $validos;
+        }
         $funcionEmpleado = $request->all();
         $funcion = DB::connection('mysql2')->table('funciones_empleado')->where('id', $id)->update([
             'descripcion' => $funcionEmpleado['descripcion']
@@ -1785,7 +1882,9 @@ class EmpleadosController extends Controller
 
     function buscarEmpresas(Request $request)
     {
-        $searchTerm = $request->input('search');
+        // El modal envía «term»; se acepta también «search» por compatibilidad.
+        // Antes sólo se leía «search» y la búsqueda devolvía todas.
+        $searchTerm = $request->input('term', $request->input('search'));
         $empresas = DB::connection('mysql2')->table('empresas')
             ->where('nombre', 'like', '%' . $searchTerm . '%')
             ->where('estado', 'Activo')
@@ -1795,7 +1894,27 @@ class EmpleadosController extends Controller
 
     function guardarEmpresa(Request $request)
     {
+        if ($request->input('accion') === 'editar'
+            && !DB::connection('mysql2')->table('empresas')->where('id', (int) $request->input('id'))->exists()) {
+            return response()->json(['error' => 'Empresa no encontrada.'], 404);
+        }
+        $validos = $this->validarParametro($request, [
+            'accion'        => 'required|in:guardar,editar',
+            'nombre'        => 'required|string|max:150',
+            'direccion'     => 'nullable|string|max:200',
+            'telefono'      => 'nullable|string|max:30',
+            'representante' => 'nullable|string|max:150',
+            'nit'           => 'nullable|string|max:30',
+        ], [
+            'nombre.required' => 'El nombre de la empresa es obligatorio.',
+        ]);
+        if ($validos instanceof \Illuminate\Http\JsonResponse) {
+            return $validos;
+        }
         $compania = $request->all();
+        foreach (['direccion', 'telefono', 'representante', 'nit', 'logo'] as $campo) {
+            $compania[$campo] = $compania[$campo] ?? null;
+        }
 
         DB::connection('mysql2')->beginTransaction();
         try {
@@ -1832,12 +1951,15 @@ class EmpleadosController extends Controller
             return response()->json(['success' => 'Empresa guardada correctamente'], 200);
         } catch (\Exception $e) {
             DB::connection('mysql2')->rollBack();
-            return response()->json(['error' => $e->getMessage()], 500);
+            return $this->errorAlGuardar($e, 'la empresa');
         }
     }
 
     function eliminarEmpresa($id)
     {
+        if (!DB::connection('mysql2')->table('empresas')->where('id', $id)->where('estado', '<>', 'ELIMINADO')->exists()) {
+            return response()->json(['error' => 'Empresa no encontrada.'], 404);
+        }
         $empresa = DB::connection('mysql2')->table('empresas')->where('id', $id)->update([
             'estado' => 'ELIMINADO'
         ]);
@@ -2078,6 +2200,9 @@ class EmpleadosController extends Controller
 
     function eliminarFuncion($id)
     {
+        if (!DB::connection('mysql2')->table('funciones_empleado')->where('id', $id)->exists()) {
+            return response()->json(['error' => 'Función no encontrada.'], 404);
+        }
         $funcion = DB::connection('mysql2')->table('funciones_empleado')->where('id', $id)->delete();
         return response()->json(['success' => 'Funcion eliminada correctamente'], 200);
     }
@@ -3762,6 +3887,24 @@ class EmpleadosController extends Controller
 
     function guardarProyecto(Request $request)
     {
+        if ($request->input('accion') === 'editar'
+            && !DB::connection('mysql2')->table('proyectos')->where('id', (int) $request->input('id'))->exists()) {
+            return response()->json(['error' => 'Proyecto no encontrado.'], 404);
+        }
+        $validos = $this->validarParametro($request, [
+            'accion'      => 'required|in:guardar,editar',
+            'nombre'      => 'required|string|max:200',
+            'municipio'   => 'nullable|string|max:150',
+            'empresa'     => 'nullable|integer|exists:mysql2.empresas,id',
+            'fechaInicio' => 'nullable|date',
+            'fechaFin'    => 'nullable|date',
+        ], [
+            'nombre.required' => 'El nombre del proyecto es obligatorio.',
+            'empresa.exists'  => 'La empresa no existe.',
+        ]);
+        if ($validos instanceof \Illuminate\Http\JsonResponse) {
+            return $validos;
+        }
         $proyecto = $request->all();
 
         DB::connection('mysql2')->beginTransaction();
@@ -3791,7 +3934,7 @@ class EmpleadosController extends Controller
             return response()->json(['success' => 'Proyecto guardado correctamente'], 200);
         } catch (\Exception $e) {
             DB::connection('mysql2')->rollBack();
-            return response()->json(['error' => $e->getMessage()], 500);
+            return $this->errorAlGuardar($e, 'el proyecto');
         }
     }
 
@@ -4238,7 +4381,7 @@ class EmpleadosController extends Controller
         // de otro modo el nombre quedaría bloqueado para siempre sin que el
         // usuario vea el registro que lo retiene.
         $existe = DB::connection('mysql2')->table('cargos')
-            ->whereRaw('LOWER(nombre) = ?', [strtolower($nombre)])->first();
+            ->whereRaw('LOWER(nombre) = ?', [mb_strtolower($nombre, 'UTF-8')])->first();
 
         if ($existe) {
             if (strcasecmp(trim($existe->estado ?? 'Activo'), 'Inactivo') === 0) {
@@ -4250,7 +4393,8 @@ class EmpleadosController extends Controller
         }
 
         $id = DB::connection('mysql2')->table('cargos')->insertGetId([
-            'nombre' => strtoupper($nombre),
+            // mb_: strtoupper no es multibyte y «Diseñador» quedaba «DISEñADOR».
+            'nombre' => mb_strtoupper($nombre, 'UTF-8'),
             'estado' => 'Activo',
         ]);
         return response()->json(['id' => $id, 'message' => 'Cargo creado']);
@@ -4258,23 +4402,45 @@ class EmpleadosController extends Controller
 
     function actualizarCargo(Request $request, $id)
     {
+        $cargo = DB::connection('mysql2')->table('cargos')->where('id', $id)->first();
+        if (!$cargo) {
+            return response()->json(['message' => 'Cargo no encontrado', 'error' => 'Cargo no encontrado'], 404);
+        }
+
         $nombre = trim($request->nombre ?? '');
         if (!$nombre) return response()->json(['message' => 'El nombre es obligatorio'], 422);
 
+        $estado = $request->estado ?? ($cargo->estado ?: 'Activo');
+        if (!in_array($estado, ['Activo', 'Inactivo'], true)) {
+            return response()->json(['message' => 'El estado debe ser Activo o Inactivo'], 422);
+        }
+
+        // Inactivarlo editándolo pasa por la misma guarda que eliminarlo.
+        if ($estado === 'Inactivo' && strcasecmp(trim($cargo->estado ?? 'Activo'), 'Inactivo') !== 0) {
+            $count = DB::connection('mysql2')->table('empleados')
+                ->where('cargo', $id)->where('estado_registro', 'Activo')->count();
+            if ($count > 0) {
+                return response()->json(['message' => "No se puede inactivar: tiene $count empleado(s) activo(s) asignado(s)"], 422);
+            }
+        }
+
         $existe = DB::connection('mysql2')->table('cargos')
-            ->whereRaw('LOWER(nombre) = ?', [strtolower($nombre)])
+            ->whereRaw('LOWER(nombre) = ?', [mb_strtolower($nombre, 'UTF-8')])
             ->where('id', '!=', $id)->exists();
         if ($existe) return response()->json(['message' => 'Ya existe un cargo con ese nombre'], 422);
 
         DB::connection('mysql2')->table('cargos')->where('id', $id)->update([
-            'nombre' => strtoupper($nombre),
-            'estado' => $request->estado ?? 'Activo',
+            'nombre' => mb_strtoupper($nombre, 'UTF-8'),
+            'estado' => $estado,
         ]);
         return response()->json(['message' => 'Cargo actualizado']);
     }
 
     function eliminarCargo($id)
     {
+        if (!DB::connection('mysql2')->table('cargos')->where('id', $id)->exists()) {
+            return response()->json(['message' => 'Cargo no encontrado', 'error' => 'Cargo no encontrado'], 404);
+        }
         $count = DB::connection('mysql2')->table('empleados')
             ->where('cargo', $id)->where('estado_registro', 'Activo')->count();
         if ($count > 0) {

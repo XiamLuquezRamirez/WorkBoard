@@ -425,7 +425,6 @@ class AdministracionParametrosTest extends TestCase
         ]))->assertStatus(422)->assertJsonFragment(['error' => 'Es líder de Depto de prueba. Quítale ese liderazgo en Departamentos antes de desmarcarlo como líder.']);
     }
 
-    #[Group('hallazgo')]
     public function test_crear_empleado_con_email_de_otro_usuario_responde_422(): void
     {
         $antes = $this->db()->table('empleados')->count();
@@ -435,7 +434,6 @@ class AdministracionParametrosTest extends TestCase
         $this->assertSame($antes, $this->db()->table('empleados')->count());
     }
 
-    #[Group('hallazgo')]
     public function test_crear_empleado_con_documento_repetido_responde_422(): void
     {
         // No hay ninguna comprobación de identificación repetida en guardarEmpleado.
@@ -443,7 +441,6 @@ class AdministracionParametrosTest extends TestCase
             ->assertStatus(422);
     }
 
-    #[Group('hallazgo')]
     public function test_un_error_al_guardar_un_empleado_no_devuelve_el_sql_al_cliente(): void
     {
         // El catch devuelve $e->getMessage(): la consulta completa, con el hash
@@ -658,7 +655,6 @@ class AdministracionParametrosTest extends TestCase
         $this->assertSame([$otra], $ids);
     }
 
-    #[Group('hallazgo')]
     public function test_buscar_empresas_filtra_con_el_parametro_que_envia_el_modal(): void
     {
         // CompanyModal.jsx manda { term }, el controlador lee 'search': la
@@ -684,7 +680,6 @@ class AdministracionParametrosTest extends TestCase
         $this->assertSame(7, (int) $analista['total_empleados']);
     }
 
-    #[Group('hallazgo')]
     public function test_un_cargo_con_tildes_o_enie_se_guarda_bien_en_mayusculas(): void
     {
         // strtoupper no es multibyte: «Diseñador» queda «DISEñADOR».
@@ -740,7 +735,6 @@ class AdministracionParametrosTest extends TestCase
         $this->assertNotContains($cargo, $this->idsDe($this->como($this->admin)->getJson('/api/parametros/cargos')));
     }
 
-    #[Group('hallazgo')]
     public function test_inactivar_un_cargo_editandolo_respeta_la_guarda_de_empleados_activos(): void
     {
         // eliminarCargo lo impide; actualizarCargo con estado=Inactivo no.
@@ -781,7 +775,6 @@ class AdministracionParametrosTest extends TestCase
         $this->assertSame([], $this->como($this->admin)->getJson("/api/cargarFunciones/{$this->colaborador}")->json());
     }
 
-    #[Group('hallazgo')]
     public function test_no_se_agregan_funciones_a_un_empleado_inexistente(): void
     {
         $this->como($this->admin)->postJson('/api/guardarFuncion', ['empleado' => 999999, 'funcion' => 'Fantasma'])
@@ -914,7 +907,6 @@ class AdministracionParametrosTest extends TestCase
         ];
     }
 
-    #[Group('hallazgo')]
     #[DataProvider('idsInexistentesQueResponden200')]
     public function test_operar_sobre_un_id_inexistente_responde_404_y_no_exito(string $metodo, string $ruta, array $cuerpo): void
     {
@@ -939,14 +931,12 @@ class AdministracionParametrosTest extends TestCase
         ];
     }
 
-    #[Group('hallazgo')]
     #[DataProvider('peticionesIncompletas')]
     public function test_una_peticion_incompleta_responde_422_y_no_500(string $metodo, string $ruta, array $cuerpo): void
     {
         $this->como($this->admin)->json($metodo, $ruta, $cuerpo)->assertStatus(422);
     }
 
-    #[Group('hallazgo')]
     public function test_actualizar_funcion_sin_descripcion_responde_422(): void
     {
         $id = $this->funcion($this->colaborador);
