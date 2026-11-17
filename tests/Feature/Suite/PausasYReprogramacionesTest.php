@@ -192,7 +192,6 @@ class PausasYReprogramacionesTest extends TestCase
         $this->assertSame(0, (int) $this->campoTarea($tarea, 'pausada'));
     }
 
-    #[Group('hallazgo')]
     public function test_pausar_sin_el_campo_pausada_responde_422_y_no_500(): void
     {
         $tarea = $this->tarea();
@@ -206,7 +205,6 @@ class PausasYReprogramacionesTest extends TestCase
         $this->assertFalse($this->db()->table('notif_generales')->where('tarea_id', 999999)->exists());
     }
 
-    #[Group('hallazgo')]
     public function test_el_lider_no_pausa_una_tarea_ya_aceptada(): void
     {
         $tarea = $this->tarea('Completada');
@@ -356,7 +354,6 @@ class PausasYReprogramacionesTest extends TestCase
         $this->assertSame(1, $this->db()->table('pausas_solicitadas')->where('tarea_id', $tarea)->count());
     }
 
-    #[Group('hallazgo')]
     public function test_la_fecha_de_reanudacion_no_puede_estar_en_el_pasado(): void
     {
         $tarea = $this->tarea();
@@ -376,7 +373,6 @@ class PausasYReprogramacionesTest extends TestCase
     }
 
     #[DataProvider('estadosEntregados')]
-    #[Group('hallazgo')]
     public function test_no_se_solicita_pausa_de_una_tarea_entregada_o_cerrada(string $estado): void
     {
         $tarea = $this->tarea($estado);
@@ -460,7 +456,6 @@ class PausasYReprogramacionesTest extends TestCase
     }
 
     #[DataProvider('rutasDeResolucion')]
-    #[Group('hallazgo')]
     public function test_rechazar_sin_observacion_no_responde_500_tras_guardar_el_rechazo(string $tipo): void
     {
         // observacion_rechazo es opcional en la validación; omitirla rompía
@@ -605,7 +600,6 @@ class PausasYReprogramacionesTest extends TestCase
     }
 
     #[DataProvider('reprogramacionesDirectasInvalidas')]
-    #[Group('hallazgo')]
     public function test_reprogramar_con_datos_invalidos_responde_422_y_no_500(array $datos): void
     {
         $tarea = $this->tarea();
@@ -623,7 +617,6 @@ class PausasYReprogramacionesTest extends TestCase
         $this->assertFalse($this->db()->table('notif_generales')->where('tarea_id', 999999)->exists());
     }
 
-    #[Group('hallazgo')]
     public function test_no_se_reprograma_directamente_a_una_fecha_pasada(): void
     {
         $tarea = $this->tarea();
@@ -744,7 +737,6 @@ class PausasYReprogramacionesTest extends TestCase
         $this->assertFalse($this->db()->table('reprogramaciones_tareas')->where('tarea_id', $tarea)->exists());
     }
 
-    #[Group('hallazgo')]
     public function test_un_administrador_sin_empleado_solicita_reprogramacion_sin_error_500(): void
     {
         // En producción un administrador puede no tener ficha de empleado.

@@ -2440,6 +2440,19 @@ class EmpleadosController extends Controller
             return $tarea;
         }
 
+        // Obligatorio. Se admite también 'true'/'false' como texto, que es lo
+        // que envía el botón «Reanudar» (la regla boolean no lo acepta).
+        $pausar = filter_var($request->input('pausada'), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+        if (!$request->has('pausada') || $pausar === null) {
+            return response()->json([
+                'message' => 'Indica si se pausa o se reanuda.',
+                'errors'  => ['pausada' => ['Indica si se pausa o se reanuda.']],
+            ], 422);
+        }
+        if ($pausar && in_array($tarea->estado, ['Completada', self::EN_REVISION], true)) {
+            return response()->json(['error' => 'La tarea ya fue entregada: no se puede pausar.'], 409);
+        }
+
         if (filter_var($request->input('pausada'), FILTER_VALIDATE_BOOLEAN)) {
             $yo = AccesoTareas::usuario();
             $empleado = (int) $tarea->empleado;
@@ -2501,7 +2514,10 @@ class EmpleadosController extends Controller
         $data = $request->validate([
             'tarea_id' => 'required|integer',
             'motivo' => 'required|string|min:3|max:5000',
-            'fecha_reanudacion' => 'required|date',
+            // Reanudar en el pasado no tiene sentido (día de Bogotá).
+            'fecha_reanudacion' => 'required|date|after_or_equal:' . \App\Support\IndiceDesempeno::hoy()->toDateString(),
+        ], [
+            'fecha_reanudacion.after_or_equal' => 'La fecha de reanudación no puede ser anterior a hoy.',
         ]);
 
         $usuarioActual = DB::connection('mysql2')->table('users')->where('email', Auth::user()->email)->first();
@@ -2512,6 +2528,10 @@ class EmpleadosController extends Controller
         $tarea = DB::connection('mysql2')->table('tareas_empleados')->where('id', $data['tarea_id'])->first();
         if (!$tarea) {
             return response()->json(['ok' => false, 'mensaje' => 'Tarea no encontrada'], 404);
+        }
+        // Entregada (en revisión) o aceptada ya no tiene trabajo que pausar.
+        if (in_array($tarea->estado, ['Completada', self::EN_REVISION], true)) {
+            return response()->json(['ok' => false, 'mensaje' => 'La tarea ya fue entregada: no se puede pausar.'], 409);
         }
 
         $esDueño = $usuarioActual->empleado && (int) $usuarioActual->empleado === (int) $tarea->empleado;
@@ -2619,7 +2639,9 @@ class EmpleadosController extends Controller
                 "Pausa aprobada por {$aprobadorNombre}. Reanudación estimada: {$fechaFmt}."
             );
         } else {
-            $obs = $data['observacion_rechazo'] ? " Observación: {$data['observacion_rechazo']}." : '';
+            // Opcional: sin ella se leía un índice inexistente y la respuesta
+            // era 500 cuando el rechazo ya estaba guardado.
+            $obs = !empty($data['observacion_rechazo']) ? " Observación: {$data['observacion_rechazo']}." : '';
             $this->registrarActividad(
                 $solicitud->tarea_id,
                 'Pausa rechazada',
@@ -3828,7 +3850,17 @@ class EmpleadosController extends Controller
             return $tarea;
         }
 
-        $data = $request->all();
+        // Antes sin validar: sin fecha o con texto daba 500, y se podía
+        // reprogramar al pasado.
+        $data = $request->validate([
+            'fecha_pactada'         => 'required|date|after_or_equal:' . \App\Support\IndiceDesempeno::hoy()->toDateString(),
+            'motivo_reprogramacion' => 'required|string|min:3|max:1000',
+        ], [
+            'fecha_pactada.required'         => 'Indica la nueva fecha.',
+            'fecha_pactada.date'             => 'La nueva fecha no es válida.',
+            'fecha_pactada.after_or_equal'   => 'La nueva fecha no puede ser anterior a hoy.',
+            'motivo_reprogramacion.required' => 'Explica el motivo de la reprogramación.',
+        ]);
         
         try {
             $tarea = DB::connection('mysql2')->table('tareas_empleados')->where('id', $id)->update([
@@ -4616,7 +4648,9 @@ class EmpleadosController extends Controller
 
         $id = DB::connection('mysql2')->table('reprogramaciones_tareas')->insertGetId([
             'tarea_id'            => $data['tarea_id'],
-            'solicitado_por'      => $usuarioActual->empleado,
+            // La columna no admite nulos: un administrador sin ficha de empleado
+            // queda como 0 (el usuario sigue en solicitado_por_user).
+            'solicitado_por'      => (int) ($usuarioActual->empleado ?? 0),
             'solicitado_por_user' => $usuarioActual->id,
             'fecha_actual'        => $data['fecha_actual'] ?? $tarea->fecha_pactada,
             'fecha_nueva'         => $data['fecha_nueva'],
@@ -4689,7 +4723,9 @@ class EmpleadosController extends Controller
                 "Reprogramación aprobada por {$aprobadorNombre}. Nueva fecha pactada: {$fechaNuevaFmt}."
             );
         } else {
-            $obsRechazo = $data['observacion_rechazo'] ? " Observación: {$data['observacion_rechazo']}." : '';
+            // Opcional: sin ella se leía un índice inexistente y la respuesta
+            // era 500 cuando el rechazo ya estaba guardado.
+            $obsRechazo = !empty($data['observacion_rechazo']) ? " Observación: {$data['observacion_rechazo']}." : '';
             $this->registrarActividad(
                 $reprg->tarea_id,
                 'Reprogramación rechazada',

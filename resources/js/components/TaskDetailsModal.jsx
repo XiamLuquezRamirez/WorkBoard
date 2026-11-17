@@ -369,7 +369,16 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton, is
             await fireSwal('Fecha requerida', 'Indique la nueva fecha pactada para continuar.', 'warning');
             return;
         }
-        if (!reanudarMotivo.trim()) {
+        // El servidor no acepta fechas pasadas. Se comprueba antes de enviar
+        // nada: reanudar son dos pasos (quitar la pausa y fijar la fecha) y
+        // un rechazo en el segundo dejaría la tarea reanudada con la fecha vieja.
+        const hoyLocal = new Date();
+        const hoyTxt = `${hoyLocal.getFullYear()}-${String(hoyLocal.getMonth() + 1).padStart(2, '0')}-${String(hoyLocal.getDate()).padStart(2, '0')}`;
+        if (String(reanudarFecha).slice(0, 10) < hoyTxt) {
+            await fireSwal('Fecha no válida', 'La nueva fecha pactada no puede ser anterior a hoy.', 'warning');
+            return;
+        }
+        if (reanudarMotivo.trim().length < 3) {
             await fireSwal('Motivo requerido', 'Indique el motivo de la reanudación.', 'warning');
             return;
         }
@@ -3230,6 +3239,7 @@ const TaskDetailsModal = ({ task, onClose, onUpdate, showObservacionesButton, is
                                     id="reanudar-fecha"
                                     type="date"
                                     className="task-pausa-solicitud-date"
+                                    min={new Date().toLocaleDateString('en-CA')}
                                     value={reanudarFecha}
                                     onChange={(e) => setReanudarFecha(e.target.value)}
                                     disabled={reanudarSubmitting}
