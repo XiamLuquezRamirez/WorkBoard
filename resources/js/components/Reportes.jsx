@@ -29,6 +29,7 @@ import {
     ResponsiveContainer,
 } from "recharts";
 import Sidebar from "./Sidebar";
+import InformeEjecutivo from "./reportes/InformeEjecutivo";
 import * as XLSX from 'xlsx';
 
 /**
@@ -66,6 +67,10 @@ const Reportes = () => {
     const [endDate, setEndDate] = useState(getFormattedDate(lastDay));
 
     const [tareas, setTareas] = useState([]);
+    // Antes no había: al abrir un informe se veían los datos del anterior
+    // mientras llegaba la respuesta, y un fallo sólo iba a la consola.
+    const [tareasCargando, setTareasCargando] = useState(false);
+    const [tareasError, setTareasError] = useState(false);
     const navigate = useNavigate();
     
     // Estados para filtros de tareas por empleado
@@ -105,7 +110,7 @@ const Reportes = () => {
             id: 0,
             title: "Informe Ejecutivo",
             icon: <FaChartLine size={25} />,
-            description: "Resumen global y por departamento",
+            description: "Entregas, cumplimiento y vencidas: general, por área y por persona",
             color: "#0f766e",
             onClick: () => {
                 setFilterEmpleado('');
@@ -113,30 +118,6 @@ const Reportes = () => {
                 setSelectedReport("ejecutivo");
                 setShowReportModal(true);
                 consultarTareas();
-            },
-        },
-        {
-            id: 6,
-            title: "Informe por Departamento",
-            icon: <FaChartBar size={25} />,
-            description: "Comparativa entre áreas de la empresa",
-            color: "#7c3aed",
-            onClick: () => {
-                setFilterEmpleado('');
-                setFilterDepartamento('');
-                setSelectedReport("departamentos");
-                setShowReportModal(true);
-                consultarTareas();
-            },
-        },
-        {
-            id: 1,
-            title: "Informe de productividad",
-            icon: <FaChartBar size={25} />,
-            description: "Resumen de tareas por empleado",
-            color: "#0891b2",
-            onClick: () => {
-                abrirModalInformeProductividad();
             },
         },
         {
@@ -151,16 +132,6 @@ const Reportes = () => {
             },
         },
         {
-            id: 3,
-            title: "Informe de avance de tareas",
-            icon: <FaChartBar size={25} />,
-            description: "Resumen de tareas por empleado",
-            color: "#0891b2",
-            onClick: () => {
-                abrirModalInformeAvance();
-            },
-        },
-        {
             id: 4,
             title: "Informe de cumplimiento de tareas",
             icon: <FaChartBar size={25} />,
@@ -171,7 +142,7 @@ const Reportes = () => {
             },
         },
         {
-            id: 4,
+            id: 5,
             title: "Informe de tareas por empleado",
             icon: <FaChartBar size={25} />,
             description: "Resumen de tareas por empleado",
@@ -237,77 +208,6 @@ const Reportes = () => {
     }
 
 
-    // Tareas completadas por empleado
-    const tareasCompletadasData = tareas.reduce((acc, tarea) => {
-        if (
-            tarea.estado === "Completada" &&
-            tarea.fecha_entregada >= startDate && tarea.fecha_entregada <= endDate &&
-            (!filterDepartamento || tarea.departamento === filterDepartamento) &&
-            (!filterEmpleado || tarea.empleado === filterEmpleado)
-        ) {
-            acc[tarea.empleado] = (acc[tarea.empleado] || 0) + 1;
-        }
-        return acc;
-    }, {});
-
-    const tareasCompletadasArray = Object.entries(tareasCompletadasData).map(
-        ([empleado, tareasCompletadas]) => ({
-            empleado,
-            tareasCompletadas,
-        })
-    );
-
-    //informe de tareas por empleado
-
-    // Promedio de días por tarea (solo completadas)
-    const promedioTiempoData = tareas.reduce((acc, tarea) => {
-
-        if (
-            tarea.estado === "Completada" &&
-            tarea.fecha_pactada &&
-            tarea.fecha_pactada >= startDate &&
-            tarea.fecha_pactada <= endDate &&
-            tarea.fecha_entregada &&
-            (!filterDepartamento || tarea.departamento === filterDepartamento) &&
-            (!filterEmpleado || tarea.empleado === filterEmpleado)
-        ) {
-            const dias =
-                (new Date(tarea.fecha_entregada) -
-                    new Date(tarea.fecha_aprobacion)) /
-                (1000 * 60 * 60 * 24);
-            if (!acc[tarea.empleado])
-                acc[tarea.empleado] = { totalDias: 0, tareas: 0 };
-            acc[tarea.empleado].totalDias += dias;
-            acc[tarea.empleado].tareas += 1;
-        }
-        return acc;
-    }, {});
-
-
-    const promedioTiempoArray = Object.entries(promedioTiempoData).map(
-        ([empleado, datos]) => ({
-            empleado,
-            promedioTiempo: (datos.totalDias / datos.tareas).toFixed(1),
-        })
-    );
-
-    // Datos para comparativo
-    const comparativoArray = tareasCompletadasArray.map((item) => {
-        const promedio = promedioTiempoArray.find(
-            (p) => p.empleado === item.empleado
-        );
-        
-        const productividad = promedio
-            ? (item.tareasCompletadas / promedio.promedioTiempo).toFixed(1)
-            : 0;
-        return {
-            empleado: item.empleado,
-            tareasCompletadas: item.tareasCompletadas,
-            promedioTiempo: promedio ? promedio.promedioTiempo : 0,
-            productividad: parseFloat(productividad),
-        };
-    });
-
     //informe de tiempo 
     const calcularDias = (inicio, fin) => {
         const i = new Date(inicio);
@@ -336,28 +236,6 @@ const Reportes = () => {
                 retrasada
             };
         });
-
-    //informe de avance de tareas
-    const empleados = [...new Set(
-        tareas
-            .filter(t =>
-                (!filterDepartamento || t.departamento === filterDepartamento) &&
-                (!filterEmpleado || t.empleado === filterEmpleado)
-            )
-            .map(t => t.empleado)
-    )];
-
-    const resumen = empleados.map(empleado => {
-        const tareasEmpleado = tareas.filter(t =>
-            t.empleado === empleado &&
-            t.fecha_pactada >= startDate && t.fecha_pactada <= endDate &&
-            (!filterDepartamento || t.departamento === filterDepartamento)
-        );
-        const total = tareasEmpleado.length;
-        const completadas = tareasEmpleado.filter(t => t.estado === "Completada").length;
-        const porcentaje = total > 0 ? ((completadas / total) * 100).toFixed(1) : 0;
-        return { empleado, total, completadas, porcentaje };
-    });
 
     const generarPDF = async (titulo) => {
         const element = document.querySelector('.modal-report');
@@ -436,6 +314,8 @@ const Reportes = () => {
     };
 
     const consultarTareas = () => {
+        setTareasCargando(true);
+        setTareasError(false);
         axiosInstance
             .get("/informes/tareas")
             .then((response) => {
@@ -449,7 +329,11 @@ const Reportes = () => {
                 setDepartamentos(departamentosUnicos);
                 setEstados(estadosUnicos);
             })
-            .catch((error) => console.error("Error fetching tasks:", error));
+            .catch((error) => {
+                console.error("Error al cargar las tareas:", error);
+                setTareasError(true);
+            })
+            .finally(() => setTareasCargando(false));
     }
 
     const consultarEficiencia = () => {
@@ -498,93 +382,6 @@ const Reportes = () => {
         const empleados   = [...new Set(tareas.map(t => t.empleado).filter(Boolean))];
         const areas       = [...new Set(tareas.map(t => t.departamento).filter(Boolean))];
         return { total, completadas, enProceso, pendientes, atrasadas, aTiempo, avance, empleados, areas };
-    };
-
-    const calcularInformeEjecutivo = () => {
-        const filtradas = tareas.filter(t =>
-            t.fecha_pactada >= startDate && t.fecha_pactada <= endDate &&
-            (!filterDepartamento || t.departamento === filterDepartamento) &&
-            (!filterEmpleado || t.empleado === filterEmpleado)
-        );
-
-        const totalCompletadas = filtradas.filter(t => t.estado === 'Completada').length;
-        const totalEnProceso = filtradas.filter(t => t.estado === 'En Proceso').length;
-        const totalPendientes = filtradas.filter(t => t.estado === 'Pendiente').length;
-        const totalAtrasadas = filtradas.filter(t => t.vencida).length;
-
-        // Completadas por departamento
-        const porDept = filtradas.reduce((acc, t) => {
-            if (!t.departamento) return acc;
-            if (!acc[t.departamento]) acc[t.departamento] = { departamento: t.departamento, completadas: 0, total: 0 };
-            acc[t.departamento].total += 1;
-            if (t.estado === 'Completada') acc[t.departamento].completadas += 1;
-            return acc;
-        }, {});
-
-        const deptData = Object.values(porDept).map(d => ({
-            ...d,
-            porcentaje: d.total > 0 ? Math.round((d.completadas / d.total) * 100) : 0,
-        }));
-
-        // Eficiencia por empleado (completadas a tiempo / total completadas)
-        const porEmpleado = filtradas.reduce((acc, t) => {
-            if (!t.empleado) return acc;
-            if (!acc[t.empleado]) acc[t.empleado] = { empleado: t.empleado, completadasATiempo: 0, totalCompletadas: 0 };
-            if (t.estado === 'Completada') {
-                acc[t.empleado].totalCompletadas += 1;
-                if (t.fecha_entregada && t.fecha_pactada && t.fecha_entregada <= t.fecha_pactada) {
-                    acc[t.empleado].completadasATiempo += 1;
-                }
-            }
-            return acc;
-        }, {});
-
-        const eficienciaData = Object.values(porEmpleado).map(e => ({
-            empleado: e.empleado,
-            eficiencia: e.totalCompletadas > 0
-                ? Math.round((e.completadasATiempo / e.totalCompletadas) * 100)
-                : 0,
-        })).sort((a, b) => b.eficiencia - a.eficiencia);
-
-        return { totalCompletadas, totalEnProceso, totalPendientes, totalAtrasadas, deptData, eficienciaData };
-    };
-
-    const calcularInformeDepartamentos = () => {
-        const filtradas = tareas.filter(t =>
-            t.fecha_pactada >= startDate && t.fecha_pactada <= endDate &&
-            (!filterDepartamento || t.departamento === filterDepartamento) &&
-            (!filterEmpleado || t.empleado === filterEmpleado)
-        );
-
-        const porDept = filtradas.reduce((acc, t) => {
-            const dept = t.departamento || 'Sin departamento';
-            if (!acc[dept]) {
-                acc[dept] = {
-                    departamento: dept,
-                    total: 0, completadas: 0, enProceso: 0,
-                    pendientes: 0, atrasadas: 0,
-                    sumaEficiencia: 0, countEficiencia: 0,
-                };
-            }
-            acc[dept].total += 1;
-            if (t.estado === 'Completada') acc[dept].completadas += 1;
-            if (t.estado === 'En Proceso') acc[dept].enProceso += 1;
-            if (t.estado === 'Pendiente') acc[dept].pendientes += 1;
-            if (t.vencida) {
-                acc[dept].atrasadas += 1;
-            }
-            if (t.estado === 'Completada' && t.fecha_entregada && t.fecha_pactada) {
-                acc[dept].countEficiencia += 1;
-                if (t.fecha_entregada <= t.fecha_pactada) acc[dept].sumaEficiencia += 1;
-            }
-            return acc;
-        }, {});
-
-        return Object.values(porDept).map(d => ({
-            ...d,
-            porcentajeCompletado: d.total > 0 ? Math.round((d.completadas / d.total) * 100) : 0,
-            eficiencia: d.countEficiencia > 0 ? Math.round((d.sumaEficiencia / d.countEficiencia) * 100) : 0,
-        })).sort((a, b) => b.porcentajeCompletado - a.porcentajeCompletado);
     };
 
     const calcularEficienciaOperativa = () => {
@@ -1217,25 +1014,9 @@ const Reportes = () => {
         setFilterDepartamento('');
     };
 
-    const abrirModalInformeProductividad = () => {
-        _resetFiltrosModal();
-        setSelectedReport("productividad");
-        setShowReportModal(true);
-        setActiveTab("tareasCompletadas");
-        consultarTareas();
-    };
-
     const abrirModalInformeTiempo = () => {
         _resetFiltrosModal();
         setSelectedReport("tiempo");
-        setShowReportModal(true);
-        setActiveTab("promedioTiempo");
-        consultarTareas();
-    };
-
-    const abrirModalInformeAvance = () => {
-        _resetFiltrosModal();
-        setSelectedReport("avance");
         setShowReportModal(true);
         setActiveTab("promedioTiempo");
         consultarTareas();
@@ -1291,257 +1072,6 @@ const Reportes = () => {
                     ))}
                 </div>
             </div>
-
-            {showReportModal && selectedReport === "productividad" && (
-                <div className="modal-overlay">
-                    <div className="modal-report">
-                        <div className="modal-header">
-                            <h2>Informe de Productividad</h2>
-                            <div className="header-actions">
-                                <button className="pdf-button" onClick={() => generarPDF('Informe de Productividad')} disabled={pdfLoading}>
-                                    <FaFilePdf /> {pdfLoading ? '...' : 'PDF'}
-                                </button>
-                                <button className="close-button" onClick={() => setShowReportModal(false)}>
-                                    <FaTimes />
-                                </button>
-                            </div>
-                        </div>
-                        <div className="tab-buttons">
-                            <button
-                                onClick={() =>
-                                    setActiveTab("tareasCompletadas")
-                                }
-                                className={`tab-button ${activeTab === "tareasCompletadas"
-                                    ? "active"
-                                    : ""
-                                    }`}
-                            >
-                                Tareas Completadas
-                            </button>
-                            <button
-                                onClick={() => setActiveTab("promedioTiempo")}
-                                className={`tab-button ${activeTab === "promedioTiempo"
-                                    ? "active"
-                                    : ""
-                                    }`}
-                            >
-                                Promedio por Tarea
-                            </button>
-                            <button
-                                onClick={() => setActiveTab("comparativo")}
-                                className={`tab-button ${activeTab === "comparativo" ? "active" : ""
-                                    }`}
-                            >
-                                Comparativo
-                            </button>
-                        </div>
-                        <div className="tab-content">
-                            <div className="eficiencia-filtros">
-                                <RangosFecha startDate={startDate} setStartDate={setStartDate} endDate={endDate} setEndDate={setEndDate} />
-                                <label className="eficiencia-filtro-label">
-                                    Área
-                                    <select className="eficiencia-filtro-input" value={filterDepartamento} onChange={e => { setFilterDepartamento(e.target.value); setFilterEmpleado(''); }}>
-                                        <option value="">Todas</option>
-                                        {departamentos.map(d => <option key={d} value={d}>{d}</option>)}
-                                    </select>
-                                </label>
-                                <label className="eficiencia-filtro-label">
-                                    Empleado
-                                    <select className="eficiencia-filtro-input" value={filterEmpleado} onChange={e => setFilterEmpleado(e.target.value)}>
-                                        <option value="">Todos</option>
-                                        {(filterDepartamento ? [...new Set(tareas.filter(t => t.departamento === filterDepartamento).map(t => t.empleado))] : empleadosList).sort().map(emp => <option key={emp} value={emp}>{emp}</option>)}
-                                    </select>
-                                </label>
-                                <button className="eficiencia-filtro-clear" onClick={() => { setFilterDepartamento(''); setFilterEmpleado(''); }}>Limpiar</button>
-                            </div>
-
-                            {activeTab === "tareasCompletadas" && (
-                                <>
-                                    <table className="table-productivity">
-                                        <thead className="table-productivity-thead">
-                                            <tr>
-                                                <th>Empleado</th>
-                                                <th>Tareas completadas</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {tareasCompletadasArray.map(
-                                                (item, i) => (
-                                                    <tr key={i}>
-                                                        <td>{item.empleado}</td>
-                                                        <td>
-                                                            {
-                                                                item.tareasCompletadas
-                                                            }
-                                                        </td>
-                                                    </tr>
-                                                )
-                                            )}
-                                        </tbody>
-                                    </table>
-                                    <ResponsiveContainer
-                                        width="100%"
-                                        height={300}
-                                        style={{ textTransform: "capitalize" }}
-                                    >
-                                        <BarChart
-                                            data={tareasCompletadasArray}
-                                            margin={{
-                                                top: 20,
-                                                right: 30,
-                                                left: 0,
-                                                bottom: 5,
-                                            }}
-                                        >
-                                            <CartesianGrid strokeDasharray="3 3" />
-                                            <XAxis dataKey="empleado" />
-                                            <YAxis />
-                                            <Tooltip />
-                                            <Legend />
-                                            <Bar
-                                                dataKey="tareasCompletadas"
-                                                fill="#2b60e5"
-                                                className="bar-productivity"
-                                                name="Tareas Completadas"
-                                            />
-                                        </BarChart>
-                                    </ResponsiveContainer>
-                                </>
-                            )}
-
-                            {activeTab === "promedioTiempo" && (
-                                <>
-                                    <table className="table-productivity">
-                                        <thead className="table-productivity-thead">
-                                            <tr>
-                                                <th>Empleado</th>
-                                                <th>
-                                                    Promedio por tarea (hrs)
-                                                </th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {promedioTiempoArray.map(
-                                                (item, i) => (
-                                                    <tr key={i}>
-                                                        <td>{item.empleado}</td>
-                                                        <td>
-                                                            {
-                                                                item.promedioTiempo
-                                                            }
-                                                        </td>
-                                                    </tr>
-                                                )
-                                            )}
-                                        </tbody>
-                                    </table>
-
-                                    <ResponsiveContainer
-                                        width="100%"
-                                        height={500}
-                                        style={{ textTransform: "capitalize" }}
-                                    >
-                                        <LineChart
-                                            data={promedioTiempoArray}
-                                            margin={{
-                                                top: 20,
-                                                right: 30,
-                                                left: 0,
-                                                bottom: 5,
-                                            }}
-                                        >
-                                            <CartesianGrid strokeDasharray="3 3" />
-                                            <XAxis dataKey="empleado" />
-                                            <YAxis />
-                                            <Tooltip />
-                                            <Legend />
-                                            <Line
-                                                type="monotone"
-                                                dataKey="promedioTiempo"
-                                                stroke="#2b60e5"
-                                                name="Promedio por tarea"
-                                            />
-                                        </LineChart>
-                                    </ResponsiveContainer>
-                                </>
-                            )}
-
-                            {activeTab === "comparativo" && (
-                                <>
-                                    <table className="table-productivity">
-                                        <thead className="table-productivity-thead">
-                                            <tr>
-                                                <th>Empleado</th>
-                                                <th>Tareas completadas</th>
-                                                <th>Promedio (hrs)</th>
-                                                <th>Productividad</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {comparativoArray.map((item, i) => {
-                                                const productividad = (
-                                                    item.tareasCompletadas /
-                                                    item.promedioTiempo
-                                                ).toFixed(1);
-                                                return (
-                                                    <tr key={i}>
-                                                        <td
-                                                            style={{
-                                                                textTransform:
-                                                                    "capitalize",
-                                                            }}
-                                                        >
-                                                            {item.empleado}
-                                                        </td>
-                                                        <td>
-                                                            {
-                                                                item.tareasCompletadas
-                                                            }
-                                                        </td>
-                                                        <td>
-                                                            {
-                                                                item.promedioTiempo
-                                                            }
-                                                        </td>
-                                                        <td>{productividad}</td>
-                                                    </tr>
-                                                );
-                                            })}
-                                        </tbody>
-                                    </table>
-
-                                    <ResponsiveContainer
-                                        width="100%"
-                                        height={300}
-                                        style={{ textTransform: "capitalize" }}
-                                    >
-                                        <BarChart
-                                            data={comparativoArray}
-                                            margin={{
-                                                top: 20,
-                                                right: 30,
-                                                left: 0,
-                                                bottom: 5,
-                                            }}
-                                        >
-                                            <CartesianGrid strokeDasharray="3 3" />
-                                            <XAxis dataKey="empleado" />
-                                            <YAxis />
-                                            <Tooltip />
-                                            <Legend />
-                                            <Bar
-                                                dataKey="productividad"
-                                                fill="#2b60e5"
-                                                name="Productividad"
-                                            />
-                                        </BarChart>
-                                    </ResponsiveContainer>
-                                </>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            )}
 
             {showReportModal && selectedReport === "tiempo" && (
                 <div className="modal-overlay">
@@ -1602,64 +1132,6 @@ const Reportes = () => {
                                     </tbody>
                                 </table>
                             </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {showReportModal && selectedReport === "avance" && (
-                <div className="modal-overlay">
-                    <div className="modal-report">
-                        <div className="modal-header">
-                            <h2>Informe de Avance</h2>
-                            <div className="header-actions">
-                                <button className="pdf-button" onClick={() => generarPDF('Informe de Avance')} disabled={pdfLoading}>
-                                    <FaFilePdf /> {pdfLoading ? '...' : 'PDF'}
-                                </button>
-                                <button className="close-button" onClick={() => setShowReportModal(false)}>
-                                    <FaTimes />
-                                </button>
-                            </div>
-                        </div>
-                        <div className="tab-content">
-                            <div className="eficiencia-filtros">
-                                <RangosFecha startDate={startDate} setStartDate={setStartDate} endDate={endDate} setEndDate={setEndDate} />
-                                <label className="eficiencia-filtro-label">
-                                    Área
-                                    <select className="eficiencia-filtro-input" value={filterDepartamento} onChange={e => { setFilterDepartamento(e.target.value); setFilterEmpleado(''); }}>
-                                        <option value="">Todas</option>
-                                        {departamentos.map(d => <option key={d} value={d}>{d}</option>)}
-                                    </select>
-                                </label>
-                                <label className="eficiencia-filtro-label">
-                                    Empleado
-                                    <select className="eficiencia-filtro-input" value={filterEmpleado} onChange={e => setFilterEmpleado(e.target.value)}>
-                                        <option value="">Todos</option>
-                                        {(filterDepartamento ? [...new Set(tareas.filter(t => t.departamento === filterDepartamento).map(t => t.empleado))] : empleadosList).sort().map(emp => <option key={emp} value={emp}>{emp}</option>)}
-                                    </select>
-                                </label>
-                                <button className="eficiencia-filtro-clear" onClick={() => { setFilterDepartamento(''); setFilterEmpleado(''); }}>Limpiar</button>
-                            </div>
-                            <table className="table-productivity">
-                                <thead className="table-productivity-thead">
-                                    <tr>
-                                        <th>Empleado</th>
-                                        <th>Tareas totales</th>
-                                        <th>Tareas completadas</th>
-                                        <th>Porcentaje de avance</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {resumen.map((item, i) => (
-                                        <tr key={i}>
-                                            <td>{item.empleado}</td>
-                                            <td>{item.total}</td>
-                                            <td>{item.completadas}</td>
-                                            <td>{Math.round(item.porcentaje)}%</td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
                         </div>
                     </div>
                 </div>
@@ -2030,187 +1502,20 @@ const Reportes = () => {
                 </div>
             )}
 
-            {showReportModal && selectedReport === "ejecutivo" && (() => {
-                const { totalCompletadas, totalEnProceso, totalPendientes, totalAtrasadas, deptData, eficienciaData } = calcularInformeEjecutivo();
-                return (
-                    <div className="modal-overlay">
-                        <div className="modal-report">
-                            <div className="modal-header">
-                                <h2>Informe Ejecutivo</h2>
-                                <div className="header-actions">
-                                    <button className="pdf-button" onClick={() => generarPDF('Informe Ejecutivo')} disabled={pdfLoading}>
-                                        <FaFilePdf /> {pdfLoading ? '...' : 'PDF'}
-                                    </button>
-                                    <button className="close-button" onClick={() => setShowReportModal(false)}>
-                                        <FaTimes />
-                                    </button>
-                                </div>
-                            </div>
-                            <div className="tab-content">
-                                <div className="eficiencia-filtros">
-                                    <RangosFecha startDate={startDate} setStartDate={setStartDate} endDate={endDate} setEndDate={setEndDate} />
-                                    <label className="eficiencia-filtro-label">
-                                        Área
-                                        <select className="eficiencia-filtro-input" value={filterDepartamento} onChange={e => { setFilterDepartamento(e.target.value); setFilterEmpleado(''); }}>
-                                            <option value="">Todas</option>
-                                            {departamentos.map(d => <option key={d} value={d}>{d}</option>)}
-                                        </select>
-                                    </label>
-                                    <label className="eficiencia-filtro-label">
-                                        Empleado
-                                        <select className="eficiencia-filtro-input" value={filterEmpleado} onChange={e => setFilterEmpleado(e.target.value)}>
-                                            <option value="">Todos</option>
-                                            {(filterDepartamento ? [...new Set(tareas.filter(t => t.departamento === filterDepartamento).map(t => t.empleado))] : empleadosList).sort().map(emp => <option key={emp} value={emp}>{emp}</option>)}
-                                        </select>
-                                    </label>
-                                    <button className="eficiencia-filtro-clear" onClick={() => { setFilterDepartamento(''); setFilterEmpleado(''); }}>Limpiar</button>
-                                </div>
-                                <div className="executive-kpis">
-                                    <div className="exec-kpi exec-kpi--green">
-                                        <span className="exec-kpi-number">{totalCompletadas}</span>
-                                        <span className="exec-kpi-label">Completadas</span>
-                                    </div>
-                                    <div className="exec-kpi exec-kpi--blue">
-                                        <span className="exec-kpi-number">{totalEnProceso}</span>
-                                        <span className="exec-kpi-label">En Proceso</span>
-                                    </div>
-                                    <div className="exec-kpi exec-kpi--orange">
-                                        <span className="exec-kpi-number">{totalPendientes}</span>
-                                        <span className="exec-kpi-label">Pendientes</span>
-                                    </div>
-                                    <div className="exec-kpi exec-kpi--red">
-                                        <span className="exec-kpi-number">{totalAtrasadas}</span>
-                                        <span className="exec-kpi-label">Atrasadas</span>
-                                    </div>
-                                </div>
-
-                                <h3 style={{ margin: '1.5rem 0 0.5rem', fontSize: '1rem', color: '#374151' }}>
-                                    Avance por Departamento
-                                </h3>
-                                <ResponsiveContainer width="100%" height={240}>
-                                    <BarChart data={deptData} margin={{ top: 5, right: 20, left: 0, bottom: 40 }}>
-                                        <CartesianGrid strokeDasharray="3 3" />
-                                        <XAxis dataKey="departamento" angle={-20} textAnchor="end" interval={0} tick={{ fontSize: 12 }} />
-                                        <YAxis domain={[0, 100]} tickFormatter={v => `${v}%`} />
-                                        <Tooltip formatter={(value) => `${value}%`} />
-                                        <Bar dataKey="porcentaje" fill="#0891b2" name="% Completado" radius={[4,4,0,0]} />
-                                    </BarChart>
-                                </ResponsiveContainer>
-
-                                <h3 style={{ margin: '1.5rem 0 0.5rem', fontSize: '1rem', color: '#374151' }}>
-                                    Eficiencia por Empleado (% entregado a tiempo)
-                                </h3>
-                                <ResponsiveContainer width="100%" height={240}>
-                                    <BarChart data={eficienciaData} margin={{ top: 5, right: 20, left: 0, bottom: 60 }}>
-                                        <CartesianGrid strokeDasharray="3 3" />
-                                        <XAxis dataKey="empleado" angle={-20} textAnchor="end" interval={0} tick={{ fontSize: 11 }} />
-                                        <YAxis domain={[0, 100]} tickFormatter={v => `${v}%`} />
-                                        <Tooltip formatter={(value) => `${value}%`} />
-                                        <Bar dataKey="eficiencia" fill="#0f766e" name="Eficiencia" radius={[4,4,0,0]} />
-                                    </BarChart>
-                                </ResponsiveContainer>
-                            </div>
-                        </div>
-                    </div>
-                );
-            })()}
-
-            {showReportModal && selectedReport === "departamentos" && (() => {
-                const deptData = calcularInformeDepartamentos();
-                return (
-                    <div className="modal-overlay">
-                        <div className="modal-report">
-                            <div className="modal-header">
-                                <h2>Informe por Departamento</h2>
-                                <div className="header-actions">
-                                    <button className="pdf-button" onClick={() => generarPDF('Informe por Departamento')} disabled={pdfLoading}>
-                                        <FaFilePdf /> {pdfLoading ? '...' : 'PDF'}
-                                    </button>
-                                    <button className="close-button" onClick={() => setShowReportModal(false)}>
-                                        <FaTimes />
-                                    </button>
-                                </div>
-                            </div>
-                            <div className="tab-content">
-                                <div className="eficiencia-filtros">
-                                    <RangosFecha startDate={startDate} setStartDate={setStartDate} endDate={endDate} setEndDate={setEndDate} />
-                                    <label className="eficiencia-filtro-label">
-                                        Área
-                                        <select className="eficiencia-filtro-input" value={filterDepartamento} onChange={e => { setFilterDepartamento(e.target.value); setFilterEmpleado(''); }}>
-                                            <option value="">Todas</option>
-                                            {departamentos.map(d => <option key={d} value={d}>{d}</option>)}
-                                        </select>
-                                    </label>
-                                    <label className="eficiencia-filtro-label">
-                                        Empleado
-                                        <select className="eficiencia-filtro-input" value={filterEmpleado} onChange={e => setFilterEmpleado(e.target.value)}>
-                                            <option value="">Todos</option>
-                                            {(filterDepartamento ? [...new Set(tareas.filter(t => t.departamento === filterDepartamento).map(t => t.empleado))] : empleadosList).sort().map(emp => <option key={emp} value={emp}>{emp}</option>)}
-                                        </select>
-                                    </label>
-                                    <button className="eficiencia-filtro-clear" onClick={() => { setFilterDepartamento(''); setFilterEmpleado(''); }}>Limpiar</button>
-                                </div>
-                                <h3 style={{ margin: '0 0 0.75rem', fontSize: '1rem', color: '#374151' }}>
-                                    Comparativa entre departamentos
-                                </h3>
-                                <ResponsiveContainer width="100%" height={260}>
-                                    <BarChart data={deptData} margin={{ top: 5, right: 20, left: 0, bottom: 50 }}>
-                                        <CartesianGrid strokeDasharray="3 3" />
-                                        <XAxis dataKey="departamento" angle={-30} textAnchor="end" interval={0} tick={{ fontSize: 11 }} />
-                                        <YAxis />
-                                        <Tooltip />
-                                        <Legend />
-                                        <Bar dataKey="completadas" fill="#16a34a" name="Completadas" radius={[3,3,0,0]} />
-                                        <Bar dataKey="enProceso" fill="#2563eb" name="En Proceso" radius={[3,3,0,0]} />
-                                        <Bar dataKey="pendientes" fill="#f97316" name="Pendientes" radius={[3,3,0,0]} />
-                                        <Bar dataKey="atrasadas" fill="#dc2626" name="Atrasadas" radius={[3,3,0,0]} />
-                                    </BarChart>
-                                </ResponsiveContainer>
-
-                                <table className="table-productivity" style={{ marginTop: '1.5rem' }}>
-                                    <thead className="table-productivity-thead">
-                                        <tr>
-                                            <th>Departamento</th>
-                                            <th>Total</th>
-                                            <th>Completadas</th>
-                                            <th>En Proceso</th>
-                                            <th>Pendientes</th>
-                                            <th>Atrasadas</th>
-                                            <th>% Avance</th>
-                                            <th>Eficiencia</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {deptData.map((d, i) => (
-                                            <tr key={i}>
-                                                <td>{d.departamento}</td>
-                                                <td>{d.total}</td>
-                                                <td style={{ color: '#16a34a', fontWeight: 600 }}>{d.completadas}</td>
-                                                <td style={{ color: '#2563eb' }}>{d.enProceso}</td>
-                                                <td style={{ color: '#f97316' }}>{d.pendientes}</td>
-                                                <td style={{ color: d.atrasadas > 0 ? '#dc2626' : 'inherit', fontWeight: d.atrasadas > 0 ? 600 : 400 }}>
-                                                    {d.atrasadas}
-                                                </td>
-                                                <td>
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                                        <div style={{ flex: 1, background: '#e5e7eb', borderRadius: 4, height: 8 }}>
-                                                            <div style={{ width: `${d.porcentajeCompletado}%`, background: '#0891b2', borderRadius: 4, height: 8 }} />
-                                                        </div>
-                                                        <span style={{ fontSize: '0.8rem', minWidth: 32 }}>{d.porcentajeCompletado}%</span>
-                                                    </div>
-                                                </td>
-                                                <td style={{ color: d.eficiencia >= 70 ? '#16a34a' : d.eficiencia >= 50 ? '#f97316' : '#dc2626', fontWeight: 600 }}>
-                                                    {d.eficiencia}%
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                );
-            })()}
+            {showReportModal && selectedReport === "ejecutivo" && (
+                <InformeEjecutivo
+                    tareas={tareas}
+                    cargando={tareasCargando}
+                    error={tareasError}
+                    startDate={startDate}
+                    setStartDate={setStartDate}
+                    endDate={endDate}
+                    setEndDate={setEndDate}
+                    onCerrar={() => setShowReportModal(false)}
+                    onPDF={generarPDF}
+                    pdfLoading={pdfLoading}
+                />
+            )}
 
             {showReportModal && selectedReport === "eficiencia" && (() => {
                 const empleados = calcularEficienciaOperativa();

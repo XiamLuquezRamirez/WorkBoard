@@ -1,0 +1,143 @@
+/* Informe Ejecutivo (prefijo ie-). */
+
+.ie-nota {
+    margin: 0.25rem 0 0.75rem;
+    font-size: 0.8rem;
+    color: #64748b;
+    line-height: 1.45;
+}
+.ie-nota b { color: #334155; font-weight: 600; }
+
+.ie-pestanas {
+    display: flex;
+    gap: 0.25rem;
+    border-bottom: 1px solid #e2e8f0;
+    margin-bottom: 1rem;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+}
+.ie-pestanas::-webkit-scrollbar { display: none; }
+.ie-pestanas button {
+    border: none;
+    background: none;
+    padding: 0.55rem 0.9rem;
+    font: inherit;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: #64748b;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+.ie-pestanas button.es-activa { color: #0f766e; border-bottom-color: #0f766e; }
+.ie-cuenta {
+    margin-left: 0.35rem;
+    padding: 0 0.4rem;
+    border-radius: 999px;
+    background: #f1f5f9;
+    color: #475569;
+    font-size: 0.72rem;
+}
+
+.ie-kpis {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+.ie-kpi {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    padding: 0.85rem 1rem;
+    border: 1px solid #e2e8f0;
+    border-top: 3px solid #2563eb;
+    border-radius: 10px;
+    background: #fff;
+}
+.ie-kpi--ok { border-top-color: #16a34a; }
+.ie-kpi--aviso { border-top-color: #f59e0b; }
+.ie-kpi--mal { border-top-color: #dc2626; }
+.ie-kpi-num { font-size: 1.7rem; font-weight: 700; color: #0f172a; line-height: 1.1; }
+.ie-kpi--mal .ie-kpi-num { color: #b91c1c; }
+.ie-kpi-tit { font-size: 0.78rem; font-weight: 600; color: #334155; }
+.ie-kpi-det { font-size: 0.74rem; color: #64748b; line-height: 1.35; }
+
+.ie-graficas {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 1rem;
+}
+.ie-grafica {
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 0.85rem 1rem 0.5rem;
+    background: #fff;
+    min-width: 0;
+}
+.ie-grafica h3 { margin: 0; font-size: 0.95rem; color: #0f172a; }
+.ie-sub { margin: 0.15rem 0 0.6rem; font-size: 0.76rem; color: #64748b; }
+
+.ie-vacio {
+    margin: 1rem 0;
+    padding: 1.25rem;
+    text-align: center;
+    color: #64748b;
+    background: #f8fafc;
+    border-radius: 10px;
+    font-size: 0.88rem;
+}
+
+.ie-tabla-caja { overflow-x: auto; }
+.ie-tabla { width: 100%; border-collapse: collapse; font-size: 0.84rem; }
+.ie-tabla th {
+    text-align: left;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: #64748b;
+    padding: 0.5rem 0.6rem;
+    border-bottom: 1px solid #e2e8f0;
+    white-space: nowrap;
+}
+.ie-tabla td { padding: 0.55rem 0.6rem; border-bottom: 1px solid #f1f5f9; color: #334155; }
+.ie-tabla .num { text-align: right; white-space: nowrap; }
+.ie-fila-accion { cursor: pointer; }
+.ie-fila-accion:hover td { background: #f8fafc; }
+.ie-nombre { text-transform: capitalize; }
+.ie-inactiva {
+    margin-left: 0.4rem;
+    padding: 0.05rem 0.45rem;
+    border-radius: 999px;
+    background: #f1f5f9;
+    color: #64748b;
+    font-size: 0.7rem;
+    font-weight: 600;
+}
+.ie-rojo { color: #b91c1c; font-weight: 700; }
+.ie-grave { color: #b91c1c; }
+.ie-nulo { color: #94a3b8; }
+
+.ie-pct { display: inline-flex; align-items: center; gap: 0.45rem; white-space: nowrap; font-weight: 600; }
+.ie-pct-barra {
+    display: inline-block;
+    width: 56px;
+    height: 6px;
+    border-radius: 999px;
+    background: #e2e8f0;
+    overflow: hidden;
+}
+.ie-pct-barra span { display: block; height: 100%; border-radius: 999px; }
+.ie-pct--ok { color: #15803d; }
+.ie-pct--ok .ie-pct-barra span { background: #16a34a; }
+.ie-pct--medio { color: #b45309; }
+.ie-pct--medio .ie-pct-barra span { background: #f59e0b; }
+.ie-pct--mal { color: #b91c1c; }
+.ie-pct--mal .ie-pct-barra span { background: #dc2626; }
+
+/* Los estilos generales de los informes centran las celdas: aquí no. */
+.modal-report .ie-tabla th,
+.modal-report .ie-tabla td { text-align: left; }
+.modal-report .ie-tabla .num { text-align: right; }
