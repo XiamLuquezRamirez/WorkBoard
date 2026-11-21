@@ -104,6 +104,22 @@ export default function Chat() {
         return () => { vivo = false; };
     }, [activa]);
 
+    /**
+     * Agrega mensajes nuevos sin repetir ninguno. Al enviar se piden los
+     * nuevos y el sondeo puede salir a la vez con el mismo «desde»: los dos
+     * traían el mensaje recién enviado y se veía dos veces.
+     */
+    const agregarNuevos = (nuevos) => {
+        if (!nuevos?.length) return false;
+        ultimoRef.current = Math.max(ultimoRef.current || 0, ...nuevos.map((m) => m.id));
+        setConversacion((c) => {
+            const vistos = new Set(c.mensajes.map((m) => m.id));
+            const frescos = nuevos.filter((m) => !vistos.has(m.id));
+            return frescos.length ? { ...c, mensajes: [...c.mensajes, ...frescos] } : c;
+        });
+        return true;
+    };
+
     // Sondeo: sólo lo nuevo, y sólo mientras hay una conversación abierta.
     useEffect(() => {
         if (!activa) return undefined;
@@ -115,12 +131,7 @@ export default function Chat() {
                 params: { clave: activa, desde: ultimoRef.current || undefined },
             })
                 .then((r) => {
-                    const nuevos = r.data.mensajes || [];
-                    if (nuevos.length === 0) return;
-
-                    ultimoRef.current = nuevos[nuevos.length - 1].id;
-                    setConversacion((c) => ({ ...c, mensajes: [...c.mensajes, ...nuevos] }));
-                    cargarCanales();
+                    if (agregarNuevos(r.data.mensajes)) cargarCanales();
                 })
                 .catch(() => { /* un fallo puntual de red no rompe la vista */ });
         }, SONDEO_MS);
@@ -147,11 +158,7 @@ export default function Chat() {
                 });
             })
             .then((r) => {
-                const nuevos = r?.data?.mensajes || [];
-                if (nuevos.length === 0) return;
-                ultimoRef.current = nuevos[nuevos.length - 1].id;
-                setConversacion((c) => ({ ...c, mensajes: [...c.mensajes, ...nuevos] }));
-                cargarCanales();
+                if (agregarNuevos(r?.data?.mensajes)) cargarCanales();
             })
             .catch(() => { /* el mensaje no salió; el texto se conserva */ })
             .finally(() => setEnviando(false));
