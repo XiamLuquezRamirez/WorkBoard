@@ -42,6 +42,42 @@ class IndiceDesempenoTest extends TestCase
         return IndiceDesempeno::calcular(collect($tareas), $this->hoy);
     }
 
+    public function test_el_desglose_explica_la_nota_con_sus_propios_numeros(): void
+    {
+        // El ejemplo de la explicación del dashboard: 8 completadas (6 a
+        // tiempo, 1 con reproceso), 2 vencidas y 3 abiertas que aún no vencen.
+        $tareas = [];
+        for ($i = 0; $i < 8; $i++) {
+            $tareas[] = $this->t([
+                'estado' => 'Completada', 'fecha_pactada' => '2026-11-01',
+                'fecha_entregada' => $i < 6 ? '2026-10-30' : '2026-11-05',
+                'rechazada' => $i === 0 ? 1 : 0,
+            ]);
+        }
+        $tareas[] = $this->t(['estado' => 'Pendiente', 'fecha_pactada' => '2026-11-10']);
+        $tareas[] = $this->t(['estado' => 'En Proceso', 'fecha_pactada' => '2026-11-12']);
+        for ($i = 0; $i < 3; $i++) {
+            $tareas[] = $this->t(['estado' => 'En Proceso', 'fecha_pactada' => '2026-11-30']);
+        }
+
+        $r = $this->calcular($tareas);
+
+        $this->assertSame(81, $r['indice']);
+        $d = collect($r['desglose'])->keyBy('factor');
+        $this->assertSame([8, 10, 32.0], [$d['completitud']['parte'], $d['completitud']['de'], $d['completitud']['puntos']]);
+        $this->assertSame([6, 8, 18.8], [$d['puntualidad']['parte'], $d['puntualidad']['de'], $d['puntualidad']['puntos']]);
+        $this->assertSame([11, 13, 16.9], [$d['vigencia']['parte'], $d['vigencia']['de'], $d['vigencia']['puntos']]);
+        $this->assertSame([7, 8, 13.1], [$d['calidad']['parte'], $d['calidad']['de'], $d['calidad']['puntos']]);
+        $this->assertSame(100, array_sum(IndiceDesempeno::PESOS));
+    }
+
+    public function test_sin_nada_exigible_no_hay_desglose(): void
+    {
+        $r = $this->calcular([$this->t(['estado' => 'En Proceso', 'fecha_pactada' => '2026-11-30'])]);
+        $this->assertNull($r['indice']);
+        $this->assertNull($r['desglose']);
+    }
+
     public function test_un_historial_brillante_no_tapa_meses_sin_actividad(): void
     {
         // 60 entregas a tiempo hace un año y 2 tareas abandonadas hace 289 días.

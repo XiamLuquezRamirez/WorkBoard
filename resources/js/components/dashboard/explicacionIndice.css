@@ -1,0 +1,140 @@
+/* Explicación del Índice de Desempeño: la cuenta de la persona y la regla. */
+
+.ei-fondo {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    background: rgba(15, 23, 42, 0.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+}
+
+.ei-modal {
+    background: #fff;
+    border-radius: 14px;
+    width: min(640px, 100%);
+    max-height: calc(100vh - 32px);
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+    overflow: hidden;
+}
+
+.ei-cab {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem 1.25rem 0.75rem;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.ei-cab h2 { margin: 0; font-size: 1.05rem; color: #0f172a; }
+.ei-cab p { margin: 0.25rem 0 0; font-size: 0.82rem; color: #64748b; text-transform: capitalize; }
+
+.ei-cerrar {
+    border: none;
+    background: none;
+    color: #64748b;
+    font-size: 1.1rem;
+    cursor: pointer;
+    align-self: flex-start;
+}
+
+.ei-cuerpo { padding: 0.5rem 1.25rem 1.25rem; overflow-y: auto; }
+
+.ei-bloque { padding: 0.75rem 0; border-bottom: 1px solid #f1f5f9; }
+.ei-bloque:last-child { border-bottom: none; }
+.ei-bloque h3 { margin: 0 0 0.5rem; font-size: 0.9rem; color: #0f172a; }
+.ei-bloque ul { margin: 0; padding-left: 1.1rem; color: #334155; font-size: 0.85rem; line-height: 1.5; }
+.ei-bloque p { margin: 0.25rem 0 0; font-size: 0.85rem; color: #334155; }
+.ei-suave { color: #64748b !important; font-size: 0.8rem !important; }
+
+.ei-propio {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 0.75rem 0.9rem;
+    margin-top: 0.5rem;
+}
+
+.ei-nota { color: #2563eb; }
+
+.ei-tabla { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+.ei-tabla th {
+    text-align: left;
+    color: #64748b;
+    font-weight: 600;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    padding: 0.3rem 0.4rem;
+    border-bottom: 1px solid #e2e8f0;
+    white-space: nowrap;
+    word-break: normal;
+}
+.ei-tabla td { padding: 0.4rem; border-bottom: 1px solid #eef2f7; color: #334155; }
+.ei-tabla tfoot td { border-bottom: none; font-weight: 600; color: #0f172a; }
+.ei-tabla th:last-child, .ei-tabla td:last-child { text-align: right; white-space: nowrap; }
+
+.ei-factores { list-style: none; padding-left: 0 !important; display: grid; gap: 0.45rem; }
+.ei-factores li { display: flex; gap: 0.6rem; align-items: flex-start; }
+.ei-peso {
+    flex: 0 0 2.2rem;
+    text-align: center;
+    background: #eff6ff;
+    color: #1d4ed8;
+    border-radius: 6px;
+    font-weight: 700;
+    padding: 0.1rem 0;
+}
+
+.ei-niveles { list-style: none; padding-left: 0 !important; display: grid; gap: 0.3rem; }
+.ei-chip {
+    display: inline-block;
+    min-width: 6.5rem;
+    margin-right: 0.4rem;
+    padding: 0.05rem 0.5rem;
+    border-radius: 999px;
+    background: #f1f5f9;
+    color: #475569;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+.ei-alto { background: #dcfce7; color: #15803d; }
+.ei-medio { background: #fef3c7; color: #b45309; }
+.ei-bajo { background: #fee2e2; color: #b91c1c; }
+
+/* Botón «?» junto a los títulos del índice. */
+.ei-ayuda {
+    border: 1px solid #cbd5e1;
+    background: #fff;
+    color: #475569;
+    border-radius: 999px;
+    width: 1.2rem;
+    height: 1.2rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    line-height: 1;
+    cursor: pointer;
+    margin-left: 0.35rem;
+    vertical-align: middle;
+    padding: 0;
+}
+.ei-ayuda:hover { background: #eff6ff; color: #1d4ed8; border-color: #93c5fd; }
+
+.ei-ayuda-texto {
+    border: none;
+    background: none;
+    color: #2563eb;
+    cursor: pointer;
+    font: inherit;
+    padding: 0;
+    text-decoration: underline;
+}
+
+@media (max-width: 520px) {
+    .ei-col-tasa { display: none; }
+    .ei-chip { min-width: 5.5rem; }
+}

@@ -8,12 +8,12 @@
              y la API, en vez de llevar un host escrito a mano. --}}
         <meta name="asset-base" content="{{ rtrim(asset(''), '/') }}">
         <title>WorkBoard</title>
-        <link href="{{ asset('css/app.css') }}" rel="stylesheet">
+        <link href="{{ asset(ltrim(mix('css/app.css'), '/')) }}" rel="stylesheet">
         <!-- colocar favicon -->
         <link rel="icon" href="{{ asset('favicon.ico') }}">
     </head>
     <body>
         <div id="app"></div>
-        <script src="{{ asset('js/app.js') }}"></script>
+        <script src="{{ asset(ltrim(mix('js/app.js'), '/')) }}"></script>
     </body>
 </html>

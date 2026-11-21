@@ -48,6 +48,17 @@ final class IndiceDesempeno
 
     public const ZONA = 'America/Bogota';
 
+    /**
+     * Peso de cada factor (suman 100). El dashboard los muestra en la
+     * explicación del índice: cambiarlos aquí cambia también el texto.
+     */
+    public const PESOS = [
+        'completitud' => 40,
+        'puntualidad' => 25,
+        'vigencia'    => 20,
+        'calidad'     => 15,
+    ];
+
     private const EN_REVISION = 'En Revisión';
 
     public static function hoy(): CarbonImmutable
@@ -107,6 +118,7 @@ final class IndiceDesempeno
 
         $diasSinActividad = $ultima ? (int) CarbonImmutable::parse($ultima, self::ZONA)->diffInDays($hoy) : null;
 
+        $desglose = null;
         if ($exigibles === 0) {
             $indice = null;
         } else {
@@ -118,9 +130,37 @@ final class IndiceDesempeno
             $tasaCalidad = $nCompletadas > 0 ? 1 - min($reprocesos->count() / $nCompletadas, 1) : 0;
             $tasaVigencia = 1 - min($nVencidas / max($asignadas, 1), 1);
 
-            $indice = (int) max(0, min(100, round(
-                $tasaCompletitud * 40 + $tasaPuntualidad * 25 + $tasaVigencia * 20 + $tasaCalidad * 15
-            )));
+            $tasas = [
+                'completitud' => $tasaCompletitud,
+                'puntualidad' => $tasaPuntualidad,
+                'vigencia'    => $tasaVigencia,
+                'calidad'     => $tasaCalidad,
+            ];
+            $total = 0.0;
+            foreach ($tasas as $factor => $tasa) {
+                $total += $tasa * self::PESOS[$factor];
+            }
+            $indice = (int) max(0, min(100, round($total)));
+
+            // Cada factor con su cuenta, para explicar la nota en el
+            // dashboard con los mismos números que la producen.
+            $cuentas = [
+                'completitud' => [$nCompletadas, $exigibles],
+                'puntualidad' => [$aTiempo->count(), $nCompletadas],
+                'vigencia'    => [$asignadas - $nVencidas, $asignadas],
+                'calidad'     => [$nCompletadas - $reprocesos->count(), $nCompletadas],
+            ];
+            $desglose = [];
+            foreach ($tasas as $factor => $tasa) {
+                $desglose[] = [
+                    'factor' => $factor,
+                    'peso'   => self::PESOS[$factor],
+                    'tasa'   => round($tasa, 4),
+                    'puntos' => round($tasa * self::PESOS[$factor], 1),
+                    'parte'  => max(0, $cuentas[$factor][0]),
+                    'de'     => $cuentas[$factor][1],
+                ];
+            }
         }
 
         $nivel = match (true) {
@@ -160,6 +200,7 @@ final class IndiceDesempeno
 
         $datos = [
             'indice'             => $indice,
+            'desglose'           => $desglose,
             'nivel'              => $nivel,
             'ventana_dias'       => self::VENTANA_DIAS,
             'asignadas'          => $asignadas,

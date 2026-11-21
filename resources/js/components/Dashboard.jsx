@@ -30,6 +30,7 @@ import { FaCircleCheck, FaCircle, FaCircleXmark } from 'react-icons/fa6';
 import FormularioTarea from './tareas/FormularioTarea';
 import PanoramaDashboard from './dashboard/PanoramaDashboard';
 import ResolverVencidas from './dashboard/ResolverVencidas';
+import ExplicacionIndice from './dashboard/ExplicacionIndice';
 import { AvataresProvider, useAvatar, resolverFoto } from './tablero/AvataresContext';
 
 /**
@@ -448,6 +449,8 @@ const Dashboard = () => {
     const [filtro, setFiltro] = useState('todos');
     // Resolver vencidas: { departamento } o { empleado: { id, nombre } }.
     const [resolver, setResolver] = useState(null);
+    // Explicación del índice: { nombre, indicadores } de una persona o {} general.
+    const [explicacion, setExplicacion] = useState(null);
     // Por defecto, lo que necesita atención arriba: antes las tarjetas no
     // tenían un orden útil y había que recorrerlas todas para encontrarlo.
     const [orden, setOrden] = useState('atencion');
@@ -793,6 +796,10 @@ const Dashboard = () => {
                                                     : `${stats.completadas30} entrega${stats.completadas30 === 1 ? '' : 's'}`}
                                                 {' · eficiencia 90 días: '}
                                                 {stats.eficienciaPromedio === null ? '—' : `${stats.eficienciaPromedio}%`}
+                                                {' · '}
+                                                <button type="button" className="ei-ayuda-texto" onClick={() => setExplicacion({})}>
+                                                    ¿cómo se calcula?
+                                                </button>
                                             </span>
                                         </div>
                                         <div
@@ -931,6 +938,13 @@ const Dashboard = () => {
                                                                 <span className="desempeno-title">
                                                                     Índice de Desempeño
                                                                     <small className="desempeno-ventana"> · últimos {ind.ventana_dias || 90} días</small>
+                                                                    <button
+                                                                        type="button"
+                                                                        className="ei-ayuda"
+                                                                        title="¿Cómo se calcula?"
+                                                                        aria-label={`Cómo se calcula el índice de ${empleado.nombre}`}
+                                                                        onClick={(e) => { e.stopPropagation(); setExplicacion({ nombre: empleado.nombre, indicadores: ind }); }}
+                                                                    >?</button>
                                                                 </span>
                                                                 <span className={`desempeno-badge desempeno-badge--${nivel}`}>{cls.label}</span>
                                                             </div>
@@ -1062,6 +1076,13 @@ const Dashboard = () => {
                     getStatusClass={getStatusClass}
                     getStatusIcon={getStatusIcon}
                     esSupervisor={user?.tipo_usuario === "Supervisor"}
+                />
+            )}
+            {explicacion && (
+                <ExplicacionIndice
+                    nombre={explicacion.nombre}
+                    indicadores={explicacion.indicadores}
+                    onCerrar={() => setExplicacion(null)}
                 />
             )}
             {resolver && (

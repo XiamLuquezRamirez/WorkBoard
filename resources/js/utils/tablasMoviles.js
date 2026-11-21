@@ -15,6 +15,9 @@ const MARCA = 'wb-tabla-movil';
 
 /** Pone data-label a las celdas de una tabla a partir de su cabecera. */
 function etiquetarTabla(tabla) {
+    // Tablas pequeñas que ya caben en un teléfono (p. ej. el desglose del
+    // índice) se quedan como tabla: marcadas con data-sin-movil.
+    if (tabla.hasAttribute('data-sin-movil')) return;
     const cabecera = tabla.tHead?.rows[tabla.tHead.rows.length - 1];
     if (!cabecera) return;
 
