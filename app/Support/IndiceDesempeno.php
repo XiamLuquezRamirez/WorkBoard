@@ -74,11 +74,13 @@ final class IndiceDesempeno
      *                                    comentarios…), que las fechas de la tarea
      *                                    no recogen
      */
-    public static function calcular(Collection $tareas, ?CarbonImmutable $hoy = null, ?string $ultimoEvento = null): array
+    public static function calcular(Collection $tareas, ?CarbonImmutable $hoy = null, ?string $ultimoEvento = null, ?int $ventanaDias = null): array
     {
         $hoy ??= self::hoy();
         $hoyTxt = $hoy->toDateString();
-        $desde = $hoy->subDays(self::VENTANA_DIAS)->toDateString();
+        // El dashboard usa 90 días; el informe de Desempeño deja elegir.
+        $ventanaDias = $ventanaDias ?: self::VENTANA_DIAS;
+        $desde = $hoy->subDays($ventanaDias)->toDateString();
 
         $fecha = fn ($v) => self::fechaValida($v);
 
@@ -200,7 +202,7 @@ final class IndiceDesempeno
             'indice'             => $indice,
             'desglose'           => $desglose,
             'nivel'              => $nivel,
-            'ventana_dias'       => self::VENTANA_DIAS,
+            'ventana_dias'       => $ventanaDias,
             'asignadas'          => $asignadas,
             'abiertas'           => $abiertas->count(),
             'en_proceso'         => $abiertas->where('estado', 'En Proceso')->count(),

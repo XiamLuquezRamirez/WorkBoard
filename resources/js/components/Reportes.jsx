@@ -30,6 +30,7 @@ import {
 } from "recharts";
 import Sidebar from "./Sidebar";
 import InformeEjecutivo from "./reportes/InformeEjecutivo";
+import InformeDesempeno from "./reportes/InformeDesempeno";
 import * as XLSX from 'xlsx';
 
 /**
@@ -82,12 +83,6 @@ const Reportes = () => {
     const [filterAtrasadas, setFilterAtrasadas] = useState(false);
     const [empleadosList, setEmpleadosList] = useState([]);
     const [departamentos, setDepartamentos] = useState([]);
-    const [datosEficiencia, setDatosEficiencia] = useState([]);
-    const [loadingEficiencia, setLoadingEficiencia] = useState(false);
-    const [eficienciaStart, setEficienciaStart] = useState('');
-    const [eficienciaEnd, setEficienciaEnd] = useState('');
-    const [eficienciaFilterArea, setEficienciaFilterArea] = useState('');
-    const [eficienciaFilterEmpleado, setEficienciaFilterEmpleado] = useState('');
     const [estados, setEstados] = useState([]);
     const [datosProyectos, setDatosProyectos] = useState([]);
     const [loadingProyectos, setLoadingProyectos] = useState(false);
@@ -153,14 +148,13 @@ const Reportes = () => {
         },
         {
             id: 7,
-            title: "Eficiencia Operativa",
+            title: "Desempeño",
             icon: <FaChartArea size={25} />,
-            description: "Ranking de eficiencia por empleado y área",
+            description: "Índice de Desempeño por persona y área, con periodo a elegir",
             color: "#1d4ed8",
             onClick: () => {
-                setSelectedReport("eficiencia");
+                setSelectedReport("desempeno");
                 setShowReportModal(true);
-                consultarEficiencia();
             },
         },
         {
@@ -336,14 +330,6 @@ const Reportes = () => {
             .finally(() => setTareasCargando(false));
     }
 
-    const consultarEficiencia = () => {
-        setLoadingEficiencia(true);
-        axiosInstance.get('/informes/eficiencia')
-            .then(res => setDatosEficiencia(res.data))
-            .catch(err => console.error('Error cargando eficiencia:', err))
-            .finally(() => setLoadingEficiencia(false));
-    };
-
     const consultarProyectos = () => {
         setLoadingProyectos(true);
         axiosInstance.get('/informes/proyectos')
@@ -382,62 +368,6 @@ const Reportes = () => {
         const empleados   = [...new Set(tareas.map(t => t.empleado).filter(Boolean))];
         const areas       = [...new Set(tareas.map(t => t.departamento).filter(Boolean))];
         return { total, completadas, enProceso, pendientes, atrasadas, aTiempo, avance, empleados, areas };
-    };
-
-    const calcularEficienciaOperativa = () => {
-        const filtradas = datosEficiencia.filter(t =>
-            (!eficienciaStart || t.fecha_pactada >= eficienciaStart) &&
-            (!eficienciaEnd   || t.fecha_pactada <= eficienciaEnd) &&
-            (!eficienciaFilterArea || t.departamento === eficienciaFilterArea) &&
-            (!eficienciaFilterEmpleado || t.nombre_empleado === eficienciaFilterEmpleado)
-        );
-
-        const porEmpleado = filtradas.reduce((acc, t) => {
-            const key = t.nombre_empleado;
-            if (!acc[key]) acc[key] = {
-                nombre: t.nombre_empleado,
-                cargo: t.cargo,
-                departamento: t.departamento,
-                total: 0, completadas: 0, aTiempo: 0, reprocesos: 0
-            };
-            acc[key].total++;
-            if (t.estado === 'Completada') acc[key].completadas++;
-            if (t.a_tiempo === true)
-                acc[key].aTiempo++;
-            if (t.rechazada == 1) acc[key].reprocesos++;
-            return acc;
-        }, {});
-
-    
-        return Object.values(porEmpleado).map(emp => {
-            const score = emp.total > 0
-                ? (emp.completadas / emp.total) * 0.4
-                  + (emp.aTiempo / emp.total) * 0.3
-                  + ((emp.total - emp.reprocesos) / emp.total) * 0.3
-                : 0;
-            const scoreRound = Math.round(score * 100) / 100;
-            const nivel = scoreRound >= 0.75 ? '🟢 Alto' : scoreRound >= 0.50 ? '🟡 Medio' : '🔴 Crítico';
-            return { ...emp, score: scoreRound, nivel };
-        }).sort((a, b) => b.score - a.score);
-    };
-
-    const calcularDeptEficiencia = (empleados) => {
-        const porDept = empleados.reduce((acc, emp) => {
-            const d = emp.departamento || 'Sin área';
-            if (!acc[d]) acc[d] = { departamento: d, count: 0, sumaScore: 0, empleadosList: [] };
-            acc[d].count++;
-            acc[d].sumaScore += emp.score;
-            acc[d].empleadosList.push(emp);
-            return acc;
-        }, {});
-        return Object.values(porDept).map(d => {
-            const avg = Math.round((d.sumaScore / d.count) * 100) / 100;
-            return {
-                ...d,
-                scorePromedio: avg,
-                nivel: avg >= 0.75 ? '🟢 Alto' : avg >= 0.50 ? '🟡 Medio' : '🔴 Crítico'
-            };
-        }).sort((a, b) => b.scorePromedio - a.scorePromedio);
     };
 
     // Función para generar datos de tareas por empleado
@@ -636,190 +566,6 @@ const Reportes = () => {
         printWindow.document.write(htmlContent);
         printWindow.document.close();
         printWindow.print();
-    };
-
-    const imprimirEficienciaGeneral = (empleados, deptos) => {
-        const hoy = new Date().toLocaleDateString();
-        let html = `<html><head><style>
-            body{font-family:Arial,sans-serif;margin:20px;font-size:13px}
-            h1{color:#1d4ed8;text-align:center}
-            h2{color:#374151;margin-top:24px;font-size:15px}
-            table{width:100%;border-collapse:collapse;margin-top:8px}
-            th,td{border:1px solid #d1d5db;padding:6px 8px;text-align:left}
-            th{background:#f3f4f6;font-weight:600}
-            .kpis{display:flex;gap:12px;margin:12px 0;flex-wrap:wrap}
-            .kpi{border:1px solid #e5e7eb;border-radius:6px;padding:8px 14px;min-width:100px}
-            .kpi strong{display:block;font-size:20px}
-            .alert{background:#fef2f2;border:1px solid #fecaca;padding:6px 10px;border-radius:4px;margin:4px 0}
-            .ok{background:#f0fdf4;border:1px solid #bbf7d0;padding:6px 10px;border-radius:4px;margin:4px 0}
-            .info{background:#eff6ff;border:1px solid #bfdbfe;padding:6px 10px;border-radius:4px;margin:4px 0}
-        </style></head><body>
-        <h1>Informe de Eficiencia Operativa</h1>
-        <p style="text-align:center;color:#6b7280">Período: ${eficienciaStart || 'Todo'} — ${eficienciaEnd || 'Todo'} | Generado: ${hoy}</p>`;
-
-        const alto = empleados.filter(e => e.score >= 0.75).length;
-        const medio = empleados.filter(e => e.score >= 0.50 && e.score < 0.75).length;
-        const critico = empleados.filter(e => e.score < 0.50).length;
-        const promedio = empleados.length > 0
-            ? Math.round(empleados.reduce((s, e) => s + e.score, 0) / empleados.length * 100) : 0;
-
-        html += `<h2>KPIs Globales</h2>
-        <div class="kpis">
-            <div class="kpi"><strong>${alto}</strong>🟢 Alto</div>
-            <div class="kpi"><strong>${medio}</strong>🟡 Medio</div>
-            <div class="kpi"><strong>${critico}</strong>🔴 Crítico</div>
-            <div class="kpi"><strong>${promedio}%</strong>Promedio global</div>
-        </div>
-        <h2>Ranking por Empleado</h2>
-        <table><thead><tr><th>#</th><th>Nombre</th><th>Cargo</th><th>Área</th><th>Nivel</th><th>Score</th><th>Completadas</th><th>A tiempo</th><th>Reprocesos</th></tr></thead><tbody>`;
-        empleados.forEach((emp, i) => {
-            html += `<tr><td>${i+1}</td><td>${esc(emp.nombre)}</td><td>${esc(emp.cargo)}</td><td>${esc(emp.departamento)}</td>
-                <td>${esc(emp.nivel)}</td><td>${emp.score.toFixed(2)}</td>
-                <td>${emp.completadas}/${emp.total}</td><td>${emp.aTiempo}</td><td>${emp.reprocesos}</td></tr>`;
-        });
-        html += `</tbody></table>
-        <h2>Resumen por Área</h2>
-        <table><thead><tr><th>Área</th><th>Empleados</th><th>Score Promedio</th><th>Nivel</th></tr></thead><tbody>`;
-        deptos.forEach(d => {
-            html += `<tr><td>${esc(d.departamento)}</td><td>${d.count}</td><td>${d.scorePromedio.toFixed(2)}</td><td>${d.nivel}</td></tr>`;
-        });
-        html += `</tbody></table><h2>Alertas</h2>`;
-        if (critico > 0) html += `<p class="alert">⚠ ${critico} empleado(s) en zona crítica: ${esc(empleados.filter(e=>e.score<0.50).map(e=>e.nombre).join(', '))}</p>`;
-        deptos.filter(d=>d.scorePromedio<0.60).forEach(d => {
-            html += `<p class="alert">⚠ Área ${esc(d.departamento)} con score ${d.scorePromedio.toFixed(2)}</p>`;
-        });
-        if (deptos.length > 0) html += `<p class="ok">✅ Mejor área: ${esc(deptos[0].departamento)} (${deptos[0].scorePromedio.toFixed(2)})</p>`;
-        html += `</body></html>`;
-
-        const win = window.open('', '_blank');
-        if (!win) { avisarVentanaBloqueada(); return; }
-        if (!win) return;
-        win.document.write(html);
-        win.document.close();
-        win.print();
-    };
-
-    const imprimirEficienciaPorEmpleado = (empleados) => {
-        const hoy = new Date().toLocaleDateString();
-        let html = `<html><head><style>
-            body{font-family:Arial,sans-serif;margin:20px;font-size:13px}
-            h1{color:#1d4ed8;text-align:center}
-            .emp-block{border:1px solid #e5e7eb;border-radius:6px;padding:14px;margin-bottom:16px;page-break-inside:avoid}
-            .emp-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-            .emp-name{font-size:15px;font-weight:700;color:#111827}
-            .emp-meta{color:#6b7280;font-size:12px}
-            .badge{padding:3px 8px;border-radius:99px;font-size:12px;font-weight:600}
-            .badge-alto{background:#dcfce7;color:#15803d}
-            .badge-medio{background:#ffedd5;color:#c2410c}
-            .badge-critico{background:#fee2e2;color:#b91c1c}
-            table{width:100%;border-collapse:collapse;margin-top:8px;font-size:12px}
-            th,td{border:1px solid #e5e7eb;padding:4px 8px}
-            th{background:#f9fafb}
-        </style></head><body>
-        <h1>Eficiencia Operativa — Por Empleado</h1>
-        <p style="text-align:center;color:#6b7280">Período: ${eficienciaStart || 'Todo'} — ${eficienciaEnd || 'Todo'} | Generado: ${hoy}</p>`;
-
-        empleados.forEach((emp, i) => {
-            const pctCompleto = emp.total > 0 ? Math.round(emp.completadas/emp.total*100) : 0;
-            const badgeClass = emp.score >= 0.75 ? 'badge-alto' : emp.score >= 0.50 ? 'badge-medio' : 'badge-critico';
-            html += `<div class="emp-block">
-                <div class="emp-header">
-                    <div>
-                        <div class="emp-name">${i+1}. ${esc(emp.nombre)}</div>
-                        <div class="emp-meta">${esc(emp.cargo)} · ${esc(emp.departamento)}</div>
-                    </div>
-                    <span class="badge ${badgeClass}">${esc(emp.nivel)} · Score ${emp.score.toFixed(2)}</span>
-                </div>
-                <table><thead><tr><th>Total tareas</th><th>Completadas</th><th>A tiempo</th><th>Reprocesos</th><th>% Completado</th></tr></thead>
-                <tbody><tr><td>${emp.total}</td><td>${emp.completadas}</td><td>${emp.aTiempo}</td><td>${emp.reprocesos}</td><td>${pctCompleto}%</td></tr></tbody>
-                </table>
-            </div>`;
-        });
-
-        html += `</body></html>`;
-        const win = window.open('', '_blank');
-        if (!win) { avisarVentanaBloqueada(); return; }
-        if (!win) return;
-        win.document.write(html);
-        win.document.close();
-        win.print();
-    };
-
-    const imprimirEficienciaPorArea = (deptos) => {
-        const hoy = new Date().toLocaleDateString();
-        let html = `<html><head><style>
-            body{font-family:Arial,sans-serif;margin:20px;font-size:13px}
-            h1{color:#1d4ed8;text-align:center}
-            .area-block{border:1px solid #e5e7eb;border-radius:6px;padding:14px;margin-bottom:20px;page-break-inside:avoid}
-            .area-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
-            .area-name{font-size:16px;font-weight:700;color:#111827}
-            .badge{padding:3px 10px;border-radius:99px;font-size:12px;font-weight:600}
-            .badge-alto{background:#dcfce7;color:#15803d}
-            .badge-medio{background:#ffedd5;color:#c2410c}
-            .badge-critico{background:#fee2e2;color:#b91c1c}
-            table{width:100%;border-collapse:collapse;font-size:12px}
-            th,td{border:1px solid #e5e7eb;padding:4px 8px}
-            th{background:#f9fafb}
-        </style></head><body>
-        <h1>Eficiencia Operativa — Por Área</h1>
-        <p style="text-align:center;color:#6b7280">Período: ${eficienciaStart || 'Todo'} — ${eficienciaEnd || 'Todo'} | Generado: ${hoy}</p>`;
-
-        deptos.forEach(dept => {
-            const badgeClass = dept.scorePromedio >= 0.75 ? 'badge-alto' : dept.scorePromedio >= 0.50 ? 'badge-medio' : 'badge-critico';
-            html += `<div class="area-block">
-                <div class="area-header">
-                    <div class="area-name">${esc(dept.departamento)} (${dept.count} empleados)</div>
-                    <span class="badge ${badgeClass}">${dept.nivel} · Score ${dept.scorePromedio.toFixed(2)}</span>
-                </div>
-                <table><thead><tr><th>#</th><th>Empleado</th><th>Cargo</th><th>Nivel</th><th>Score</th><th>Completadas</th><th>A tiempo</th><th>Reprocesos</th></tr></thead>
-                <tbody>`;
-            dept.empleadosList.forEach((emp, i) => {
-                const bc = emp.score >= 0.75 ? 'badge-alto' : emp.score >= 0.50 ? 'badge-medio' : 'badge-critico';
-                html += `<tr><td>${i+1}</td><td>${esc(emp.nombre)}</td><td>${esc(emp.cargo)}</td>
-                    <td><span class="badge ${bc}">${esc(emp.nivel)}</span></td>
-                    <td>${emp.score.toFixed(2)}</td>
-                    <td>${emp.completadas}/${emp.total}</td>
-                    <td>${emp.aTiempo}</td><td>${emp.reprocesos}</td></tr>`;
-            });
-            html += `</tbody></table></div>`;
-        });
-
-        html += `</body></html>`;
-        const win = window.open('', '_blank');
-        if (!win) { avisarVentanaBloqueada(); return; }
-        if (!win) return;
-        win.document.write(html);
-        win.document.close();
-        win.print();
-    };
-
-    const exportarEficienciaExcel = (empleados, deptos) => {
-        const wb = XLSX.utils.book_new();
-
-        const wsEmpleados = XLSX.utils.json_to_sheet(empleados.map((emp, i) => ({
-            '#': i + 1,
-            'Nombre': emp.nombre,
-            'Cargo': emp.cargo,
-            'Área': emp.departamento,
-            'Nivel': emp.nivel,
-            'Score': emp.score,
-            'Total tareas': emp.total,
-            'Completadas': emp.completadas,
-            'A tiempo': emp.aTiempo,
-            'Reprocesos': emp.reprocesos,
-            '% Completado': emp.total > 0 ? Math.round(emp.completadas/emp.total*100) + '%' : '0%'
-        })));
-        XLSX.utils.book_append_sheet(wb, wsEmpleados, 'Por Empleado');
-
-        const wsAreas = XLSX.utils.json_to_sheet(deptos.map(d => ({
-            'Área': d.departamento,
-            'Empleados': d.count,
-            'Score Promedio': d.scorePromedio,
-            'Nivel': d.nivel
-        })));
-        XLSX.utils.book_append_sheet(wb, wsAreas, 'Por Área');
-
-        XLSX.writeFile(wb, `eficiencia-operativa-${eficienciaStart || 'todo'}-${eficienciaEnd || 'todo'}.xlsx`);
     };
 
     const exportarExcel = () => {
@@ -1517,289 +1263,13 @@ const Reportes = () => {
                 />
             )}
 
-            {showReportModal && selectedReport === "eficiencia" && (() => {
-                const empleados = calcularEficienciaOperativa();
-                const deptos = calcularDeptEficiencia(empleados);
-                const alto = empleados.filter(e => e.score >= 0.75).length;
-                const medio = empleados.filter(e => e.score >= 0.50 && e.score < 0.75).length;
-                const critico = empleados.filter(e => e.score < 0.50).length;
-                const promedioGlobal = empleados.length > 0
-                    ? Math.round((empleados.reduce((s, e) => s + e.score, 0) / empleados.length) * 100)
-                    : 0;
-                const totalSum = empleados.reduce((s, e) => s + e.total, 0);
-                const pctATiempo = totalSum > 0
-                    ? Math.round(empleados.reduce((s, e) => s + e.aTiempo, 0) / totalSum * 100)
-                    : 0;
-                const pctReprocesos = totalSum > 0
-                    ? Math.round(empleados.reduce((s, e) => s + e.reprocesos, 0) / totalSum * 100)
-                    : 0;
-
-                return (
-                    <div className="modal-overlay">
-                        <div className="modal-report">
-                            <div className="modal-header">
-                                <h2>Informe de Eficiencia Operativa</h2>
-                                <div className="header-actions">
-                                    <button className="pdf-button" onClick={() => generarPDF('Informe de Eficiencia Operativa')} disabled={pdfLoading}>
-                                        <FaFilePdf /> {pdfLoading ? '...' : 'PDF'}
-                                    </button>
-                                    <button className="eficiencia-print-btn" onClick={() => imprimirEficienciaGeneral(empleados, deptos)}>
-                                        <FaPrint /> General
-                                    </button>
-                                    <button className="eficiencia-print-btn" onClick={() => imprimirEficienciaPorEmpleado(empleados)}>
-                                        <FaPrint /> Por Empleado
-                                    </button>
-                                    <button className="eficiencia-print-btn" onClick={() => imprimirEficienciaPorArea(deptos)}>
-                                        <FaPrint /> Por Área
-                                    </button>
-                                    <button className="excel-button" onClick={() => exportarEficienciaExcel(empleados, deptos)}>
-                                        <FaChartBar /> Excel
-                                    </button>
-                                    <button className="close-button" onClick={() => setShowReportModal(false)}>
-                                        <FaTimes />
-                                    </button>
-                                </div>
-                            </div>
-
-                            <div className="tab-content">
-                                {/* Filtros de fecha propios del informe */}
-                                <div className="eficiencia-filtros">
-                                    <label className="eficiencia-filtro-label">
-                                        Desde
-                                        <input
-                                            type="date"
-                                            className="eficiencia-filtro-input"
-                                            value={eficienciaStart}
-                                            onChange={e => setEficienciaStart(e.target.value)}
-                                        />
-                                    </label>
-                                    <label className="eficiencia-filtro-label">
-                                        Hasta
-                                        <input
-                                            type="date"
-                                            className="eficiencia-filtro-input"
-                                            value={eficienciaEnd}
-                                            onChange={e => setEficienciaEnd(e.target.value)}
-                                        />
-                                    </label>
-                                    <label className="eficiencia-filtro-label">
-                                        Área
-                                        <select
-                                            className="eficiencia-filtro-input"
-                                            value={eficienciaFilterArea}
-                                            onChange={e => { setEficienciaFilterArea(e.target.value); setEficienciaFilterEmpleado(''); }}
-                                        >
-                                            <option value="">Todas</option>
-                                            {[...new Set(datosEficiencia.map(t => t.departamento).filter(Boolean))].sort().map(d => (
-                                                <option key={d} value={d}>{d}</option>
-                                            ))}
-                                        </select>
-                                    </label>
-                                    <label className="eficiencia-filtro-label">
-                                        Empleado
-                                        <select
-                                            className="eficiencia-filtro-input"
-                                            value={eficienciaFilterEmpleado}
-                                            onChange={e => setEficienciaFilterEmpleado(e.target.value)}
-                                        >
-                                            <option value="">Todos</option>
-                                            {[...new Set(
-                                                datosEficiencia
-                                                    .filter(t => !eficienciaFilterArea || t.departamento === eficienciaFilterArea)
-                                                    .map(t => t.nombre_empleado)
-                                                    .filter(Boolean)
-                                            )].sort().map(n => (
-                                                <option key={n} value={n}>{n}</option>
-                                            ))}
-                                        </select>
-                                    </label>
-                                    <button
-                                        className="eficiencia-filtro-clear"
-                                        onClick={() => { setEficienciaStart(''); setEficienciaEnd(''); setEficienciaFilterArea(''); setEficienciaFilterEmpleado(''); }}
-                                    >
-                                        Limpiar
-                                    </button>
-                                    {loadingEficiencia && <span style={{ color: '#6b7280', fontSize: '0.85rem' }}>Cargando...</span>}
-                                </div>
-
-                                {/* Sección 1: KPIs Globales */}
-                                <div className="executive-kpis" style={{ marginBottom: '1.5rem' }}>
-                                    <div className="exec-kpi exec-kpi--green">
-                                        <span className="exec-kpi-number">{alto}</span>
-                                        <span className="exec-kpi-label">🟢 Alto</span>
-                                    </div>
-                                    <div className="exec-kpi exec-kpi--orange">
-                                        <span className="exec-kpi-number">{medio}</span>
-                                        <span className="exec-kpi-label">🟡 Medio</span>
-                                    </div>
-                                    <div className="exec-kpi exec-kpi--red">
-                                        <span className="exec-kpi-number">{critico}</span>
-                                        <span className="exec-kpi-label">🔴 Crítico</span>
-                                    </div>
-                                    <div className="exec-kpi exec-kpi--blue">
-                                        <span className="exec-kpi-number">{promedioGlobal}%</span>
-                                        <span className="exec-kpi-label">Eficiencia promedio</span>
-                                    </div>
-                                    <div className="exec-kpi" style={{ background: '#f0fdf4', border: '1px solid #bbf7d0' }}>
-                                        <span className="exec-kpi-number" style={{ color: '#16a34a' }}>{pctATiempo}%</span>
-                                        <span className="exec-kpi-label">A tiempo</span>
-                                    </div>
-                                    <div className="exec-kpi" style={{ background: '#fef2f2', border: '1px solid #fecaca' }}>
-                                        <span className="exec-kpi-number" style={{ color: '#dc2626' }}>{pctReprocesos}%</span>
-                                        <span className="exec-kpi-label">Reprocesos</span>
-                                    </div>
-                                </div>
-
-                                {/* Sección 2: Ranking por empleado */}
-                                <h3 style={{ margin: '0 0 0.75rem', fontSize: '1rem', color: '#374151' }}>
-                                    Ranking por Empleado
-                                </h3>
-                                <div style={{ overflowX: 'auto', marginBottom: '1.5rem' }}>
-                                    <table className="eficiencia-ranking-table">
-                                        <thead>
-                                            <tr>
-                                                <th>#</th>
-                                                <th>Nombre</th>
-                                                <th>Cargo</th>
-                                                <th>Área</th>
-                                                <th>Nivel</th>
-                                                <th>Score</th>
-                                                <th>Completadas</th>
-                                                <th>A tiempo</th>
-                                                <th>Reprocesos</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {empleados.map((emp, idx) => (
-                                                <tr key={emp.nombre} className={emp.score < 0.50 ? 'eficiencia-row-critico' : ''}>
-                                                    <td style={{ fontWeight: 700, color: '#6b7280' }}>{idx + 1}</td>
-                                                    <td style={{ fontWeight: 600 }}>{emp.nombre}</td>
-                                                    <td style={{ color: '#6b7280', fontSize: '0.85rem' }}>{emp.cargo}</td>
-                                                    <td style={{ color: '#6b7280', fontSize: '0.85rem' }}>{emp.departamento}</td>
-                                                    <td>
-                                                        <span className={`eficiencia-nivel-badge ${emp.score >= 0.75 ? 'badge-alto' : emp.score >= 0.50 ? 'badge-medio' : 'badge-critico'}`}>
-                                                            {emp.nivel}
-                                                        </span>
-                                                    </td>
-                                                    <td>
-                                                        <div className="eficiencia-score-bar-wrap">
-                                                            <div
-                                                                className="eficiencia-score-bar"
-                                                                style={{
-                                                                    width: `${emp.score * 100}%`,
-                                                                    background: emp.score >= 0.75 ? '#16a34a' : emp.score >= 0.50 ? '#f97316' : '#dc2626'
-                                                                }}
-                                                            />
-                                                            <span className="eficiencia-score-num">{emp.score.toFixed(2)}</span>
-                                                        </div>
-                                                    </td>
-                                                    <td style={{ textAlign: 'center' }}>{emp.completadas}/{emp.total}</td>
-                                                    <td style={{ textAlign: 'center' }}>{emp.aTiempo}</td>
-                                                    <td style={{ textAlign: 'center', color: emp.reprocesos > 0 ? '#dc2626' : '#16a34a' }}>
-                                                        {emp.reprocesos}
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-
-                                {/* Sección 3: Análisis por área */}
-                                <h3 style={{ margin: '0 0 0.75rem', fontSize: '1rem', color: '#374151' }}>
-                                    Análisis por Área
-                                </h3>
-                                <ResponsiveContainer width="100%" height={220}>
-                                    <BarChart data={deptos} margin={{ top: 5, right: 20, left: 0, bottom: 40 }}>
-                                        <CartesianGrid strokeDasharray="3 3" />
-                                        <XAxis dataKey="departamento" angle={-30} textAnchor="end" interval={0} tick={{ fontSize: 12 }} />
-                                        <YAxis domain={[0, 1]} tickFormatter={v => v.toFixed(1)} />
-                                        <Tooltip formatter={(v) => v.toFixed(2)} />
-                                        <Bar dataKey="scorePromedio" name="Score" radius={[4, 4, 0, 0]}>
-                                            {deptos.map((d) => (
-                                                <Cell
-                                                    key={d.departamento}
-                                                    fill={d.scorePromedio >= 0.75 ? '#16a34a' : d.scorePromedio >= 0.50 ? '#f97316' : '#dc2626'}
-                                                />
-                                            ))}
-                                        </Bar>
-                                    </BarChart>
-                                </ResponsiveContainer>
-                                <div style={{ overflowX: 'auto', marginBottom: '1.5rem' }}>
-                                    <table className="eficiencia-ranking-table">
-                                        <thead>
-                                            <tr>
-                                                <th>Área</th>
-                                                <th>Empleados</th>
-                                                <th>Score Promedio</th>
-                                                <th>Nivel</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {deptos.map(d => (
-                                                <tr key={d.departamento}>
-                                                    <td style={{ fontWeight: 600 }}>{d.departamento}</td>
-                                                    <td style={{ textAlign: 'center' }}>{d.count}</td>
-                                                    <td>
-                                                        <div className="eficiencia-score-bar-wrap">
-                                                            <div
-                                                                className="eficiencia-score-bar"
-                                                                style={{
-                                                                    width: `${d.scorePromedio * 100}%`,
-                                                                    background: d.scorePromedio >= 0.75 ? '#16a34a' : d.scorePromedio >= 0.50 ? '#f97316' : '#dc2626'
-                                                                }}
-                                                            />
-                                                            <span className="eficiencia-score-num">{d.scorePromedio.toFixed(2)}</span>
-                                                        </div>
-                                                    </td>
-                                                    <td>
-                                                        <span className={`eficiencia-nivel-badge ${d.scorePromedio >= 0.75 ? 'badge-alto' : d.scorePromedio >= 0.50 ? 'badge-medio' : 'badge-critico'}`}>
-                                                            {d.nivel}
-                                                        </span>
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-
-                                {/* Sección 4: Alertas e insights */}
-                                <h3 style={{ margin: '0 0 0.75rem', fontSize: '1rem', color: '#374151' }}>
-                                    Alertas e Insights
-                                </h3>
-                                <div className="eficiencia-insights">
-                                    {critico > 0 && (
-                                        <div className="insight-card insight-card--alert">
-                                            <strong>⚠ {critico} empleado{critico > 1 ? 's' : ''} en zona crítica:</strong>{' '}
-                                            {empleados.filter(e => e.score < 0.50).map(e => e.nombre).join(', ')}
-                                        </div>
-                                    )}
-                                    {deptos.filter(d => d.scorePromedio < 0.60).map(d => (
-                                        <div key={d.departamento} className="insight-card insight-card--alert">
-                                            ⚠ Área <strong>{d.departamento}</strong> con score promedio {d.scorePromedio.toFixed(2)} — requiere atención
-                                        </div>
-                                    ))}
-                                    {deptos.length > 0 && (
-                                        <div className="insight-card insight-card--ok">
-                                            ✅ Área con mejor desempeño: <strong>{deptos[0].departamento}</strong> (score {deptos[0].scorePromedio.toFixed(2)})
-                                        </div>
-                                    )}
-                                    <div className="insight-card insight-card--info">
-                                        📊 {pctATiempo}% de tareas entregadas a tiempo en el período
-                                    </div>
-                                    <div className="insight-card insight-card--info">
-                                        📊 Índice de reprocesos global: {pctReprocesos}%
-                                    </div>
-                                    {critico === 0 && deptos.filter(d => d.scorePromedio < 0.60).length === 0 && (
-                                        <div className="insight-card insight-card--ok">
-                                            ✅ Todos los empleados y áreas están en niveles aceptables o superiores
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                );
-            })()}
+            {showReportModal && selectedReport === "desempeno" && (
+                <InformeDesempeno
+                    onCerrar={() => setShowReportModal(false)}
+                    onPDF={generarPDF}
+                    pdfLoading={pdfLoading}
+                />
+            )}
 
             {showReportModal && selectedReport === "proyectos" && (() => {
                 const proyectosFiltrados = datosProyectos.filter(p => {

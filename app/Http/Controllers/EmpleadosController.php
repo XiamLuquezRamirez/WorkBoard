@@ -2188,6 +2188,80 @@ class EmpleadosController extends Controller
         return response()->json($this->marcarFilasInforme($tareas));
     }
 
+    /** Periodos que ofrece el informe de Desempeño (días hacia atrás). */
+    public const VENTANAS_DESEMPENO = [30, 90, 180, 365];
+
+    /**
+     * Informe de Desempeño: el Índice de Desempeño de cada persona del alcance,
+     * con el periodo elegido. Es el mismo cálculo del dashboard
+     * (IndiceDesempeno::calcular, con su último movimiento real), así que con
+     * 90 días la nota coincide con la de la tarjeta de esa persona. Reemplaza
+     * a «Eficiencia Operativa», que usaba otra fórmula y otros niveles.
+     */
+    function informeDesempeno(Request $request)
+    {
+        $ventana = (int) $request->query('ventana', IndiceDesempeno::VENTANA_DIAS);
+        if (!in_array($ventana, self::VENTANAS_DESEMPENO, true)) {
+            $ventana = IndiceDesempeno::VENTANA_DIAS;
+        }
+
+        $alcance = $this->alcanceEmpleadosInformes();
+        $conn = DB::connection('mysql2');
+        $hoy = IndiceDesempeno::hoy();
+
+        if ($alcance === []) {
+            return response()->json(['ventana' => $ventana, 'hoy' => $hoy->toDateString(), 'personas' => []]);
+        }
+
+        $empleados = $conn->table('empleados as e')
+            ->leftJoin('cargos as c', 'e.cargo', '=', 'c.id')
+            ->leftJoin('departamentos as d', 'e.departamento', '=', 'd.id')
+            ->where('e.estado', 'Activo')->where('e.estado_registro', 'Activo')
+            ->when($alcance !== null, fn ($q) => $q->whereIn('e.id', $alcance))
+            ->get(['e.id', 'e.nombres', 'e.apellidos', 'c.nombre as cargo', 'd.id as departamento_id', 'd.nombre as departamento']);
+        $ids = $empleados->pluck('id');
+
+        $tareas = $conn->table('tareas_empleados')
+            ->whereIn('empleado', $ids)
+            ->where('estado_reg', 'Activo')
+            ->select('id', 'empleado', 'titulo', 'estado', 'fecha_creacion', 'fecha_pactada', 'fecha_entregada',
+                'fecha_aprobacion', 'fecha_reprogramacion', 'fecha_verificacion', 'archivar', 'pausada', 'rechazada')
+            ->selectRaw(CriteriosAceptacionController::sqlConteo('tareas_empleados') . ' as n_criterios')
+            ->get()->groupBy('empleado');
+
+        // Último movimiento real (sin recordatorios automáticos), como el dashboard.
+        $ultimosEventos = $conn->table('notif_generales as n')
+            ->join('tareas_empleados as te', 'n.tarea_id', '=', 'te.id')
+            ->whereIn('te.empleado', $ids)
+            ->where(fn ($q) => $q->whereNull('n.tipo')->orWhereNotIn('n.tipo', IndiceDesempeno::EVENTOS_SIN_ACTIVIDAD))
+            ->groupBy('te.empleado')
+            ->selectRaw('te.empleado, MAX(n.fecha_creacion) as ultimo')
+            ->pluck('ultimo', 'empleado');
+
+        $personas = $empleados->map(function ($e) use ($tareas, $ultimosEventos, $hoy, $ventana) {
+            $ind = IndiceDesempeno::calcular(
+                collect($tareas[$e->id] ?? []), $hoy, $ultimosEventos[$e->id] ?? null, $ventana
+            );
+            // Lo que no hace falta en el informe se queda fuera.
+            unset($ind['mas_vencida']);
+
+            return [
+                'id'              => (int) $e->id,
+                'nombre'          => trim($e->nombres . ' ' . $e->apellidos),
+                'cargo'           => $e->cargo,
+                'departamento_id' => $e->departamento_id ? (int) $e->departamento_id : null,
+                'departamento'    => $e->departamento ?: 'Sin departamento',
+                'indicadores'     => $ind,
+            ];
+        })->values();
+
+        return response()->json([
+            'ventana'  => $ventana,
+            'hoy'      => $hoy->toDateString(),
+            'personas' => $personas,
+        ]);
+    }
+
     function informeEficiencia()
     {
         $alcance = $this->alcanceEmpleadosInformes();

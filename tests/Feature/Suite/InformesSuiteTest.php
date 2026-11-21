@@ -53,6 +53,57 @@ class InformesSuiteTest extends TestCase
         ], $campos));
     }
 
+    // ─── informes/desempeno ───────────────────────────────────────────────
+
+    private function personaDesempeno($r, int $empleado): ?array
+    {
+        return collect($r->json('personas'))->firstWhere('id', $empleado);
+    }
+
+    public function test_desempeno_da_la_misma_nota_que_el_dashboard(): void
+    {
+        $hace = fn (int $d) => now('America/Bogota')->subDays($d)->toDateString();
+        $this->tarea($this->colaborador, 'A tiempo', ['estado' => 'Completada', 'fecha_pactada' => $hace(5), 'fecha_entregada' => $hace(6)]);
+        $this->tarea($this->colaborador, 'Tarde', ['estado' => 'Completada', 'fecha_pactada' => $hace(10), 'fecha_entregada' => $hace(8)]);
+        $this->tarea($this->colaborador, 'Vencida', ['fecha_pactada' => $hace(3)]);
+        $admin = $this->como($this->conRol('Administrador'));
+
+        $informe = $this->personaDesempeno($admin->getJson('/api/informes/desempeno')->assertOk(), $this->colaborador);
+        $tarjeta = collect($admin->getJson('/api/dashboard/cargarEmpleadosTareas?ligero=1')->json())->firstWhere('id', $this->colaborador);
+
+        $this->assertNotNull($informe['indicadores']['indice']);
+        $this->assertSame($tarjeta['indicadores']['indice'], $informe['indicadores']['indice']);
+        $this->assertSame($tarjeta['indicadores']['nivel'], $informe['indicadores']['nivel']);
+        $this->assertCount(4, $informe['indicadores']['desglose']);
+    }
+
+    public function test_desempeno_respeta_el_alcance_del_lider(): void
+    {
+        $r = $this->como($this->lider)->getJson('/api/informes/desempeno')->assertOk();
+        $ids = collect($r->json('personas'))->pluck('id')->all();
+
+        $this->assertContains($this->colaborador, $ids);
+        $this->assertNotContains($this->ajeno, $ids);
+    }
+
+    public function test_desempeno_cambia_con_el_periodo_elegido(): void
+    {
+        // Entregada hace 120 días: fuera de 90, dentro de 180.
+        $hace = now('America/Bogota')->subDays(120)->toDateString();
+        $this->tarea($this->colaborador, 'Vieja', ['estado' => 'Completada', 'fecha_pactada' => $hace, 'fecha_entregada' => $hace]);
+        $admin = $this->como($this->conRol('Administrador'));
+
+        $en90 = $this->personaDesempeno($admin->getJson('/api/informes/desempeno?ventana=90'), $this->colaborador);
+        $en180 = $this->personaDesempeno($admin->getJson('/api/informes/desempeno?ventana=180'), $this->colaborador);
+
+        $this->assertNull($en90['indicadores']['indice']);
+        $this->assertSame(100, $en180['indicadores']['indice']);
+        $this->assertSame(180, $en180['indicadores']['ventana_dias']);
+
+        // Un periodo que no se ofrece vuelve a 90.
+        $this->assertSame(90, $admin->getJson('/api/informes/desempeno?ventana=7')->json('ventana'));
+    }
+
     private function idDe(string $titulo): int
     {
         return (int) $this->db()->table('tareas_empleados')->where('titulo', $titulo)->value('id');

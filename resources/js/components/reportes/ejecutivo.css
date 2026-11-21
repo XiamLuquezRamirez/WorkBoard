@@ -141,3 +141,13 @@
 .modal-report .ie-tabla th,
 .modal-report .ie-tabla td { text-align: left; }
 .modal-report .ie-tabla .num { text-align: right; }
+
+/* Informe de Desempeño (prefijo id-, comparte la base ie-). */
+.id-cargo { display: block; font-size: 0.72rem; color: #94a3b8; }
+.id-indice { display: inline-flex; align-items: center; gap: 0.45rem; white-space: nowrap; }
+.id-nivel { padding: 0.05rem 0.5rem; border-radius: 999px; font-size: 0.7rem; font-weight: 700; }
+.id-info { color: #cbd5e1; font-size: 0.8rem; }
+.ie-fila-accion:hover .id-info { color: #2563eb; }
+.ie-tabla-cab { display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; }
+.ie-orden { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.78rem; color: #64748b; }
+.ie-orden select { padding: 0.3rem 0.5rem; border: 1px solid #cbd5e1; border-radius: 6px; font: inherit; font-size: 0.8rem; }
