@@ -1,6 +1,9 @@
 /* Recuadro de reuniones pendientes en «Mis Tareas». */
 
 .rp-caja {
+    /* «Mis Tareas» es una columna flex de alto fijo: sin esto, con poco
+       espacio la caja se encogía y su overflow cortaba las reuniones. */
+    flex-shrink: 0;
     margin: 0 0 16px;
     border: 1px solid #DBEAFE;
     border-left: 4px solid #2563EB;
