@@ -3167,3 +3167,40 @@ a.tb-btn-sec, a.tb-btn-sec:visited { color: var(--tb-txt); }
 }
 .tb-filtro option { color: #0f172a; background: #fff; }
 .tb-claro .tb-filtro { background-color: #fff; color: #0f172a; border-color: #cbd5e1; }
+
+/* ── Cabecera ordenada en tres bloques ──────────────────────────────────
+   Título · filtros · estado y acciones. Nada se parte por dentro (antes el
+   título iba en dos líneas, la hora se cortaba y los iconos quedaban encima
+   del texto); si no caben, un bloque entero baja a la siguiente línea. */
+.tb-header { flex-wrap: wrap; row-gap: 10px; }
+.tb-header-izq { flex: 0 1 auto; }
+.tb-header-txt { min-width: 0; }
+.tb-header h1 { white-space: nowrap; }
+.tb-root:not(.tb-tv) .tb-header h1 { font-size: clamp(18px, 1.35vw, 26px); }
+.tb-ambito { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 42vw; }
+
+/* Los filtros ocupan el hueco del medio y ceden ancho antes que el resto. */
+.tb-filtros { flex: 1 1 300px; justify-content: center; flex-wrap: nowrap; min-width: 0; }
+.tb-filtro { flex: 1 1 180px; width: auto; min-width: 140px; max-width: 220px; }
+.tb-header-der { margin-left: auto; }
+
+.tb-header-der { flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+.tb-estado {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    white-space: nowrap;
+    padding-right: 10px;
+    margin-right: 2px;
+    border-right: 1px solid rgba(148, 163, 184, .35);
+}
+.tb-conexion { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; letter-spacing: .02em; }
+.tb-punto { width: 8px; height: 8px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+.tb-hora { white-space: nowrap; }
+.tb-root:not(.tb-tv) .tb-hora { font-size: clamp(14px, 1.05vw, 20px); }
+.tb-btn { white-space: nowrap; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+
+@media (max-width: 1100px) {
+    .tb-root:not(.tb-tv) .tb-filtros { order: 3; width: 100%; }
+    .tb-root:not(.tb-tv) .tb-filtro { flex: 1 1 0; width: auto; max-width: none; }
+}

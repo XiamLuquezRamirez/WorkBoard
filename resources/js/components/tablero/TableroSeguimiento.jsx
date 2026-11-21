@@ -288,8 +288,9 @@ function TableroContenido({
                     </div>
                 </div>
 
-                <div className="tb-header-der">
-                    {hayFiltros && !modoTv && (
+                {/* Tres bloques que no se parten por dentro: título, filtros y
+                    estado con acciones. Si no caben, baja un bloque entero. */}
+                {hayFiltros && !modoTv && (
                         <div className="tb-filtros" role="group" aria-label="Filtrar el tablero">
                             <select
                                 className="tb-filtro"
@@ -320,13 +321,18 @@ function TableroContenido({
                                 </button>
                             )}
                         </div>
-                    )}
-                    <span className={`tb-conexion ${conectado ? 'ok' : 'ko'}`}>
-                        {conectado ? '✓ CONECTADO' : '⚠ CONEXIÓN PERDIDA'}
-                    </span>
-                    <span className="tb-hora">
-                        {hora.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })}
-                    </span>
+                )}
+
+                <div className="tb-header-der">
+                    <div className="tb-estado">
+                        <span className={`tb-conexion ${conectado ? 'ok' : 'ko'}`} title={conectado ? 'Conectado: se actualiza solo' : 'Sin conexión con el servidor'}>
+                            <span className="tb-punto" aria-hidden="true" />
+                            {conectado ? 'Conectado' : 'Sin conexión'}
+                        </span>
+                        <span className="tb-hora">
+                            {hora.toLocaleTimeString('es-CO', { hour: 'numeric', minute: '2-digit', hour12: true })}
+                        </span>
+                    </div>
                     {/* Interactuar sigue disponible en modo TV: si alguien se
                         acerca a la pantalla, debe poder detener la rotación y
                         consultar sin salir de la vista. */}
