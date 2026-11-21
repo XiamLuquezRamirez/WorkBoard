@@ -4,6 +4,7 @@ import Chat from './Chat';
 import FormularioReunion, { avisarCambioReuniones } from './FormularioReunion';
 import TableroPlano from '../tablero/TableroPlano';
 import { AvataresProvider } from '../tablero/AvataresContext';
+import { useUser } from '../UserContext';
 import './espacio.css';
 
 /**
@@ -375,8 +376,29 @@ const SECCIONES = [
  * «Actividad» lee el historial que ya registra cada cambio de tarea, de modo
  * que tiene contenido desde el primer día sin pedir que nadie escriba nada.
  */
+/**
+ * Administración sin ficha de empleado: mira el plano, pero el chat y las
+ * reuniones van a nombre de una persona (su ficha), así que se le explica
+ * cómo habilitarlos en vez de mostrar pantallas que fallarían.
+ */
+function SinFicha({ que }) {
+    return (
+        <div className="eq-sin-ficha">
+            <h4>Vincula tu ficha de empleado para usar {que}</h4>
+            <p>
+                El chat y las reuniones van con el nombre de una persona. En
+                Parámetros › Usuarios, edita tu usuario y elige tu ficha en
+                «Ficha de empleado». Mientras tanto puedes ver el plano y el
+                tablero de toda la oficina.
+            </p>
+        </div>
+    );
+}
+
 export default function EspacioEquipoModal({ pestanaInicial = 'actividad', onCerrar }) {
     const [pestana, setPestana] = useState(pestanaInicial);
+    const { user } = useUser();
+    const conFicha = Boolean(user?.empleado);
 
     useEffect(() => {
         const onKey = (ev) => {
@@ -417,8 +439,8 @@ export default function EspacioEquipoModal({ pestanaInicial = 'actividad', onCer
                             />
                         </AvataresProvider>
                     )}
-                    {pestana === 'reuniones' && <Reuniones />}
-                    {pestana === 'chat' && <Chat />}
+                    {pestana === 'reuniones' && (conFicha ? <Reuniones /> : <SinFicha que="las reuniones" />)}
+                    {pestana === 'chat' && (conFicha ? <Chat /> : <SinFicha que="el chat" />)}
                 </div>
 
                 {/* Barra inferior: las tres secciones siempre a la vista, como

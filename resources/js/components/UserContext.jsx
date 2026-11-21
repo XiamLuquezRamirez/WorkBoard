@@ -42,6 +42,8 @@ export const UserProvider = ({ children }) => {
                         lider: fresh.lider ?? usuario.lider,
                         tipo_usuario: fresh.tipo_usuario ?? usuario.tipo_usuario,
                         estado: fresh.estado ?? usuario.estado,
+                        // Administración puede vincular su ficha después de entrar.
+                        empleado: fresh.empleado !== undefined ? fresh.empleado : usuario.empleado,
                     };
                     setUser(merged);
                     localStorage.setItem('userWorkBoard', JSON.stringify(merged));

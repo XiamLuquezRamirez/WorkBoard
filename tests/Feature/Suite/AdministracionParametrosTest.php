@@ -489,6 +489,18 @@ class AdministracionParametrosTest extends TestCase
         $this->assertSame('x', $this->usuarioDe($this->colaborador)->password);
     }
 
+    public function test_una_ficha_de_empleado_no_se_vincula_a_dos_usuarios(): void
+    {
+        // Administración puede vincular su ficha para chatear y convocar,
+        // pero la de alguien que ya tiene cuenta no: chat, presencia y avisos
+        // van por la ficha y no se sabría a qué cuenta.
+        $this->como($this->admin)->postJson('/api/guardarUsuario', $this->datosUsuario([
+            'role' => 'Administrador', 'empleado' => $this->colaborador,
+        ]))->assertStatus(422)->assertJsonValidationErrors('empleado');
+
+        $this->assertFalse($this->db()->table('users')->where('email', 'usuario.nuevo@prueba.test')->exists());
+    }
+
     public function test_guardar_usuario_con_email_repetido_responde_422(): void
     {
         $this->como($this->admin)->postJson('/api/guardarUsuario', $this->datosUsuario(['email' => 'colaborador@prueba.test']))

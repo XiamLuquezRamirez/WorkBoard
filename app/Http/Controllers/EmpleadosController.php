@@ -1782,7 +1782,12 @@ class EmpleadosController extends Controller
             'email'    => ['required', 'email', 'max:255', Rule::unique('mysql2.users', 'email')->ignore($actual->id ?? null)],
             'role'     => ['required', Rule::in(self::ROLES_USUARIO)],
             'estado'   => ['nullable', Rule::in(['Activo', 'Inactivo'])],
-            'empleado' => 'nullable|integer|exists:mysql2.empleados,id',
+            // Una ficha, una cuenta: el chat, la presencia del plano y los
+            // avisos van por la ficha, y con dos cuentas no se sabría a cuál.
+            // También vale para administración, que la vincula para chatear y
+            // convocar reuniones con su nombre.
+            'empleado' => ['nullable', 'integer', 'exists:mysql2.empleados,id',
+                Rule::unique('mysql2.users', 'empleado')->ignore($actual->id ?? null)],
         ], [
             'name.required'   => 'Escribe el nombre del usuario.',
             'email.required'  => 'Escribe el correo del usuario.',
@@ -1792,6 +1797,7 @@ class EmpleadosController extends Controller
             'role.in'         => 'El rol no es válido.',
             'estado.in'       => 'El estado no es válido.',
             'empleado.exists' => 'El empleado elegido no existe.',
+            'empleado.unique' => 'Esa ficha de empleado ya está vinculada a otro usuario. Si es la misma persona, cambia el rol de esa cuenta en vez de crear otra.',
         ]);
 
         if (!$soyAdmin && ($datos['role'] === 'Administrador' || ($actual && $actual->tipo_usuario === 'Administrador'))) {

@@ -24,13 +24,19 @@ import {
     FaCalendar,
     FaPause,
     FaFolder,
-    FaPlus
+    FaPlus,
+    FaInfoCircle,
+    FaUsers,
+    FaColumns
 } from 'react-icons/fa';
 import { FaCircleCheck, FaCircle, FaCircleXmark } from 'react-icons/fa6';
 import FormularioTarea from './tareas/FormularioTarea';
 import PanoramaDashboard from './dashboard/PanoramaDashboard';
 import ResolverVencidas from './dashboard/ResolverVencidas';
 import ExplicacionIndice from './dashboard/ExplicacionIndice';
+import EspacioEquipoModal from './equipo/EspacioEquipoModal';
+import TableroEquipoModal from './equipo/TableroEquipoModal';
+import ReunionesPendientes from './equipo/ReunionesPendientes';
 import { AvataresProvider, useAvatar, resolverFoto } from './tablero/AvataresContext';
 
 /**
@@ -451,6 +457,10 @@ const Dashboard = () => {
     const [resolver, setResolver] = useState(null);
     // Explicación del índice: { nombre, indicadores } de una persona o {} general.
     const [explicacion, setExplicacion] = useState(null);
+    // Visión general de administración: el plano de toda la oficina, las
+    // reuniones y el chat (espacio), y el tablero de todo el trabajo.
+    const [espacio, setEspacio] = useState(null);
+    const [verTablero, setVerTablero] = useState(false);
     // Por defecto, lo que necesita atención arriba: antes las tarjetas no
     // tenían un orden útil y había que recorrerlas todas para encontrarlo.
     const [orden, setOrden] = useState('atencion');
@@ -751,8 +761,29 @@ const Dashboard = () => {
                                                 ))}
                                             </select>
                                         </div>
+                                        <div className="dashboard-header__equipo">
+                                            <button
+                                                type="button"
+                                                className="btn-equipo es-tablero"
+                                                onClick={() => setVerTablero(true)}
+                                                title="Tablero con el trabajo de toda la empresa"
+                                            >
+                                                <FaColumns /> <span>Tablero de Equipo</span>
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className="btn-equipo es-espacio"
+                                                onClick={() => setEspacio('actividad')}
+                                                title="Plano de la oficina, reuniones y chat"
+                                            >
+                                                <FaUsers /> <span>Espacio de Equipo</span>
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
+                                {user.empleado && (
+                                    <ReunionesPendientes onVerTodas={() => setEspacio('reuniones')} />
+                                )}
                                 <div className="dashboard-content-column">
                                     {/* Adopción primero: antes de medir el desempeño hay que
                                         saber si la plataforma se está usando para trabajar. */}
@@ -944,7 +975,7 @@ const Dashboard = () => {
                                                                         title="¿Cómo se calcula?"
                                                                         aria-label={`Cómo se calcula el índice de ${empleado.nombre}`}
                                                                         onClick={(e) => { e.stopPropagation(); setExplicacion({ nombre: empleado.nombre, indicadores: ind }); }}
-                                                                    >?</button>
+                                                                    ><FaInfoCircle aria-hidden="true" /></button>
                                                                 </span>
                                                                 <span className={`desempeno-badge desempeno-badge--${nivel}`}>{cls.label}</span>
                                                             </div>
@@ -1077,6 +1108,10 @@ const Dashboard = () => {
                     getStatusIcon={getStatusIcon}
                     esSupervisor={user?.tipo_usuario === "Supervisor"}
                 />
+            )}
+            {verTablero && <TableroEquipoModal onCerrar={() => setVerTablero(false)} />}
+            {espacio && (
+                <EspacioEquipoModal pestanaInicial={espacio} onCerrar={() => setEspacio(null)} />
             )}
             {explicacion && (
                 <ExplicacionIndice

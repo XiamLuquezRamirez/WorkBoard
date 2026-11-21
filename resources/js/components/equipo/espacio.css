@@ -743,3 +743,8 @@
         border-bottom: 1px solid #E5E7EB;
     }
 }
+
+/* Administración sin ficha de empleado: chat y reuniones. */
+.eq-sin-ficha { align-self: flex-start; height: fit-content; max-width: 520px; margin: 3rem auto; padding: 1.25rem 1.4rem; border: 1px solid #dbeafe; border-radius: 12px; background: #f8fbff; color: #334155; text-align: left; }
+.eq-sin-ficha h4 { margin: 0 0 .5rem; font-size: 1rem; color: #1e3a8a; }
+.eq-sin-ficha p { margin: 0; font-size: .88rem; line-height: 1.5; }

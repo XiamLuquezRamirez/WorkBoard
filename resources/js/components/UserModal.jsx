@@ -548,19 +548,24 @@ const UserModal = ({ isOpen, onClose }) => {
                                     </select>
                                 </div>
                                 <div className="form-group col-6">
-                                    <label>Empleado</label>
+                                    <label>{newUser.role === 'Empleado' ? 'Empleado' : 'Ficha de empleado (opcional)'}</label>
                                     <select
                                         value={newUser.empleado}
                                         onChange={(e) => setNewUser({ ...newUser, empleado: e.target.value })}
-                                        disabled={newUser.role !== 'Empleado'}
                                     >
-                                        <option value="">Seleccionar empleado</option>
+                                        <option value="">{newUser.role === 'Empleado' ? 'Seleccionar empleado' : 'Sin ficha'}</option>
                                         {empleados.map(empleado => (
                                             <option key={empleado.id} value={empleado.id}>
                                                 {empleado.nombre}
                                             </option>
                                         ))}
                                     </select>
+                                    {newUser.role && newUser.role !== 'Empleado' && (
+                                        <small style={{ display: 'block', marginTop: 4, fontSize: '0.75rem', color: '#64748b', lineHeight: 1.35 }}>
+                                            Con su ficha aparece en el plano, chatea y convoca reuniones con su nombre.
+                                            Sin ficha sólo puede mirar el espacio de trabajo.
+                                        </small>
+                                    )}
                                 </div>
                             </div>
 

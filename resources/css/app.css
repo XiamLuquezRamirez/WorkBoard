@@ -3249,6 +3249,9 @@ body {
     line-height: 1.25;
 }
 
+/* Accesos de administración al tablero y al espacio de equipo. */
+.dashboard-header__equipo { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+
 .dashboard-header__toolbar {
     display: flex;
     flex-wrap: wrap;

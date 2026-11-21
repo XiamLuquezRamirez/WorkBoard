@@ -106,23 +106,35 @@
 .ei-medio { background: #fef3c7; color: #b45309; }
 .ei-bajo { background: #fee2e2; color: #b91c1c; }
 
-/* Botón «?» junto a los títulos del índice. */
+/* Botón de ayuda (icono «i») junto al título del índice. */
+.desempeno-title {
+    display: inline-flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0 0.3rem;
+}
+
 .ei-ayuda {
-    border: 1px solid #cbd5e1;
-    background: #fff;
-    color: #475569;
-    border-radius: 999px;
-    width: 1.2rem;
-    height: 1.2rem;
-    font-size: 0.7rem;
-    font-weight: 700;
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    min-width: 22px;
+    height: 22px;
+    margin: 0;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: #94a3b8;
+    font-size: 15px;
     line-height: 1;
     cursor: pointer;
-    margin-left: 0.35rem;
-    vertical-align: middle;
-    padding: 0;
+    box-shadow: none;
 }
-.ei-ayuda:hover { background: #eff6ff; color: #1d4ed8; border-color: #93c5fd; }
+.ei-ayuda:hover,
+.ei-ayuda:focus-visible { background: #eff6ff; color: #2563eb; outline: none; }
 
 .ei-ayuda-texto {
     border: none;
