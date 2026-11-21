@@ -155,6 +155,67 @@ class TableroSuiteTest extends TestCase
         $this->assertNull($this->sinEmpleado()->estado()->json('alcance.departamento'));
     }
 
+    /** Dos departamentos: Sistemas (Carlos, Inés) y Contabilidad (Ana). */
+    private function dosDepartamentos(): array
+    {
+        $sis = $this->db()->table('departamentos')->insertGetId(['nombre' => 'Sistemas prueba']);
+        $con = $this->db()->table('departamentos')->insertGetId(['nombre' => 'Contabilidad prueba']);
+        $this->db()->table('empleados')->whereIn('id', [$this->colaborador, $this->independiente])->update(['departamento' => $sis]);
+        $this->db()->table('empleados')->where('id', $this->ajeno)->update(['departamento' => $con]);
+
+        return [$sis, $con];
+    }
+
+    public function test_tablero_administracion_filtra_por_departamento_y_por_persona(): void
+    {
+        [$sis, $con] = $this->dosDepartamentos();
+        $c = $this->tarea($this->colaborador, 'C');
+        $i = $this->tarea($this->independiente, 'I');
+        $a = $this->tarea($this->ajeno, 'A');
+        $admin = $this->como($this->conRol('Administrador'));
+
+        $r = $admin->estado("?departamento={$sis}");
+        $this->assertSame(collect([$c, $i])->sort()->values()->all(), $this->idsEnColumnas($r));
+        $this->assertSame($sis, $r->json('filtro.departamento'));
+        $this->assertSame('global', $r->json('alcance.tipo'));
+
+        $this->assertSame([$a], $this->idsEnColumnas($admin->estado("?departamento={$con}")));
+        $this->assertSame([$i], $this->idsEnColumnas($admin->estado("?empleado={$this->independiente}")));
+        // Persona de otro departamento que el elegido: nada.
+        $this->assertSame([], $this->idsEnColumnas($admin->estado("?departamento={$con}&empleado={$this->colaborador}")));
+
+        // Las opciones del filtro salen aunque se esté filtrando.
+        $opciones = $admin->estado("?departamento={$sis}")->json('filtros');
+        $this->assertEqualsCanonicalizing([$sis, $con], collect($opciones['departamentos'])->pluck('id')->all());
+    }
+
+    public function test_tablero_el_filtro_no_amplia_lo_que_ve_un_lider(): void
+    {
+        [, $con] = $this->dosDepartamentos();
+        $this->tarea($this->ajeno, 'A');
+        $c = $this->tarea($this->colaborador, 'C');
+        $lider = $this->como($this->lider);
+
+        $this->assertSame([], $this->idsEnColumnas($lider->estado("?departamento={$con}")));
+        $this->assertSame([], $this->idsEnColumnas($lider->estado("?empleado={$this->ajeno}")));
+        $this->assertSame([$c], $this->idsEnColumnas($lider->estado("?empleado={$this->colaborador}")));
+
+        // Sus opciones son sólo su equipo.
+        $personas = collect($lider->estado()->json('filtros.empleados'))->pluck('id')->all();
+        $this->assertNotContains($this->ajeno, $personas);
+        $this->assertContains($this->colaborador, $personas);
+    }
+
+    public function test_la_agenda_sigue_el_filtro_del_tablero(): void
+    {
+        [$sis] = $this->dosDepartamentos();
+        $c = $this->tarea($this->colaborador, 'C');
+        $this->tarea($this->ajeno, 'A');
+
+        $r = $this->como($this->conRol('Administrador'))->getJson("/api/tablero/agenda?departamento={$sis}")->assertOk();
+        $this->assertSame([$c], $this->agendaIds($r));
+    }
+
     public function test_tablero_un_correo_sin_usuario_no_ve_nada(): void
     {
         $this->tarea($this->colaborador, 'C');

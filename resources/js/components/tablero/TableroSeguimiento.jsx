@@ -12,6 +12,8 @@ import { getImageUrl, getAppUrl } from '../../utils/assetHelper';
 import './tablero.css';
 
 const RELOJ_MS = 30000;
+/** Filtro del tablero recordado en este navegador. */
+const CLAVE_FILTRO = 'tablero.filtro';
 
 /** Detecta eventos destacables comparando dos respuestas consecutivas. */
 function detectarEventos(datos, previo) {
@@ -193,7 +195,21 @@ function TableroContenido({
     // así que se ofrece cerrarla en lugar de regresar a la vista anterior.
     const enPestanaPropia = !onCerrar;
     const [dias] = useState(7);
-    const { datos, previo, conectado, cargando } = useTableroEstado({ dias });
+    // Filtro por departamento o persona. Se recuerda en este navegador: el
+    // tablero suele quedarse abierto (o en una TV) mirando lo mismo.
+    const [filtro, setFiltroEstado] = useState(() => {
+        try {
+            const f = JSON.parse(localStorage.getItem(CLAVE_FILTRO) || '{}');
+            return { departamento: Number(f.departamento) || null, empleado: Number(f.empleado) || null };
+        } catch (e) {
+            return { departamento: null, empleado: null };
+        }
+    });
+    const setFiltro = (f) => {
+        setFiltroEstado(f);
+        try { localStorage.setItem(CLAVE_FILTRO, JSON.stringify(f)); } catch (e) { /* sin almacenamiento */ }
+    };
+    const { datos, previo, conectado, cargando } = useTableroEstado({ dias, ...filtro });
     const [hora, setHora] = useState(() => new Date());
 
     useEffect(() => {
@@ -241,9 +257,21 @@ function TableroContenido({
         );
     }
 
-    const ambito = datos.alcance.tipo === 'global'
+    const opciones = datos.filtros || { departamentos: [], empleados: [] };
+    const deptoElegido = opciones.departamentos.find((d) => d.id === filtro.departamento);
+    const personaElegida = opciones.empleados.find((e) => e.id === filtro.empleado);
+    // Las personas del selector se acotan al departamento elegido.
+    const personasDelFiltro = filtro.departamento
+        ? opciones.empleados.filter((e) => e.departamento_id === filtro.departamento)
+        : opciones.empleados;
+    const hayFiltros = opciones.departamentos.length > 1 || opciones.empleados.length > 1;
+
+    const ambitoBase = datos.alcance.tipo === 'global'
         ? 'TODA LA ORGANIZACIÓN'
         : (datos.alcance.departamento || 'MI EQUIPO').toUpperCase();
+    const ambito = personaElegida
+        ? personaElegida.nombre.toUpperCase()
+        : deptoElegido ? deptoElegido.nombre.toUpperCase() : ambitoBase;
 
     return (
         <div className={`tb-root ${modoTv ? 'tb-tv' : ''} ${claro ? 'tb-claro' : ''}`}>
@@ -261,6 +289,38 @@ function TableroContenido({
                 </div>
 
                 <div className="tb-header-der">
+                    {hayFiltros && !modoTv && (
+                        <div className="tb-filtros" role="group" aria-label="Filtrar el tablero">
+                            <select
+                                className="tb-filtro"
+                                value={filtro.departamento || ''}
+                                onChange={(e) => setFiltro({ departamento: Number(e.target.value) || null, empleado: null })}
+                                aria-label="Departamento"
+                            >
+                                <option value="">Todos los departamentos</option>
+                                {opciones.departamentos.map((d) => <option key={d.id} value={d.id}>{d.nombre}</option>)}
+                            </select>
+                            <select
+                                className="tb-filtro"
+                                value={filtro.empleado || ''}
+                                onChange={(e) => setFiltro({ ...filtro, empleado: Number(e.target.value) || null })}
+                                aria-label="Persona"
+                            >
+                                <option value="">{filtro.departamento ? 'Todo el departamento' : 'Todas las personas'}</option>
+                                {personasDelFiltro.map((p) => <option key={p.id} value={p.id}>{p.nombre}</option>)}
+                            </select>
+                            {(filtro.departamento || filtro.empleado) && (
+                                <button
+                                    type="button"
+                                    className="tb-btn tb-btn-sec"
+                                    onClick={() => setFiltro({ departamento: null, empleado: null })}
+                                    title="Quitar el filtro"
+                                >
+                                    ✕ Quitar filtro
+                                </button>
+                            )}
+                        </div>
+                    )}
                     <span className={`tb-conexion ${conectado ? 'ok' : 'ko'}`}>
                         {conectado ? '✓ CONECTADO' : '⚠ CONEXIÓN PERDIDA'}
                     </span>
@@ -342,6 +402,7 @@ function TableroContenido({
                     interactivo={interactivo}
                     onVerTarea={(t) => { setVerAgenda(false); setTareaAbierta(t); }}
                     onCerrar={() => setVerAgenda(false)}
+                    filtro={filtro}
                 />
             )}
 

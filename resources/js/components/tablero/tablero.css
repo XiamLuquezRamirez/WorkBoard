@@ -3151,3 +3151,19 @@ a.tb-btn-sec, a.tb-btn-sec:visited { color: var(--tb-txt); }
     }
     .po-zeta { opacity: .8; }
 }
+
+/* Filtro por departamento o persona en la cabecera del tablero. */
+.tb-filtros { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.tb-filtro {
+    max-width: 220px;
+    padding: 6px 28px 6px 10px;
+    border-radius: 8px;
+    border: 1px solid rgba(148, 163, 184, .45);
+    background-color: rgba(15, 23, 42, .55);
+    color: #e2e8f0;
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+}
+.tb-filtro option { color: #0f172a; background: #fff; }
+.tb-claro .tb-filtro { background-color: #fff; color: #0f172a; border-color: #cbd5e1; }

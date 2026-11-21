@@ -2845,7 +2845,8 @@ class EmpleadosController extends Controller
      */
     function tableroAgenda(Request $request)
     {
-        $alcance = $this->alcanceEmpleadosInformes();
+        // Mismo filtro que el tablero: la agenda acompaña a lo que se mira.
+        $alcance = $this->filtrarAlcanceTablero($request, $this->alcanceEmpleadosInformes());
         if ($alcance !== null && $alcance === []) {
             return response()->json(['dias' => [], 'hoy' => now()->toDateString()]);
         }
@@ -3183,7 +3184,10 @@ class EmpleadosController extends Controller
     function tableroEstado(Request $request)
     {
         $conn = DB::connection('mysql2');
-        $alcance = $this->alcanceEmpleadosInformes();
+        // Lo que puede ver (todo, su equipo o lo suyo) y, dentro de eso, lo que
+        // pidió ver: un departamento o una persona.
+        $alcanceBase = $this->alcanceEmpleadosInformes();
+        $alcance = $this->filtrarAlcanceTablero($request, $alcanceBase);
         $dias = max(1, min(365, (int) $request->query('dias', 7)));
         $hoy = Carbon::today();
 
@@ -3452,10 +3456,16 @@ class EmpleadosController extends Controller
         return response()->json([
             'servidor_ts' => now()->toIso8601String(),
             'alcance' => [
-                'tipo'         => $alcance === null ? 'global' : 'equipo',
+                'tipo'         => $alcanceBase === null ? 'global' : 'equipo',
                 'departamento' => $departamento,
                 'empleados'    => $alcance === null ? null : count($alcance),
                 'dias_ventana' => $dias,
+            ],
+            // Opciones del filtro (dentro de lo que puede ver) y el aplicado.
+            'filtros' => $this->opcionesFiltroTablero($alcanceBase),
+            'filtro'  => [
+                'departamento' => $request->integer('departamento') ?: null,
+                'empleado'     => $request->integer('empleado') ?: null,
             ],
             'kpis' => [
                 'total'      => $totalCiclo,
@@ -3710,6 +3720,65 @@ class EmpleadosController extends Controller
      * en el login (Auth\LoginController), de modo que el alcance del servidor
      * coincide con el que el frontend ya venía aplicando en el cliente.
      */
+    /**
+     * Acota el alcance del tablero a un departamento o a una persona.
+     *
+     * Nunca lo amplía: un líder que pide otro departamento o a alguien que no
+     * es de su equipo recibe un tablero vacío. null sigue significando «sin
+     * restricción» (administración sin filtro).
+     */
+    private function filtrarAlcanceTablero(Request $request, ?array $alcance): ?array
+    {
+        $departamento = $request->integer('departamento');
+        $empleado = $request->integer('empleado');
+
+        if ($departamento > 0) {
+            $delDepartamento = DB::connection('mysql2')->table('empleados')
+                ->where('departamento', $departamento)
+                ->pluck('id')->map(fn ($id) => (int) $id)->all();
+            $alcance = $alcance === null
+                ? $delDepartamento
+                : array_values(array_intersect($alcance, $delDepartamento));
+        }
+
+        if ($empleado > 0) {
+            $alcance = ($alcance === null || in_array($empleado, $alcance, true)) ? [$empleado] : [];
+        }
+
+        return $alcance;
+    }
+
+    /**
+     * Departamentos y personas activas que el usuario puede elegir en el
+     * filtro del tablero: sólo los de su alcance.
+     */
+    private function opcionesFiltroTablero(?array $alcance): array
+    {
+        $conn = DB::connection('mysql2');
+        if ($alcance === []) {
+            return ['departamentos' => [], 'empleados' => []];
+        }
+
+        $empleados = $conn->table('empleados as e')
+            ->leftJoin('departamentos as d', 'e.departamento', '=', 'd.id')
+            ->where('e.estado', 'Activo')->where('e.estado_registro', 'Activo')
+            ->when($alcance !== null, fn ($q) => $q->whereIn('e.id', $alcance))
+            ->orderBy('e.nombres')->orderBy('e.apellidos')
+            ->get(['e.id', 'e.nombres', 'e.apellidos', 'd.id as departamento_id', 'd.nombre as departamento']);
+
+        return [
+            'departamentos' => $empleados->whereNotNull('departamento_id')
+                ->unique('departamento_id')->sortBy('departamento')
+                ->map(fn ($e) => ['id' => (int) $e->departamento_id, 'nombre' => $e->departamento])
+                ->values(),
+            'empleados' => $empleados->map(fn ($e) => [
+                'id'              => (int) $e->id,
+                'nombre'          => trim($e->nombres . ' ' . $e->apellidos),
+                'departamento_id' => $e->departamento_id ? (int) $e->departamento_id : null,
+            ])->values(),
+        ];
+    }
+
     private function alcanceEmpleadosInformes(): ?array
     {
         $email = Auth::user()->email ?? null;

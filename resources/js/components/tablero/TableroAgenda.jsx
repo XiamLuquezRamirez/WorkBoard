@@ -77,7 +77,7 @@ function Entrega({ tarea, onAbrir }) {
  * Se pide al abrirla y no en el sondeo del tablero: el rango es largo y no
  * cambia cada cinco segundos.
  */
-export default function TableroAgenda({ datosTablero, interactivo, onVerTarea, onCerrar }) {
+export default function TableroAgenda({ datosTablero, interactivo, onVerTarea, onCerrar, filtro = {} }) {
     // La agenda envía lo justo para el listado; el detalle necesita bastante
     // más (descripción, cargo, días restantes). Como la tarea completa ya viaja
     // en las columnas del tablero, se resuelve por id en lugar de repetir esos
@@ -103,11 +103,13 @@ export default function TableroAgenda({ datosTablero, interactivo, onVerTarea, o
 
     useEffect(() => {
         let vivo = true;
-        axiosInstance.get('/tablero/agenda')
+        axiosInstance.get('/tablero/agenda', {
+            params: { departamento: filtro.departamento || undefined, empleado: filtro.empleado || undefined },
+        })
             .then((r) => vivo && setDatos(r.data))
             .catch(() => vivo && setError(true));
         return () => { vivo = false; };
-    }, []);
+    }, [filtro.departamento, filtro.empleado]);
 
     useEffect(() => {
         const onKey = (ev) => { if (ev.key === 'Escape') { ev.stopPropagation(); onCerrar(); } };

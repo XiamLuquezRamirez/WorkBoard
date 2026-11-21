@@ -12,7 +12,7 @@ const INTERVALO_ERR = 15000; // backoff tras un fallo de red
  * Las animaciones se derivan comparando cada respuesta con la anterior: eso vive
  * en los componentes, aquí sólo se expone `previo` junto al estado actual.
  */
-export default function useTableroEstado({ dias = 7, activo = true } = {}) {
+export default function useTableroEstado({ dias = 7, activo = true, departamento = null, empleado = null } = {}) {
     const [datos, setDatos] = useState(null);
     const [previo, setPrevio] = useState(null);
     const [conectado, setConectado] = useState(true);
@@ -31,7 +31,10 @@ export default function useTableroEstado({ dias = 7, activo = true } = {}) {
         abortRef.current = ctrl;
 
         try {
-            const r = await axiosInstance.get(`/tablero/estado?dias=${dias}`, { signal: ctrl.signal });
+            const r = await axiosInstance.get('/tablero/estado', {
+                params: { dias, departamento: departamento || undefined, empleado: empleado || undefined },
+                signal: ctrl.signal,
+            });
             if (!montadoRef.current) return;
 
             // servidor_ts cambia en cada respuesta, así que se excluye de la
@@ -57,7 +60,15 @@ export default function useTableroEstado({ dias = 7, activo = true } = {}) {
         } finally {
             if (montadoRef.current) setCargando(false);
         }
-    }, [dias]);
+    }, [dias, departamento, empleado]);
+
+    // Cambiar el filtro no es «tareas que se movieron»: se descarta la
+    // respuesta anterior para que el tablero no anime la diferencia.
+    useEffect(() => {
+        datosRef.current = null;
+        firmaRef.current = null;
+        setPrevio(null);
+    }, [departamento, empleado]);
 
     useEffect(() => {
         montadoRef.current = true;
