@@ -277,6 +277,9 @@ export default function CriteriosAceptacion({ task, onUpdate, onCargado, abrirSe
     const cerrada = enRevision || estado === 'Completada';
     const puedeVerificar = (c) => enRevision && permisos.verificar.includes(c.id);
     const puedeDeclarar = permisos.declarar && !cerrada;
+    // El líder gestiona todos; el responsable añade y cambia sólo los suyos.
+    const puedeAnadir = permisos.gestionar || permisos.proponer;
+    const puedeEditar = (c) => permisos.gestionar || (permisos.editar || []).includes(c.id);
 
     return (
         <section className="ca-caja">
@@ -312,7 +315,7 @@ export default function CriteriosAceptacion({ task, onUpdate, onCargado, abrirSe
                     {criterios.length === 0 && (
                         <p className="ca-vacio">
                             Esta tarea no tiene criterios de aceptación.
-                            {permisos.gestionar ? ' Añade las condiciones que debe cumplir el resultado.' : ''}
+                            {puedeAnadir ? ' Añade las condiciones que debe cumplir el resultado.' : ''}
                         </p>
                     )}
 
@@ -344,6 +347,7 @@ export default function CriteriosAceptacion({ task, onUpdate, onCargado, abrirSe
                                             <span className={c.obligatorio ? 'm-oblig' : ''}>{c.obligatorio ? 'Obligatorio' : 'Opcional'}</span>
                                             {c.requiere_evidencia === 1 && <span>Requiere evidencia</span>}
                                             {c.responsable_nombre && <span>Verifica: {c.responsable_nombre}</span>}
+                                            {!permisos.gestionar && puedeEditar(c) && <span className="m-propio">Lo escribiste tú</span>}
                                             {c.declarado_at && (
                                                 <span className="m-declarado"><FaCheck /> Declarado por {c.declarado_nombre || 'el responsable'}</span>
                                             )}
@@ -415,10 +419,14 @@ export default function CriteriosAceptacion({ task, onUpdate, onCargado, abrirSe
                                                 </>
                                             )}
 
-                                            {permisos.gestionar && (
+                                            {puedeEditar(c) && (
                                                 <span className="ca-gestion">
-                                                    <button type="button" className="ca-mini" title="Subir" disabled={ocupado || i === 0} onClick={() => mover(i, -1)}><FaArrowUp /></button>
-                                                    <button type="button" className="ca-mini" title="Bajar" disabled={ocupado || i === criterios.length - 1} onClick={() => mover(i, 1)}><FaArrowDown /></button>
+                                                    {permisos.gestionar && (
+                                                        <>
+                                                            <button type="button" className="ca-mini" title="Subir" disabled={ocupado || i === 0} onClick={() => mover(i, -1)}><FaArrowUp /></button>
+                                                            <button type="button" className="ca-mini" title="Bajar" disabled={ocupado || i === criterios.length - 1} onClick={() => mover(i, 1)}><FaArrowDown /></button>
+                                                        </>
+                                                    )}
                                                     <button
                                                         type="button" className="ca-mini" title="Editar"
                                                         onClick={() => setEditando({
@@ -437,7 +445,7 @@ export default function CriteriosAceptacion({ task, onUpdate, onCargado, abrirSe
                         ))}
                     </ol>
 
-                    {permisos.gestionar && (
+                    {puedeAnadir && (
                         <form className="ca-nuevo" onSubmit={agregar}>
                             <textarea
                                 rows={2}

@@ -24,6 +24,9 @@ use Illuminate\Support\Facades\DB;
  *  - Líder del responsable (lideres_empleados) o administrador: define los
  *    criterios, verifica, acepta y devuelve.
  *  - Responsable de la tarea: declara el cumplimiento y aporta evidencias.
+ *    Mientras la tarea no esté en revisión también añade criterios y edita o
+ *    elimina los que escribió él (creado_por); los que puso su líder quedan
+ *    fijos, y no los reordena ni designa quién los verifica.
  *    Sólo acepta su propia tarea si tiene independencia (users.independencia),
  *    que es la autorización expresa que ya existía para supervisarse.
  *  - Responsable de verificación de un criterio: verifica ESE criterio, pero
@@ -65,6 +68,11 @@ class CriteriosAceptacionController extends Controller
                 // Para que el frontend sepa qué evidencias son propias.
                 'yo'        => $u ? (int) $u->id : null,
                 'gestionar' => $this->puedeGestionar($u, $tarea) && $this->estructuraAbierta($tarea),
+                // El responsable añade criterios y edita sólo los suyos.
+                'proponer'  => $this->puedeProponer($u, $tarea) && $this->estructuraAbierta($tarea),
+                'editar'    => $this->estructuraAbierta($tarea)
+                    ? $criterios->filter(fn ($c) => $this->puedeEditarCriterio($u, $tarea, $c))->pluck('id')->values()
+                    : [],
                 'declarar'  => $this->puedeDeclarar($u, $tarea),
                 'aceptar'   => $this->puedeAceptar($u, $tarea),
                 // Por criterio: el responsable de verificación sólo verifica
@@ -117,8 +125,18 @@ class CriteriosAceptacionController extends Controller
         }
 
         $u = $this->usuario();
-        if ($r = $this->exigirGestion($u, $tarea)) {
-            return $r;
+        if ($this->puedeGestionar($u, $tarea)) {
+            if ($r = $this->exigirGestion($u, $tarea)) {
+                return $r;
+            }
+        } elseif ($this->puedeProponer($u, $tarea)) {
+            if ($r = $this->exigirAbierta($tarea)) {
+                return $r;
+            }
+            // Quién verifica lo decide el líder, no el responsable.
+            $datos['responsable_verificacion'] = null;
+        } else {
+            return $this->exigirGestion($u, $tarea);
         }
 
         $id = $this->crear($tarea->id, $datos, $u);
@@ -136,11 +154,15 @@ class CriteriosAceptacionController extends Controller
         }
 
         $u = $this->usuario();
-        if ($r = $this->exigirGestion($u, $tarea)) {
+        if ($r = $this->exigirEdicion($u, $tarea, $criterio)) {
             return $r;
         }
 
         $cambios = $this->normalizar($datos);
+        if (!$this->puedeGestionar($u, $tarea)) {
+            // El responsable no cambia quién verifica su criterio.
+            unset($cambios['responsable_verificacion']);
+        }
         $antes = array_intersect_key((array) $criterio, $cambios);
 
         // Si cambia la condición, el veredicto anterior ya no aplica a lo que
@@ -174,7 +196,7 @@ class CriteriosAceptacionController extends Controller
         }
 
         $u = $this->usuario();
-        if ($r = $this->exigirGestion($u, $tarea)) {
+        if ($r = $this->exigirEdicion($u, $tarea, $criterio)) {
             return $r;
         }
 
@@ -770,6 +792,22 @@ class CriteriosAceptacionController extends Controller
             || ($this->esResponsable($u, $tarea) && $this->esIndependiente($u));
     }
 
+    /** El responsable añade criterios a su propia tarea. */
+    private function puedeProponer(?object $u, object $tarea): bool
+    {
+        return $this->puedeGestionar($u, $tarea) || $this->esResponsable($u, $tarea);
+    }
+
+    /**
+     * Editar o eliminar un criterio: quien gestiona, cualquiera; el
+     * responsable, sólo los que escribió él (al crear la tarea o después).
+     */
+    private function puedeEditarCriterio(?object $u, object $tarea, object $criterio): bool
+    {
+        return $this->puedeGestionar($u, $tarea)
+            || ($this->esResponsable($u, $tarea) && $u->id && (int) ($criterio->creado_por ?? 0) === (int) $u->id);
+    }
+
     /** Aceptar o devolver la entrega. El responsable, sólo con independencia. */
     private function puedeAceptar(?object $u, object $tarea): bool
     {
@@ -817,6 +855,28 @@ class CriteriosAceptacionController extends Controller
     {
         return !in_array($tarea->estado, self::ESTADOS_CERRADOS, true)
             && (int) ($tarea->archivar ?? 0) !== 1;
+    }
+
+    private function exigirEdicion(?object $u, object $tarea, object $criterio)
+    {
+        if (!$this->puedeEditarCriterio($u, $tarea, $criterio)) {
+            return response()->json([
+                'error' => $this->esResponsable($u, $tarea)
+                    ? 'Sólo puedes cambiar los criterios que escribiste tú: los demás los define tu líder.'
+                    : 'Sólo el líder del responsable define los criterios de aceptación.',
+            ], 403);
+        }
+        return $this->exigirAbierta($tarea);
+    }
+
+    private function exigirAbierta(object $tarea)
+    {
+        if (!$this->estructuraAbierta($tarea)) {
+            return response()->json([
+                'error' => 'La tarea está en revisión o cerrada: sus criterios ya no se modifican. Devuélvela para cambiarlos.',
+            ], 409);
+        }
+        return null;
     }
 
     private function exigirGestion(?object $u, object $tarea)

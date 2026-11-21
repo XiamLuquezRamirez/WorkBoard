@@ -66,14 +66,92 @@ class CriteriosAceptacionTest extends TestCase
 
     // ─── Permisos de gestión ────────────────────────────────────────────────
 
-    public function test_solo_el_lider_gestiona_los_criterios(): void
+    public function test_el_lider_y_el_responsable_anaden_criterios_pero_un_ajeno_no(): void
     {
         $tarea = $this->crearTarea();
         $nuevo = ['descripcion' => 'Los totales cuadran con el balance'];
 
-        $this->como($this->colaborador)->postJson("/api/tareas/{$tarea}/criterios", $nuevo)->assertStatus(403);
         $this->como($this->ajeno)->postJson("/api/tareas/{$tarea}/criterios", $nuevo)->assertStatus(403);
         $this->como($this->lider)->postJson("/api/tareas/{$tarea}/criterios", $nuevo)->assertStatus(201);
+        $this->como($this->colaborador)->postJson("/api/tareas/{$tarea}/criterios", $nuevo)->assertStatus(201);
+    }
+
+    public function test_el_responsable_edita_y_elimina_solo_los_criterios_que_escribio(): void
+    {
+        $tarea = $this->crearTarea();
+        [$delLider] = $this->criterios($tarea);
+
+        $suyo = $this->como($this->colaborador)
+            ->postJson("/api/tareas/{$tarea}/criterios", ['descripcion' => 'Queda documentado en el manual'])
+            ->assertStatus(201)->json('id');
+
+        $permisos = $this->como($this->colaborador)->getJson("/api/tareas/{$tarea}/criterios")->assertOk()->json('permisos');
+        $this->assertFalse($permisos['gestionar']);
+        $this->assertTrue($permisos['proponer']);
+        $this->assertSame([$suyo], $permisos['editar']);
+
+        // El suyo sí.
+        $this->como($this->colaborador)->putJson("/api/criterios/{$suyo}", ['descripcion' => 'Queda documentado en el manual de usuario'])
+            ->assertOk();
+        $this->assertSame('Queda documentado en el manual de usuario', DB::connection('mysql2')
+            ->table('tarea_criterios')->where('id', $suyo)->value('descripcion'));
+
+        // El que puso su líder no.
+        $this->como($this->colaborador)->putJson("/api/criterios/{$delLider}", ['descripcion' => 'Otra condición más fácil'])
+            ->assertStatus(403)->assertJsonPath('error', 'Sólo puedes cambiar los criterios que escribiste tú: los demás los define tu líder.');
+        $this->como($this->colaborador)->deleteJson("/api/criterios/{$delLider}")->assertStatus(403);
+
+        // Ni los reordena.
+        $this->como($this->colaborador)->putJson("/api/tareas/{$tarea}/criterios/orden", ['orden' => array_reverse($this->criterios($tarea))])
+            ->assertStatus(403);
+
+        $this->como($this->colaborador)->deleteJson("/api/criterios/{$suyo}")->assertOk();
+        $this->assertNotContains($suyo, $this->criterios($tarea));
+
+        // El líder sigue pudiendo con todos, también con los del responsable.
+        $otro = $this->como($this->colaborador)
+            ->postJson("/api/tareas/{$tarea}/criterios", ['descripcion' => 'Incluye capturas de pantalla'])->json('id');
+        $this->como($this->lider)->deleteJson("/api/criterios/{$otro}")->assertOk();
+    }
+
+    public function test_los_criterios_que_el_responsable_escribio_al_crear_su_tarea_son_suyos(): void
+    {
+        $id = $this->como($this->colaborador)->postJson('/api/guardarTarea', $this->datosTarea())->assertOk()->json('tarea_id');
+        $criterios = $this->criterios($id);
+
+        $this->assertSame($criterios, $this->como($this->colaborador)
+            ->getJson("/api/tareas/{$id}/criterios")->json('permisos.editar'));
+        $this->como($this->colaborador)->putJson("/api/criterios/{$criterios[0]}", ['descripcion' => 'El formulario valida todos los campos'])
+            ->assertOk();
+    }
+
+    public function test_el_responsable_no_designa_quien_verifica(): void
+    {
+        $tarea = $this->crearTarea();
+
+        $suyo = $this->como($this->colaborador)->postJson("/api/tareas/{$tarea}/criterios", [
+            'descripcion' => 'Lo revisa un compañero', 'responsable_verificacion' => $this->verificador,
+        ])->assertStatus(201)->json('id');
+        $this->assertNull(DB::connection('mysql2')->table('tarea_criterios')->where('id', $suyo)->value('responsable_verificacion'));
+
+        // Si el líder lo designó, editarlo no lo quita ni lo cambia.
+        DB::connection('mysql2')->table('tarea_criterios')->where('id', $suyo)->update(['responsable_verificacion' => $this->verificador]);
+        $this->como($this->colaborador)->putJson("/api/criterios/{$suyo}", [
+            'descripcion' => 'Lo revisa un compañero del área', 'responsable_verificacion' => null,
+        ])->assertOk();
+        $this->assertSame($this->verificador, (int) DB::connection('mysql2')->table('tarea_criterios')->where('id', $suyo)->value('responsable_verificacion'));
+    }
+
+    public function test_en_revision_el_responsable_ya_no_toca_sus_criterios(): void
+    {
+        $tarea = $this->crearTarea();
+        $suyo = $this->como($this->colaborador)
+            ->postJson("/api/tareas/{$tarea}/criterios", ['descripcion' => 'Queda documentado en el manual'])->json('id');
+        $this->enviarARevision($tarea);
+
+        $this->como($this->colaborador)->putJson("/api/criterios/{$suyo}", ['descripcion' => 'Algo distinto ya entregado'])->assertStatus(409);
+        $this->como($this->colaborador)->postJson("/api/tareas/{$tarea}/criterios", ['descripcion' => 'Uno más al final'])->assertStatus(409);
+        $this->assertSame([], $this->como($this->colaborador)->getJson("/api/tareas/{$tarea}/criterios")->json('permisos.editar'));
     }
 
     public function test_un_ajeno_no_ve_los_criterios(): void

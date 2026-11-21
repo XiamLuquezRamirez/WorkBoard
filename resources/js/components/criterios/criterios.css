@@ -172,6 +172,7 @@
 
 .ca-meta .m-oblig     { color: #0f172a; font-weight: 600; }
 .ca-meta .m-declarado { color: #0f766e; font-weight: 600; display: inline-flex; align-items: center; gap: .25rem; }
+.ca-meta .m-propio     { color: #1d4ed8; font-weight: 600; }
 
 .ca-obs {
     margin: .45rem 0 0 30px;
