@@ -31,7 +31,8 @@ const ReportesDepartamentoModal = ({ user, onClose }) => {
     const now = new Date();
     const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
     const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-    const fmt = (d) => d.toISOString().split("T")[0];
+    // Fecha local: toISOString la daba en UTC.
+    const fmt = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
     const [startDate, setStartDate] = useState(fmt(firstDay));
     const [endDate, setEndDate] = useState(fmt(lastDay));
@@ -103,7 +104,9 @@ const ReportesDepartamentoModal = ({ user, onClose }) => {
 
     // ── Helpers ──────────────────────────────────────────────────────────────
 
-    const isPausada = (t) => t.pausada === 1 || t.pausada === '1' || t.pausada === true;
+    // Pausa efectiva y vencida vienen del servidor (IndiceDesempeno): la
+    // misma regla que el dashboard, en hora de Bogotá.
+    const isPausada = (t) => Boolean(t.en_pausa);
 
     // ── Computed data (same logic as Reportes.jsx) ───────────────────────────
 
@@ -164,13 +167,12 @@ const ReportesDepartamentoModal = ({ user, onClose }) => {
     const incumplidas = tareas.filter(t => { if (!t.fecha_entregada || !_cumplFiltro(t) || isPausada(t)) return false; return new Date(t.fecha_entregada) > new Date(t.fecha_pactada); });
 
     const calcularInformeEjecutivo = () => {
-        const hoy = new Date().toISOString().split('T')[0];
         const filtradas = tareas.filter(t => t.fecha_pactada >= startDate && t.fecha_pactada <= endDate && (!filterDepartamento || t.departamento === filterDepartamento) && (!filterEmpleado || t.empleado === filterEmpleado));
         const totalCompletadas = filtradas.filter(t => t.estado === 'Completada').length;
         const totalEnProceso = filtradas.filter(t => t.estado === 'En Proceso' && !isPausada(t)).length;
         const totalPendientes = filtradas.filter(t => t.estado === 'Pendiente' && !isPausada(t)).length;
         const totalPausadas = filtradas.filter(t => isPausada(t)).length;
-        const totalAtrasadas = filtradas.filter(t => t.fecha_pactada && t.fecha_pactada < hoy && t.estado !== 'Completada' && !isPausada(t)).length;
+        const totalAtrasadas = filtradas.filter(t => t.vencida).length;
         const porDept = filtradas.filter(t => !isPausada(t)).reduce((acc, t) => {
             if (!t.departamento) return acc;
             if (!acc[t.departamento]) acc[t.departamento] = { departamento: t.departamento, completadas: 0, total: 0 };
@@ -182,7 +184,7 @@ const ReportesDepartamentoModal = ({ user, onClose }) => {
         const porEmpleado = filtradas.reduce((acc, t) => {
             if (!t.empleado) return acc;
             if (!acc[t.empleado]) acc[t.empleado] = { empleado: t.empleado, completadasATiempo: 0, totalCompletadas: 0 };
-            if (t.estado === 'Completada') { acc[t.empleado].totalCompletadas += 1; if (t.fecha_entregada && t.fecha_pactada && t.fecha_entregada <= t.fecha_pactada) acc[t.empleado].completadasATiempo += 1; }
+            if (t.estado === 'Completada') { acc[t.empleado].totalCompletadas += 1; if (t.a_tiempo === true) acc[t.empleado].completadasATiempo += 1; }
             return acc;
         }, {});
         const eficienciaData = Object.values(porEmpleado).map(e => ({ empleado: e.empleado, eficiencia: e.totalCompletadas > 0 ? Math.round((e.completadasATiempo / e.totalCompletadas) * 100) : 0 })).sort((a, b) => b.eficiencia - a.eficiencia);
@@ -203,7 +205,7 @@ const ReportesDepartamentoModal = ({ user, onClose }) => {
             if (isPausada(t)) { acc[key].pausadas++; return acc; }
             acc[key].total++;
             if (t.estado === 'Completada') acc[key].completadas++;
-            if (t.estado === 'Completada' && t.fecha_entregada && t.fecha_entregada <= t.fecha_pactada) acc[key].aTiempo++;
+            if (t.a_tiempo === true) acc[key].aTiempo++;
             if (t.rechazada == 1) acc[key].reprocesos++;
             return acc;
         }, {});
@@ -229,7 +231,6 @@ const ReportesDepartamentoModal = ({ user, onClose }) => {
 
     const calcularProyecto = (proyecto, filtros = {}) => {
         const { startDate: fStart, endDate: fEnd, departamento: fDept } = filtros;
-        const hoy = new Date().toISOString().split('T')[0];
         let trs = proyecto.tareas || [];
         if (fDept) trs = trs.filter(t => t.departamento === fDept);
         if (fStart || fEnd) trs = trs.filter(t => (!fStart || t.fecha_pactada >= fStart) && (!fEnd || t.fecha_pactada <= fEnd));
@@ -238,8 +239,8 @@ const ReportesDepartamentoModal = ({ user, onClose }) => {
         const completadas = trs.filter(t => t.estado === 'Completada').length;
         const enProceso = trs.filter(t => t.estado === 'En Proceso' && !isPausada(t)).length;
         const pendientes = trs.filter(t => t.estado === 'Pendiente' && !isPausada(t)).length;
-        const atrasadas = trs.filter(t => t.fecha_pactada < hoy && t.estado !== 'Completada' && !isPausada(t)).length;
-        const aTiempo = trs.filter(t => t.estado === 'Completada' && t.fecha_entregada && t.fecha_entregada <= t.fecha_pactada).length;
+        const atrasadas = trs.filter(t => t.vencida).length;
+        const aTiempo = trs.filter(t => t.a_tiempo === true).length;
         const avance = total > 0 ? Math.round((completadas / total) * 100) : 0;
         return { total, completadas, enProceso, pendientes, pausadas, atrasadas, aTiempo, avance, empleados: [...new Set(trs.map(t => t.empleado).filter(Boolean))], areas: [...new Set(trs.map(t => t.departamento).filter(Boolean))] };
     };
@@ -249,7 +250,7 @@ const ReportesDepartamentoModal = ({ user, onClose }) => {
         if (filterEmpleado) tfs = tfs.filter(t => t.empleado === filterEmpleado);
         if (filterDepartamento) tfs = tfs.filter(t => t.departamento === filterDepartamento);
         if (filterEstado) tfs = tfs.filter(t => t.estado === filterEstado);
-        if (filterAtrasadas) { const hoy = new Date().toISOString().split('T')[0]; tfs = tfs.filter(t => t.fecha_pactada && t.fecha_pactada < hoy && t.estado !== 'Completada'); }
+        if (filterAtrasadas) { tfs = tfs.filter(t => t.vencida); }
         if (filterFechaInicio) tfs = tfs.filter(t => t.fecha_pactada && t.fecha_pactada >= filterFechaInicio);
         if (filterFechaFin) tfs = tfs.filter(t => t.fecha_pactada && t.fecha_pactada <= filterFechaFin);
         const map = {};
@@ -263,7 +264,7 @@ const ReportesDepartamentoModal = ({ user, onClose }) => {
         pendientes: ts.filter(t => t.estado === 'Pendiente' && !isPausada(t)).length,
         enProceso: ts.filter(t => t.estado === 'En Proceso' && !isPausada(t)).length,
         pausadas: ts.filter(t => isPausada(t)).length,
-        atrasadas: ts.filter(t => t.estado === 'Atrasada').length,
+        atrasadas: ts.filter(t => t.vencida).length, // no existe el estado «Atrasada»: daba 0
     }));
 
     const generarPDF = async (titulo) => {
@@ -286,7 +287,7 @@ const ReportesDepartamentoModal = ({ user, onClose }) => {
             const scale = pw / canvas.width, scaledH = canvas.height * scale;
             let posY = 0;
             while (posY < scaledH) { if (posY > 0) pdf.addPage(); pdf.addImage(imgData, 'JPEG', 0, -posY, pw, scaledH); posY += ph; }
-            pdf.save(`${titulo.replace(/\s+/g,'-').toLowerCase()}-${new Date().toISOString().split('T')[0]}.pdf`);
+            pdf.save(`${titulo.replace(/\s+/g,'-').toLowerCase()}-${fmt(new Date())}.pdf`);
         } catch (e) { console.error('Error generando PDF:', e); }
         finally { saved.forEach(({ el, overflow, overflowX, overflowY, maxHeight, height }) => { el.style.overflow = overflow; el.style.overflowX = overflowX; el.style.overflowY = overflowY; el.style.maxHeight = maxHeight; el.style.height = height; }); setPdfLoading(false); }
     };
@@ -298,14 +299,14 @@ const ReportesDepartamentoModal = ({ user, onClose }) => {
         const detalle = [];
         generarTareasPorEmpleado().forEach(ed => ed.tareas.forEach(t => detalle.push({ 'Empleado': ed.empleado, 'Departamento': t.departamento || 'N/A', 'Título': t.titulo, 'Estado': t.estado, 'Prioridad': t.prioridad || 'N/A', 'Fecha Pactada': cambiarFormatoFecha(t.fecha_pactada), 'Fecha Entregada': cambiarFormatoFecha(t.fecha_entregada) })));
         XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(detalle), 'Detalle');
-        XLSX.writeFile(wb, `Tareas_Depto_${new Date().toISOString().split('T')[0]}.xlsx`);
+        XLSX.writeFile(wb, `Tareas_Depto_${fmt(new Date())}.xlsx`);
     };
 
     const exportarEficienciaExcel = (empleados, deptos) => {
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(empleados.map((e, i) => ({ '#': i+1, 'Nombre': e.nombre, 'Cargo': e.cargo, 'Área': e.departamento, 'Nivel': e.nivel, 'Score': e.score, 'Total activo': e.total, 'Completadas': e.completadas, 'A tiempo': e.aTiempo, 'Reprocesos': e.reprocesos, 'Pausadas': e.pausadas || 0 }))), 'Por Empleado');
         XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(deptos.map(d => ({ 'Área': d.departamento, 'Empleados': d.count, 'Score Promedio': d.scorePromedio, 'Nivel': d.nivel }))), 'Por Área');
-        XLSX.writeFile(wb, `eficiencia-depto-${new Date().toISOString().split('T')[0]}.xlsx`);
+        XLSX.writeFile(wb, `eficiencia-depto-${fmt(new Date())}.xlsx`);
     };
 
     const exportarProyectosExcel = (proyectos, filtros = {}) => {
@@ -313,7 +314,7 @@ const ReportesDepartamentoModal = ({ user, onClose }) => {
         XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(proyectos.map(p => { const st = calcularProyecto(p, filtros); return { 'Proyecto': p.nombre, 'Estado': p.estado, 'Total': st.total, 'Completadas': st.completadas, 'En Proceso': st.enProceso, 'Pendientes': st.pendientes, 'Pausadas': st.pausadas, 'Atrasadas': st.atrasadas, '% Avance': st.avance + '%', 'Empleados': st.empleados.join(', ') }; })), 'Resumen');
         const detalle = []; proyectos.forEach(p => (p.tareas||[]).forEach((t,i) => { const at = t.estado==='Completada'&&t.fecha_entregada&&t.fecha_entregada<=t.fecha_pactada; detalle.push({ 'Proyecto': p.nombre, '#': i+1, 'Tarea': t.titulo||'', 'Empleado': t.empleado||'', 'Estado': t.estado, 'Fecha pactada': t.fecha_pactada||'', 'Fecha entregada': t.fecha_entregada||'', 'A tiempo': t.estado==='Completada'?(at?'Sí':'No'):'—' }); }));
         XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(detalle), 'Tareas');
-        XLSX.writeFile(wb, `proyectos-depto-${new Date().toISOString().split('T')[0]}.xlsx`);
+        XLSX.writeFile(wb, `proyectos-depto-${fmt(new Date())}.xlsx`);
     };
 
     // ── Report cards ─────────────────────────────────────────────────────────
@@ -597,7 +598,7 @@ const ReportesDepartamentoModal = ({ user, onClose }) => {
         }
 
         if (selectedReport === "reporteGeneral") {
-            const hoy = new Date().toISOString().split('T')[0];
+            const hoy = fmt(new Date());
 
             const pausadasActivas = tareas.filter(t => isPausada(t));
             const enProceso = tareas.filter(t => t.estado === 'En Proceso' && !isPausada(t));

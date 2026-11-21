@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Carbon;
 use App\Mail\NotificacionMailable;
 use App\Support\AccesoTareas;
+use App\Support\IndiceDesempeno;
 
 class EmpleadosController extends Controller
 {
@@ -2105,6 +2106,53 @@ class EmpleadosController extends Controller
         return response()->json(['success' => 'Asignaciones guardadas correctamente'], 200);
     }
 
+    /**
+     * Base común de los informes de tareas: tareas vivas (estado_reg Activo)
+     * sin archivar, dentro del alcance de quien consulta, con la ficha del
+     * responsable aunque esté inactivo, su cargo y su departamento.
+     */
+    private function baseInformeTareas(?array $alcance)
+    {
+        return DB::connection('mysql2')->table('tareas_empleados')
+            ->leftJoin('empleados', 'tareas_empleados.empleado', '=', 'empleados.id')
+            ->leftJoinSub($this->usuarioPorEmpleado(), 'users', 'tareas_empleados.empleado', '=', 'users.empleado')
+            ->leftJoin('departamentos', 'empleados.departamento', '=', 'departamentos.id')
+            ->leftJoin('cargos', 'empleados.cargo', '=', 'cargos.id')
+            ->where('tareas_empleados.estado_reg', 'Activo')
+            ->whereRaw('COALESCE(tareas_empleados.archivar, 0) <> 1')
+            ->when($alcance !== null, function ($q) use ($alcance) {
+                $q->whereIn('tareas_empleados.empleado', $alcance);
+            });
+    }
+
+    /** Nombre del responsable: su ficha, si no su usuario, si no «Sin responsable». */
+    private function sqlNombreResponsable(): string
+    {
+        return 'COALESCE(NULLIF(TRIM(CONCAT(COALESCE(empleados.nombres, ""), " ", COALESCE(empleados.apellidos, ""))), ""), users.name, "Sin responsable")';
+    }
+
+    private function sqlResponsableActivo(): string
+    {
+        return '(CASE WHEN empleados.estado = "Activo" AND empleados.estado_registro = "Activo" THEN 1 ELSE 0 END)';
+    }
+
+    /** Marca cada fila con vencida, en_pausa, a_tiempo y fechas válidas. */
+    private function marcarFilasInforme($filas)
+    {
+        $hoy = IndiceDesempeno::hoy();
+
+        return $filas->map(function ($t) use ($hoy) {
+            $t = IndiceDesempeno::marcarParaInforme($t, $hoy);
+            if (property_exists($t, 'empleado_id')) {
+                $t->empleado_id = $t->empleado_id ? (int) $t->empleado_id : null;
+            }
+            if (property_exists($t, 'empleado_activo')) {
+                $t->empleado_activo = (int) $t->empleado_activo === 1;
+            }
+            return $t;
+        })->values();
+    }
+
     function informeTareas()
     {
         $alcance = $this->alcanceEmpleadosInformes();
@@ -2114,33 +2162,30 @@ class EmpleadosController extends Controller
         // baja cuyo registro se eliminó— y con INNER JOIN quedaban fuera del
         // informe sin dejar rastro. El trabajo realizado sigue contando aunque
         // su responsable haya salido; el nombre se recupera de 'users'.
-        $tareas = DB::connection('mysql2')->table('tareas_empleados')
-            ->leftJoin('empleados', function ($join) {
-                $join->on('tareas_empleados.empleado', '=', 'empleados.id')
-                     ->where('empleados.estado_registro', 'Activo')
-                     ->where('empleados.estado', 'Activo');
-            })
-            ->leftJoinSub($this->usuarioPorEmpleado(), 'users', 'tareas_empleados.empleado', '=', 'users.empleado')
+        //
+        // Reglas comunes de los informes (baseInformeTareas):
+        //  - Todas las tareas vivas, tengan o no visto bueno: antes sólo las
+        //    aprobadas, y una tarea vencida sin visto bueno no salía en ninguno.
+        //  - Sin archivadas: ya no son trabajo pendiente ni entregado.
+        //  - La ficha se une aunque la persona esté inactiva: su trabajo sigue
+        //    siendo de su área (antes caía en «Sin departamento» o se perdía).
+        //  - empleado_id viaja aparte: agrupar por nombre sumaba homónimos.
+        //  - vencida, en_pausa, a_tiempo y las fechas salen de IndiceDesempeno,
+        //    la misma regla que el dashboard, en hora de Bogotá.
+        $tareas = $this->baseInformeTareas($alcance)
             ->leftJoin('empresas', 'empleados.empresa', '=', 'empresas.id')
-            ->leftJoin('departamentos', 'empleados.departamento', '=', 'departamentos.id')
-            ->leftJoin('cargos', 'empleados.cargo', '=', 'cargos.id')
             ->select(
                 'tareas_empleados.*',
-                DB::connection('mysql2')->raw(
-                    'COALESCE(NULLIF(TRIM(CONCAT(COALESCE(empleados.nombres, ""), " ", COALESCE(empleados.apellidos, ""))), ""), users.name, "Sin responsable") as empleado'
-                ),
+                'tareas_empleados.empleado as empleado_id',
+                DB::connection('mysql2')->raw($this->sqlNombreResponsable() . ' as empleado'),
+                DB::connection('mysql2')->raw($this->sqlResponsableActivo() . ' as empleado_activo'),
                 'empresas.nombre as empresa',
                 'departamentos.nombre as departamento',
                 'cargos.nombre as cargo'
             )
-            ->where('aprobada', 1)
-            ->where('estado_reg', 'Activo')
-            ->when($alcance !== null, function ($q) use ($alcance) {
-                $q->whereIn('tareas_empleados.empleado', $alcance);
-            })
             ->get();
 
-        return response()->json($tareas);
+        return response()->json($this->marcarFilasInforme($tareas));
     }
 
     function informeEficiencia()
@@ -2150,39 +2195,29 @@ class EmpleadosController extends Controller
         // Mismo criterio que informeTareas: con INNER JOIN se perdían las tareas
         // de empleados ya eliminados, lo que falseaba el cálculo de eficiencia al
         // dejar fuera trabajo realmente entregado.
-        $tareas = DB::connection('mysql2')->table('tareas_empleados')
-            ->leftJoin('empleados', function ($join) {
-                $join->on('tareas_empleados.empleado', '=', 'empleados.id')
-                     ->where('empleados.estado_registro', 'Activo')
-                     ->where('empleados.estado', 'Activo');
-            })
-            ->leftJoinSub($this->usuarioPorEmpleado(), 'users', 'tareas_empleados.empleado', '=', 'users.empleado')
-            ->leftJoin('cargos', 'empleados.cargo', '=', 'cargos.id')
-            ->leftJoin('departamentos', 'empleados.departamento', '=', 'departamentos.id')
+        // Mismas reglas comunes que informeTareas (baseInformeTareas).
+        $tareas = $this->baseInformeTareas($alcance)
             ->select(
                 'tareas_empleados.id',
+                'tareas_empleados.empleado as empleado_id',
                 'tareas_empleados.estado',
+                'tareas_empleados.archivar',
+                'tareas_empleados.fecha_creacion',
                 'tareas_empleados.fecha_pactada',
                 'tareas_empleados.fecha_entregada',
                 'tareas_empleados.rechazada',
                 'tareas_empleados.pausada',
-                DB::connection('mysql2')->raw(
-                    'COALESCE(NULLIF(TRIM(CONCAT(COALESCE(empleados.nombres, ""), " ", COALESCE(empleados.apellidos, ""))), ""), users.name, "Sin responsable") as nombre_empleado'
-                ),
+                DB::connection('mysql2')->raw($this->sqlNombreResponsable() . ' as nombre_empleado'),
                 'cargos.nombre as cargo',
                 'departamentos.nombre as departamento'
             )
-            ->where('tareas_empleados.estado_reg', 'Activo')
-            ->when($alcance !== null, function ($q) use ($alcance) {
-                $q->whereIn('tareas_empleados.empleado', $alcance);
-            })
             // Se ordena por la columna de la tarea y no por empleados.id, que con
             // el LEFT JOIN puede ser NULL y dispersaría las filas de un mismo
             // responsable eliminado.
             ->orderBy('tareas_empleados.empleado')
             ->get();
 
-        return response()->json($tareas);
+        return response()->json($this->marcarFilasInforme($tareas));
     }
 
     function informeProyectos()
@@ -2197,16 +2232,17 @@ class EmpleadosController extends Controller
         $rows = DB::connection('mysql2')->table('proyectos')
             ->leftJoin('tareas_empleados', function ($join) use ($alcance) {
                 $join->on('tareas_empleados.proyecto_id', '=', 'proyectos.id')
-                     ->where('tareas_empleados.estado_reg', 'Activo');
+                     ->where('tareas_empleados.estado_reg', 'Activo')
+                     // Sin archivadas, como el resto de informes.
+                     ->whereRaw('COALESCE(tareas_empleados.archivar, 0) <> 1');
                 if ($alcance !== null) {
                     $join->whereIn('tareas_empleados.empleado', $alcance);
                 }
             })
-            ->leftJoin('empleados', function ($join) {
-                $join->on('tareas_empleados.empleado', '=', 'empleados.id')
-                     ->where('empleados.estado_registro', 'Activo')
-                     ->where('empleados.estado', 'Activo');
-            })
+            // La ficha aunque la persona esté inactiva: su trabajo sigue siendo
+            // de su área y con su nombre (antes salía «—»).
+            ->leftJoin('empleados', 'tareas_empleados.empleado', '=', 'empleados.id')
+            ->leftJoinSub($this->usuarioPorEmpleado(), 'users', 'tareas_empleados.empleado', '=', 'users.empleado')
             ->leftJoin('departamentos', 'empleados.departamento', '=', 'departamentos.id')
             ->select(
                 'proyectos.id as proyecto_id',
@@ -2221,7 +2257,8 @@ class EmpleadosController extends Controller
                 'tareas_empleados.fecha_entregada',
                 'tareas_empleados.rechazada',
                 'tareas_empleados.pausada',
-                DB::connection('mysql2')->raw('CONCAT(empleados.nombres, " ", empleados.apellidos) AS nombre_empleado'),
+                'tareas_empleados.empleado as empleado_id',
+                DB::connection('mysql2')->raw($this->sqlNombreResponsable() . ' AS nombre_empleado'),
                 'departamentos.nombre as departamento'
             )
             ->orderBy('proyectos.nombre')
@@ -2229,6 +2266,7 @@ class EmpleadosController extends Controller
             ->get();
 
         // Agrupar por proyecto
+        $hoyInforme = IndiceDesempeno::hoy();
         $proyectos = [];
         foreach ($rows as $row) {
             $pid = $row->proyecto_id;
@@ -2243,14 +2281,26 @@ class EmpleadosController extends Controller
                 ];
             }
             if ($row->tarea_id) {
+                $t = IndiceDesempeno::marcarParaInforme((object) [
+                    'estado'          => $row->estado,
+                    'archivar'        => 0,
+                    'fecha_pactada'   => $row->fecha_pactada,
+                    'fecha_entregada' => $row->fecha_entregada,
+                    'pausada'         => $row->pausada,
+                ], $hoyInforme);
                 $proyectos[$pid]['tareas'][] = [
                     'id'              => $row->tarea_id,
                     'titulo'          => $row->titulo,
                     'estado'          => $row->estado,
-                    'fecha_pactada'   => $row->fecha_pactada,
-                    'fecha_entregada' => $row->fecha_entregada,
+                    'fecha_pactada'   => $t->fecha_pactada,
+                    'fecha_entregada' => $t->fecha_entregada,
                     'rechazada'       => $row->rechazada,
                     'pausada'         => $row->pausada,
+                    'en_pausa'        => $t->en_pausa,
+                    'vencida'         => $t->vencida,
+                    'dias_vencida'    => $t->dias_vencida,
+                    'a_tiempo'        => $t->a_tiempo,
+                    'empleado_id'     => $row->empleado_id ? (int) $row->empleado_id : null,
                     'empleado'        => $row->nombre_empleado,
                     'departamento'    => $row->departamento,
                 ];

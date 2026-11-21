@@ -71,6 +71,32 @@ class IndiceDesempenoTest extends TestCase
         $this->assertSame(100, array_sum(IndiceDesempeno::PESOS));
     }
 
+    public function test_marcar_para_informe_usa_la_regla_de_vencida_y_limpia_fechas(): void
+    {
+        $vencida = IndiceDesempeno::marcarParaInforme($this->t(['estado' => 'En Proceso', 'fecha_pactada' => '2026-11-10']), $this->hoy);
+        $this->assertTrue($vencida->vencida);
+        $this->assertSame(4, $vencida->dias_vencida);
+        $this->assertNull($vencida->a_tiempo);
+
+        $vieja = IndiceDesempeno::marcarParaInforme($this->t(['fecha_pactada' => '0000-00-00', 'fecha_entregada' => '0000-00-00 00:00:00']), $this->hoy);
+        $this->assertNull($vieja->fecha_pactada);
+        $this->assertNull($vieja->fecha_entregada);
+        $this->assertFalse($vieja->vencida);
+
+        $archivada = IndiceDesempeno::marcarParaInforme($this->t(['fecha_pactada' => '2026-11-01', 'archivar' => 1]), $this->hoy);
+        $this->assertFalse($archivada->vencida);
+
+        // En Proceso con la marca de pausa puesta: está reanudada, sí vence.
+        $reanudada = IndiceDesempeno::marcarParaInforme($this->t(['estado' => 'En Proceso', 'pausada' => 1, 'fecha_pactada' => '2026-11-01']), $this->hoy);
+        $this->assertFalse($reanudada->en_pausa);
+        $this->assertTrue($reanudada->vencida);
+
+        $aTiempo = IndiceDesempeno::marcarParaInforme($this->t([
+            'estado' => 'Completada', 'fecha_pactada' => '2026-11-10', 'fecha_entregada' => '2026-11-10 16:30:00',
+        ]), $this->hoy);
+        $this->assertTrue($aTiempo->a_tiempo, 'Entregar el mismo día con hora no es entregar tarde.');
+    }
+
     public function test_sin_nada_exigible_no_hay_desglose(): void
     {
         $r = $this->calcular([$this->t(['estado' => 'En Proceso', 'fecha_pactada' => '2026-11-30'])]);

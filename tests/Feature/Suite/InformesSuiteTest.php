@@ -53,6 +53,11 @@ class InformesSuiteTest extends TestCase
         ], $campos));
     }
 
+    private function idDe(string $titulo): int
+    {
+        return (int) $this->db()->table('tareas_empleados')->where('titulo', $titulo)->value('id');
+    }
+
     /** Un empleado con usuario de administración o supervisión. */
     private function conRol(string $tipo): int
     {
@@ -207,13 +212,47 @@ class InformesSuiteTest extends TestCase
         $this->sinEmpleado('Empleado')->getJson('/api/informes/eficiencia')->assertOk()->assertExactJson([]);
     }
 
-    public function test_informe_de_tareas_omite_las_eliminadas_y_las_no_aprobadas(): void
+    public function test_informe_de_tareas_cuenta_las_sin_visto_bueno_y_omite_eliminadas_y_archivadas(): void
     {
+        // Una tarea vencida sin visto bueno también es trabajo que no se hizo:
+        // antes ningún informe la mostraba. Las archivadas ya no son trabajo.
         $this->tarea($this->colaborador, 'Viva');
         $this->tarea($this->colaborador, 'Eliminada', ['estado_reg' => 'Eliminado']);
         $this->tarea($this->colaborador, 'Sin aprobar', ['aprobada' => 0]);
+        $this->tarea($this->colaborador, 'Archivada', ['archivar' => 1]);
 
-        $this->assertSame(['Viva'], $this->como($this->lider)->titulos('/api/informes/tareas'));
+        $titulos = $this->como($this->lider)->titulos('/api/informes/tareas');
+        sort($titulos);
+        $this->assertSame(['Sin aprobar', 'Viva'], $titulos);
+    }
+
+    public function test_los_informes_marcan_vencida_con_la_regla_del_indice(): void
+    {
+        $ayer = now('America/Bogota')->subDay()->toDateString();
+        $this->tarea($this->colaborador, 'Vencida', ['fecha_pactada' => $ayer]);
+        $this->tarea($this->colaborador, 'En revisión', ['fecha_pactada' => $ayer, 'estado' => 'En Revisión']);
+        $this->tarea($this->colaborador, 'Pausada', ['fecha_pactada' => $ayer, 'pausada' => 1]);
+        $this->tarea($this->colaborador, 'Entregada tarde', [
+            'fecha_pactada' => $ayer, 'estado' => 'Completada', 'fecha_entregada' => now('America/Bogota')->toDateString(),
+        ]);
+        $this->tarea($this->colaborador, 'Fecha vacía', ['fecha_pactada' => null]); // igual que '0000-00-00' (la base de pruebas no la admite)
+
+        $filas = collect($this->como($this->lider)->getJson('/api/informes/tareas')->assertOk()->json())->keyBy('titulo');
+
+        $this->assertTrue($filas['Vencida']['vencida']);
+        $this->assertSame(1, $filas['Vencida']['dias_vencida']);
+        $this->assertFalse($filas['En revisión']['vencida']);
+        $this->assertFalse($filas['Pausada']['vencida']);
+        $this->assertTrue($filas['Pausada']['en_pausa']);
+        $this->assertFalse($filas['Entregada tarde']['vencida']);
+        $this->assertFalse($filas['Entregada tarde']['a_tiempo']);
+        $this->assertNull($filas['Fecha vacía']['fecha_pactada']);
+        $this->assertFalse($filas['Fecha vacía']['vencida']);
+        $this->assertSame($this->colaborador, $filas['Vencida']['empleado_id']);
+
+        // Eficiencia y proyectos llevan las mismas marcas.
+        $ef = collect($this->como($this->lider)->getJson('/api/informes/eficiencia')->json())->firstWhere('id', $this->idDe('Vencida'));
+        $this->assertTrue($ef['vencida']);
     }
 
     public function test_informe_de_tareas_conserva_el_trabajo_de_quien_ya_salio(): void
@@ -225,8 +264,12 @@ class InformesSuiteTest extends TestCase
         $fila = collect($this->como($this->conRol('Administrador'))->getJson('/api/informes/tareas')->assertOk()->json())
             ->firstWhere('titulo', 'De Carlos');
 
+        // Su ficha sigue unida aunque esté inactivo: el trabajo conserva su
+        // nombre y su área, y se marca que ya no está activo.
         $this->assertNotNull($fila);
-        $this->assertSame('colaborador@prueba.test', $fila['empleado']);
+        $this->assertSame('Carlos Colaborador', $fila['empleado']);
+        $this->assertFalse($fila['empleado_activo']);
+        $this->assertSame($this->colaborador, $fila['empleado_id']);
     }
 
     public function test_informe_de_tareas_no_duplica_filas_si_el_empleado_tiene_dos_usuarios(): void

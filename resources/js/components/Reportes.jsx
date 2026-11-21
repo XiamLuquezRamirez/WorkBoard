@@ -31,6 +31,26 @@ import {
 import Sidebar from "./Sidebar";
 import * as XLSX from 'xlsx';
 
+/**
+ * Escapa un texto para meterlo en el HTML de las ventanas de impresión. Esas
+ * ventanas son del mismo origen que la app: un título de tarea con «<script>»
+ * se ejecutaba dentro de WorkBoard al imprimir.
+ */
+const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+));
+
+/** Fecha local 'AAAA-MM-DD' (toISOString la daba en UTC). */
+const fechaLocal = (d = new Date()) => {
+    const dos = (n) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${dos(d.getMonth() + 1)}-${dos(d.getDate())}`;
+};
+
+/** El navegador bloqueó la ventana de impresión: antes fallaba sin decir nada. */
+const avisarVentanaBloqueada = () => window.alert(
+    'El navegador bloqueó la ventana de impresión. Permite las ventanas emergentes para este sitio e inténtalo de nuevo.'
+);
+
 const Reportes = () => {
     const { user } = useUser();
     const [selectedReport, setSelectedReport] = useState(null);
@@ -41,9 +61,7 @@ const Reportes = () => {
     const now = new Date();
     const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
     const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-    const getFormattedDate = (date) => {
-        return date.toISOString().split("T")[0];
-    };
+    const getFormattedDate = (date) => fechaLocal(date);
     const [startDate, setStartDate] = useState(getFormattedDate(firstDay));
     const [endDate, setEndDate] = useState(getFormattedDate(lastDay));
 
@@ -400,7 +418,7 @@ const Reportes = () => {
                 pdf.addImage(imgData, 'JPEG', 0, -posY, pageWidth, scaledH);
                 posY += pageHeight;
             }
-            const fecha = new Date().toISOString().split('T')[0];
+            const fecha = fechaLocal();
             pdf.save(`${titulo.replace(/\s+/g, '-').toLowerCase()}-${fecha}.pdf`);
         } catch (e) {
             console.error('Error generando PDF:', e);
@@ -463,7 +481,6 @@ const Reportes = () => {
 
     const calcularProyecto = (proyecto, filtros = {}) => {
         const { startDate: fStart, endDate: fEnd, departamento: fDept } = filtros;
-        const hoy = new Date().toISOString().split('T')[0];
         let tareas = proyecto.tareas || [];
         if (fDept)          tareas = tareas.filter(t => t.departamento === fDept);
         if (fStart || fEnd) tareas = tareas.filter(t =>
@@ -474,8 +491,9 @@ const Reportes = () => {
         const completadas = tareas.filter(t => t.estado === 'Completada').length;
         const enProceso   = tareas.filter(t => t.estado === 'En Proceso').length;
         const pendientes  = tareas.filter(t => t.estado === 'Pendiente').length;
-        const atrasadas   = tareas.filter(t => t.fecha_pactada < hoy && t.estado !== 'Completada' && t.pausada !== 1).length;
-        const aTiempo     = tareas.filter(t => t.estado === 'Completada' && t.fecha_entregada && t.fecha_entregada <= t.fecha_pactada).length;
+        // vencida y a_tiempo vienen del servidor: la regla del índice.
+        const atrasadas   = tareas.filter(t => t.vencida).length;
+        const aTiempo     = tareas.filter(t => t.a_tiempo === true).length;
         const avance      = total > 0 ? Math.round((completadas / total) * 100) : 0;
         const empleados   = [...new Set(tareas.map(t => t.empleado).filter(Boolean))];
         const areas       = [...new Set(tareas.map(t => t.departamento).filter(Boolean))];
@@ -483,8 +501,6 @@ const Reportes = () => {
     };
 
     const calcularInformeEjecutivo = () => {
-        const hoy = new Date().toISOString().split('T')[0];
-
         const filtradas = tareas.filter(t =>
             t.fecha_pactada >= startDate && t.fecha_pactada <= endDate &&
             (!filterDepartamento || t.departamento === filterDepartamento) &&
@@ -494,9 +510,7 @@ const Reportes = () => {
         const totalCompletadas = filtradas.filter(t => t.estado === 'Completada').length;
         const totalEnProceso = filtradas.filter(t => t.estado === 'En Proceso').length;
         const totalPendientes = filtradas.filter(t => t.estado === 'Pendiente').length;
-        const totalAtrasadas = filtradas.filter(t =>
-            t.fecha_pactada && t.fecha_pactada < hoy && t.estado !== 'Completada' && t.pausada !== 1
-        ).length;
+        const totalAtrasadas = filtradas.filter(t => t.vencida).length;
 
         // Completadas por departamento
         const porDept = filtradas.reduce((acc, t) => {
@@ -536,8 +550,6 @@ const Reportes = () => {
     };
 
     const calcularInformeDepartamentos = () => {
-        const hoy = new Date().toISOString().split('T')[0];
-
         const filtradas = tareas.filter(t =>
             t.fecha_pactada >= startDate && t.fecha_pactada <= endDate &&
             (!filterDepartamento || t.departamento === filterDepartamento) &&
@@ -558,7 +570,7 @@ const Reportes = () => {
             if (t.estado === 'Completada') acc[dept].completadas += 1;
             if (t.estado === 'En Proceso') acc[dept].enProceso += 1;
             if (t.estado === 'Pendiente') acc[dept].pendientes += 1;
-            if (t.fecha_pactada && t.fecha_pactada < hoy && t.estado !== 'Completada' && t.pausada !== 1) {
+            if (t.vencida) {
                 acc[dept].atrasadas += 1;
             }
             if (t.estado === 'Completada' && t.fecha_entregada && t.fecha_pactada) {
@@ -593,7 +605,7 @@ const Reportes = () => {
             };
             acc[key].total++;
             if (t.estado === 'Completada') acc[key].completadas++;
-            if (t.estado === 'Completada' && t.fecha_entregada && t.fecha_entregada <= t.fecha_pactada)
+            if (t.a_tiempo === true)
                 acc[key].aTiempo++;
             if (t.rechazada == 1) acc[key].reprocesos++;
             return acc;
@@ -648,10 +660,7 @@ const Reportes = () => {
         
         // Filtro específico para tareas atrasadas
         if (filterAtrasadas) {
-            const hoyStr = new Date().toISOString().split('T')[0];
-            tareasFiltradas = tareasFiltradas.filter(t =>
-                t.fecha_pactada && t.fecha_pactada < hoyStr && t.estado !== 'Completada'
-            );
+            tareasFiltradas = tareasFiltradas.filter(t => t.vencida);
         }
         
         // Filtro por rango de fecha pactada
@@ -693,7 +702,8 @@ const Reportes = () => {
             const total = tareas.length;
             const completadas = tareas.filter(t => t.estado === 'Completada').length;
             const pendientes = tareas.filter(t => t.estado === 'Pendiente').length;
-            const atrasadas = tareas.filter(t => t.estado === 'Atrasada').length;
+            // No existe un estado «Atrasada»: contaba siempre 0.
+            const atrasadas = tareas.filter(t => t.vencida).length;
             const enProceso = tareas.filter(t => t.estado === 'En Proceso').length;
             const retrasadas = tareas.filter(t => t.estado === 'Retrasada').length;
             const noIniciadas = tareas.filter(t => t.estado === 'No Iniciada').length;
@@ -737,9 +747,9 @@ const Reportes = () => {
                 <h1>Informe de Tareas por Empleado</h1>
                 <div class="filtros">
                     <h3>Filtros Aplicados:</h3>
-                    <p><strong>Empleado:</strong> ${filterEmpleado || 'Todos'}</p>
-                    <p><strong>Departamento:</strong> ${filterDepartamento || 'Todos'}</p>
-                    <p><strong>Estado:</strong> ${filterEstado || 'Todos'}</p>
+                    <p><strong>Empleado:</strong> ${esc(filterEmpleado || 'Todos')}</p>
+                    <p><strong>Departamento:</strong> ${esc(filterDepartamento || 'Todos')}</p>
+                    <p><strong>Estado:</strong> ${esc(filterEstado || 'Todos')}</p>
                     <p><strong>Solo tareas atrasadas:</strong> ${filterAtrasadas ? 'Sí' : 'No'}</p>
                     <p><strong>Fecha Pactada:</strong> ${filterFechaInicio && filterFechaFin ? `${cambiarFormatoFecha(filterFechaInicio)} - ${cambiarFormatoFecha(filterFechaFin)}` : filterFechaInicio ? `Desde ${cambiarFormatoFecha(filterFechaInicio)}` : filterFechaFin ? `Hasta ${cambiarFormatoFecha(filterFechaFin)}` : 'Todas las fechas'}</p>
                     <p><strong>Fecha de generación:</strong> ${new Date().toLocaleDateString()}</p>
@@ -767,7 +777,7 @@ const Reportes = () => {
         resumen.forEach(item => {
             htmlContent += `
                 <tr>
-                    <td>${item.empleado}</td>
+                    <td>${esc(item.empleado)}</td>
                     <td>${item.total}</td>
                     <td>${item.completadas}</td>
                     <td>${item.pendientes}</td>
@@ -786,7 +796,7 @@ const Reportes = () => {
         // Agregar detalle de tareas
         tareasPorEmpleado.forEach(empleadoData => {
             htmlContent += `
-                <h2>Tareas de ${empleadoData.empleado}</h2>
+                <h2>Tareas de ${esc(empleadoData.empleado)}</h2>
                 <table>
                     <thead>
                         <tr>
@@ -803,11 +813,11 @@ const Reportes = () => {
             empleadoData.tareas.forEach(tarea => {
                 htmlContent += `
                     <tr>
-                        <td>${tarea.titulo}</td>
-                        <td>${tarea.estado}</td>
+                        <td>${esc(tarea.titulo)}</td>
+                        <td>${esc(tarea.estado)}</td>
                         <td>${cambiarFormatoFecha(tarea.fecha_pactada) || 'N/A'}</td>
                         <td>${cambiarFormatoFecha(tarea.fecha_entregada) || 'N/A'}</td>
-                        <td>${tarea.prioridad || 'N/A'}</td>
+                        <td>${esc(tarea.prioridad || 'N/A')}</td>
                     </tr>
                 `;
             });
@@ -825,6 +835,7 @@ const Reportes = () => {
 
         // Crear ventana de impresión
         const printWindow = window.open('', '_blank');
+        if (!printWindow) { avisarVentanaBloqueada(); return; }
         printWindow.document.write(htmlContent);
         printWindow.document.close();
         printWindow.print();
@@ -865,25 +876,26 @@ const Reportes = () => {
         <h2>Ranking por Empleado</h2>
         <table><thead><tr><th>#</th><th>Nombre</th><th>Cargo</th><th>Área</th><th>Nivel</th><th>Score</th><th>Completadas</th><th>A tiempo</th><th>Reprocesos</th></tr></thead><tbody>`;
         empleados.forEach((emp, i) => {
-            html += `<tr><td>${i+1}</td><td>${emp.nombre}</td><td>${emp.cargo}</td><td>${emp.departamento}</td>
-                <td>${emp.nivel}</td><td>${emp.score.toFixed(2)}</td>
+            html += `<tr><td>${i+1}</td><td>${esc(emp.nombre)}</td><td>${esc(emp.cargo)}</td><td>${esc(emp.departamento)}</td>
+                <td>${esc(emp.nivel)}</td><td>${emp.score.toFixed(2)}</td>
                 <td>${emp.completadas}/${emp.total}</td><td>${emp.aTiempo}</td><td>${emp.reprocesos}</td></tr>`;
         });
         html += `</tbody></table>
         <h2>Resumen por Área</h2>
         <table><thead><tr><th>Área</th><th>Empleados</th><th>Score Promedio</th><th>Nivel</th></tr></thead><tbody>`;
         deptos.forEach(d => {
-            html += `<tr><td>${d.departamento}</td><td>${d.count}</td><td>${d.scorePromedio.toFixed(2)}</td><td>${d.nivel}</td></tr>`;
+            html += `<tr><td>${esc(d.departamento)}</td><td>${d.count}</td><td>${d.scorePromedio.toFixed(2)}</td><td>${d.nivel}</td></tr>`;
         });
         html += `</tbody></table><h2>Alertas</h2>`;
-        if (critico > 0) html += `<p class="alert">⚠ ${critico} empleado(s) en zona crítica: ${empleados.filter(e=>e.score<0.50).map(e=>e.nombre).join(', ')}</p>`;
+        if (critico > 0) html += `<p class="alert">⚠ ${critico} empleado(s) en zona crítica: ${esc(empleados.filter(e=>e.score<0.50).map(e=>e.nombre).join(', '))}</p>`;
         deptos.filter(d=>d.scorePromedio<0.60).forEach(d => {
-            html += `<p class="alert">⚠ Área ${d.departamento} con score ${d.scorePromedio.toFixed(2)}</p>`;
+            html += `<p class="alert">⚠ Área ${esc(d.departamento)} con score ${d.scorePromedio.toFixed(2)}</p>`;
         });
-        if (deptos.length > 0) html += `<p class="ok">✅ Mejor área: ${deptos[0].departamento} (${deptos[0].scorePromedio.toFixed(2)})</p>`;
+        if (deptos.length > 0) html += `<p class="ok">✅ Mejor área: ${esc(deptos[0].departamento)} (${deptos[0].scorePromedio.toFixed(2)})</p>`;
         html += `</body></html>`;
 
         const win = window.open('', '_blank');
+        if (!win) { avisarVentanaBloqueada(); return; }
         if (!win) return;
         win.document.write(html);
         win.document.close();
@@ -916,10 +928,10 @@ const Reportes = () => {
             html += `<div class="emp-block">
                 <div class="emp-header">
                     <div>
-                        <div class="emp-name">${i+1}. ${emp.nombre}</div>
-                        <div class="emp-meta">${emp.cargo} · ${emp.departamento}</div>
+                        <div class="emp-name">${i+1}. ${esc(emp.nombre)}</div>
+                        <div class="emp-meta">${esc(emp.cargo)} · ${esc(emp.departamento)}</div>
                     </div>
-                    <span class="badge ${badgeClass}">${emp.nivel} · Score ${emp.score.toFixed(2)}</span>
+                    <span class="badge ${badgeClass}">${esc(emp.nivel)} · Score ${emp.score.toFixed(2)}</span>
                 </div>
                 <table><thead><tr><th>Total tareas</th><th>Completadas</th><th>A tiempo</th><th>Reprocesos</th><th>% Completado</th></tr></thead>
                 <tbody><tr><td>${emp.total}</td><td>${emp.completadas}</td><td>${emp.aTiempo}</td><td>${emp.reprocesos}</td><td>${pctCompleto}%</td></tr></tbody>
@@ -929,6 +941,7 @@ const Reportes = () => {
 
         html += `</body></html>`;
         const win = window.open('', '_blank');
+        if (!win) { avisarVentanaBloqueada(); return; }
         if (!win) return;
         win.document.write(html);
         win.document.close();
@@ -958,15 +971,15 @@ const Reportes = () => {
             const badgeClass = dept.scorePromedio >= 0.75 ? 'badge-alto' : dept.scorePromedio >= 0.50 ? 'badge-medio' : 'badge-critico';
             html += `<div class="area-block">
                 <div class="area-header">
-                    <div class="area-name">${dept.departamento} (${dept.count} empleados)</div>
+                    <div class="area-name">${esc(dept.departamento)} (${dept.count} empleados)</div>
                     <span class="badge ${badgeClass}">${dept.nivel} · Score ${dept.scorePromedio.toFixed(2)}</span>
                 </div>
                 <table><thead><tr><th>#</th><th>Empleado</th><th>Cargo</th><th>Nivel</th><th>Score</th><th>Completadas</th><th>A tiempo</th><th>Reprocesos</th></tr></thead>
                 <tbody>`;
             dept.empleadosList.forEach((emp, i) => {
                 const bc = emp.score >= 0.75 ? 'badge-alto' : emp.score >= 0.50 ? 'badge-medio' : 'badge-critico';
-                html += `<tr><td>${i+1}</td><td>${emp.nombre}</td><td>${emp.cargo}</td>
-                    <td><span class="badge ${bc}">${emp.nivel}</span></td>
+                html += `<tr><td>${i+1}</td><td>${esc(emp.nombre)}</td><td>${esc(emp.cargo)}</td>
+                    <td><span class="badge ${bc}">${esc(emp.nivel)}</span></td>
                     <td>${emp.score.toFixed(2)}</td>
                     <td>${emp.completadas}/${emp.total}</td>
                     <td>${emp.aTiempo}</td><td>${emp.reprocesos}</td></tr>`;
@@ -976,6 +989,7 @@ const Reportes = () => {
 
         html += `</body></html>`;
         const win = window.open('', '_blank');
+        if (!win) { avisarVentanaBloqueada(); return; }
         if (!win) return;
         win.document.write(html);
         win.document.close();
@@ -1045,7 +1059,7 @@ const Reportes = () => {
         const wsDetalle = XLSX.utils.json_to_sheet(detalleData);
         XLSX.utils.book_append_sheet(workbook, wsDetalle, 'Detalle');
 
-        const fecha = new Date().toISOString().split('T')[0];
+        const fecha = fechaLocal();
         XLSX.writeFile(workbook, `Tareas_Empleados_${fecha}.xlsx`);
     };
 
@@ -1086,10 +1100,10 @@ const Reportes = () => {
             html += `<div class="proyecto">
                 <div class="proy-header">
                     <div>
-                        <div class="proy-nombre">${p.nombre}</div>
-                        <div class="proy-meta">Inicio: ${p.fecha_inicio || '—'} · Fin estimado: ${p.fecha_fin_estimada || '—'}</div>
+                        <div class="proy-nombre">${esc(p.nombre)}</div>
+                        <div class="proy-meta">Inicio: ${esc(p.fecha_inicio || '—')} · Fin estimado: ${esc(p.fecha_fin_estimada || '—')}</div>
                     </div>
-                    <span class="badge badge-${badgeClass}">${p.estado || '—'}</span>
+                    <span class="badge badge-${badgeClass}">${esc(p.estado || '—')}</span>
                 </div>
                 <div class="avance-bar"><div class="avance-fill" style="width:${st.avance}%"></div></div>
                 <div style="font-size:12px;color:#6b7280;margin-bottom:8px">Avance: ${st.avance}%</div>
@@ -1100,18 +1114,18 @@ const Reportes = () => {
                     <div class="stat" style="background:#ffedd5">⌛ Pendientes: <strong>${st.pendientes}</strong></div>
                     <div class="stat" style="background:#fee2e2">⚠️ Atrasadas: <strong>${st.atrasadas}</strong></div>
                 </div>
-                <div class="empleados"><strong>Equipo:</strong> ${st.empleados.join(' · ') || '—'}</div>
+                <div class="empleados"><strong>Equipo:</strong> ${esc(st.empleados.join(' · ') || '—')}</div>
                 <table><thead><tr><th>#</th><th>Tarea</th><th>Empleado</th><th>Estado</th><th>Fecha pactada</th><th>Entregada</th><th>¿A tiempo?</th></tr></thead><tbody>`;
             p.tareas.forEach((t, i) => {
                 const aTiempo = t.estado === 'Completada' && t.fecha_entregada && t.fecha_entregada <= t.fecha_pactada;
                 const estadoClass = t.estado === 'Completada' ? 'c-ok' : t.estado === 'En Proceso' ? 'c-proc' : 'c-pend';
                 html += `<tr>
                     <td>${i+1}</td>
-                    <td>${t.titulo || '—'}</td>
-                    <td>${t.empleado || '—'}</td>
-                    <td class="${estadoClass}">${t.estado}</td>
-                    <td>${t.fecha_pactada || '—'}</td>
-                    <td>${t.fecha_entregada || '—'}</td>
+                    <td>${esc(t.titulo || '—')}</td>
+                    <td>${esc(t.empleado || '—')}</td>
+                    <td class="${estadoClass}">${esc(t.estado)}</td>
+                    <td>${esc(t.fecha_pactada || '—')}</td>
+                    <td>${esc(t.fecha_entregada || '—')}</td>
                     <td>${t.estado === 'Completada' ? (aTiempo ? '✅ Sí' : '❌ No') : '—'}</td>
                 </tr>`;
             });
@@ -1120,6 +1134,7 @@ const Reportes = () => {
 
         html += `</body></html>`;
         const win = window.open('', '_blank');
+        if (!win) { avisarVentanaBloqueada(); return; }
         if (!win) return;
         win.document.write(html);
         win.document.close();
@@ -1169,7 +1184,7 @@ const Reportes = () => {
         });
         XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(detalle), 'Tareas');
 
-        const fecha = new Date().toISOString().split('T')[0];
+        const fecha = fechaLocal();
         XLSX.writeFile(wb, `informe-proyectos-${fecha}.xlsx`);
     };
 

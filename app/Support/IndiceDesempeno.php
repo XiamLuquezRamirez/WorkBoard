@@ -86,9 +86,7 @@ final class IndiceDesempeno
         $completadas = $tareas->filter(fn ($t) => $t->estado === 'Completada'
             && $fecha($t->fecha_entregada) !== null && $fecha($t->fecha_entregada) >= $desde);
 
-        $vencidas = $abiertas->filter(fn ($t) => $t->estado !== self::EN_REVISION
-            && !self::estaPausada($t)
-            && $fecha($t->fecha_pactada) !== null && $fecha($t->fecha_pactada) < $hoyTxt);
+        $vencidas = $abiertas->filter(fn ($t) => self::esVencida($t, $hoyTxt));
 
         // Sin fecha pactada no hay plazo que incumplir: cuenta como a tiempo.
         $aTiempo = $completadas->filter(fn ($t) => $fecha($t->fecha_pactada) === null
@@ -246,8 +244,54 @@ final class IndiceDesempeno
             && !in_array(trim((string) $t->estado), ['Completada', 'En Proceso', self::EN_REVISION], true);
     }
 
+    /**
+     * ¿Vencida? Abierta (ni completada ni archivada), no En Revisión (ya
+     * entregada, espera al líder), no pausada y con la fecha pactada antes de
+     * hoy. Es LA regla: el índice, los informes y el dashboard la comparten.
+     */
+    public static function esVencida(object $t, string $hoyTxt): bool
+    {
+        $pactada = self::fechaValida($t->fecha_pactada ?? null);
+
+        return trim((string) $t->estado) !== 'Completada'
+            && (int) ($t->archivar ?? 0) !== 1
+            && trim((string) $t->estado) !== self::EN_REVISION
+            && !self::estaPausada($t)
+            && $pactada !== null && $pactada < $hoyTxt;
+    }
+
+    /**
+     * Marca una fila de tarea para los informes con las reglas de aquí, para
+     * que ninguna pantalla las vuelva a calcular a su manera:
+     *  - fechas válidas en 'Y-m-d' o null ('0000-00-00' y vacías no son fechas);
+     *  - en_pausa (pausa efectiva), vencida y dias_vencida (hora de Bogotá);
+     *  - a_tiempo: true/false si está completada, null si no.
+     */
+    public static function marcarParaInforme(object $t, ?CarbonImmutable $hoy = null): object
+    {
+        $hoy ??= self::hoy();
+        $hoyTxt = $hoy->toDateString();
+
+        foreach (['fecha_pactada', 'fecha_entregada', 'fecha_aprobacion', 'fecha_creacion', 'fecha_reprogramacion'] as $campo) {
+            if (property_exists($t, $campo)) {
+                $t->$campo = self::fechaValida($t->$campo);
+            }
+        }
+
+        $t->en_pausa = self::estaPausada($t);
+        $t->vencida = self::esVencida($t, $hoyTxt);
+        $t->dias_vencida = $t->vencida
+            ? (int) CarbonImmutable::parse($t->fecha_pactada, self::ZONA)->diffInDays($hoy)
+            : 0;
+        $t->a_tiempo = trim((string) $t->estado) === 'Completada' && ($t->fecha_entregada ?? null)
+            ? (($t->fecha_pactada ?? null) === null || $t->fecha_entregada <= $t->fecha_pactada)
+            : null;
+
+        return $t;
+    }
+
     /** Las fechas antiguas traen '0000-00-00'; eso no es una fecha. */
-    private static function fechaValida($valor): ?string
+    public static function fechaValida($valor): ?string
     {
         if (!$valor) {
             return null;
