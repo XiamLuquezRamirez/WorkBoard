@@ -3814,7 +3814,9 @@ class EmpleadosController extends Controller
     /**
      * Una tarea aprobada queda cerrada a la edición de su responsable hasta que
      * el líder la habilite (habilitarEdicion). Antes solo lo aplicaba la
-     * pantalla. El líder y administración sí pueden editarla.
+     * pantalla. El líder y administración sí pueden editarla, y también su
+     * responsable si tiene independencia: no depende de nadie que la habilite
+     * (igual que la pantalla y que supervisorAutorizado).
      */
     private function bloqueadaPorAprobacion(object $tarea): ?\Illuminate\Http\JsonResponse
     {
@@ -3824,6 +3826,10 @@ class EmpleadosController extends Controller
         $yo = AccesoTareas::usuario();
         $empleado = (int) $tarea->empleado;
         if (AccesoTareas::esAdministracion($yo) || AccesoTareas::lidera($yo, $empleado)) {
+            return null;
+        }
+        if (AccesoTareas::esPropio($yo, $empleado)
+            && strcasecmp(trim((string) ($yo->independencia ?? '')), 'Si') === 0) {
             return null;
         }
 

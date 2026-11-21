@@ -368,6 +368,21 @@ class CicloTareasCrearEditarTest extends CicloTareasCaso
         $this->assertSame('Alta', $this->campoTarea($tarea, 'prioridad'));
     }
 
+    public function test_con_independencia_edita_su_tarea_aprobada_sin_que_la_habiliten(): void
+    {
+        // Inés es líder con independencia: no depende de nadie que le
+        // habilite la edición de sus propias tareas aprobadas.
+        $tarea = $this->tarea(['aprobada' => 1, 'editable' => 0], $this->independiente);
+
+        $this->como($this->independiente)->putJson("/api/actualizarTarea/{$tarea}", $this->datosActualizar())->assertOk();
+        $this->assertSame('Título actualizado de la tarea', $this->campoTarea($tarea, 'titulo'));
+
+        // Sin independencia sigue haciendo falta que su líder la habilite.
+        $otra = $this->tarea(['aprobada' => 1, 'editable' => 0]);
+        $this->como($this->colaborador)->putJson("/api/actualizarTarea/{$otra}", $this->datosActualizar())
+            ->assertStatus(403)->assertJsonPath('error', 'La tarea está aprobada: pide a tu líder que habilite la edición.');
+    }
+
     public function test_actualizar_no_cambia_estado_ni_responsable(): void
     {
         $tarea = $this->tarea([], null, 'En Proceso');
