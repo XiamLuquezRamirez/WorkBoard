@@ -7,53 +7,24 @@ import {
     FaChartBar,
     FaChartLine,
     FaTimes,
-    FaPrint,
     FaFilePdf,
 } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import Header from "./Header";
 import axiosInstance from "../axiosConfig";
-import RangosFecha from "./rangosFecha";
 import { useUser } from './UserContext';
-import {
-    BarChart,
-    Bar,
-    Cell,
-    XAxis,
-    YAxis,
-    CartesianGrid,
-    Tooltip,
-    Legend,
-    LineChart,
-    Line,
-    ResponsiveContainer,
-} from "recharts";
 import Sidebar from "./Sidebar";
 import InformeEjecutivo from "./reportes/InformeEjecutivo";
 import InformeDesempeno from "./reportes/InformeDesempeno";
 import InformePuntualidad from "./reportes/InformePuntualidad";
 import InformeTareasEmpleado from "./reportes/InformeTareasEmpleado";
-import * as XLSX from 'xlsx';
-
-/**
- * Escapa un texto para meterlo en el HTML de las ventanas de impresión. Esas
- * ventanas son del mismo origen que la app: un título de tarea con «<script>»
- * se ejecutaba dentro de WorkBoard al imprimir.
- */
-const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => (
-    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
-));
+import InformeProyectos from "./reportes/InformeProyectos";
 
 /** Fecha local 'AAAA-MM-DD' (toISOString la daba en UTC). */
 const fechaLocal = (d = new Date()) => {
     const dos = (n) => String(n).padStart(2, '0');
     return `${d.getFullYear()}-${dos(d.getMonth() + 1)}-${dos(d.getDate())}`;
 };
-
-/** El navegador bloqueó la ventana de impresión: antes fallaba sin decir nada. */
-const avisarVentanaBloqueada = () => window.alert(
-    'El navegador bloqueó la ventana de impresión. Permite las ventanas emergentes para este sitio e inténtalo de nuevo.'
-);
 
 const Reportes = () => {
     const { user } = useUser();
@@ -75,13 +46,6 @@ const Reportes = () => {
     const [tareasError, setTareasError] = useState(false);
     const navigate = useNavigate();
     
-    const [datosProyectos, setDatosProyectos] = useState([]);
-    const [loadingProyectos, setLoadingProyectos] = useState(false);
-    const [proyectoFiltro, setProyectoFiltro] = useState('');
-    const [proyectoEstadoFiltro, setProyectoEstadoFiltro] = useState('');
-    const [proyectoDepartamentoFiltro, setProyectoDepartamentoFiltro] = useState('');
-    const [proyectoStartDate, setProyectoStartDate] = useState('');
-    const [proyectoEndDate, setProyectoEndDate] = useState('');
     const [pdfLoading, setPdfLoading] = useState(false);
     const [datosReprogramaciones, setDatosReprogramaciones] = useState([]);
     const [loadingReprg, setLoadingReprg] = useState(false);
@@ -163,11 +127,8 @@ const Reportes = () => {
             description: "Avance, tareas y equipo por proyecto",
             color: "#7c3aed",
             onClick: () => {
-                setProyectoFiltro('');
-                setProyectoEstadoFiltro('');
                 setSelectedReport("proyectos");
                 setShowReportModal(true);
-                consultarProyectos();
             },
         },
 
@@ -275,14 +236,6 @@ const Reportes = () => {
             .finally(() => setTareasCargando(false));
     }
 
-    const consultarProyectos = () => {
-        setLoadingProyectos(true);
-        axiosInstance.get('/informes/proyectos')
-            .then(res => setDatosProyectos(res.data))
-            .catch(err => console.error('Error cargando proyectos:', err))
-            .finally(() => setLoadingProyectos(false));
-    };
-
     const consultarReprogramaciones = (inicio = '', fin = '') => {
         setLoadingReprg(true);
         const params = new URLSearchParams();
@@ -292,152 +245,6 @@ const Reportes = () => {
             .then(res => setDatosReprogramaciones(Array.isArray(res.data) ? res.data : []))
             .catch(err => console.error('Error cargando reprogramaciones:', err))
             .finally(() => setLoadingReprg(false));
-    };
-
-    const calcularProyecto = (proyecto, filtros = {}) => {
-        const { startDate: fStart, endDate: fEnd, departamento: fDept } = filtros;
-        let tareas = proyecto.tareas || [];
-        if (fDept)          tareas = tareas.filter(t => t.departamento === fDept);
-        if (fStart || fEnd) tareas = tareas.filter(t =>
-            (!fStart || t.fecha_pactada >= fStart) &&
-            (!fEnd   || t.fecha_pactada <= fEnd)
-        );
-        const total       = tareas.length;
-        const completadas = tareas.filter(t => t.estado === 'Completada').length;
-        const enProceso   = tareas.filter(t => t.estado === 'En Proceso').length;
-        const pendientes  = tareas.filter(t => t.estado === 'Pendiente').length;
-        // vencida y a_tiempo vienen del servidor: la regla del índice.
-        const atrasadas   = tareas.filter(t => t.vencida).length;
-        const aTiempo     = tareas.filter(t => t.a_tiempo === true).length;
-        const avance      = total > 0 ? Math.round((completadas / total) * 100) : 0;
-        const empleados   = [...new Set(tareas.map(t => t.empleado).filter(Boolean))];
-        const areas       = [...new Set(tareas.map(t => t.departamento).filter(Boolean))];
-        return { total, completadas, enProceso, pendientes, atrasadas, aTiempo, avance, empleados, areas };
-    };
-
-    const imprimirProyectos = (proyectos, filtros = {}) => {
-        const hoy = new Date().toLocaleDateString('es-ES');
-        let html = `<html><head><style>
-            body{font-family:Arial,sans-serif;margin:20px;font-size:13px;color:#111}
-            h1{color:#7c3aed;text-align:center;margin-bottom:4px}
-            .sub{text-align:center;color:#6b7280;margin-bottom:20px;font-size:12px}
-            .proyecto{border:1px solid #e5e7eb;border-radius:6px;padding:14px;margin-bottom:20px;page-break-inside:avoid}
-            .proy-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
-            .proy-nombre{font-size:15px;font-weight:700;color:#1e1b4b}
-            .proy-meta{font-size:11px;color:#6b7280;margin-top:2px}
-            .badge{padding:2px 8px;border-radius:99px;font-size:11px;font-weight:600}
-            .badge-activo{background:#ede9fe;color:#6d28d9}
-            .badge-completado{background:#dcfce7;color:#15803d}
-            .badge-pausado{background:#fef9c3;color:#b45309}
-            .badge-cancelado{background:#fee2e2;color:#b91c1c}
-            .avance-bar{height:10px;background:#e5e7eb;border-radius:99px;margin:8px 0;overflow:hidden}
-            .avance-fill{height:100%;border-radius:99px;background:#7c3aed}
-            .stats{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:10px;font-size:12px}
-            .stat{background:#f5f3ff;border-radius:4px;padding:4px 10px}
-            .empleados{font-size:11px;color:#374151;margin-bottom:8px}
-            table{width:100%;border-collapse:collapse;margin-top:6px;font-size:11px}
-            th,td{border:1px solid #e5e7eb;padding:5px 7px;text-align:left}
-            th{background:#f5f3ff;font-weight:600}
-            .c-ok{color:#15803d;font-weight:600}
-            .c-proc{color:#2563eb}
-            .c-pend{color:#f97316}
-            .c-atras{color:#b91c1c;font-weight:600}
-        </style></head><body>
-        <h1>Informe de Proyectos</h1>
-        <p class="sub">Generado: ${hoy}</p>`;
-
-        proyectos.forEach(p => {
-            const st = calcularProyecto(p, filtros);
-            const badgeClass = {ACTIVO:'activo',COMPLETADO:'completado',PAUSADO:'pausado',CANCELADO:'cancelado'}[p.estado?.toUpperCase()] || 'activo';
-            html += `<div class="proyecto">
-                <div class="proy-header">
-                    <div>
-                        <div class="proy-nombre">${esc(p.nombre)}</div>
-                        <div class="proy-meta">Inicio: ${esc(p.fecha_inicio || '—')} · Fin estimado: ${esc(p.fecha_fin_estimada || '—')}</div>
-                    </div>
-                    <span class="badge badge-${badgeClass}">${esc(p.estado || '—')}</span>
-                </div>
-                <div class="avance-bar"><div class="avance-fill" style="width:${st.avance}%"></div></div>
-                <div style="font-size:12px;color:#6b7280;margin-bottom:8px">Avance: ${st.avance}%</div>
-                <div class="stats">
-                    <div class="stat">Total: <strong>${st.total}</strong></div>
-                    <div class="stat" style="background:#dcfce7">✅ Completadas: <strong>${st.completadas}</strong></div>
-                    <div class="stat" style="background:#dbeafe">⏳ En Proceso: <strong>${st.enProceso}</strong></div>
-                    <div class="stat" style="background:#ffedd5">⌛ Pendientes: <strong>${st.pendientes}</strong></div>
-                    <div class="stat" style="background:#fee2e2">⚠️ Atrasadas: <strong>${st.atrasadas}</strong></div>
-                </div>
-                <div class="empleados"><strong>Equipo:</strong> ${esc(st.empleados.join(' · ') || '—')}</div>
-                <table><thead><tr><th>#</th><th>Tarea</th><th>Empleado</th><th>Estado</th><th>Fecha pactada</th><th>Entregada</th><th>¿A tiempo?</th></tr></thead><tbody>`;
-            p.tareas.forEach((t, i) => {
-                const aTiempo = t.estado === 'Completada' && t.fecha_entregada && t.fecha_entregada <= t.fecha_pactada;
-                const estadoClass = t.estado === 'Completada' ? 'c-ok' : t.estado === 'En Proceso' ? 'c-proc' : 'c-pend';
-                html += `<tr>
-                    <td>${i+1}</td>
-                    <td>${esc(t.titulo || '—')}</td>
-                    <td>${esc(t.empleado || '—')}</td>
-                    <td class="${estadoClass}">${esc(t.estado)}</td>
-                    <td>${esc(t.fecha_pactada || '—')}</td>
-                    <td>${esc(t.fecha_entregada || '—')}</td>
-                    <td>${t.estado === 'Completada' ? (aTiempo ? '✅ Sí' : '❌ No') : '—'}</td>
-                </tr>`;
-            });
-            html += `</tbody></table></div>`;
-        });
-
-        html += `</body></html>`;
-        const win = window.open('', '_blank');
-        if (!win) { avisarVentanaBloqueada(); return; }
-        if (!win) return;
-        win.document.write(html);
-        win.document.close();
-        win.print();
-    };
-
-    const exportarProyectosExcel = (proyectos, filtros = {}) => {
-        const wb = XLSX.utils.book_new();
-
-        // Hoja resumen
-        const resumen = proyectos.map(p => {
-            const st = calcularProyecto(p, filtros);
-            return {
-                'Proyecto': p.nombre,
-                'Estado': p.estado,
-                'Inicio': p.fecha_inicio || '',
-                'Fin estimado': p.fecha_fin_estimada || '',
-                'Total tareas': st.total,
-                'Completadas': st.completadas,
-                'En Proceso': st.enProceso,
-                'Pendientes': st.pendientes,
-                'Atrasadas': st.atrasadas,
-                'A tiempo': st.aTiempo,
-                '% Avance': st.avance + '%',
-                'Empleados': st.empleados.join(', '),
-            };
-        });
-        XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(resumen), 'Resumen');
-
-        // Hoja detalle de tareas
-        const detalle = [];
-        proyectos.forEach(p => {
-            (p.tareas || []).forEach((t, i) => {
-                const aTiempo = t.estado === 'Completada' && t.fecha_entregada && t.fecha_entregada <= t.fecha_pactada;
-                detalle.push({
-                    'Proyecto': p.nombre,
-                    '#': i + 1,
-                    'Tarea': t.titulo || '',
-                    'Empleado': t.empleado || '',
-                    'Área': t.departamento || '',
-                    'Estado': t.estado,
-                    'Fecha pactada': t.fecha_pactada || '',
-                    'Fecha entregada': t.fecha_entregada || '',
-                    'A tiempo': t.estado === 'Completada' ? (aTiempo ? 'Sí' : 'No') : '—',
-                });
-            });
-        });
-        XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(detalle), 'Tareas');
-
-        const fecha = fechaLocal();
-        XLSX.writeFile(wb, `informe-proyectos-${fecha}.xlsx`);
     };
 
 
@@ -525,203 +332,13 @@ const Reportes = () => {
                 />
             )}
 
-            {showReportModal && selectedReport === "proyectos" && (() => {
-                const proyectosFiltrados = datosProyectos.filter(p => {
-                    if (proyectoFiltro && p.id !== parseInt(proyectoFiltro)) return false;
-                    if (proyectoEstadoFiltro && p.estado?.toUpperCase() !== proyectoEstadoFiltro.toUpperCase()) return false;
-                    if (proyectoDepartamentoFiltro && !(p.tareas || []).some(t => t.departamento === proyectoDepartamentoFiltro)) return false;
-                    if (proyectoStartDate || proyectoEndDate) {
-                        const tareasDentro = (p.tareas || []).some(t =>
-                            (!proyectoStartDate || t.fecha_pactada >= proyectoStartDate) &&
-                            (!proyectoEndDate   || t.fecha_pactada <= proyectoEndDate)
-                        );
-                        if (!tareasDentro) return false;
-                    }
-                    return true;
-                });
-                const estadosUnicos = [...new Set(datosProyectos.map(p => p.estado).filter(Boolean))];
-                const deptosProyectos = [...new Set(datosProyectos.flatMap(p => (p.tareas || []).map(t => t.departamento)).filter(Boolean))].sort();
-                return (
-                    <div className="modal-overlay">
-                        <div className="modal-report">
-                            <div className="modal-header">
-                                <h2>Informe de Proyectos</h2>
-                                <div className="header-actions">
-                                    <button className="pdf-button" onClick={() => generarPDF('Informe de Proyectos')} disabled={pdfLoading}>
-                                        <FaFilePdf /> {pdfLoading ? '...' : 'PDF'}
-                                    </button>
-                                    <button className="eficiencia-print-btn" onClick={() => imprimirProyectos(proyectosFiltrados, { startDate: proyectoStartDate, endDate: proyectoEndDate, departamento: proyectoDepartamentoFiltro })}>
-                                        <FaPrint /> Imprimir
-                                    </button>
-                                    <button className="excel-button" onClick={() => exportarProyectosExcel(proyectosFiltrados, { startDate: proyectoStartDate, endDate: proyectoEndDate, departamento: proyectoDepartamentoFiltro })}>
-                                        <FaChartBar /> Excel
-                                    </button>
-                                    <button className="close-button" onClick={() => setShowReportModal(false)}>
-                                        <FaTimes />
-                                    </button>
-                                </div>
-                            </div>
-
-                            <div className="tab-content">
-                                {/* Filtros */}
-                                <div className="eficiencia-filtros">
-                                    <RangosFecha startDate={proyectoStartDate} setStartDate={setProyectoStartDate} endDate={proyectoEndDate} setEndDate={setProyectoEndDate} />
-                                    <label className="eficiencia-filtro-label">
-                                        Proyecto
-                                        <select className="eficiencia-filtro-input" value={proyectoFiltro} onChange={e => setProyectoFiltro(e.target.value)}>
-                                            <option value="">Todos</option>
-                                            {datosProyectos.map(p => <option key={p.id} value={p.id}>{p.nombre}</option>)}
-                                        </select>
-                                    </label>
-                                    <label className="eficiencia-filtro-label">
-                                        Estado
-                                        <select className="eficiencia-filtro-input" value={proyectoEstadoFiltro} onChange={e => setProyectoEstadoFiltro(e.target.value)}>
-                                            <option value="">Todos</option>
-                                            {estadosUnicos.map(e => <option key={e} value={e}>{e}</option>)}
-                                        </select>
-                                    </label>
-                                    <label className="eficiencia-filtro-label">
-                                        Departamento
-                                        <select className="eficiencia-filtro-input" value={proyectoDepartamentoFiltro} onChange={e => { setProyectoDepartamentoFiltro(e.target.value); setProyectoFiltro(''); }}>
-                                            <option value="">Todos</option>
-                                            {deptosProyectos.map(d => <option key={d} value={d}>{d}</option>)}
-                                        </select>
-                                    </label>
-                                    <button className="eficiencia-filtro-clear" onClick={() => { setProyectoFiltro(''); setProyectoEstadoFiltro(''); setProyectoDepartamentoFiltro(''); setProyectoStartDate(''); setProyectoEndDate(''); }}>Limpiar</button>
-                                    {loadingProyectos && <span style={{ color: '#6b7280', fontSize: '0.85rem' }}>Cargando...</span>}
-                                </div>
-
-                                {proyectosFiltrados.length === 0 && !loadingProyectos && (
-                                    <p style={{ color: '#9ca3af', textAlign: 'center', padding: '2rem' }}>
-                                        No hay proyectos para mostrar.
-                                    </p>
-                                )}
-
-                                {proyectosFiltrados.map(proyecto => {
-                                    const st = calcularProyecto(proyecto, { startDate: proyectoStartDate, endDate: proyectoEndDate, departamento: proyectoDepartamentoFiltro });
-                                    const estadoColor = {
-                                        ACTIVO: '#7c3aed', COMPLETADO: '#16a34a',
-                                        PAUSADO: '#f59e0b', CANCELADO: '#dc2626'
-                                    }[proyecto.estado?.toUpperCase()] || '#6b7280';
-                                    const barColor = st.avance >= 80 ? '#16a34a' : st.avance >= 40 ? '#f59e0b' : '#dc2626';
-
-                                    return (
-                                        <div key={proyecto.id} className="proy-card">
-                                            {/* Encabezado del proyecto */}
-                                            <div className="proy-card-header">
-                                                <div>
-                                                    <h3 className="proy-card-nombre">{proyecto.nombre}</h3>
-                                                    <span className="proy-card-fechas">
-                                                        {proyecto.fecha_inicio || '—'} → {proyecto.fecha_fin_estimada || '—'}
-                                                    </span>
-                                                </div>
-                                                <span className="proy-estado-badge" style={{ background: estadoColor + '22', color: estadoColor, border: `1px solid ${estadoColor}55` }}>
-                                                    {proyecto.estado || '—'}
-                                                </span>
-                                            </div>
-
-                                            {/* Barra de avance */}
-                                            <div className="proy-avance-wrap">
-                                                <div className="proy-avance-bar">
-                                                    <div className="proy-avance-fill" style={{ width: `${st.avance}%`, background: barColor }} />
-                                                </div>
-                                                <span className="proy-avance-pct">{st.avance}%</span>
-                                            </div>
-
-                                            {/* KPIs */}
-                                            <div className="proy-kpis">
-                                                <div className="proy-kpi">
-                                                    <span className="proy-kpi-num">{st.total}</span>
-                                                    <span className="proy-kpi-lbl">Total</span>
-                                                </div>
-                                                <div className="proy-kpi proy-kpi--ok">
-                                                    <span className="proy-kpi-num">{st.completadas}</span>
-                                                    <span className="proy-kpi-lbl">✅ Completadas</span>
-                                                </div>
-                                                <div className="proy-kpi proy-kpi--blue">
-                                                    <span className="proy-kpi-num">{st.enProceso}</span>
-                                                    <span className="proy-kpi-lbl">⏳ En Proceso</span>
-                                                </div>
-                                                <div className="proy-kpi proy-kpi--orange">
-                                                    <span className="proy-kpi-num">{st.pendientes}</span>
-                                                    <span className="proy-kpi-lbl">⌛ Pendientes</span>
-                                                </div>
-                                                <div className="proy-kpi proy-kpi--red">
-                                                    <span className="proy-kpi-num">{st.atrasadas}</span>
-                                                    <span className="proy-kpi-lbl">⚠️ Atrasadas</span>
-                                                </div>
-                                                <div className="proy-kpi proy-kpi--purple">
-                                                    <span className="proy-kpi-num">{st.aTiempo}</span>
-                                                    <span className="proy-kpi-lbl">🕐 A tiempo</span>
-                                                </div>
-                                            </div>
-
-                                            {/* Equipo */}
-                                            {st.empleados.length > 0 && (
-                                                <div className="proy-equipo">
-                                                    <span className="proy-equipo-titulo">Equipo:</span>
-                                                    {st.empleados.map(emp => (
-                                                        <span key={emp} className="proy-emp-chip">{emp}</span>
-                                                    ))}
-                                                    {st.areas.length > 0 && (
-                                                        <span className="proy-area-chip">{st.areas.join(' · ')}</span>
-                                                    )}
-                                                </div>
-                                            )}
-
-                                            {/* Tabla de tareas */}
-                                            {proyecto.tareas.length > 0 && (
-                                                <div style={{ overflowX: 'auto', marginTop: '1rem' }}>
-                                                    <table className="eficiencia-ranking-table">
-                                                        <thead>
-                                                            <tr>
-                                                                <th>#</th>
-                                                                <th>Tarea</th>
-                                                                <th>Empleado</th>
-                                                                <th>Área</th>
-                                                                <th>Estado</th>
-                                                                <th>Fecha pactada</th>
-                                                                <th>Entregada</th>
-                                                                <th>¿A tiempo?</th>
-                                                            </tr>
-                                                        </thead>
-                                                        <tbody>
-                                                            {proyecto.tareas.map((t, idx) => {
-                                                                const aTiempoT = t.estado === 'Completada' && t.fecha_entregada && t.fecha_entregada <= t.fecha_pactada;
-                                                                const estadoStyle = {
-                                                                    'Completada': { color: '#16a34a', fontWeight: 600 },
-                                                                    'En Proceso':  { color: '#2563eb' },
-                                                                    'Pendiente':   { color: '#f97316' },
-                                                                }[t.estado] || {};
-                                                                return (
-                                                                    <tr key={t.id}>
-                                                                        <td style={{ color: '#9ca3af', fontSize: '0.8rem' }}>{idx + 1}</td>
-                                                                        <td style={{ fontWeight: 500 }}>{t.titulo || '—'}</td>
-                                                                        <td style={{ color: '#6b7280', fontSize: '0.85rem' }}>{t.empleado || '—'}</td>
-                                                                        <td style={{ color: '#6b7280', fontSize: '0.85rem' }}>{t.departamento || '—'}</td>
-                                                                        <td><span style={estadoStyle}>{t.estado}</span></td>
-                                                                        <td style={{ fontSize: '0.85rem' }}>{cambiarFormatoFecha(t.fecha_pactada)}</td>
-                                                                        <td style={{ fontSize: '0.85rem' }}>{t.fecha_entregada ? cambiarFormatoFecha(t.fecha_entregada) : '—'}</td>
-                                                                        <td style={{ textAlign: 'center' }}>
-                                                                            {t.estado === 'Completada'
-                                                                                ? (aTiempoT ? '✅' : '❌')
-                                                                                : '—'}
-                                                                        </td>
-                                                                    </tr>
-                                                                );
-                                                            })}
-                                                        </tbody>
-                                                    </table>
-                                                </div>
-                                            )}
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        </div>
-                    </div>
-                );
-            })()}
+            {showReportModal && selectedReport === "proyectos" && (
+                <InformeProyectos
+                    onCerrar={() => setShowReportModal(false)}
+                    onPDF={generarPDF}
+                    pdfLoading={pdfLoading}
+                />
+            )}
 
             {/* ── Informe de Reprogramaciones ── */}
             {showReportModal && selectedReport === 'reprogramaciones' && (() => {

@@ -162,3 +162,20 @@
 .it-abrir svg { flex: none; font-size: 0.7rem; color: #94a3b8; transition: transform 0.15s; transform: rotate(-90deg); }
 .it-abrir svg.es-abierta { transform: none; }
 .it-detalle > td { background: #f8fafc; padding: 0.4rem 0.8rem 0.8rem 1.6rem !important; }
+
+/* Proyectos (prefijo ipr-). */
+.ipr-proyecto { max-width: 220px; }
+.ipr-aviso { margin: 0 0 1rem; padding: 0.75rem 1rem; border: 1px solid #fed7aa; border-left: 4px solid #f97316; border-radius: 10px; background: #fff7ed; color: #7c2d12; font-size: 0.83rem; line-height: 1.45; text-align: left; }
+.ipr-lista { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.5rem; }
+.ipr-item { border: 1px solid #e2e8f0; border-radius: 10px; background: #fff; overflow: hidden; }
+.ipr-cab { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.75rem; width: 100%; padding: 0.7rem 0.9rem; border: none; background: none; font: inherit; color: #334155; text-align: left; cursor: pointer; }
+.ipr-cab:hover { background: #f8fafc; }
+.ipr-cab > svg { flex: none; font-size: 0.75rem; color: #94a3b8; transform: rotate(-90deg); transition: transform 0.15s; }
+.ipr-cab > svg.es-abierta { transform: none; }
+.ipr-nombre { flex: 1 1 260px; min-width: 0; font-size: 0.86rem; overflow-wrap: anywhere; }
+.ipr-nombre small { display: block; margin-top: 0.15rem; font-size: 0.74rem; color: #64748b; }
+.ipr-cifras { display: flex; flex-wrap: wrap; gap: 0.2rem 0.9rem; font-size: 0.82rem; font-weight: 600; }
+.ipr-detalle { padding: 0 0.9rem 0.9rem; border-top: 1px solid #f1f5f9; }
+
+/* El globo oculto de una gráfica no debe ensanchar el informe. */
+.ie-grafica { overflow: hidden; }
