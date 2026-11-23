@@ -436,6 +436,60 @@ class InformesSuiteTest extends TestCase
         $this->assertSame([$antes, $primero, $ultimo], $this->como($this->lider)->idsReprogramaciones('?fin=2026-11-30'));
     }
 
+    public function test_reprogramaciones_separa_al_responsable_de_quien_la_pidio(): void
+    {
+        $this->reprogramacion($this->tarea($this->colaborador, 'Cruzada'), $this->ajeno, '2026-11-12 09:00:00');
+
+        $fila = $this->como($this->lider)->getJson('/api/informes/reprogramaciones')->assertOk()->json('0');
+        $this->assertSame('Carlos Colaborador', $fila['responsable']);
+        $this->assertSame($this->colaborador, $fila['empleado_id']);
+        $this->assertSame('Ana Ajena', $fila['nombre_solicitante']);
+        $this->assertSame(10, $fila['dias_ampliados']);
+        // Se pidió el 12 y vencía el 10.
+        $this->assertTrue($fila['ya_vencida']);
+        $this->assertSame('Solicitud', $fila['via']);
+    }
+
+    public function test_reprogramaciones_incluye_pausas_y_cambios_directos(): void
+    {
+        $t = $this->tarea($this->colaborador, 'Con cambios', ['fecha_pactada' => now()->addDays(2)->toDateString()]);
+        $this->db()->table('pausas_solicitadas')->insert([
+            'tarea_id' => $t, 'solicitado_por' => $this->colaborador,
+            'solicitado_por_user' => (int) $this->db()->table('users')->where('empleado', $this->colaborador)->value('id'),
+            'motivo' => 'Espera de insumos', 'fecha_reanudacion' => now()->addDays(8)->toDateString(),
+            'estado' => 'Aprobada', 'tipo_aprobador' => 'lider', 'fecha_solicitud' => now()->subDay(),
+        ]);
+        $nueva = now()->addDays(9)->toDateString();
+        $this->como($this->lider)->putJson("/api/reprogramarTarea/{$t}", [
+            'fecha_pactada' => $nueva, 'motivo_reprogramacion' => 'Cambió el alcance. Se amplía',
+        ])->assertOk();
+
+        $filas = collect($this->como($this->lider)->getJson('/api/informes/reprogramaciones')->assertOk()->json());
+        $directa = $filas->firstWhere('via', 'Directa');
+        $this->assertSame('Reprogramación', $directa['tipo']);
+        $this->assertSame($nueva, $directa['fecha_nueva']);
+        $this->assertSame(7, $directa['dias_ampliados']);
+        $this->assertFalse($directa['ya_vencida']);
+        $this->assertSame('Cambió el alcance. Se amplía', $directa['motivo']);
+        $this->assertSame('Carlos Colaborador', $directa['responsable']);
+        $this->assertSame('Espera de insumos', $filas->firstWhere('tipo', 'Pausa')['motivo']);
+
+        // Los cambios directos respetan el alcance.
+        $this->assertSame([], $this->como($this->verificador)->getJson('/api/informes/reprogramaciones')->json());
+    }
+
+    public function test_reprogramar_al_reanudar_no_es_aplazar(): void
+    {
+        $t = $this->tarea($this->colaborador, 'Pausada', ['pausada' => 1]);
+        $this->como($this->lider)->putJson("/api/pausarTarea/{$t}", ['pausada' => false, 'motivo' => 'Llegó el insumo'])->assertOk();
+        $this->como($this->lider)->putJson("/api/reprogramarTarea/{$t}", [
+            'fecha_pactada' => now()->addDays(9)->toDateString(), 'motivo_reprogramacion' => 'Llegó el insumo',
+        ])->assertOk();
+
+        $filas = collect($this->como($this->lider)->getJson('/api/informes/reprogramaciones')->json());
+        $this->assertSame(['Al reanudar'], $filas->pluck('via')->all());
+    }
+
     public function test_informe_de_reprogramaciones_rechaza_fechas_invalidas_con_422(): void
     {
         $this->reprogramacion($this->tarea($this->colaborador, 'R'), $this->colaborador);

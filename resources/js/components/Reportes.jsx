@@ -19,6 +19,7 @@ import InformeDesempeno from "./reportes/InformeDesempeno";
 import InformePuntualidad from "./reportes/InformePuntualidad";
 import InformeTareasEmpleado from "./reportes/InformeTareasEmpleado";
 import InformeProyectos from "./reportes/InformeProyectos";
+import InformeReprogramaciones from "./reportes/InformeReprogramaciones";
 
 /** Fecha local 'AAAA-MM-DD' (toISOString la daba en UTC). */
 const fechaLocal = (d = new Date()) => {
@@ -47,13 +48,6 @@ const Reportes = () => {
     const navigate = useNavigate();
     
     const [pdfLoading, setPdfLoading] = useState(false);
-    const [datosReprogramaciones, setDatosReprogramaciones] = useState([]);
-    const [loadingReprg, setLoadingReprg] = useState(false);
-    const [reprgFiltroEstado, setReprgFiltroEstado] = useState('');
-    const [reprgFiltroEmpleado, setReprgFiltroEmpleado] = useState('');
-    const [reprgFiltroDept, setReprgFiltroDept] = useState('');
-    const [reprgInicio, setReprgInicio] = useState('');
-    const [reprgFin, setReprgFin] = useState('');
 
     const reportCards = [
         {
@@ -105,19 +99,13 @@ const Reportes = () => {
         },
         {
             id: 9,
-            title: "Reprogramaciones",
+            title: "Reprogramaciones y pausas",
             icon: <FaChartArea size={25} />,
-            description: "Historial de solicitudes de reprogramación de tareas",
+            description: "Cuánto, quién y cómo se aplazan las tareas, con y sin aprobación",
             color: "#b45309",
             onClick: () => {
-                setReprgFiltroEstado('');
-                setReprgFiltroEmpleado('');
-                setReprgFiltroDept('');
-                setReprgInicio('');
-                setReprgFin('');
                 setSelectedReport("reprogramaciones");
                 setShowReportModal(true);
-                consultarReprogramaciones();
             },
         },
         {
@@ -135,14 +123,6 @@ const Reportes = () => {
     ];
 
 
-    const cambiarFormatoFecha = (fecha) => {
-        if (!fecha) return 'N/A';
-        const fechaObj = new Date(fecha + 'T12:00:00');
-        const dia = fechaObj.getDate().toString().padStart(2, '0');
-        const mes = (fechaObj.getMonth() + 1).toString().padStart(2, '0');
-        const anio = fechaObj.getFullYear();
-        return `${dia}/${mes}/${anio}`;
-    }
 
 
     const generarPDF = async (titulo) => {
@@ -236,16 +216,6 @@ const Reportes = () => {
             .finally(() => setTareasCargando(false));
     }
 
-    const consultarReprogramaciones = (inicio = '', fin = '') => {
-        setLoadingReprg(true);
-        const params = new URLSearchParams();
-        if (inicio) params.append('inicio', inicio);
-        if (fin)    params.append('fin', fin);
-        axiosInstance.get(`/informes/reprogramaciones?${params.toString()}`)
-            .then(res => setDatosReprogramaciones(Array.isArray(res.data) ? res.data : []))
-            .catch(err => console.error('Error cargando reprogramaciones:', err))
-            .finally(() => setLoadingReprg(false));
-    };
 
 
     return (
@@ -340,141 +310,13 @@ const Reportes = () => {
                 />
             )}
 
-            {/* ── Informe de Reprogramaciones ── */}
-            {showReportModal && selectedReport === 'reprogramaciones' && (() => {
-                const reprgFiltrados = datosReprogramaciones.filter(r =>
-                    (!reprgFiltroEstado   || r.estado === reprgFiltroEstado) &&
-                    (!reprgFiltroEmpleado || r.nombre_solicitante === reprgFiltroEmpleado) &&
-                    (!reprgFiltroDept     || r.departamento === reprgFiltroDept)
-                );
-                const empleadosReprg = [...new Set(datosReprogramaciones.map(r => r.nombre_solicitante).filter(Boolean))].sort();
-                const deptosReprg    = [...new Set(datosReprogramaciones.map(r => r.departamento).filter(Boolean))].sort();
-                const totalPendientes = reprgFiltrados.filter(r => r.estado === 'Pendiente').length;
-                const totalAprobadas  = reprgFiltrados.filter(r => r.estado === 'Aprobada').length;
-                const totalRechazadas = reprgFiltrados.filter(r => r.estado === 'Rechazada').length;
-
-                const estadoColor = (e) => {
-                    if (e === 'Aprobada')  return { background: '#d1fae5', color: '#065f46', borderRadius: '4px', padding: '2px 8px', fontWeight: 600, fontSize: '0.8rem' };
-                    if (e === 'Rechazada') return { background: '#fee2e2', color: '#991b1b', borderRadius: '4px', padding: '2px 8px', fontWeight: 600, fontSize: '0.8rem' };
-                    return { background: '#fef3c7', color: '#92400e', borderRadius: '4px', padding: '2px 8px', fontWeight: 600, fontSize: '0.8rem' };
-                };
-
-                return (
-                    <div className="modal-overlay">
-                        <div className="modal-report">
-                            <div className="modal-header">
-                                <h2>Informe de Reprogramaciones</h2>
-                                <div className="header-actions">
-                                    <button className="pdf-button" onClick={() => generarPDF('Informe-Reprogramaciones')} disabled={pdfLoading}>
-                                        <FaFilePdf /> {pdfLoading ? '...' : 'PDF'}
-                                    </button>
-                                    <button className="close-button" onClick={() => setShowReportModal(false)}>
-                                        <FaTimes />
-                                    </button>
-                                </div>
-                            </div>
-
-                            <div className="tab-content">
-                                {/* Filtros */}
-                                <div className="eficiencia-filtros">
-                                    <label className="eficiencia-filtro-label">
-                                        Desde
-                                        <input type="date" className="eficiencia-filtro-input" value={reprgInicio}
-                                            onChange={e => { setReprgInicio(e.target.value); consultarReprogramaciones(e.target.value, reprgFin); }} />
-                                    </label>
-                                    <label className="eficiencia-filtro-label">
-                                        Hasta
-                                        <input type="date" className="eficiencia-filtro-input" value={reprgFin}
-                                            onChange={e => { setReprgFin(e.target.value); consultarReprogramaciones(reprgInicio, e.target.value); }} />
-                                    </label>
-                                    <label className="eficiencia-filtro-label">
-                                        Estado
-                                        <select className="eficiencia-filtro-input" value={reprgFiltroEstado} onChange={e => setReprgFiltroEstado(e.target.value)}>
-                                            <option value="">Todos</option>
-                                            <option value="Pendiente">Pendiente</option>
-                                            <option value="Aprobada">Aprobada</option>
-                                            <option value="Rechazada">Rechazada</option>
-                                        </select>
-                                    </label>
-                                    <label className="eficiencia-filtro-label">
-                                        Empleado
-                                        <select className="eficiencia-filtro-input" value={reprgFiltroEmpleado} onChange={e => setReprgFiltroEmpleado(e.target.value)}>
-                                            <option value="">Todos</option>
-                                            {empleadosReprg.map(n => <option key={n} value={n}>{n}</option>)}
-                                        </select>
-                                    </label>
-                                    <label className="eficiencia-filtro-label">
-                                        Área
-                                        <select className="eficiencia-filtro-input" value={reprgFiltroDept} onChange={e => setReprgFiltroDept(e.target.value)}>
-                                            <option value="">Todas</option>
-                                            {deptosReprg.map(d => <option key={d} value={d}>{d}</option>)}
-                                        </select>
-                                    </label>
-                                    <button className="eficiencia-filtro-clear" onClick={() => { setReprgFiltroEstado(''); setReprgFiltroEmpleado(''); setReprgFiltroDept(''); setReprgInicio(''); setReprgFin(''); consultarReprogramaciones(); }}>Limpiar</button>
-                                    {loadingReprg && <span style={{ color: '#6b7280', fontSize: '0.85rem' }}>Cargando...</span>}
-                                </div>
-
-                                {/* KPIs */}
-                                <div className="reprg-kpis" style={{ display: 'flex', gap: '1rem', margin: '1rem 0', flexWrap: 'wrap' }}>
-                                    <div className="reprg-kpi" style={{ background: '#fef9c3', borderRadius: '8px', padding: '0.75rem 1.5rem', textAlign: 'center', minWidth: '110px' }}>
-                                        <div style={{ fontSize: '1.6rem', fontWeight: 700, color: '#92400e' }}>{totalPendientes}</div>
-                                        <div style={{ fontSize: '0.8rem', color: '#78350f' }}>Pendientes</div>
-                                    </div>
-                                    <div className="reprg-kpi" style={{ background: '#d1fae5', borderRadius: '8px', padding: '0.75rem 1.5rem', textAlign: 'center', minWidth: '110px' }}>
-                                        <div style={{ fontSize: '1.6rem', fontWeight: 700, color: '#065f46' }}>{totalAprobadas}</div>
-                                        <div style={{ fontSize: '0.8rem', color: '#064e3b' }}>Aprobadas</div>
-                                    </div>
-                                    <div className="reprg-kpi" style={{ background: '#fee2e2', borderRadius: '8px', padding: '0.75rem 1.5rem', textAlign: 'center', minWidth: '110px' }}>
-                                        <div style={{ fontSize: '1.6rem', fontWeight: 700, color: '#991b1b' }}>{totalRechazadas}</div>
-                                        <div style={{ fontSize: '0.8rem', color: '#7f1d1d' }}>Rechazadas</div>
-                                    </div>
-                                    <div className="reprg-kpi" style={{ background: '#e0e7ff', borderRadius: '8px', padding: '0.75rem 1.5rem', textAlign: 'center', minWidth: '110px' }}>
-                                        <div style={{ fontSize: '1.6rem', fontWeight: 700, color: '#3730a3' }}>{reprgFiltrados.length}</div>
-                                        <div style={{ fontSize: '0.8rem', color: '#312e81' }}>Total</div>
-                                    </div>
-                                </div>
-
-                                {reprgFiltrados.length === 0 && !loadingReprg ? (
-                                    <p style={{ color: '#9ca3af', textAlign: 'center', padding: '2rem' }}>No hay reprogramaciones para mostrar.</p>
-                                ) : (
-                                    <div style={{ overflowX: 'auto' }}>
-                                        <table className="report-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.88rem' }}>
-                                            <thead>
-                                                <tr style={{ background: '#f3f4f6' }}>
-                                                    <th style={{ padding: '8px 10px', textAlign: 'left' }}>Tarea</th>
-                                                    <th style={{ padding: '8px 10px', textAlign: 'left' }}>Empleado</th>
-                                                    <th style={{ padding: '8px 10px', textAlign: 'left' }}>Área</th>
-                                                    <th style={{ padding: '8px 10px', textAlign: 'center' }}>Fecha anterior</th>
-                                                    <th style={{ padding: '8px 10px', textAlign: 'center' }}>Nueva fecha</th>
-                                                    <th style={{ padding: '8px 10px', textAlign: 'left' }}>Motivo</th>
-                                                    <th style={{ padding: '8px 10px', textAlign: 'center' }}>Estado</th>
-                                                    <th style={{ padding: '8px 10px', textAlign: 'left' }}>Aprobado/Rechazado por</th>
-                                                    <th style={{ padding: '8px 10px', textAlign: 'center' }}>Fecha solicitud</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {reprgFiltrados.map((r, i) => (
-                                                    <tr key={r.id} style={{ background: i % 2 === 0 ? '#fff' : '#f9fafb', borderBottom: '1px solid #e5e7eb' }}>
-                                                        <td style={{ padding: '7px 10px', fontWeight: 500 }}>{r.tarea_titulo}</td>
-                                                        <td style={{ padding: '7px 10px' }}>{r.nombre_solicitante}</td>
-                                                        <td style={{ padding: '7px 10px', color: '#6b7280' }}>{r.departamento || '—'}</td>
-                                                        <td style={{ padding: '7px 10px', textAlign: 'center', color: '#6b7280' }}>{cambiarFormatoFecha(r.fecha_actual)}</td>
-                                                        <td style={{ padding: '7px 10px', textAlign: 'center', fontWeight: 600, color: '#1d4ed8' }}>{cambiarFormatoFecha(r.fecha_nueva)}</td>
-                                                        <td style={{ padding: '7px 10px', maxWidth: '200px', wordBreak: 'break-word' }}>{r.motivo}</td>
-                                                        <td style={{ padding: '7px 10px', textAlign: 'center' }}><span style={estadoColor(r.estado)}>{r.estado}</span></td>
-                                                        <td style={{ padding: '7px 10px', color: '#6b7280' }}>{r.nombre_aprobador || '—'}</td>
-                                                        <td style={{ padding: '7px 10px', textAlign: 'center', color: '#6b7280', fontSize: '0.82rem' }}>{cambiarFormatoFecha(r.fecha_solicitud?.split(' ')[0] || r.fecha_solicitud)}</td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                );
-            })()}
+            {showReportModal && selectedReport === "reprogramaciones" && (
+                <InformeReprogramaciones
+                    onCerrar={() => setShowReportModal(false)}
+                    onPDF={generarPDF}
+                    pdfLoading={pdfLoading}
+                />
+            )}
 
         </>
     );

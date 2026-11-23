@@ -4185,7 +4185,11 @@ class EmpleadosController extends Controller
         ]);
         
         try {
-            $tarea = DB::connection('mysql2')->table('tareas_empleados')->where('id', $id)->update([
+            // La fecha anterior queda en el historial: al cambiarla se perdía.
+            $antes = IndiceDesempeno::fechaValida($tarea->fecha_pactada);
+            $antesStr = $antes ? ' (antes: ' . Carbon::parse($antes)->format('d/m/Y') . ')' : '';
+
+            DB::connection('mysql2')->table('tareas_empleados')->where('id', $id)->update([
                 'fecha_pactada' => $data['fecha_pactada'],
                 'motivo_reprogramacion' => $data['motivo_reprogramacion'],
                 'reprogramada' => 1
@@ -4195,7 +4199,7 @@ class EmpleadosController extends Controller
             $actor = DB::connection('mysql2')->table('users')->where('email', Auth::user()->email)->value('name') ?? 'Usuario';
             $motivo = trim($data['motivo_reprogramacion'] ?? '');
             $motivoStr = $motivo ? " Motivo: {$motivo}." : '';
-            $this->registrarActividad($id, 'Reprogramada', "Tarea reprogramada por {$actor}. Nueva fecha: {$fechaFmt}.{$motivoStr}");
+            $this->registrarActividad($id, 'Reprogramada', "Tarea reprogramada por {$actor}. Nueva fecha: {$fechaFmt}{$antesStr}.{$motivoStr}");
 
             return response()->json(['success' => 'Tarea reprogramada correctamente'], 200);
         } catch (\Exception $e) {
@@ -5123,6 +5127,10 @@ class EmpleadosController extends Controller
         return response()->json($query->orderBy('r.fecha_solicitud', 'desc')->get());
     }
 
+    /**
+     * Reprogramaciones y pausas: las solicitudes y los cambios directos (que
+     * no piden aprobación y antes no salían en ningún informe).
+     */
     function informeReprogramaciones(Request $request)
     {
         $request->validate([
@@ -5137,38 +5145,111 @@ class EmpleadosController extends Controller
         $fin    = $request->query('fin');
         $alcance = $this->alcanceEmpleadosInformes();
 
-        $query = DB::connection('mysql2')->table('reprogramaciones_tareas as r')
-            ->join('tareas_empleados as t', 'r.tarea_id', '=', 't.id')
-            // LEFT y sin filtrar por estado: si quien la pidió salió de la
-            // empresa, la solicitud sigue siendo parte del histórico.
-            ->leftJoin('empleados as e', 'r.solicitado_por', '=', 'e.id')
-            ->leftJoin('departamentos as d', 'e.departamento', '=', 'd.id')
-            ->leftJoin('users as ua', 'r.aprobado_por', '=', 'ua.id')
-            ->leftJoin('empleados as ea', 'ua.empleado', '=', 'ea.id')
-            ->select(
-                'r.*',
-                't.titulo as tarea_titulo',
-                DB::connection('mysql2')->raw('CONCAT(e.nombres, " ", e.apellidos) as nombre_solicitante'),
-                'd.nombre as departamento',
-                DB::connection('mysql2')->raw('CONCAT(ea.nombres, " ", ea.apellidos) as nombre_aprobador')
-            )
-            ->orderBy('r.fecha_solicitud', 'desc');
+        $conn = DB::connection('mysql2');
+        $desde = $inicio ? $inicio . ' 00:00:00' : null;
+        $hasta = $fin ? $fin . ' 23:59:59' : null;
 
-        // Alcance por rol: se incluye la solicitud si el solicitante está dentro
-        // del alcance o si lo está el empleado dueño de la tarea reprogramada,
-        // de modo que un líder siga viendo las reprogramaciones de las tareas de
-        // su equipo aunque las haya solicitado un tercero.
-        if ($alcance !== null) {
-            $query->where(function ($q) use ($alcance) {
-                $q->whereIn('r.solicitado_por', $alcance)
-                  ->orWhereIn('t.empleado', $alcance);
-            });
-        }
+        // Solicitudes (reprogramar o pausar), con las mismas columnas. El
+        // responsable es el dueño de la tarea; quien la pidió va aparte (antes
+        // «Empleado» y su área eran los del solicitante).
+        $solicitudes = function (string $tabla, string $tipo, string $anterior, string $nueva) use ($conn, $alcance, $desde, $hasta) {
+            return $conn->table("{$tabla} as r")
+                ->join('tareas_empleados as t', 'r.tarea_id', '=', 't.id')
+                // LEFT y sin filtrar por estado: si alguien salió de la empresa,
+                // la solicitud sigue siendo parte del histórico.
+                ->leftJoin('empleados as o', 't.empleado', '=', 'o.id')
+                ->leftJoin('departamentos as d', 'o.departamento', '=', 'd.id')
+                ->leftJoin('empleados as e', 'r.solicitado_por', '=', 'e.id')
+                ->leftJoin('users as us', 'r.solicitado_por_user', '=', 'us.id')
+                ->leftJoin('users as ua', 'r.aprobado_por', '=', 'ua.id')
+                ->leftJoin('empleados as ea', 'ua.empleado', '=', 'ea.id')
+                ->where('t.estado_reg', 'Activo')
+                // Alcance: lo pidió alguien visible, o la tarea es de alguien visible.
+                ->when($alcance !== null, fn ($q) => $q->where(fn ($w) => $w
+                    ->whereIn('r.solicitado_por', $alcance)->orWhereIn('t.empleado', $alcance)))
+                ->when($desde, fn ($q) => $q->where('r.fecha_solicitud', '>=', $desde))
+                ->when($hasta, fn ($q) => $q->where('r.fecha_solicitud', '<=', $hasta))
+                ->select('r.id', 'r.tarea_id', 'r.motivo', 'r.estado', 'r.observacion_rechazo', 'r.fecha_solicitud', 'r.fecha_resolucion',
+                    't.titulo as tarea_titulo', 't.empleado as empleado_id', 'd.nombre as departamento')
+                ->selectRaw("'{$tipo}' as tipo, 'Solicitud' as via, {$anterior} as fecha_actual, {$nueva} as fecha_nueva")
+                ->selectRaw('NULLIF(TRIM(CONCAT(COALESCE(o.nombres, ""), " ", COALESCE(o.apellidos, ""))), "") as responsable')
+                // Administración sin ficha: el nombre sale de su usuario.
+                ->selectRaw('COALESCE(NULLIF(TRIM(CONCAT(COALESCE(e.nombres, ""), " ", COALESCE(e.apellidos, ""))), ""), us.name) as nombre_solicitante')
+                ->selectRaw('COALESCE(NULLIF(TRIM(CONCAT(COALESCE(ea.nombres, ""), " ", COALESCE(ea.apellidos, ""))), ""), ua.name) as nombre_aprobador')
+                ->get();
+        };
 
-        if ($inicio) $query->where('r.fecha_solicitud', '>=', $inicio . ' 00:00:00');
-        if ($fin)    $query->where('r.fecha_solicitud', '<=', $fin . ' 23:59:59');
+        // Cambios directos, sin solicitud: sólo quedan en el historial.
+        $directos = $conn->table('notif_generales as n')
+            ->join('tareas_empleados as t', 'n.tarea_id', '=', 't.id')
+            ->leftJoin('empleados as o', 't.empleado', '=', 'o.id')
+            ->leftJoin('departamentos as d', 'o.departamento', '=', 'd.id')
+            ->whereIn('n.tipo', ['Reprogramada', 'Pausada', 'Reanudada'])
+            // El registro del historial, no los avisos que lo repiten.
+            ->where('n.tipo_receptor', 'sistema')
+            ->where('t.estado_reg', 'Activo')
+            ->when($alcance !== null, fn ($q) => $q->whereIn('t.empleado', $alcance))
+            ->when($desde, fn ($q) => $q->where('n.fecha_creacion', '>=', $desde))
+            ->when($hasta, fn ($q) => $q->where('n.fecha_creacion', '<=', $hasta))
+            ->select('n.id', 'n.tipo as evento', 'n.mensaje', 'n.fecha_creacion', 'n.tarea_id',
+                't.titulo as tarea_titulo', 't.empleado as empleado_id', 'd.nombre as departamento')
+            ->selectRaw('NULLIF(TRIM(CONCAT(COALESCE(o.nombres, ""), " ", COALESCE(o.apellidos, ""))), "") as responsable')
+            ->get();
+        $reanudadas = $directos->where('evento', 'Reanudada')->groupBy('tarea_id');
 
-        return response()->json($query->get());
+        $fechaTexto = function (?string $f): ?string {
+            if (!$f) {
+                return null;
+            }
+            return preg_match('#^(\d{2})/(\d{2})/(\d{4})$#', $f, $m)
+                ? "{$m[3]}-{$m[2]}-{$m[1]}"
+                : IndiceDesempeno::fechaValida($f);
+        };
+
+        $filasDirectas = $directos->where('evento', '<>', 'Reanudada')->map(function ($n) use ($reanudadas, $fechaTexto) {
+            preg_match('/^Tarea (?:reprogramada|pausada) por (.+?)(?: desde el dashboard)?\.'
+                . '(?: Nueva fecha: (\d[\d\/-]+)(?: \(antes: (\d[\d\/-]+)\))?\.)?(?: Motivo: (.*?)\.?)?$/us', (string) $n->mensaje, $m);
+
+            // Reanudar una tarea pausada obliga a darle fecha: no es aplazarla.
+            $alReanudar = $n->evento === 'Reprogramada' && ($reanudadas[$n->tarea_id] ?? collect())->contains(
+                fn ($r) => abs(strtotime($r->fecha_creacion) - strtotime($n->fecha_creacion)) <= 120
+            );
+
+            return (object) [
+                'id' => (int) $n->id, 'tarea_id' => (int) $n->tarea_id, 'motivo' => $m[4] ?? null,
+                'estado' => 'Aplicada', 'observacion_rechazo' => null,
+                'fecha_solicitud' => $n->fecha_creacion, 'fecha_resolucion' => null,
+                'tarea_titulo' => $n->tarea_titulo, 'empleado_id' => $n->empleado_id, 'departamento' => $n->departamento,
+                'tipo' => $n->evento === 'Pausada' ? 'Pausa' : 'Reprogramación',
+                'via' => $alReanudar ? 'Al reanudar' : 'Directa',
+                'fecha_actual' => $fechaTexto($m[3] ?? null), 'fecha_nueva' => $fechaTexto($m[2] ?? null),
+                'responsable' => $n->responsable, 'nombre_solicitante' => $m[1] ?? null, 'nombre_aprobador' => null,
+            ];
+        });
+
+        $filas = $solicitudes('reprogramaciones_tareas', 'Reprogramación', 'r.fecha_actual', 'r.fecha_nueva')
+            ->concat($solicitudes('pausas_solicitadas', 'Pausa', 'NULL', 'r.fecha_reanudacion'))
+            ->concat($filasDirectas)
+            ->map(function ($r) {
+                $r->clave = "{$r->tipo}-{$r->via}-{$r->id}";
+                $r->empleado_id = $r->empleado_id ? (int) $r->empleado_id : null;
+                $r->responsable = $r->responsable ?: 'Sin responsable';
+                $r->departamento = $r->departamento ?: 'Sin departamento';
+                $r->fecha_actual = IndiceDesempeno::fechaValida($r->fecha_actual);
+                $r->fecha_nueva = IndiceDesempeno::fechaValida($r->fecha_nueva);
+                $esReprogramacion = $r->tipo === 'Reprogramación';
+                $r->dias_ampliados = $esReprogramacion && $r->fecha_actual && $r->fecha_nueva
+                    ? (int) round(Carbon::parse($r->fecha_actual)->diffInDays(Carbon::parse($r->fecha_nueva), false))
+                    : null;
+                // Pedida cuando ya había vencido; null si no se sabe la fecha anterior.
+                $r->ya_vencida = $esReprogramacion && $r->fecha_actual
+                    ? substr((string) $r->fecha_solicitud, 0, 10) > $r->fecha_actual
+                    : null;
+                return $r;
+            })
+            ->sortByDesc('fecha_solicitud')->values();
+
+        return response()->json($filas);
     }
 
     function migrarFotos()
