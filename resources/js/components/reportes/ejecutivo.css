@@ -151,3 +151,7 @@
 .ie-tabla-cab { display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; }
 .ie-orden { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.78rem; color: #64748b; }
 .ie-orden select { padding: 0.3rem 0.5rem; border: 1px solid #cbd5e1; border-radius: 6px; font: inherit; font-size: 0.8rem; }
+
+/* Puntualidad y vencidas (prefijo ip-). */
+.ip-dias { display: inline-block; min-width: 3rem; padding: 0.1rem 0.5rem; border-radius: 999px; font-weight: 700; text-align: center; }
+.ip-mas { margin: 0.75rem auto 0; display: block; }

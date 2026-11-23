@@ -31,6 +31,7 @@ import {
 import Sidebar from "./Sidebar";
 import InformeEjecutivo from "./reportes/InformeEjecutivo";
 import InformeDesempeno from "./reportes/InformeDesempeno";
+import InformePuntualidad from "./reportes/InformePuntualidad";
 import * as XLSX from 'xlsx';
 
 /**
@@ -117,23 +118,15 @@ const Reportes = () => {
         },
         {
             id: 2,
-            title: "Informe de tiempo",
+            title: "Puntualidad y vencidas",
             icon: <FaChartArea size={25} />,
-            description: "Tiempos y retrasos",
-            color: "#0891b2",
+            description: "Qué está vencido hoy y desde cuándo, y qué tan puntual fue lo entregado",
+            color: "#b91c1c",
             onClick: () => {
-                abrirModalInformeTiempo();
-
-            },
-        },
-        {
-            id: 4,
-            title: "Informe de cumplimiento de tareas",
-            icon: <FaChartBar size={25} />,
-            description: "Resumen de tareas pendientes",
-            color: "#0891b2",
-            onClick: () => {
-                abrirModalInformeCumplimiento();
+                _resetFiltrosModal();
+                setSelectedReport("puntualidad");
+                setShowReportModal(true);
+                consultarTareas();
             },
         },
         {
@@ -201,35 +194,6 @@ const Reportes = () => {
         return `${dia}/${mes}/${anio}`;
     }
 
-
-    //informe de tiempo 
-    const calcularDias = (inicio, fin) => {
-        const i = new Date(inicio);
-        const f = new Date(fin);
-        const diff = (f - i) / (1000 * 60 * 60 * 24);
-        return Math.ceil(diff);
-    };
-
-    const informe = tareas
-        .filter(tarea =>
-            tarea.fecha_pactada >= startDate && tarea.fecha_pactada <= endDate &&
-            (!filterDepartamento || tarea.departamento === filterDepartamento) &&
-            (!filterEmpleado || tarea.empleado === filterEmpleado)
-        )
-        .map((tarea) => {
-            const diasEstimados = calcularDias(tarea.fecha_aprobacion, tarea.fecha_pactada);
-            const diasReales = tarea.fecha_entregada ? calcularDias(tarea.fecha_aprobacion, tarea.fecha_entregada) : null;
-            const retrasada = tarea.fecha_entregada && tarea.fecha_entregada > tarea.fecha_pactada;
-
-            return {
-                ...tarea,
-                diasEstimados,
-                diasReales,
-                horasEstimadas: diasEstimados * 8,
-                horasReales: diasReales ? diasReales * 8 : null,
-                retrasada
-            };
-        });
 
     const generarPDF = async (titulo) => {
         const element = document.querySelector('.modal-report');
@@ -731,49 +695,9 @@ const Reportes = () => {
         XLSX.writeFile(wb, `informe-proyectos-${fecha}.xlsx`);
     };
 
-    //informe de cumplimiento de tareas
-    const _cumplFiltro = t =>
-        t.fecha_pactada >= startDate && t.fecha_pactada <= endDate &&
-        (!filterDepartamento || t.departamento === filterDepartamento) &&
-        (!filterEmpleado || t.empleado === filterEmpleado);
-
-    // 1. No iniciadas vs completadas
-    const noIniciadas = tareas.filter(t => t.estado === "Pendiente" && _cumplFiltro(t)).length;
-    const completadas = tareas.filter(t => t.estado === "Completada" && _cumplFiltro(t)).length;
-
-    // 2. Recurrentes no cumplidas (mismo título + no completada)
-    const titulos = tareas.filter(_cumplFiltro).map(t => t.titulo);
-    const titulosRecurrentes = titulos.filter((titulo, i, arr) => arr.indexOf(titulo) !== i);
-    const recurrentesNoCumplidas = tareas.filter(
-        t => titulosRecurrentes.includes(t.titulo) && t.estado !== "Completada" && _cumplFiltro(t)
-    );
-
-    // 3. Incumplimiento de fechas (fecha_entregada > fecha_pactada)
-    const incumplidas = tareas.filter(t => {
-        if (!t.fecha_entregada || !_cumplFiltro(t)) return false;
-        return new Date(t.fecha_entregada) > new Date(t.fecha_pactada);
-    });
-
-
     const _resetFiltrosModal = () => {
         setFilterEmpleado('');
         setFilterDepartamento('');
-    };
-
-    const abrirModalInformeTiempo = () => {
-        _resetFiltrosModal();
-        setSelectedReport("tiempo");
-        setShowReportModal(true);
-        setActiveTab("promedioTiempo");
-        consultarTareas();
-    };
-
-    const abrirModalInformeCumplimiento = () => {
-        _resetFiltrosModal();
-        setSelectedReport("cumplimiento");
-        setShowReportModal(true);
-        setActiveTab("promedioTiempo");
-        consultarTareas();
     };
 
     const abrirModalInformeTareasPorEmpleado = () => {
@@ -819,225 +743,19 @@ const Reportes = () => {
                 </div>
             </div>
 
-            {showReportModal && selectedReport === "tiempo" && (
-                <div className="modal-overlay">
-                    <div className="modal-report">
-                        <div className="modal-header">
-                            <h2>Informe de Tiempo</h2>
-                            <div className="header-actions">
-                                <button className="pdf-button" onClick={() => generarPDF('Informe de Tiempo')} disabled={pdfLoading}>
-                                    <FaFilePdf /> {pdfLoading ? '...' : 'PDF'}
-                                </button>
-                                <button className="close-button" onClick={() => setShowReportModal(false)}>
-                                    <FaTimes />
-                                </button>
-                            </div>
-                        </div>
-                        <div className="tab-content">
-                            <div>
-                                <div className="eficiencia-filtros">
-                                    <RangosFecha startDate={startDate} setStartDate={setStartDate} endDate={endDate} setEndDate={setEndDate} />
-                                    <label className="eficiencia-filtro-label">
-                                        Área
-                                        <select className="eficiencia-filtro-input" value={filterDepartamento} onChange={e => { setFilterDepartamento(e.target.value); setFilterEmpleado(''); }}>
-                                            <option value="">Todas</option>
-                                            {departamentos.map(d => <option key={d} value={d}>{d}</option>)}
-                                        </select>
-                                    </label>
-                                    <label className="eficiencia-filtro-label">
-                                        Empleado
-                                        <select className="eficiencia-filtro-input" value={filterEmpleado} onChange={e => setFilterEmpleado(e.target.value)}>
-                                            <option value="">Todos</option>
-                                            {(filterDepartamento ? [...new Set(tareas.filter(t => t.departamento === filterDepartamento).map(t => t.empleado))] : empleadosList).sort().map(emp => <option key={emp} value={emp}>{emp}</option>)}
-                                        </select>
-                                    </label>
-                                    <button className="eficiencia-filtro-clear" onClick={() => { setFilterDepartamento(''); setFilterEmpleado(''); }}>Limpiar</button>
-                                </div>
-                                <table border="1" cellPadding="8" className="table-productivity">
-                                    <thead className="table-productivity-thead">
-                                        <tr>
-                                            <th>Tarea</th>
-                                            <th>Empleado</th>
-                                            <th>Estado</th>
-                                            <th>Horas Estimadas</th>
-                                            <th>Horas Reales</th>
-                                            <th>¿Retrasada?</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {informe.map((t, idx) => (
-                                            <tr key={idx}>
-                                                <td style={{ textAlign: "left" }}>{t.titulo}</td>
-                                                <td style={{ textAlign: "left" }}>{t.empleado}</td>
-                                                <td>{t.estado}</td>
-                                                <td>{t.horasEstimadas}</td>
-                                                <td>{t.horasReales ?? '—'}</td>
-                                                <td>{t.retrasada ? '✅ Sí' : 'No'}</td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {showReportModal && selectedReport === "cumplimiento" && (
-                <div className="modal-overlay">
-                    <div className="modal-report">
-                        <div className="modal-header">
-                            <h2>Informe de Cumplimiento</h2>
-                            <div className="header-actions">
-                                <button className="pdf-button" onClick={() => generarPDF('Informe de Cumplimiento')} disabled={pdfLoading}>
-                                    <FaFilePdf /> {pdfLoading ? '...' : 'PDF'}
-                                </button>
-                                <button className="close-button" onClick={() => setShowReportModal(false)}>
-                                    <FaTimes />
-                                </button>
-                            </div>
-                        </div>
-                        <div className="tab-content">
-                            <div className="bg-white shadow-xl rounded-2xl p-8 space-y-8 border border-gray-200">
-                                {/* Header del informe */}
-                                <div className="text-center mb-10">
-                                    <h3 className="text-3xl font-bold text-gray-800 mb-3">Resumen de Cumplimiento</h3>
-                                    <p className="text-gray-600 text-lg">Estado actual de las tareas y su cumplimiento</p>
-                                    <div className="w-24 h-1 bg-blue-500 mx-auto mt-4 rounded-full"></div>
-                                </div>
-
-                                {/* Tabla de Resumen General */}
-                                <div className="overflow-x-auto">
-                                    <div className="eficiencia-filtros">
-                                        <RangosFecha startDate={startDate} setStartDate={setStartDate} endDate={endDate} setEndDate={setEndDate} />
-                                        <label className="eficiencia-filtro-label">
-                                            Área
-                                            <select className="eficiencia-filtro-input" value={filterDepartamento} onChange={e => { setFilterDepartamento(e.target.value); setFilterEmpleado(''); }}>
-                                                <option value="">Todas</option>
-                                                {departamentos.map(d => <option key={d} value={d}>{d}</option>)}
-                                            </select>
-                                        </label>
-                                        <label className="eficiencia-filtro-label">
-                                            Empleado
-                                            <select className="eficiencia-filtro-input" value={filterEmpleado} onChange={e => setFilterEmpleado(e.target.value)}>
-                                                <option value="">Todos</option>
-                                                {(filterDepartamento ? [...new Set(tareas.filter(t => t.departamento === filterDepartamento).map(t => t.empleado))] : empleadosList).sort().map(emp => <option key={emp} value={emp}>{emp}</option>)}
-                                            </select>
-                                        </label>
-                                        <button className="eficiencia-filtro-clear" onClick={() => { setFilterDepartamento(''); setFilterEmpleado(''); }}>Limpiar</button>
-                                    </div>
-                                    <table className="table-productivity">
-                                        <thead className="table-productivity-thead">
-                                            <tr>
-                                                <th>Métrica</th>
-                                                <th>Cantidad</th>
-                                                <th>Estado</th>
-                                                <th>Detalle</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <tr>
-                                                <td>
-                                                    <div className="icon-cell">
-                                                        <span>📋</span>
-                                                        <span>Tareas no iniciadas</span>
-                                                    </div>
-                                                </td>
-                                                <td className="number-cell">{noIniciadas}</td>
-                                                <td>
-                                                    <span className="status-badge status-pending">Pendientes</span>
-                                                </td>
-                                                <td>Total de tareas sin iniciar</td>
-                                            </tr>
-                                            <tr>
-                                                <td>
-                                                    <div className="icon-cell">
-                                                        <span>✅</span>
-                                                        <span>Tareas completadas</span>
-                                                    </div>
-                                                </td>
-                                                <td className="number-cell">{completadas}</td>
-                                                <td>
-                                                    <span className="status-badge status-completed">Finalizadas</span>
-                                                </td>
-                                                <td>Total de tareas completadas</td>
-                                            </tr>
-                                            <tr>
-                                                <td>
-                                                    <div className="icon-cell">
-                                                        <span>🔄</span>
-                                                        <span>Recurrentes no cumplidas</span>
-                                                    </div>
-                                                </td>
-                                                <td className="number-cell">{recurrentesNoCumplidas.length}</td>
-                                                <td>
-                                                    <span className="status-badge status-pending">Pendientes</span>
-                                                </td>
-                                                <td>Tareas recurrentes sin completar</td>
-                                            </tr>
-                                            <tr>
-                                                <td>
-                                                    <div className="icon-cell">
-                                                        <span>⏰</span>
-                                                        <span>Incumplieron fecha límite</span>
-                                                    </div>
-                                                </td>
-                                                <td className="number-cell">{incumplidas.length}</td>
-                                                <td>
-                                                    <span className="status-badge status-delayed">Atrasadas</span>
-                                                </td>
-                                                <td>Tareas fuera de plazo</td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-
-                                {/* Tabla de Tareas Incumplidas */}
-                                {incumplidas.length > 0 && (
-                                    <div className="mt-12">
-                                        <div className="bg-gradient-to-r from-red-50 to-red-100 rounded-2xl p-8 shadow-lg">
-                                            <div className="warning-header">
-                                                <h4>
-                                                    <span>⚠️</span>
-                                                    Tareas que incumplieron fechas límite
-                                                </h4>
-                                                <p className="text-red-600 mt-1">Se requiere atención inmediata</p>
-                                            </div>
-                                            <div className="overflow-x-auto">
-                                                <table className="table-productivity">
-                                                    <thead className="table-productivity-thead">
-                                                        <tr>
-                                                            <th>Tarea</th>
-                                                            <th>Empleado</th>
-                                                            <th>Fecha Pactada</th>
-                                                            <th>Fecha Entregada</th>
-                                                            <th>Estado</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        {incumplidas.map((t, i) => (
-                                                            <tr key={i}>
-                                                                <td>{t.titulo}</td>
-                                                                <td>
-                                                                    <span className="status-badge status-pending">{t.empleado}</span>
-                                                                </td>
-                                                                <td className="date-cell">{cambiarFormatoFecha(t.fecha_pactada)}</td>
-                                                                <td className="date-cell text-red-600">{cambiarFormatoFecha(t.fecha_entregada)}</td>
-                                                                <td>
-                                                                    <span className="status-badge status-delayed">Atrasada</span>
-                                                                </td>
-                                                            </tr>
-                                                        ))}
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                </div>
+            {showReportModal && selectedReport === "puntualidad" && (
+                <InformePuntualidad
+                    tareas={tareas}
+                    cargando={tareasCargando}
+                    error={tareasError}
+                    startDate={startDate}
+                    setStartDate={setStartDate}
+                    endDate={endDate}
+                    setEndDate={setEndDate}
+                    onCerrar={() => setShowReportModal(false)}
+                    onPDF={generarPDF}
+                    pdfLoading={pdfLoading}
+                />
             )}
 
             {showReportModal && selectedReport === "tareasPorEmpleado" && (
