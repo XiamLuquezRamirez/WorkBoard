@@ -104,6 +104,97 @@ class InformesSuiteTest extends TestCase
         $this->assertSame(90, $admin->getJson('/api/informes/desempeno?ventana=7')->json('ventana'));
     }
 
+    // ─── informes/registro ────────────────────────────────────────────────
+
+    private function registro(string $query = ''): \Illuminate\Support\Collection
+    {
+        return collect($this->getJson('/api/informes/registro' . $query)->assertOk()->json('personas'))->keyBy('id');
+    }
+
+    public function test_registro_marca_las_semanas_con_movimiento_y_la_semana_en_curso_no_cuenta(): void
+    {
+        // Lunes 16 de noviembre: la semana en curso acaba de empezar.
+        Carbon::setTestNow(Carbon::parse('2026-11-16 09:00:00', 'America/Bogota'));
+        \Carbon\CarbonImmutable::setTestNow('2026-11-16 09:00:00');
+        $this->tarea($this->colaborador, 'Nueva', ['fecha_creacion' => '2026-11-11', 'fecha_pactada' => '2026-11-30']);
+
+        $this->como($this->lider);
+        $p = $this->registro('?semanas=4')[$this->colaborador];
+        // 26 oct, 2 nov, 9 nov y 16 nov (en curso).
+        $this->assertSame([false, false, true, false], array_column($p['semanas'], 'movio'));
+        $this->assertSame([0, 0, 1, 0], array_column($p['semanas'], 'creadas'));
+        $this->assertSame(3, $p['semanas_cerradas']);
+        $this->assertSame(2, $p['semanas_sin_registrar']);
+        $this->assertSame(['Laura Líder'], $p['lideres']);
+        $this->assertSame(5, $p['dias_sin_actividad']);
+    }
+
+    public function test_registro_no_cuenta_los_recordatorios_automaticos_y_respeta_el_alcance(): void
+    {
+        $t = $this->tarea($this->colaborador, 'Vieja', ['fecha_creacion' => now()->subDays(100)->toDateString()]);
+        $evento = fn (string $tipo) => $this->db()->table('notif_generales')->insert([
+            'id_emisor' => 0, 'tipo_emisor' => 'sistema', 'id_receptor' => 0, 'tipo_receptor' => 'sistema',
+            'mensaje' => 'x', 'tarea_id' => $t, 'leido' => 1, 'fecha' => now(), 'fecha_creacion' => now()->subDays(9), 'tipo' => $tipo,
+        ]);
+        $this->como($this->lider);
+
+        $evento('TareaAtrasada');
+        $this->assertNotContains(true, array_column($this->registro()[$this->colaborador]['semanas'], 'movio'));
+        $evento('Observacion');
+        $this->assertContains(true, array_column($this->registro()[$this->colaborador]['semanas'], 'movio'));
+
+        $this->assertFalse($this->registro()->has($this->ajeno));
+        // Un número de semanas que no se ofrece vuelve a 8.
+        $this->assertCount(8, $this->registro('?semanas=999')[$this->colaborador]['semanas']);
+    }
+
+    // ─── informes/calidad ─────────────────────────────────────────────────
+
+    public function test_calidad_detecta_lo_mal_definido_y_lo_que_espera_visto_bueno(): void
+    {
+        $hace = fn (int $d) => now('America/Bogota')->subDays($d)->toDateString();
+        $this->tarea($this->colaborador, 'Sin nada', ['fecha_creacion' => '2026-01-10']);
+        $bien = $this->tarea($this->colaborador, 'Completa', ['aprobada' => 0, 'fecha_creacion' => $hace(6), 'proposito' => 'Para decidir']);
+        $this->db()->table('tarea_criterios')->insert(['tarea_id' => $bien, 'descripcion' => 'Cuadra', 'created_at' => now()]);
+        $this->tarea($this->colaborador, 'Con espera', ['fecha_creacion' => $hace(12), 'fecha_aprobacion' => $hace(2)]);
+        $this->tarea($this->colaborador, 'Archivada', ['archivar' => 1]);
+        $this->tarea($this->ajeno, 'Ajena');
+
+        $r = $this->como($this->lider)->getJson('/api/informes/calidad')->assertOk();
+        $abiertas = collect($r->json('abiertas'))->keyBy('titulo');
+        $this->assertFalse($abiertas->has('Archivada'));
+        $this->assertFalse($abiertas->has('Ajena'));
+        $this->assertTrue($abiertas['Sin nada']['sin_criterio']);
+        $this->assertTrue($abiertas['Sin nada']['sin_proposito']);
+        $this->assertFalse($abiertas['Sin nada']['nueva']);
+        $this->assertFalse($abiertas['Completa']['sin_criterio']);
+        $this->assertTrue($abiertas['Completa']['sin_visto_bueno']);
+        $this->assertSame(6, $abiertas['Completa']['dias_esperando_vb']);
+        $this->assertSame(['Laura Líder'], $abiertas['Completa']['lideres']);
+        $this->assertSame([10], collect($r->json('vistos_buenos'))->where('titulo', 'Con espera')->pluck('dias')->values()->all());
+    }
+
+    public function test_calidad_mide_las_decisiones_y_separa_las_automaticas(): void
+    {
+        $t = $this->tarea($this->colaborador, 'Revisada', ['estado' => 'Completada', 'fecha_entregada' => now()->toDateString()]);
+        $envio = fn ($cuando) => $this->db()->table('tarea_criterio_historial')->insert(['tarea_id' => $t, 'evento' => 'enviada_revision', 'created_at' => $cuando]);
+        $decision = fn ($res, $cuando, $obs = null) => $this->db()->table('tarea_aceptaciones')->insert(['tarea_id' => $t, 'resultado' => $res, 'observacion' => $obs, 'created_at' => $cuando]);
+        $envio(now()->subDays(9));
+        $decision('Devuelta', now()->subDays(6), 'Faltan anexos');
+        $envio(now()->subDays(4));
+        $decision('Aceptada', now()->subDays(3));
+        $auto = $this->tarea($this->independiente, 'Sola', ['estado' => 'Completada']);
+        $this->db()->table('tarea_aceptaciones')->insert(['tarea_id' => $auto, 'resultado' => 'Aceptada',
+            'observacion' => 'Aceptada al completarla: el responsable tiene independencia.', 'created_at' => now()->subDay()]);
+
+        $a = collect($this->como($this->lider)->getJson('/api/informes/calidad')->assertOk()->json('aceptaciones'));
+        $this->assertSame(['Aceptada', 'Aceptada', 'Devuelta'], $a->pluck('resultado')->all());
+        $this->assertSame([null, 1, 3], $a->pluck('dias')->all());
+        $this->assertSame([true, false, false], $a->pluck('automatica')->all());
+
+        $this->getJson('/api/informes/calidad?inicio=ayer')->assertStatus(422);
+    }
+
     private function idDe(string $titulo): int
     {
         return (int) $this->db()->table('tareas_empleados')->where('titulo', $titulo)->value('id');
@@ -173,6 +264,8 @@ class InformesSuiteTest extends TestCase
             'informes/eficiencia'      => ['get', '/api/informes/eficiencia'],
             'informes/proyectos'       => ['get', '/api/informes/proyectos'],
             'informes/reprogramaciones' => ['get', '/api/informes/reprogramaciones'],
+            'informes/registro'        => ['get', '/api/informes/registro'],
+            'informes/calidad'         => ['get', '/api/informes/calidad'],
             'dashboard'                => ['get', '/api/dashboard/cargarEmpleadosTareas'],
             'tablero/estado'           => ['get', '/api/tablero/estado'],
             'tablero/avatares'         => ['get', '/api/tablero/avatares'],

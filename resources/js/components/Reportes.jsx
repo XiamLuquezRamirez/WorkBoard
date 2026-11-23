@@ -20,6 +20,8 @@ import InformePuntualidad from "./reportes/InformePuntualidad";
 import InformeTareasEmpleado from "./reportes/InformeTareasEmpleado";
 import InformeProyectos from "./reportes/InformeProyectos";
 import InformeReprogramaciones from "./reportes/InformeReprogramaciones";
+import InformeRegistro from "./reportes/InformeRegistro";
+import InformeCalidad from "./reportes/InformeCalidad";
 
 /** Fecha local 'AAAA-MM-DD' (toISOString la daba en UTC). */
 const fechaLocal = (d = new Date()) => {
@@ -63,6 +65,17 @@ const Reportes = () => {
             },
         },
         {
+            id: 10,
+            title: "Quién no registra",
+            icon: <FaChartBar size={25} />,
+            description: "Personas sin movimiento en sus tareas, semana a semana, por líder y por área",
+            color: "#b45309",
+            onClick: () => {
+                setSelectedReport("registro");
+                setShowReportModal(true);
+            },
+        },
+        {
             id: 2,
             title: "Puntualidad y vencidas",
             icon: <FaChartArea size={25} />,
@@ -94,6 +107,17 @@ const Reportes = () => {
             color: "#1d4ed8",
             onClick: () => {
                 setSelectedReport("desempeno");
+                setShowReportModal(true);
+            },
+        },
+        {
+            id: 11,
+            title: "Calidad de definición y aceptación",
+            icon: <FaChartArea size={25} />,
+            description: "Tareas mal definidas, espera del visto bueno y entregas devueltas",
+            color: "#0f766e",
+            onClick: () => {
+                setSelectedReport("calidad");
                 setShowReportModal(true);
             },
         },
@@ -304,6 +328,22 @@ const Reportes = () => {
 
             {showReportModal && selectedReport === "proyectos" && (
                 <InformeProyectos
+                    onCerrar={() => setShowReportModal(false)}
+                    onPDF={generarPDF}
+                    pdfLoading={pdfLoading}
+                />
+            )}
+
+            {showReportModal && selectedReport === "registro" && (
+                <InformeRegistro
+                    onCerrar={() => setShowReportModal(false)}
+                    onPDF={generarPDF}
+                    pdfLoading={pdfLoading}
+                />
+            )}
+
+            {showReportModal && selectedReport === "calidad" && (
+                <InformeCalidad
                     onCerrar={() => setShowReportModal(false)}
                     onPDF={generarPDF}
                     pdfLoading={pdfLoading}

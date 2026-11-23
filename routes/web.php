@@ -189,6 +189,9 @@ Route::middleware(['auth:sanctum', 'activo'])->group(function () {
         Route::get('/informes/eficiencia', [empleadosController::class, 'informeEficiencia']);
         // Índice de Desempeño por persona, con periodo a elegir (reemplaza a Eficiencia Operativa).
         Route::get('/informes/desempeno', [EmpleadosController::class, 'informeDesempeno']);
+        // Quién no registra y calidad de definición y aceptación.
+        Route::get('/informes/registro', [EmpleadosController::class, 'informeRegistro']);
+        Route::get('/informes/calidad', [EmpleadosController::class, 'informeCalidad']);
 
         // informe de proyectos
         Route::get('/informes/proyectos', [empleadosController::class, 'informeProyectos']);

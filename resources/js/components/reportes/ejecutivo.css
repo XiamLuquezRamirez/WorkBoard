@@ -182,3 +182,11 @@
 
 /* Reprogramaciones y pausas. */
 .irp-motivo { min-width: 180px; max-width: 320px; overflow-wrap: anywhere; }
+
+/* Quién no registra (prefijo ir-). */
+.ir-semanas { display: inline-flex; gap: 3px; }
+.ir-semana { width: 13px; height: 13px; border-radius: 3px; box-sizing: border-box; }
+.ir-semana.si { background: #22c55e; }
+.ir-semana.no { background: #fecaca; }
+.ir-semana.actual { border: 2px solid #475569; }
+.ir-semana.actual.no { background: #f1f5f9; }

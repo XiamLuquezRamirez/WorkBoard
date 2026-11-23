@@ -2205,13 +2205,55 @@ class EmpleadosController extends Controller
             $ventana = IndiceDesempeno::VENTANA_DIAS;
         }
 
-        $alcance = $this->alcanceEmpleadosInformes();
-        $conn = DB::connection('mysql2');
+        return response()->json([
+            'ventana'  => $ventana,
+            'hoy'      => IndiceDesempeno::hoy()->toDateString(),
+            'personas' => $this->personasConIndice($this->alcanceEmpleadosInformes(), $ventana),
+        ]);
+    }
+
+    /** «Quién no registra»: movimiento de cada persona, semana a semana. */
+    function informeRegistro(Request $request)
+    {
+        $semanas = (int) $request->query('semanas', 8);
+        if (!in_array($semanas, \App\Support\InformeRegistro::SEMANAS, true)) {
+            $semanas = 8;
+        }
+
+        return response()->json(\App\Support\InformeRegistro::calcular(
+            $this->personasConIndice($this->alcanceEmpleadosInformes(), IndiceDesempeno::VENTANA_DIAS)->all(), $semanas
+        ));
+    }
+
+    /** Calidad de definición y aceptación, en un periodo (por defecto, 90 días). */
+    function informeCalidad(Request $request)
+    {
+        $datos = $request->validate([
+            'inicio' => 'nullable|date_format:Y-m-d',
+            'fin'    => 'nullable|date_format:Y-m-d|after_or_equal:inicio',
+        ], [
+            'inicio.date_format' => 'La fecha de inicio no es válida (AAAA-MM-DD).',
+            'fin.date_format'    => 'La fecha de fin no es válida (AAAA-MM-DD).',
+            'fin.after_or_equal' => 'La fecha de fin no puede ser anterior a la de inicio.',
+        ]);
         $hoy = IndiceDesempeno::hoy();
 
+        return response()->json(\App\Support\InformeCalidad::calcular(
+            $this->alcanceEmpleadosInformes(),
+            $datos['inicio'] ?? $hoy->subDays(90)->toDateString(),
+            $datos['fin'] ?? $hoy->toDateString(),
+            $hoy
+        ));
+    }
+
+    /** Personas activas del alcance con su índice (mismo cálculo que el dashboard). */
+    private function personasConIndice(?array $alcance, int $ventana): \Illuminate\Support\Collection
+    {
         if ($alcance === []) {
-            return response()->json(['ventana' => $ventana, 'hoy' => $hoy->toDateString(), 'personas' => []]);
+            return collect();
         }
+        $conn = DB::connection('mysql2');
+        $hoy = IndiceDesempeno::hoy();
 
         $empleados = $conn->table('empleados as e')
             ->leftJoin('cargos as c', 'e.cargo', '=', 'c.id')
@@ -2238,7 +2280,7 @@ class EmpleadosController extends Controller
             ->selectRaw('te.empleado, MAX(n.fecha_creacion) as ultimo')
             ->pluck('ultimo', 'empleado');
 
-        $personas = $empleados->map(function ($e) use ($tareas, $ultimosEventos, $hoy, $ventana) {
+        return $empleados->map(function ($e) use ($tareas, $ultimosEventos, $hoy, $ventana) {
             $ind = IndiceDesempeno::calcular(
                 collect($tareas[$e->id] ?? []), $hoy, $ultimosEventos[$e->id] ?? null, $ventana
             );
@@ -2254,12 +2296,6 @@ class EmpleadosController extends Controller
                 'indicadores'     => $ind,
             ];
         })->values();
-
-        return response()->json([
-            'ventana'  => $ventana,
-            'hoy'      => $hoy->toDateString(),
-            'personas' => $personas,
-        ]);
     }
 
     function informeEficiencia()
