@@ -1,9 +1,10 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useContext, useEffect, useMemo, useState } from 'react';
 import { FaTimes, FaFilePdf, FaFileExcel } from 'react-icons/fa';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LabelList } from 'recharts';
 import * as XLSX from 'xlsx';
 import axiosInstance from '../../axiosConfig';
 import RangosFecha from '../rangosFecha';
+import { AmbitoInforme } from './ambito';
 import './ejecutivo.css';
 
 const PESTANAS = [
@@ -53,6 +54,7 @@ function Kpi({ numero, titulo, detalle, tono = '' }) {
 
 /** Cómo nacen las tareas, cuánto esperan por su líder y qué pasa al entregarlas. */
 export default function InformeCalidad({ onCerrar, onPDF, pdfLoading }) {
+    const ambito = useContext(AmbitoInforme);
     const [inicio, setInicio] = useState(haceDias(90));
     const [fin, setFin] = useState(haceDias(0));
     const [datos, setDatos] = useState(null);
@@ -66,7 +68,7 @@ export default function InformeCalidad({ onCerrar, onPDF, pdfLoading }) {
         const ctrl = new AbortController();
         setError('');
         setDatos(null);
-        axiosInstance.get('/informes/calidad', { params: { inicio: inicio || undefined, fin: fin || undefined }, signal: ctrl.signal })
+        axiosInstance.get('/informes/calidad', { params: { ...ambito, inicio: inicio || undefined, fin: fin || undefined }, signal: ctrl.signal })
             .then((r) => setDatos(r.data))
             .catch((e) => {
                 if (ctrl.signal.aborted) return;

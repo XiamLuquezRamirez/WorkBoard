@@ -190,3 +190,7 @@
 .ir-semana.no { background: #fecaca; }
 .ir-semana.actual { border: 2px solid #475569; }
 .ir-semana.actual.no { background: #f1f5f9; }
+
+/* Reporte General (prefijo irg-). */
+.irg-seccion { margin-top: 1.25rem; }
+.irg-seccion h3 { margin: 0 0 0.4rem; font-size: 0.95rem; color: #0f172a; text-align: left; }

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useContext, useEffect, useMemo, useState } from 'react';
 import { FaTimes, FaFilePdf, FaFileExcel, FaInfoCircle } from 'react-icons/fa';
 import {
     BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LabelList,
@@ -6,6 +6,7 @@ import {
 import * as XLSX from 'xlsx';
 import axiosInstance from '../../axiosConfig';
 import ExplicacionIndice from '../dashboard/ExplicacionIndice';
+import { AmbitoInforme } from './ambito';
 import './ejecutivo.css';
 
 /**
@@ -69,6 +70,7 @@ function Kpi({ numero, titulo, detalle, tono = '' }) {
 }
 
 export default function InformeDesempeno({ onCerrar, onPDF, pdfLoading }) {
+    const ambito = useContext(AmbitoInforme);
     const [ventana, setVentana] = useState(90);
     const [datos, setDatos] = useState(null);
     const [cargando, setCargando] = useState(true);
@@ -83,7 +85,7 @@ export default function InformeDesempeno({ onCerrar, onPDF, pdfLoading }) {
         let vivo = true;
         setCargando(true);
         setError(false);
-        axiosInstance.get('/informes/desempeno', { params: { ventana } })
+        axiosInstance.get('/informes/desempeno', { params: { ...ambito, ventana } })
             .then((r) => { if (vivo) setDatos(r.data); })
             .catch(() => { if (vivo) setError(true); })
             .finally(() => { if (vivo) setCargando(false); });

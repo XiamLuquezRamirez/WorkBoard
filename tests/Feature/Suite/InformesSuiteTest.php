@@ -104,6 +104,25 @@ class InformesSuiteTest extends TestCase
         $this->assertSame(90, $admin->getJson('/api/informes/desempeno?ventana=7')->json('ventana'));
     }
 
+    public function test_el_ambito_de_equipo_deja_fuera_lo_propio_y_no_amplia_a_nadie(): void
+    {
+        $this->tarea($this->lider, 'De Laura');
+        $this->tarea($this->colaborador, 'De Carlos');
+        $this->tarea($this->ajeno, 'De Ana');
+
+        $this->assertEqualsCanonicalizing(['De Laura', 'De Carlos'], $this->como($this->lider)->titulos('/api/informes/tareas'));
+        $this->assertSame(['De Carlos'], $this->como($this->lider)->titulos('/api/informes/tareas?equipo=1'));
+        foreach (['desempeno', 'registro'] as $informe) {
+            $ids = collect($this->getJson("/api/informes/{$informe}?equipo=1")->assertOk()->json('personas'))->pluck('id')->all();
+            $this->assertEqualsCanonicalizing([$this->colaborador, $this->independiente], $ids);
+        }
+        $this->assertSame(['De Carlos'], collect($this->getJson('/api/informes/calidad?equipo=1')->json('abiertas'))->pluck('titulo')->all());
+
+        // Quien no lidera sigue viendo sólo lo suyo.
+        $this->assertSame(['De Carlos'], $this->como($this->colaborador)->titulos('/api/informes/tareas?equipo=1'));
+        $this->assertSame(['De Ana'], $this->como($this->ajeno)->titulos('/api/informes/tareas?equipo=1'));
+    }
+
     // ─── informes/registro ────────────────────────────────────────────────
 
     private function registro(string $query = ''): \Illuminate\Support\Collection

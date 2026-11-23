@@ -1,6 +1,4 @@
 import React, { useState, useEffect } from "react";
-import html2canvas from 'html2canvas';
-import { jsPDF } from 'jspdf';
 import {
     FaArrowLeft,
     FaChartArea,
@@ -14,6 +12,7 @@ import Header from "./Header";
 import axiosInstance from "../axiosConfig";
 import { useUser } from './UserContext';
 import Sidebar from "./Sidebar";
+import usePdfInforme from "./reportes/usePdfInforme";
 import InformeEjecutivo from "./reportes/InformeEjecutivo";
 import InformeDesempeno from "./reportes/InformeDesempeno";
 import InformePuntualidad from "./reportes/InformePuntualidad";
@@ -49,7 +48,7 @@ const Reportes = () => {
     const [tareasError, setTareasError] = useState(false);
     const navigate = useNavigate();
     
-    const [pdfLoading, setPdfLoading] = useState(false);
+    const { generarPDF, pdfLoading } = usePdfInforme();
 
     const reportCards = [
         {
@@ -148,82 +147,6 @@ const Reportes = () => {
 
 
 
-
-    const generarPDF = async (titulo) => {
-        const element = document.querySelector('.modal-report');
-        if (!element) return;
-        setPdfLoading(true);
-
-        // Expand every scroll container so html2canvas captures full content
-        const saved = [];
-        [element, ...element.querySelectorAll('*')].forEach(el => {
-            const cs = window.getComputedStyle(el);
-            const hasScroll = ['auto', 'scroll'].includes(cs.overflowY)
-                || ['auto', 'scroll'].includes(cs.overflowX)
-                || ['auto', 'scroll'].includes(cs.overflow);
-            const hasMaxH = cs.maxHeight && cs.maxHeight !== 'none';
-            if (hasScroll || hasMaxH) {
-                saved.push({
-                    el,
-                    overflow:  el.style.overflow,
-                    overflowX: el.style.overflowX,
-                    overflowY: el.style.overflowY,
-                    maxHeight: el.style.maxHeight,
-                    height:    el.style.height,
-                });
-                el.style.overflow  = 'visible';
-                el.style.overflowX = 'visible';
-                el.style.overflowY = 'visible';
-                el.style.maxHeight = 'none';
-                el.style.height    = 'auto';
-            }
-        });
-
-        // Allow browser to reflow before capture
-        await new Promise(r => setTimeout(r, 200));
-
-        try {
-            const canvas = await html2canvas(element, {
-                scale: 2,
-                useCORS: true,
-                allowTaint: true,
-                logging: false,
-                backgroundColor: '#ffffff',
-                scrollX: 0,
-                scrollY: -window.scrollY,
-                width:  element.scrollWidth,
-                height: element.scrollHeight,
-                windowWidth:  document.documentElement.scrollWidth,
-                windowHeight: document.documentElement.scrollHeight,
-            });
-            const imgData = canvas.toDataURL('image/jpeg', 0.92);
-            const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-            const pageWidth  = pdf.internal.pageSize.getWidth();
-            const pageHeight = pdf.internal.pageSize.getHeight();
-            const scale      = pageWidth / canvas.width;
-            const scaledH    = canvas.height * scale;
-            let posY = 0;
-            while (posY < scaledH) {
-                if (posY > 0) pdf.addPage();
-                pdf.addImage(imgData, 'JPEG', 0, -posY, pageWidth, scaledH);
-                posY += pageHeight;
-            }
-            const fecha = fechaLocal();
-            pdf.save(`${titulo.replace(/\s+/g, '-').toLowerCase()}-${fecha}.pdf`);
-        } catch (e) {
-            console.error('Error generando PDF:', e);
-        } finally {
-            // Restore original styles
-            saved.forEach(({ el, overflow, overflowX, overflowY, maxHeight, height }) => {
-                el.style.overflow  = overflow;
-                el.style.overflowX = overflowX;
-                el.style.overflowY = overflowY;
-                el.style.maxHeight = maxHeight;
-                el.style.height    = height;
-            });
-            setPdfLoading(false);
-        }
-    };
 
     const consultarTareas = () => {
         setTareasCargando(true);

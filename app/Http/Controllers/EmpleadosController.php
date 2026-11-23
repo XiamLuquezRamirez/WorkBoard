@@ -3921,7 +3921,10 @@ class EmpleadosController extends Controller
                 ->pluck('empleados.id')
                 ->all();
 
-            $ids = array_merge($ids, array_map('intval', $asignados));
+            $asignados = array_map('intval', $asignados);
+            // «Reportes de mi equipo»: su equipo, sin sus propias tareas (salvo
+            // que figure en él). Sólo reduce el alcance.
+            $ids = request()->boolean('equipo') ? $asignados : array_merge($ids, $asignados);
         }
 
         return array_values(array_unique($ids));

@@ -1,8 +1,9 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useContext, useEffect, useMemo, useState } from 'react';
 import { FaTimes, FaFilePdf, FaFileExcel } from 'react-icons/fa';
 import { BarChart, Bar, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, LabelList } from 'recharts';
 import * as XLSX from 'xlsx';
 import axiosInstance from '../../axiosConfig';
+import { AmbitoInforme } from './ambito';
 import './ejecutivo.css';
 
 /** Desde cuándo no se mueve nada en sus tareas. */
@@ -37,6 +38,7 @@ function Kpi({ numero, titulo, detalle, tono = '' }) {
 
 /** Quién no registra: personas sin movimiento en sus tareas, semana a semana. */
 export default function InformeRegistro({ onCerrar, onPDF, pdfLoading }) {
+    const ambito = useContext(AmbitoInforme);
     const [semanas, setSemanas] = useState(8);
     const [datos, setDatos] = useState(null);
     const [error, setError] = useState(false);
@@ -48,7 +50,7 @@ export default function InformeRegistro({ onCerrar, onPDF, pdfLoading }) {
     useEffect(() => {
         let vivo = true;
         setError(false);
-        axiosInstance.get('/informes/registro', { params: { semanas } })
+        axiosInstance.get('/informes/registro', { params: { ...ambito, semanas } })
             .then((r) => { if (vivo) setDatos(r.data); })
             .catch(() => { if (vivo) setError(true); });
         return () => { vivo = false; };

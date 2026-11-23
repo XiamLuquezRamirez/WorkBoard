@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useContext, useEffect, useMemo, useState } from 'react';
 import { FaTimes, FaFilePdf, FaFileExcel, FaPrint, FaChevronDown } from 'react-icons/fa';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import * as XLSX from 'xlsx';
@@ -6,6 +6,7 @@ import axiosInstance from '../../axiosConfig';
 import RangosFecha from '../rangosFecha';
 import { situacion, SITUACIONES } from './tareasEmpleado';
 import { calcularProyectos, calcularCobertura } from './proyectos';
+import { AmbitoInforme } from './ambito';
 import './ejecutivo.css';
 
 const fecha = (iso) => {
@@ -56,6 +57,7 @@ function htmlImpresion(proyectos, filtrosTexto) {
  * está realmente asignado a un proyecto.
  */
 export default function InformeProyectos({ onCerrar, onPDF, pdfLoading }) {
+    const ambito = useContext(AmbitoInforme);
     const [datos, setDatos] = useState(null);
     const [tareas, setTareas] = useState([]);
     const [error, setError] = useState(false);
@@ -69,7 +71,7 @@ export default function InformeProyectos({ onCerrar, onPDF, pdfLoading }) {
 
     useEffect(() => {
         let vivo = true;
-        Promise.all([axiosInstance.get('/informes/proyectos'), axiosInstance.get('/informes/tareas')])
+        Promise.all([axiosInstance.get('/informes/proyectos', { params: ambito }), axiosInstance.get('/informes/tareas', { params: ambito })])
             .then(([p, t]) => { if (vivo) { setDatos(p.data); setTareas(t.data); } })
             .catch(() => { if (vivo) setError(true); });
         return () => { vivo = false; };

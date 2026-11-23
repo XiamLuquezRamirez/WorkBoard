@@ -1,10 +1,11 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useContext, useEffect, useMemo, useState } from 'react';
 import { FaTimes, FaFilePdf, FaFileExcel } from 'react-icons/fa';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import * as XLSX from 'xlsx';
 import axiosInstance from '../../axiosConfig';
 import RangosFecha from '../rangosFecha';
 import { calcular, filtrar, FILTROS_VACIOS } from './reprogramaciones';
+import { AmbitoInforme } from './ambito';
 import './ejecutivo.css';
 
 const PESTANAS = [
@@ -45,6 +46,7 @@ function Kpi({ numero, titulo, detalle, tono = '' }) {
 
 /** Cuánto, quién y cómo se aplazan o pausan las tareas, con y sin aprobación. */
 export default function InformeReprogramaciones({ onCerrar, onPDF, pdfLoading }) {
+    const ambito = useContext(AmbitoInforme);
     const [pestana, setPestana] = useState('resumen');
     const [inicio, setInicio] = useState('');
     const [fin, setFin] = useState('');
@@ -61,7 +63,7 @@ export default function InformeReprogramaciones({ onCerrar, onPDF, pdfLoading })
         setFilas(null);
         setError('');
         axiosInstance.get('/informes/reprogramaciones', {
-            params: { inicio: inicio || undefined, fin: fin || undefined }, signal: ctrl.signal,
+            params: { ...ambito, inicio: inicio || undefined, fin: fin || undefined }, signal: ctrl.signal,
         })
             .then((r) => setFilas(Array.isArray(r.data) ? r.data : []))
             .catch((e) => {
