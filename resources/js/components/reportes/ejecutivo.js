@@ -8,7 +8,8 @@
  *  - ¿Qué se ENTREGÓ en el periodo?   Completadas con fecha_entregada dentro.
  *                                     A tiempo = marca a_tiempo del servidor.
  *  - ¿Se cumplió lo que VENCÍA?       Tareas con fecha_pactada dentro del
- *                                     periodo: cuántas están completadas.
+ *                                     periodo y ya pasada (o completadas):
+ *                                     cuántas están completadas.
  *  - ¿Cómo está HOY?                  Abiertas y vencidas, sin importar el
  *                                     periodo: lo vencido de meses atrás
  *                                     también es deuda de hoy.
@@ -37,7 +38,7 @@ function nuevoAcumulado() {
     };
 }
 
-function sumar(acc, t, { desde, hasta }) {
+function sumar(acc, t, { desde, hasta, hoy }) {
     const completada = t.estado === 'Completada';
     if (!completada) {
         acc.abiertas += 1;
@@ -55,7 +56,9 @@ function sumar(acc, t, { desde, hasta }) {
         if (t.a_tiempo === true) acc.aTiempo += 1;
         else acc.tarde += 1;
     }
-    if (enRango(t.fecha_pactada, desde, hasta)) {
+    // Sólo lo que ya se pudo incumplir: una tarea abierta cuya fecha aún no
+    // llega (o es hoy) no es un incumplimiento, aunque caiga en el periodo.
+    if (enRango(t.fecha_pactada, desde, hasta) && (completada || t.fecha_pactada < hoy)) {
         acc.compromisos += 1;
         if (completada) acc.cumplidos += 1;
     }
@@ -70,6 +73,11 @@ function cerrar(acc) {
         pctCumplimiento: pct(acc.cumplidos, acc.compromisos),
     };
 }
+
+const hoyLocal = () => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
 
 /** Lunes (AAAA-MM-DD) de la semana de una fecha AAAA-MM-DD, sin pasar por UTC. */
 function lunesDe(fecha) {
@@ -90,7 +98,7 @@ export function calcularEjecutivo(tareas, { desde, hasta, area = '', persona = n
         (!area || (t.departamento || SIN_AREA) === area)
         && (!persona || t.empleado_id === persona)
     );
-    const periodo = { desde, hasta };
+    const periodo = { desde, hasta, hoy: hoyLocal() };
 
     const total = cerrar(visibles.reduce((acc, t) => sumar(acc, t, periodo), nuevoAcumulado()));
 
